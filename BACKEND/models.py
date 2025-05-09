@@ -14,6 +14,7 @@ class Usuario(models.Model):
     correo = models.EmailField(max_length=45)
     contrasena = models.CharField(max_length=45)
     telefono = models.IntegerField()
+    estado = models.BooleanField()
     rol = models.ForeignKey(Rol, on_delete=models.DO_NOTHING)
     def __str__(self):
         return f"{self.nombre} {self.apellido}"

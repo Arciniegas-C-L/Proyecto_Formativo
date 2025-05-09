@@ -1,9 +1,11 @@
-import React from 'react'
+import {Link} from 'react-router-dom'
 
-export default function Footer() {
+export function Footer() {
     return (
         <div>
-
+            <div>
+                <Link to="/home" className="text-decoration-none">Variedad y  Estilos ZOE</Link>
+            </div>
         </div>
     )
 }
