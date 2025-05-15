@@ -1,3 +1,8 @@
+from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import authenticate
 from rest_framework import viewsets
 from .serializer import RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer, ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer, PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer
 from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago
@@ -12,6 +17,27 @@ class Rolview(viewsets.ModelViewSet):
 class Usuarioview(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
     queryset = Usuario.objects.all()
+    @action(detail=False, methods=['post'])
+    def registro(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"mensaje": "Usuario registrado"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_usuario(request):
+    correo = request.data.get('correo')
+    contrasena = request.data.get('contrasena')
+    try:
+        usuario = Usuario.objects.get(correo=correo)
+        if usuario.contrasena == contrasena: 
+            return Response({"mensaje": "Login exitoso", "usuario": usuario.nombre})
+        else:
+            return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+    except Usuario.DoesNotExist:
+        return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
     
 class ProveedorView(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer

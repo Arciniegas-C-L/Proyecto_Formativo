@@ -1,0 +1,237 @@
+.container-sesion * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Montserrat", sans-serif;
+}
+
+.container-sesion {
+    width: 100%;
+    height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #D7D4D4;
+}
+
+.container-sesion .container {
+    width: 800px;
+    height: 500px;
+    display: flex;
+    position: relative;
+    border-color: white;
+    border-radius: 15px;
+    overflow: hidden;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.container-sesion .container-form {
+    width: 100%;
+    overflow: hidden;
+}
+
+.container-sesion .container-form form {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.5s ease-in;
+}
+
+.container-sesion .container-form h2 {
+    font-size: 30px;
+    margin-bottom: 20px;
+}
+
+.container-sesion .container-form span {
+    font-size: 15px;
+    margin-bottom: 10px;
+}
+
+.container-sesion .container-input {
+    width: 300px;
+    height: 40px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 0 15px;
+    background-color: #EEEEEE;
+}
+
+.container-sesion .container-input input {
+    border: none;
+    outline: none;
+    width: 100%;
+    height: 100%;
+    background-color: inherit;
+}
+
+.container-sesion .container-form a {
+    color: black;
+    font-size: 14px;
+    margin-bottom: 20px;
+    margin-top: 5px;
+    text-decoration: none;
+}
+
+.container-sesion .container-form a:hover {
+    text-decoration: underline;
+}
+
+.container-sesion .button {
+    width: 170px;
+    height: 40px;
+    font-size: 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    background-color: #FFD447;
+    color: #000000;
+}
+
+/* animation form */
+.container-sesion .sign-up {
+    transform: translateX(-100%);
+}
+
+.container-sesion .container.toggle .sign-in {
+    transform: translateX(100%);
+}
+
+.container-sesion .container.toggle .sign-up {
+    transform: translateX(0);
+}
+
+/* welcome */
+.container-sesion .container-welcome {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    background-color: #000000;
+    transform: translateX(100%);
+    transition: transform 0.5s ease-in-out, border-radius 0.5s ease-in-out;
+    overflow: hidden;
+    border-radius: 40% 0 0 36%;
+}
+
+.container-sesion .container.toggle .container-welcome {
+    transform: translateX(0);
+    border-radius: 0 35% 40% 0;
+    background-color: #000000;
+}
+
+.container-sesion .container-welcome .welcome {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    padding: 0 50px;
+    transition: transform 0.5s ease-in-out;
+}
+
+.container-sesion .welcome-sign-in {
+    transform: translateX(100%);
+}
+
+.container-sesion .container-welcome h3 {
+    font-size: 40px;
+}
+
+.container-sesion .container-welcome p {
+    font-size: 14px;
+    text-align: center;
+}
+
+.container-sesion .container-welcome .button {
+    border: 2px solid #FFD447;
+    background-color: transparent;
+    color: #FFFFFF;
+}
+
+.container-sesion .container.toggle .welcome-sign-in {
+    transform: translateX(0);
+}
+
+.container-sesion .container.toggle .welcome-sign-up {
+    transform: translateX(-100%);
+}
+
+.container-sesion .welcome .saludo-welcome {
+    max-width: 150px;
+    height: auto;
+    margin: 15px 0;
+}
+
+/* Teléfonos */
+@media (max-width: 576px) {
+    .container-sesion {
+        width: 100%;
+        height: 80vh;
+    }
+    .container-sesion .container {
+        width: 390px;
+        height: 400px;
+    }
+    .container-sesion .container-form h2 {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+    .container-sesion .container-form span {
+        font-size: 12px;
+        margin: 10px 0;
+        padding: 0 12px;
+        text-align: center;
+    }
+    .container-sesion .container-input {
+        width: 150px;
+        height: 27px;
+        margin-bottom: 10px;
+        padding: 0 10px;
+    }
+    .container-sesion .container-form a {
+    font-size: 10px;
+    margin-bottom: 10px;
+    margin-top: 0.2rem;
+    }
+    .container-sesion .button {
+        width: 100px;
+        height: 35px;
+        font-size: 10px;
+        margin-top: 10px;
+    }
+    .container-sesion .container-welcome {
+        border-radius: 32% 0 0 28%;
+    }
+    .container-sesion .container.toggle .container-welcome {
+        border-radius: 0 28% 32% 0;
+    }
+    .container-sesion .container-welcome h3 {
+        font-size: 20px;
+    }
+    .container-sesion .container-welcome p {
+        font-size: 10px;
+    }
+    .container-sesion .welcome .saludo-welcome {
+        max-width: 100px;
+        height: auto;
+        margin: 0;
+    }
+        input::placeholder {
+            font-size: 10px;
+            color: #888;
+    }
+}
+
+/* Tablets */
+@media (min-width: 577px) and (max-width: 768px) {
+    
+}
