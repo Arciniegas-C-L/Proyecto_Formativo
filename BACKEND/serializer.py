@@ -18,6 +18,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
         validated_data['rol'] = rol_cliente
         return super().create(validated_data)
 
+
+
 class ProveedorSerializer(serializers.ModelSerializer):
     usuario = UsuarioSerializer()  # Información del usuario relacionada con el proveedor
 
