@@ -1,0 +1,92 @@
+.Formulario-Recuperar{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60vh;
+}
+
+.Formulario-Recuperar .formulario{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    gap: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.titulo-Recuperar{
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 40px;
+}
+
+.Formulario-Recuperar input{
+    width: 40rem;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 20px;
+    margin: 10px 0;
+}
+
+.Formulario-Recuperar button{
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    background-color: #FFD447;
+    color: #000000;
+    cursor: pointer;
+}
+
+.Formulario-Recuperar button:hover{
+    box-shadow: 3px 3px 1px rgba(0, 0, 0, 0.9);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 576px) {
+    .Formulario-Recuperar .formulario{
+        padding: 15px;
+    }
+    .titulo-Recuperar{
+        margin-bottom: 5px;
+        font-size: 25px;
+    }
+    .Formulario-Recuperar input{
+        width: 20rem;
+        padding: 10px;
+        font-size: 10px;
+        margin: 5px 0;
+    }
+    .Formulario-Recuperar button{
+        width: 50%;
+        padding: 10px;
+        font-size: 15px;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .Formulario-Recuperar .formulario{
+        padding: 20px;
+    }
+    .titulo-Recuperar{
+        margin-bottom: 10px;
+        font-size: 35px;
+    }
+    .Formulario-Recuperar input{
+        width: 30rem;
+        padding: 15px;
+        font-size: 15px;
+        margin: 10px 0;
+    }
+    .Formulario-Recuperar button{
+        width: 50%;
+        padding: 10px;
+        font-size: 18px;
+    }
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../assets/css/formCambio.css";
+import { RecuperarContrasena } from "./FormRecuperacion";
 
 export function VerificarCodigo({ correo }) {
     const [codigo, setCodigo] = useState("");
@@ -63,7 +64,7 @@ export function VerificarCodigo({ correo }) {
         const data = await res.json();
         if (res.ok) {
             setMensaje(data.mensaje);
-            setTimeout(() => navigate("/login"), 2000);
+            setTimeout(() => navigate("/sesion"), 2000);
         } else {
             setError(data.error || "No se pudo cambiar la contraseña");
         }
@@ -74,51 +75,54 @@ export function VerificarCodigo({ correo }) {
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal">
-                {!codigoVerificado ? (
-                <form onSubmit={verificarCodigo}>
-                <h2>Verificar código</h2>
-                <input
-                    type="text"
-                    placeholder="Código de 6 dígitos"
-                    value={codigo}
-                    onChange={(e) => setCodigo(e.target.value)}
-                    required
-                    maxLength={6}
-                    className="input"
-                />
-                <button type="submit" className="button">
-                    Verificar
-                </button>
-                </form>
-            ) : (
-                <form onSubmit={cambiarContrasena}>
-                <h2>Nueva contraseña</h2>
-                <input
-                    type="password"
-                    placeholder="Nueva contraseña"
-                    value={nuevaContrasena}
-                    onChange={(e) => setNuevaContrasena(e.target.value)}
-                    required
-                    className="input"
-                />
-                <input
-                    type="password"
-                    placeholder="Confirmar contraseña"
-                    value={confirmarContrasena}
-                    onChange={(e) => setConfirmarContrasena(e.target.value)}
-                    required
-                    className="input"
-                />
-                <button type="submit" className="button">
-                    Cambiar contraseña
-                </button>
-                </form>
-            )}
-                {mensaje && <p className="mensaje-ok">{mensaje}</p>}
-                {error && <p className="mensaje-error">{error}</p>}
+        <div>
+            <RecuperarContrasena />
+            <div className="modal-overlay">
+                <div className="modal-verificar">
+                    {!codigoVerificado ? (
+                        <form onSubmit={verificarCodigo}>
+                            <h2>Verificar código</h2>
+                            <input
+                                type="text"
+                                placeholder="Código de 6 dígitos"
+                                value={codigo}
+                                onChange={(e) => setCodigo(e.target.value)}
+                                required
+                                maxLength={6}
+                                className="input"
+                            />
+                            <button type="submit" className="button">
+                                Verificar
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={cambiarContrasena}>
+                            <h2>Nueva contraseña</h2>
+                            <input
+                                type="password"
+                                placeholder="Nueva contraseña"
+                                value={nuevaContrasena}
+                                onChange={(e) => setNuevaContrasena(e.target.value)}
+                                required
+                                className="input"
+                            />
+                            <input
+                                type="password"
+                                placeholder="Confirmar contraseña"
+                                value={confirmarContrasena}
+                                onChange={(e) => setConfirmarContrasena(e.target.value)}
+                                required
+                                className="input"
+                            />
+                            <button type="submit" className="button">
+                                Cambiar contraseña
+                            </button>
+                        </form>
+                    )}
+                        {mensaje && <p className="mensaje-ok">{mensaje}</p>}
+                        {error && <p className="mensaje-error">{error}</p>}
+                </div>
+            </div>
         </div>
-    </div>
     );
 }
