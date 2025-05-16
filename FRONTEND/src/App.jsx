@@ -7,6 +7,8 @@ import {Home} from './pages/Home'
 import {Sesion} from './pages/Sesion'
 import { Toaster } from 'react-hot-toast'
 import { RecuperarContrasena } from './pages/FormRecuperacion'
+import {AdminProveedores} from './pages/AdminProveedores';
+
 
 function App() {
   return (
@@ -18,6 +20,7 @@ function App() {
         <Route path="/rol-create" element={<RolFormPage />} />
         <Route path="/sesion" element={<Sesion />} />
         <Route path="/sesion/recuperar_contrasena" element={<RecuperarContrasena />} />
+        <Route path="/proveedores" element={<AdminProveedores />} />
       </Routes>
       <Toaster />
       <Footer />
@@ -25,4 +28,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
