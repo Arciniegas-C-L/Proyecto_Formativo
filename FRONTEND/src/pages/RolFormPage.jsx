@@ -11,7 +11,7 @@ export function RolFormPage() {
 
     const onSubmit = handleSubmit( async data => {
         await createRol(data)
-        toast.success('Tarea Creada')
+        toast.success('Rol Creado')
         navigate("/rol")
     })
     

@@ -6,9 +6,9 @@ import {Footer} from './components/Footer'
 import {Home} from './pages/Home'
 import {Sesion} from './pages/Sesion'
 import { Toaster } from 'react-hot-toast'
+import { RecuperarContrasena } from './pages/FormRecuperacion'
 
 function App() {
-  
   return (
     <BrowserRouter>
       <Header />
@@ -17,6 +17,7 @@ function App() {
         <Route path="/rol" element={<RolPage />} />
         <Route path="/rol-create" element={<RolFormPage />} />
         <Route path="/sesion" element={<Sesion />} />
+        <Route path="/sesion/recuperar_contrasena" element={<RecuperarContrasena />} />
       </Routes>
       <Toaster />
       <Footer />
