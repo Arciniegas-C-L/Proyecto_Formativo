@@ -7,16 +7,21 @@ class RolSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class UsuarioSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = Usuario
-        fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'contrasena', 'telefono', 'rol']
-        extra_kwargs = {'rol': {'required': False}}  # Hacemos que 'rol' sea opcional
+        fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'password', 'telefono']
+        # Quité 'rol' de los campos para que no sea editable desde el serializer
 
     def create(self, validated_data):
-        from .models import Rol
-        rol_cliente, _ = Rol.objects.get_or_create(nombre='Cliente')  # Busca o crea el rol "Cliente"
-        validated_data['rol'] = rol_cliente
-        return super().create(validated_data)
+        rol_cliente, _ = Rol.objects.get_or_create(nombre='Cliente')
+        password = validated_data.pop('password')
+        usuario = Usuario(**validated_data)
+        usuario.rol = rol_cliente
+        usuario.set_password(password)
+        usuario.save()
+        return usuario
 
 
 

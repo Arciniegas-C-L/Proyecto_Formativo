@@ -1,12 +1,15 @@
 import React, { useRef, useState } from 'react';
-import saludo from "../assets/images/saludo.webp"
-import bienvenida from "../assets/images/bienvenida.gif"
+import { useNavigate, Link } from 'react-router-dom';
+import saludo from "../assets/images/saludo.webp";
+import bienvenida from "../assets/images/bienvenida.gif";
 import "../assets/css/sesion.css";
 import { loginUsuario, registerUsuario } from '../api/Usiario.api';
+import toast from 'react-hot-toast';
 
 export function Sesion() {
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleSignInClick = () => {
     containerRef.current.classList.remove('toggle');
@@ -20,18 +23,19 @@ export function Sesion() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const email = e.target[0].value;
-    const password = e.target[1].value;
+    const form = e.target.elements;
+    const correo = form.email.value;
+    const password = form.password.value;
 
     try {
-      const response = await loginUsuario({
-        correo: email,
-        contrasena: password,
-      });
-      alert("Inicio de sesión exitoso");
-      console.log(response.data);
+      const response = await loginUsuario({ correo, password });
+
+      localStorage.setItem('usuario', JSON.stringify(response.data.usuario));
+      toast.success("Inicio de sesión exitoso");
+      navigate('/home');
     } catch (error) {
-      alert("Error: " + (error.response?.data?.non_field_errors || "Credenciales inválidas"));
+      const errorMsg = error.response?.data?.error || "Credenciales inválidas";
+      toast.error("Error: " + errorMsg);
     }
 
     setIsSubmitting(false);
@@ -41,29 +45,31 @@ export function Sesion() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const nombre = e.target[0].value;
-    const apellido = e.target[1].value;
-    const telefono = e.target[2].value;
-    const email = e.target[3].value;
-    const password = e.target[4].value;
+    const form = e.target.elements;
 
-  try {
-    await registerUsuario({
-      nombre,
-      apellido,
-      correo: email,
-      contrasena: password,
-      telefono, 
-    });
+    const nombre = form.nombre.value;
+    const apellido = form.apellido.value;
+    const telefono = form.telefono.value;
+    const correo = form.correo.value;
+    const password = form.password.value;
 
-      alert("Registro exitoso");
+    try {
+      await registerUsuario({
+        nombre,
+        apellido,
+        correo,
+        password,
+        telefono,
+      });
+
+      toast.success("Registro exitoso. Ahora inicia sesión.");
+      containerRef.current.classList.remove('toggle');
     } catch (error) {
-      alert("Error: " + JSON.stringify(error.response?.data || {}));
+      toast.error("Error: " + JSON.stringify(error.response?.data || {}));
     }
 
     setIsSubmitting(false);
   };
-
 
   return (
     <div className="container-sesion">
@@ -78,7 +84,7 @@ export function Sesion() {
             <div className="container-input">
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
-            <a href="#">¿Olvidaste tu contraseña?</a>
+            <Link to="recuperar_contrasena/" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? "Procesando..." : "INICIAR SESIÓN"}
             </button>
@@ -90,19 +96,19 @@ export function Sesion() {
             <h2>Registrarse</h2>
             <span>Use su correo electrónico para registrarse</span>
             <div className="container-input">
-              <input type="text" placeholder="Nombre" required />
+              <input type="text" name="nombre" placeholder="Nombre" required />
             </div>
             <div className="container-input">
-              <input type="text" placeholder="Apellido" required />
+              <input type="text" name="apellido" placeholder="Apellido" required />
             </div>
             <div className="container-input">
-              <input type="tel" placeholder="Teléfono" required />
+              <input type="tel" name="telefono" placeholder="Teléfono" required />
             </div>
             <div className="container-input">
-              <input type="email" placeholder="Correo" required />
+              <input type="email" name="correo" placeholder="Correo" required />
             </div>
             <div className="container-input">
-              <input type="password" placeholder="Contraseña" required />
+              <input type="password" name="password" placeholder="Contraseña" required />
             </div>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? "Procesando..." : "REGISTRARSE"}
@@ -127,5 +133,4 @@ export function Sesion() {
       </div>
     </div>
   );
-};
-
+}
