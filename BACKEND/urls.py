@@ -13,7 +13,7 @@ router.register(r'categoria', views.CategoriaView, 'categoria')
 router.register(r'proveedor', views.ProveedorView, 'proveedor')
 router.register(r'inventario', views.InventarioView, 'inventario')
 
-
 urlpatterns = [
     path('api/', include(router.urls)),
 ]
+
