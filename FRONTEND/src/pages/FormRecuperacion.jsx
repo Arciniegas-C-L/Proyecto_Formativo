@@ -1,6 +1,7 @@
 // FormRecuperacion.jsx
 import { useState } from "react";
 import { VerificarCodigo } from "./FormCambio";
+import "../assets/css/formRecuperacion.css";
 
 export function RecuperarContrasena() {
     const [correo, setCorreo] = useState("");
@@ -38,8 +39,9 @@ export function RecuperarContrasena() {
     }
 
     return (
-        <form onSubmit={enviarCodigo}>
-            <h2>Recuperar Contraseña</h2>
+        <div className="Formulario-Recuperar">
+            <form className="formulario" onSubmit={enviarCodigo}>
+            <h2 className="titulo-Recuperar">Recuperar Contraseña</h2>
             <input
                 type="email"
                 placeholder="Correo"
@@ -51,5 +53,6 @@ export function RecuperarContrasena() {
             {mensaje && <p style={{ color: "green" }}>{mensaje}</p>}
             {error && <p style={{ color: "red" }}>{error}</p>}
         </form>
+        </div>
     );
 }

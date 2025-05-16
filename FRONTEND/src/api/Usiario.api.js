@@ -16,8 +16,6 @@ export const solicitarRecuperacion = (data) => {
     return UsuarioApi.post('recuperar_contrasena/', data);
 };
 
-// Agrega esta función para cambiar la contraseña con código verificado
 export const resetearContrasena = (data) => {
-    // data debe tener: correo, codigo, contrasena (nueva contraseña)
     return UsuarioApi.post('reset_password/', data);
 };
