@@ -21,14 +21,13 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
 
 class ProveedorSerializer(serializers.ModelSerializer):
-    usuario = UsuarioSerializer()  # Información del usuario relacionada con el proveedor
-
+    usuario = serializers.PrimaryKeyRelatedField(queryset=Usuario.objects.all()) 
+    
     class Meta:
         model = Proveedor
-        fields = ['idProveedor', 'nombre', 'contacto', 'estado', 'usuario']
+        fields = ['idProveedor', 'nombre', 'tipo', 'productos', 'correo', 'telefono','estado', 'usuario']
 
 class CategoriaSerializer(serializers.ModelSerializer):
-    class Meta:
         model = Categoria
         fields = ['idCategoria', 'nombre', 'estado']
 
@@ -44,7 +43,7 @@ class InventarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Inventario
-        fields = ['idInventario', 'cantidad', 'fechaRegistro', 'stockMinimo', 'producto']
+        fields = ['idProveedor', 'nombre', 'tipo', 'productos', 'correo', 'telefono', 'estado', 'usuario']
 
 class MovimientoSerializer(serializers.ModelSerializer):
     inventario = InventarioSerializer()  # Información del inventario relacionado con el movimiento

@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from rest_framework import viewsets
 from .serializer import RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer, ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer, PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer
 from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago
+from rest_framework.permissions import AllowAny
 
 # Create your views here.
 
@@ -39,10 +40,40 @@ def login_usuario(request):
     except Usuario.DoesNotExist:
         return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
     
-class ProveedorView(viewsets.ModelViewSet):
-    serializer_class = ProveedorSerializer
-    queryset = Proveedor.objects.all()
-    
+class ProveedorViewSet(viewsets.ModelViewSet):
+        serializer_class = ProveedorSerializer
+        queryset = Proveedor.objects.all()
+        permission_classes = [AllowAny]
+
+        def get_queryset(self):
+            user = self.request.user
+            if hasattr(user,  'rol') and user.rol.nombre.lower()== 'administrador':
+                return Proveedor.objects.all()
+            return Proveedor.objects.none()
+        
+        def perform_create(self, serializer):
+            user = self.request.user
+            if hasattr(user, 'rol') and user.rol.nombre.lower() == 'administrador':
+                serializer.save()
+            else:
+                raise PermissionError("No tiene permisos para crear proveedores")
+                                    
+        def perform_update(self, serializer):
+            user = self.request.user
+            if hasattr(user, 'rol') and user.rol.nombre.lower () == 'administrador':
+                serializer.save()
+            else:
+                raise PermissionError("No tiene permisos para editar proveedores")
+            
+
+        def perform_destroy(self, instance):
+            user = self.request.user
+            if hasattr(user, 'rol') and user.rol.nombre.lower() == 'administrador':
+                instance.delete()
+            else:
+                raise PermissionError("No tiene permisos para eliminar proveedores.")
+            
+                                                 
 class CategoriaView(viewsets.ModelViewSet):
     serializer_class = CategoriaSerializer
     queryset = Categoria.objects.all()

@@ -21,10 +21,17 @@ class Usuario(models.Model):
         return f"{self.nombre} {self.apellido}"
 
 class Proveedor(models.Model):
+    TIPO_PROVEEDOR_CHOICES = [
+        ('nacional', 'Nacional'),
+        ('importado', 'Importado'),
+    ]
     idProveedor = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45)
-    contacto = models.IntegerField()
-    estado = models.BooleanField()
+    tipo = models.CharField(max_length=20, choices=TIPO_PROVEEDOR_CHOICES)
+    productos = models.TextField(help_text="Lista de productos o descripcion")
+    correo = models.EmailField()
+    telefono = models.CharField(max_length=20)
+    estado = models.BooleanField(default=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
     def __str__(self):
         return self.nombre
