@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import React from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { fetchProveedores, createProveedor, updateProveedor, deleteProveedor, fetchUsuarios } from "../api/Proveedor.api.js";
 
