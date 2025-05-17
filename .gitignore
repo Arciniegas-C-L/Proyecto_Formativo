@@ -1,0 +1,25 @@
+# Ignorar base de datos SQLite
+db.sqlite3
+
+# Ignorar entorno virtual (si está en raíz)
+env/
+
+# Ignorar node_modules de frontend
+FRONTEND/node_modules/
+
+# Ignorar logs
+*.log
+
+# Ignorar archivos de sistema y editores
+.vscode/
+.idea/
+.DS_Store
+
+# Otros
+*.env
+*.bak
+db.sqlite3
+
+# Python bytecode
+*.pyc
+__pycache__/
