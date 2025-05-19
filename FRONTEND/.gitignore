@@ -32,3 +32,5 @@ dist-ssr
 # Archivos de entorno
 .env
 .env.*
+
+env
