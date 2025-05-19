@@ -13,6 +13,9 @@ export function Header() {
                         <Link to="/rol" className="text-dark text-decoration-none nav-link text-white">Rol</Link>
                     </li>
                     <li>
+                        <Link to="/proveedores" className="text-dark text-decoration-none nav-link text-white">Proveedor</Link>
+                    </li>
+                    <li>
                         <Link to="/sesion" className="text-dark text-decoration-none nav-link text-white">Sesion</Link>
                     </li>
                 </ul>
