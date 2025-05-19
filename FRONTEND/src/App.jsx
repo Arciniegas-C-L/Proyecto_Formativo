@@ -7,6 +7,7 @@ import {Home} from './pages/Home'
 import {Sesion} from './pages/Sesion'
 import { Toaster } from 'react-hot-toast'
 import { RecuperarContrasena } from './pages/FormRecuperacion'
+import { InventarioFormPage } from './components/InventarioFormPage'
 
 function App() {
   return (
