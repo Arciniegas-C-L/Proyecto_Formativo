@@ -1,25 +1,33 @@
-import { Link } from "react-router-dom"
-import React from "react"
+import { Link } from "react-router-dom";
+import React from "react";
+import ZOE from "../assets/images/home/ZOE.gif";
+import "../assets/css/Header.css";
 
 export function Header() {
     return (
-        <div className="d-flex justify-content-between p-3 bg-dark">
-            <div>
-                <Link to="/home" className="text-dark text-decoration-none text-md text-white "><h3>Variedad y  Estilos ZOE</h3></Link>
+        <section className="nombre-empresa">
+            <div className="nombre-de-empresa">
+                <div className="contenido-imagen">
+                    <img src={ZOE} alt="Logo de la empresa" />
+                </div>
+                <h3><Link to="/home" className="titulo-empresa">Variedad y Estilos ZOE</Link></h3>
+                <div className="navegacion">
+                    <ul>
+                        <li>
+                            <Link to="/inventario">Inventario</Link>
+                        </li>
+                        <li>
+                            <Link to="/rol">Rol</Link>
+                        </li>
+                        <li>
+                            <Link to="/proveedores">Proveedor</Link>
+                        </li>
+                        <li>
+                            <Link to="/sesion">Sesión</Link>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <div>
-                <ul className="nav">
-                    <li className="nav-item">
-                        <Link to="/rol" className="text-dark text-decoration-none nav-link text-white">Rol</Link>
-                    </li>
-                    <li>
-                        <Link to="/proveedores" className="text-dark text-decoration-none nav-link text-white">Proveedor</Link>
-                    </li>
-                    <li>
-                        <Link to="/sesion" className="text-dark text-decoration-none nav-link text-white">Sesion</Link>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    )
+        </section>
+    );
 }

@@ -1,4 +1,4 @@
-import InventarioList from "./GDIGrafica/InventarioList";
+import InventarioList from "../components/GDIGrafica/InventarioList";
 import { Toaster } from "react-hot-toast";
 
 export function InventarioPage() {

@@ -65,7 +65,7 @@ function InventarioList() {
       ) : (
         <>
           <button
-            className="btn btn-primary mb-3"
+            className="btn btn-warning fw-bold px-4 shadow mb-3"
             onClick={() => {
               setInventarioEditado(null);
               setMostrarFormulario(true);

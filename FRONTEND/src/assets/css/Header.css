@@ -1,0 +1,83 @@
+body {
+    font-family: 'Urbanist';
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+header {
+    background-color: #000000;
+    margin: 0;
+    align-items: center;
+    padding: 20px;
+    width: 100%;
+}
+
+.titulo-empresa {
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+.nombre-de-empresa {
+    display: flex;
+    background-color: rgb(14, 13, 13);
+}
+
+.contenido-imagen {
+    display: flex;
+    justify-content: center;
+    width: 9%;
+    height: 9%;
+    padding: 5px 5px 5px 5px;
+}
+
+.contenido-imagen img {
+    width: 60%;
+    height: 40%;
+    border-radius: 100%;
+}
+
+h3 {
+    font-family: "Bebas Neue", sans-serif;
+    padding-top: 15px;
+    margin: 14px 10px 14px 14px;
+    text-align: center;
+    color: white;
+}
+
+.navegacion {
+    font-family: "Bebas Neue", sans-serif;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    color: #ffffff;
+    padding: 0 1rem;
+    margin: 14px 0 0 440px;
+}
+
+.navegacion ul {
+    display: flex;
+    list-style-type: none;
+}
+
+.navegacion ul li {
+    margin: 0 10px;
+    padding: 0 10px;
+}
+
+.navegacion ul li a {
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 18px;
+    transition: all ease .4s;
+}
+
+.navegacion ul li a:hover {
+    color: #FFD447;
+}
+
+hr {
+    height: 70%;
+    margin: auto;
+}

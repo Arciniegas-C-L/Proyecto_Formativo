@@ -99,7 +99,7 @@ function InventarioForm({ inventarioEditado, onSuccess = () => {} }) {
         />
       </div>
 
-      <button type="submit" className="btn btn-primary">
+      <button type="submit" className="btn btn-warning fw-bold shadow">
         {inventarioEditado ? "Actualizar" : "Crear"}
       </button>
     </form>
