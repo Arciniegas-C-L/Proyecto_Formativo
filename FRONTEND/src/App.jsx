@@ -8,6 +8,7 @@ import {Home} from './pages/Home'
 import {Sesion} from './pages/Sesion'
 import { Toaster } from 'react-hot-toast'
 import { RecuperarContrasena } from './pages/FormRecuperacion'
+import { InventarioPage } from './pages/InventarioPage'
 import {AdminProveedores} from './pages/AdminProveedores';
 
 
@@ -22,6 +23,7 @@ function App() {
         <Route path="/sesion" element={<Sesion />} />
         <Route path="/sesion/recuperar_contrasena" element={<RecuperarContrasena />} />
         <Route path="/proveedores" element={<AdminProveedores />} />
+        <Route path="/inventario" element={<InventarioPage />} />
       </Routes>
       <Toaster />
       <Footer />

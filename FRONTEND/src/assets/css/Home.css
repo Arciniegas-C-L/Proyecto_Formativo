@@ -1,0 +1,369 @@
+.contenedor-Home {
+    font-family: 'Urbanist';
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.inicio {
+    background-color: rgb(14, 13, 13);
+    width: 100%;
+}
+
+.introduccion {
+    padding: 14px;
+    display: flex;
+    width: 100%;
+    margin: 0;
+}
+
+.contenido-introduccion {
+    width: 50%;
+    height: 100%;
+    padding: 0 20px;
+}
+
+.contenido-introduccion .titulointroduccion {
+    font-size: 57px;
+}
+
+.contenido-introduccion p {
+    font-size: 23px;
+    margin-bottom: 45px;
+}
+
+.contenido-introduccion a {
+    text-decoration: none;
+    color: #FFFFFF;
+    background-color: #FFD447;
+    padding: 13px 35px;
+    font-size: 25px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,35);
+    border-radius: 10px;
+    margin: 70px;
+    margin-top: 30%;
+}
+
+.contenido-introduccion h2 {
+    font-family: "Caveat", cursive;
+    font-optical-sizing: auto;
+    font-weight: weight;
+    font-style: normal;
+    color: rgb(184, 166, 128);
+    font-size: 110px;
+    margin: 70px 50px 50px 50px;
+}
+
+.contenido-introduccion h2 hr {
+    border: 1px solid;
+    width: 30%;
+    margin: 0 130px;
+}
+
+.contenido-imagen {
+    display: flex;
+    justify-content: center;
+    width: 9%;
+    height: 9%;
+    padding: 5px 5px 5px 5px;
+
+    img {
+        width: 60%;
+        height: 40%;
+        border-radius: 100%;
+    }
+}
+
+.imagen-modelos {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.imagen-modelos img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+.parrafo-primero {
+    font-family: "Bebas Neue", sans-serif;
+    font-style: normal;
+    color: rgb(184, 166, 128);
+    margin: 15px 120px;
+}
+
+.nombre-de-empresa {
+    display: flex;
+    background-color: rgb(14, 13, 13);
+}
+
+.navegacion {
+    font-family: "Bebas Neue", sans-serif;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    color: #ffffff;
+    padding: 0 1rem;
+    margin: 14px 0 0 440px;
+
+    ul {
+        display: flex;
+        list-style-type: none;
+    }
+
+    ul li {
+        margin: 0 10px;
+        padding: 0 10px;
+    }
+
+    ul li a {
+        text-decoration: none;
+        color: #ffffff;
+        font-size: 18px;
+        transition: all ease .4s;
+
+        &:hover {
+            color: #FFD447;
+        }
+    }
+}
+
+.productos-destacados {
+    margin-top: 50px;
+    width: 100%;
+}
+
+.Titulo-productos {
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+    align-items: center;
+    margin-bottom: 50px;
+    width: 100%;
+    padding: 0 20px;
+}
+
+.Titulo-productos hr {
+    width: 25%;
+    height: 3px;
+    background-color: #000;
+}
+
+.Titulo-productos .izquierda {
+    margin-right: auto;
+    flex-grow: 1;
+}
+
+.Titulo-productos .derecha {
+    margin-left: auto;
+    flex-grow: 1;
+}
+
+.Titulo-productos h2 {
+    margin: 0 30px;
+    font-size: 41px;
+}
+
+.productos {
+    width: 90%;
+    padding: 0px 0px 0px 0px;
+    position: relative;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 30px;
+    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.productos img {
+    float: center;
+}
+
+.productos .producto-home {
+    position: relative;
+    max-width: 300px;
+    height: 215px;
+    background-color: rgb(227, 233, 196);
+    margin: 30px 10px;
+    padding: 20px 15px;
+    overflow: hidden;
+    flex-direction: row;
+    box-shadow: 0 5px 200px rgba(0,0,0,0.5);
+    transition: 0.3s ease-in-out;
+}
+
+.productos .producto-home:hover {
+    height: 380px;
+}
+
+.productos .producto-home img {
+    max-width: 50%;
+    max-height: 500%;
+    border-radius: 4px;
+    margin-left: 25%;
+    margin-top: 8px;
+}
+
+.productos .producto-home .content {
+    position: relative;
+    margin-top: 140px;
+    padding: 10px 15px;
+    text-align: center;
+    text-overflow: ellipsis;
+    color: #111;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.3s ease-in-out;
+}
+
+.productos .producto-home:hover .content {
+    visibility: visible;
+    opacity: 1;
+    margin-top: -40px;
+    transition-delay: 0.3s;
+}
+
+.contenido-clientes {
+    width: 100%;
+    margin: 0;
+    background-color: #131111;
+    padding: 40px 0;
+    position: relative;
+}
+
+.contenido-clientes h2 {
+    color: #FFFFFF;
+}
+
+.comentarios {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    gap: 25px;
+    position: relative;
+}
+
+.comentarios::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.comentarios::-webkit-scrollbar-thumb {
+    background-color: #FFD447;
+    border-radius: 10px;
+}
+
+.comentarios::-webkit-scrollbar-thumb:hover {
+    background-color: #e6bf3f;
+}
+
+.comentarios .usuario {
+    flex: 0 0 350px;
+    scroll-snap-align: start;
+}
+
+.usuario {
+    margin: 10px;
+    padding: 25px;
+    border: none;
+    border-radius: 15px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.usuario:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.usuario-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.usuario img {
+    border-radius: 50%;
+    width: 65px;
+    height: 65px;
+    margin: 0;
+    border: 3px solid #FFD447;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.usuario-detalles {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.usuario-detalles h3 {
+    color: #333;
+    font-size: 1.2rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+.estrellas {
+    color: #FFD447;
+    font-size: 0.9rem;
+}
+
+.comentario-usuario {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.comentario-usuario p {
+    color: #555;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
+    font-style: italic;
+}
+
+.fecha {
+    color: #888;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.palabras-con-movimiento {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    background-color: #f1d168;
+    font-size: 24px;
+    padding: 0px 0px;
+    position: relative;
+}
+
+.palabras-con-movimiento .palabras {
+    color: black;
+    font-family: "Smooch Sans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: weight;
+    font-style: normal;
+    font-size: 20px;
+}
+
+li {
+    list-style: none;
+    font-family: 'Urbanist', sans-serif;
+    text-transform: capitalize;
+}
