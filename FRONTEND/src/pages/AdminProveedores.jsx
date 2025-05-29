@@ -1,218 +1,138 @@
-import { useEffect, useState } from "react";
-import React from "react";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { fetchProveedores, createProveedor, updateProveedor, deleteProveedor, fetchUsuarios } from "../api/Proveedor.api.js";
+import React, { useEffect, useState } from "react";
+import {
+  fetchProveedores,
+  createProveedor,
+  updateProveedor,
+} from "../api/Proveedor.api.js";
+import { useNavigate } from "react-router-dom";
+import "../assets/css/Proveedores.css";
 
-export function AdminProveedores() {
-  const [proveedores, setProveedores] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+export function AdminProveedores({ proveedorEditar, onEditComplete }) {
   const [form, setForm] = useState({
     nombre: "",
-    tipo: "nacional",
-    productos: "",
     correo: "",
     telefono: "",
-    estado: true,
-    usuario: "", // ID del usuario seleccionado
+    tipo: "nacional",
   });
   const [editingId, setEditingId] = useState(null);
-
-  const cargarProveedores = async () => {
-    try {
-      const data = await fetchProveedores();
-      setProveedores(data.data);
-    } catch (error) {
-      console.error("Error al obtener proveedores:", error.response?.data || error.message);
-    }
-  };
-
-  const cargarUsuarios = async () => {
-    try {
-      const response = await fetchUsuarios();
-      setUsuarios(response.data);
-    } catch (error) {
-      console.error("Error al obtener usuarios:", error.response?.data || error.message);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    cargarProveedores();
-    cargarUsuarios();
-  }, []);
+    if (proveedorEditar) {
+      setForm({
+        nombre: proveedorEditar.nombre,
+        correo: proveedorEditar.correo,
+        telefono: proveedorEditar.telefono,
+        tipo: proveedorEditar.tipo,
+      });
+      setEditingId(proveedorEditar.idProveedor);
+    }
+  }, [proveedorEditar]);
+
+  const handleVerProveedores = () => {
+    navigate("/proveedores_registrados");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!form.usuario) {
-      alert("Debe seleccionar un usuario.");
-      return;
-    }
-
     try {
       if (editingId) {
         await updateProveedor(editingId, form);
       } else {
         await createProveedor(form);
       }
+
+      setEditingId(null);
       setForm({
         nombre: "",
-        tipo: "nacional",
-        productos: "",
         correo: "",
         telefono: "",
-        estado: true,
-        usuario: "",
+        tipo: "nacional",
       });
-      setEditingId(null);
-      cargarProveedores();
-    } catch (error) {
-      console.error("Error al registrar proveedor:", error.response?.data || error.message);
-    }
-  };
 
-  const handleEdit = (proveedor) => {
-    setForm({
-      nombre: proveedor.nombre,
-      tipo: proveedor.tipo,
-      productos: proveedor.productos,
-      correo: proveedor.correo,
-      telefono: proveedor.telefono,
-      estado: proveedor.estado,
-      usuario: proveedor.usuario || "",  // Asegúrate que proveedor tenga usuario
-    });
-    setEditingId(proveedor.idProveedor);
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await deleteProveedor(id);
-      cargarProveedores();
+      if (onEditComplete) onEditComplete();
     } catch (error) {
-      console.error("Error al eliminar proveedor:", error.response?.data || error.message);
+      console.error(
+        "Error al registrar proveedor:",
+        error.response?.data || error.message
+      );
     }
   };
 
   return (
-    <div className="container mt-4">
-      <h2 className="text-center fw-bold text-warning">Gestión de Proveedores</h2>
-
-      <form onSubmit={handleSubmit} className="row g-3 bg-light p-4 rounded shadow">
-        <div className="col-md-4">
+    <>
+      <div className="container">
+        <h2 className="title">Gestión de Proveedores</h2>
+        <form className="form" onSubmit={handleSubmit}>
           <input
+            className="input"
             type="text"
-            className="form-control"
             placeholder="Nombre"
             value={form.nombre}
             onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+            required
           />
-        </div>
+          <input
+            className="input"
+            type="email"
+            placeholder="Correo"
+            value={form.correo}
+            onChange={(e) => setForm({ ...form, correo: e.target.value })}
+            required
+          />
+          <input
+            className="input"
+            type="tel"
+            placeholder="Teléfono"
+            value={form.telefono}
+            onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+            required
+          />
 
-        <div className="col-md-4">
           <select
-            className="form-select"
+            className="input"
             value={form.tipo}
             onChange={(e) => setForm({ ...form, tipo: e.target.value })}
           >
             <option value="nacional">Nacional</option>
             <option value="importado">Importado</option>
           </select>
-        </div>
 
-        <div className="col-md-4">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Productos"
-            value={form.productos}
-            onChange={(e) => setForm({ ...form, productos: e.target.value })}
-          />
-        </div>
+          <div className="button-row">
+            <button className="btn btn-save" type="submit">
+              {editingId ? "Actualizar Proveedor" : "Registrar Proveedor"}
+            </button>
+            {editingId && (
+              <button
+                className="btn btn-cancel"
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm({
+                    nombre: "",
+                    correo: "",
+                    telefono: "",
+                    tipo: "nacional",
+                  });
+                  if (onEditComplete) onEditComplete();
+                }}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
 
-        <div className="col-md-6">
-          <input
-            type="email"
-            className="form-control"
-            placeholder="Correo"
-            value={form.correo}
-            onChange={(e) => setForm({ ...form, correo: e.target.value })}
-          />
-        </div>
-
-        <div className="col-md-6">
-          <input
-            type="tel"
-            className="form-control"
-            placeholder="Teléfono"
-            value={form.telefono}
-            onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-          />
-        </div>
-
-        <div className="col-md-6">
-          <select
-            className="form-select"
-            value={form.usuario}
-            onChange={(e) => setForm({ ...form, usuario: e.target.value })}
-            required
-          >
-            <option value="">-- Seleccione un usuario --</option>
-            {usuarios.map(usuario => (
-              <option key={usuario.idUsuario} value={usuario.idUsuario}>
-                {usuario.nombre} {usuario.apellido}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="col-md-6">
-          <select
-            className="form-select"
-            value={form.estado}
-            onChange={(e) => setForm({ ...form, estado: e.target.value === "true" })}
-          >
-            <option value="true">Activo</option>
-            <option value="false">Inactivo</option>
-          </select>
-        </div>
-
-        <div className="col-12 text-center">
-          <button type="submit" className="btn btn-warning fw-bold px-4 shadow">
-            {editingId ? "Actualizar Proveedor" : "Registrar Proveedor"}
-          </button>
-        </div>
-      </form>
-
-      <table className="table table-bordered table-hover table-striped mt-4">
-        <thead className="bg-dark text-warning">
-          <tr>
-            <th>Nombre</th>
-            <th>Tipo</th>
-            <th>Productos</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {proveedores.map((p) => (
-            <tr key={p.idProveedor}>
-              <td>{p.nombre}</td>
-              <td>{p.tipo}</td>
-              <td>{p.productos}</td>
-              <td>{p.correo}</td>
-              <td>{p.telefono}</td>
-              <td className={p.estado ? "fw-bold text-success" : "fw-bold text-danger"}>
-                {p.estado ? "Activo" : "Inactivo"}
-              </td>
-              <td>
-                <button onClick={() => handleEdit(p)} className="btn btn-sm btn-warning">Editar</button>
-                <button onClick={() => handleDelete(p.idProveedor)} className="btn btn-sm btn-danger ms-2">Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <div style={{ marginTop: "20px", textAlign: "center" }}>
+        <button
+          className="btn btn-view"
+          type="button"
+          onClick={handleVerProveedores}
+        >
+          Ver Proveedores Registrados
+        </button>
+      </div>
+    </>
   );
 }
