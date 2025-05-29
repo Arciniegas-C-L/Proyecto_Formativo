@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago
+from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, Subcategoria
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,7 +39,6 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
 class ProductoSerializer(serializers.ModelSerializer):
     categoria = CategoriaSerializer()  # Información de la categoría relacionada con el producto
-
     class Meta:
         model = Producto
         fields = ['idProducto', 'nombre', 'descripcion', 'precio', 'imagen', 'categoria']
@@ -83,6 +82,10 @@ class PagoSerializer(serializers.ModelSerializer):
 class TipoPagoSerializer(serializers.ModelSerializer):
     pago = PagoSerializer()  # Información del pago relacionado con el tipo de pago
 
+class Meta:
+    model = TipoPago
+    fields = ['idtipoPago', 'nombre', 'monto', 'pago']
+class SubcategoriaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TipoPago
-        fields = ['idtipoPago', 'nombre', 'monto', 'pago']
+        model = Subcategoria
+        fields = ['idSubcategoria', 'nombre', 'estado', 'categoria']
