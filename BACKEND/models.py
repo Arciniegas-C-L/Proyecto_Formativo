@@ -46,14 +46,14 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     
     groups = models.ManyToManyField(
         'auth.Group',
-        related_name='usuarios_set',  # cambia este related_name para evitar choque
+        related_name='usuarios_set',
         blank=True,
         help_text='Los grupos a los que pertenece este usuario.',
         verbose_name='grupos'
     )
     user_permissions = models.ManyToManyField(
         'auth.Permission',
-        related_name='usuarios_set_perm',  # cambia este también
+        related_name='usuarios_set_perm',
         blank=True,
         help_text='Permisos específicos para este usuario.',
         verbose_name='permisos de usuario'
@@ -98,12 +98,20 @@ class Categoria(models.Model):
 class Producto(models.Model):
     idProducto = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45)
-    descripcion = models.CharField(max_length=45)
+    descripcion = models.CharField(max_length=200)
     precio = models.DecimalField(max_digits=30, decimal_places=2)
-    imagen = models.BinaryField()
+    stock = models.PositiveIntegerField(default=0)
+    imagen = models.ImageField(upload_to='productos/')
     categoria = models.ForeignKey(Categoria, on_delete=models.DO_NOTHING)
     def __str__(self):
         return self.nombre
+
+    def save(self, *args, **kwargs):
+        if self.stock < 0:
+            raise ValueError("El stock no puede ser negativo")
+        if self.precio <= 0:
+            raise ValueError("El precio debe ser mayor a 0")
+        super().save(*args, **kwargs)
 
 class Inventario(models.Model):
     idInventario = models.AutoField(primary_key=True)
@@ -155,3 +163,70 @@ class TipoPago(models.Model):
     pago = models.ForeignKey(Pago, on_delete=models.DO_NOTHING)
     def __str__(self):
         return self.nombre
+
+class Carrito(models.Model):
+    idCarrito = models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True)  # Hacemos el usuario opcional
+    fechaCreacion = models.DateTimeField(auto_now_add=True)
+    fechaActualizacion = models.DateTimeField(auto_now=True)
+    estado = models.BooleanField(default=True)  # True = activo, False = convertido en pedido
+
+    def __str__(self):
+        if self.usuario:
+            return f"Carrito de {self.usuario.nombre} {self.usuario.apellido}"
+        return f"Carrito {self.idCarrito}"
+
+    def calcular_total(self):
+        return sum(item.subtotal for item in self.items.all())
+
+    class Meta:
+        verbose_name = "Carrito"
+        verbose_name_plural = "Carritos"
+
+class CarritoItem(models.Model):
+    idCarritoItem = models.AutoField(primary_key=True)
+    carrito = models.ForeignKey(Carrito, related_name='items', on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=30, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=30, decimal_places=2)
+    fechaAgregado = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.cantidad} x {self.producto.nombre} en carrito {self.carrito.idCarrito}"
+
+    def save(self, *args, **kwargs):
+        # Actualizar el precio unitario al guardar
+        self.precio_unitario = self.producto.precio
+        # Calcular el subtotal
+        self.subtotal = self.precio_unitario * self.cantidad
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Item del Carrito"
+        verbose_name_plural = "Items del Carrito"
+        unique_together = ('carrito', 'producto')  # Evita duplicados del mismo producto en el carrito
+
+class EstadoCarrito(models.Model):
+    ESTADO_CHOICES = [
+        ('activo', 'Activo'),
+        ('pendiente', 'Pendiente de Pago'),
+        ('pagado', 'Pagado'),
+        ('enviado', 'Enviado'),
+        ('entregado', 'Entregado'),
+        ('cancelado', 'Cancelado')
+    ]
+    
+    idEstado = models.AutoField(primary_key=True)
+    carrito = models.ForeignKey(Carrito, on_delete=models.CASCADE)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activo')
+    fechaCambio = models.DateTimeField(auto_now_add=True)
+    observacion = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Estado {self.estado} - Carrito {self.carrito.idCarrito}"
+
+    class Meta:
+        verbose_name = "Estado del Carrito"
+        verbose_name_plural = "Estados del Carrito"
+        ordering = ['-fechaCambio']  # Ordenar por fecha de cambio descendente

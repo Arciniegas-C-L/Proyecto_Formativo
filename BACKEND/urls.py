@@ -12,6 +12,9 @@ router.register(r'pedido_detalle', views.PedidoProductoView, 'pedido_detalle')
 router.register(r'categoria', views.CategoriaView, 'categoria')
 router.register(r'proveedores', views.ProveedorView, 'proveedores')
 router.register(r'inventario', views.InventarioView, 'inventario')
+router.register(r'carrito', views.CarritoView, 'carrito')
+router.register(r'carrito-item', views.CarritoItemView, 'carrito-item')
+router.register(r'estado-carrito', views.EstadoCarritoView, 'estado-carrito')
 
 urlpatterns = [
     path('api/', include(router.urls)),

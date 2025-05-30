@@ -7,4 +7,10 @@ const ProductoApi = axios.create({
 export const getALLProductos = () => ProductoApi.get("/");
 export const createProducto = (Producto) => ProductoApi.post("/", Producto);
 export const deleteProducto = (id) => ProductoApi.delete(`/${id}`);
-export const updateProducto = (id, Producto) => ProductoApi.put(`/${id}`, Producto);
+export const updateProducto = (id, Producto) => ProductoApi.put(`/${id}/`, Producto);
+
+const CategoriaApi = axios.create({
+    baseURL: "http://127.0.0.1:8000/BACKEND/api/categoria/"
+})
+
+export const getCategorias = () => CategoriaApi.get("/");

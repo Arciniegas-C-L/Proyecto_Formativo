@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view, permission_classes, action
 from django.contrib.auth.hashers import make_password, check_password
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -11,8 +11,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework import viewsets
-from .serializer import RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer, ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer, PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer
-from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion
+from .serializer import (
+    RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
+    ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
+    PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
+    CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
+    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer
+)
+from .models import (
+    Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
+    Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
+    Carrito, CarritoItem, EstadoCarrito
+)
 
 # Create your views here.
 
@@ -152,6 +162,21 @@ class CategoriaView(viewsets.ModelViewSet):
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     queryset = Producto.objects.all()
+
+    def update(self, request):
+        print("Datos recibidos en update:", request.data)  # Log de los datos recibidos
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                print("Datos validados:", serializer.validated_data)  # Log de los datos validados
+                self.perform_update(serializer)
+                return Response(serializer.data)
+            print("Errores de validación:", serializer.errors)  # Log de los errores
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print("Error en update:", str(e))  # Log de cualquier error
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 class InventarioView(viewsets.ModelViewSet):
     serializer_class = InventarioSerializer
@@ -176,4 +201,181 @@ class PagoView(viewsets.ModelViewSet):
 class TipoPagoView(viewsets.ModelViewSet):
     serializer_class = TipoPagoSerializer
     queryset = TipoPago.objects.all()
+    
+class CarritoView(viewsets.ModelViewSet):
+    serializer_class = CarritoSerializer
+    permission_classes = [AllowAny]  # Permitimos acceso sin autenticación
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            # Si el usuario está autenticado, mostrar sus carritos
+            return Carrito.objects.filter(usuario=self.request.user)
+        # Si no está autenticado, mostrar todos los carritos sin usuario
+        return Carrito.objects.filter(usuario__isnull=True)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CarritoCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return CarritoUpdateSerializer
+        return CarritoSerializer
+
+    @action(detail=True, methods=['post'])
+    def agregar_producto(self, request, pk=None):
+        try:
+            carrito = self.get_object()
+            print("Datos recibidos:", request.data)  # Log para debug
+            
+            # Validar que los datos requeridos estén presentes
+            if 'producto' not in request.data:
+                return Response(
+                    {"error": "El campo 'producto' es requerido"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if 'cantidad' not in request.data:
+                return Response(
+                    {"error": "El campo 'cantidad' es requerido"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Crear el serializer con los datos
+            serializer = CarritoItemCreateSerializer(data={
+                'carrito': carrito.idCarrito,
+                'producto': request.data.get('producto'),
+                'cantidad': int(request.data.get('cantidad', 1))
+            })
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
+            
+            print("Errores de validación:", serializer.errors)  # Log para debug
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            print("Error al agregar producto:", str(e))  # Log para debug
+            return Response(
+                {"error": f"Error al agregar el producto: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'])
+    def actualizar_cantidad(self, request, pk=None):
+        try:
+            # Obtener el carrito con sus items y productos precargados
+            carrito = Carrito.objects.prefetch_related(
+                'items__producto'
+            ).get(pk=pk)
+            
+            item_id = request.data.get('item_id')
+            nueva_cantidad = request.data.get('cantidad')
+
+            # Obtener el item con su producto relacionado
+            item = carrito.items.select_related('producto').get(idCarritoItem=item_id)
+            
+            if nueva_cantidad <= 0:
+                item.delete()
+            else:
+                item.cantidad = nueva_cantidad
+                item.save()
+            
+            # Serializar el carrito con sus items actualizados
+            serializer = CarritoSerializer(carrito)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except CarritoItem.DoesNotExist:
+            return Response(
+                {"error": "Item no encontrado en el carrito"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            print(f"Error al actualizar cantidad: {str(e)}")  # Log para debug
+            return Response(
+                {"error": f"Error al actualizar la cantidad: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'])
+    def eliminar_producto(self, request, pk=None):
+        carrito = self.get_object()
+        item_id = request.data.get('item_id')
+
+        try:
+            item = CarritoItem.objects.get(idCarritoItem=item_id, carrito=carrito)
+            item.delete()
+            return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
+        except CarritoItem.DoesNotExist:
+            return Response(
+                {"error": "Item no encontrado en el carrito"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=True, methods=['post'])
+    def limpiar_carrito(self, request, pk=None):
+        carrito = self.get_object()
+        carrito.items.all().delete()
+        return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def finalizar_compra(self, request, pk=None):
+        carrito = self.get_object()
+        
+        if carrito.items.count() == 0:
+            return Response(
+                {"error": "El carrito está vacío"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Crear el pedido
+        pedido = Pedido.objects.create(
+            usuario=carrito.usuario,
+            total=carrito.calcular_total(),
+            estado=True  # True = activo
+        )
+
+        # Crear los items del pedido
+        for item in carrito.items.all():
+            PedidoProducto.objects.create(
+                pedido=pedido,
+                producto=item.producto
+            )
+
+        # Actualizar el estado del carrito
+        carrito.estado = False  # False = convertido en pedido
+        carrito.save()
+        
+        # Crear el estado final del carrito
+        EstadoCarrito.objects.create(
+            carrito=carrito,
+            estado='entregado',
+            observacion='Carrito convertido en pedido'
+        )
+
+        return Response({
+            "mensaje": "Compra finalizada exitosamente",
+            "pedido_id": pedido.idPedido
+        }, status=status.HTTP_200_OK)
+
+class CarritoItemView(viewsets.ModelViewSet):
+    serializer_class = CarritoItemSerializer
+    permission_classes = [AllowAny]  # Permitimos acceso sin autenticación
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            # Si el usuario está autenticado, mostrar items de sus carritos
+            return CarritoItem.objects.filter(carrito__usuario=self.request.user)
+        # Si no está autenticado, mostrar items de carritos sin usuario
+        return CarritoItem.objects.filter(carrito__usuario__isnull=True)
+
+class EstadoCarritoView(viewsets.ModelViewSet):
+    serializer_class = EstadoCarritoSerializer
+    permission_classes = [AllowAny]  # Permitimos acceso sin autenticación
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            # Si el usuario está autenticado, mostrar estados de sus carritos
+            return EstadoCarrito.objects.filter(carrito__usuario=self.request.user)
+        # Si no está autenticado, mostrar estados de carritos sin usuario
+        return EstadoCarrito.objects.filter(carrito__usuario__isnull=True)
     

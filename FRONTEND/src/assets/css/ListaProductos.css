@@ -1,0 +1,157 @@
+.lista-productos-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header-acciones {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header-acciones h2 {
+    color: #333;
+    margin: 0;
+}
+
+.btn-crear {
+    background-color: #FFD447;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.btn-crear:hover {
+    background-color: #cba015;
+}
+
+.tabla-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.tabla-productos {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.tabla-productos th,
+.tabla-productos td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.tabla-productos th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+}
+
+.tabla-productos tr:hover {
+    background-color: #f8f9fa;
+}
+
+.celda-imagen img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.celda-descripcion {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.celda-acciones {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.btn-editar,
+.btn-eliminar {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-editar {
+    color: #2c5282;
+}
+
+.btn-editar:hover {
+    background-color: #ebf8ff;
+    color: #2c5282;
+}
+
+.btn-eliminar {
+    color: #e53e3e;
+}
+
+.btn-eliminar:hover {
+    background-color: #fff5f5;
+    color: #e53e3e;
+}
+
+.loading {
+    text-align: center;
+    font-size: 1.2em;
+    color: #666;
+    padding: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-acciones {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    .btn-crear {
+        justify-content: center;
+    }
+
+    .tabla-container {
+        margin: 0 -20px;
+        border-radius: 0;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tabla-productos tbody tr {
+    animation: fadeIn 0.3s ease-out;
+} 
