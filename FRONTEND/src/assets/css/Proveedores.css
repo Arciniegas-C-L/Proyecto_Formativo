@@ -52,12 +52,14 @@ select.input {
 }
 
 .button-row {
+  padding: 10px 20px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 14px;
-  margin-top: 26px;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  
 }
+
 
 .btn {
   display: inline-block;
