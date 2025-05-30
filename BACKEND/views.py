@@ -16,12 +16,12 @@ from .serializer import (
     ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
     PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
     CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
-    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer
+    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer, SubcategoriaSerializer
 )
 from .models import (
     Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
     Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
-    Carrito, CarritoItem, EstadoCarrito
+    Carrito, CarritoItem, EstadoCarrito, Subcategoria
 )
 
 # Create your views here.
@@ -378,4 +378,7 @@ class EstadoCarritoView(viewsets.ModelViewSet):
             return EstadoCarrito.objects.filter(carrito__usuario=self.request.user)
         # Si no está autenticado, mostrar estados de carritos sin usuario
         return EstadoCarrito.objects.filter(carrito__usuario__isnull=True)
-    
+
+class SubcategoriaView(viewsets.ModelViewSet):
+    queryset = Subcategoria.objects.all()
+    serializer_class = SubcategoriaSerializer 

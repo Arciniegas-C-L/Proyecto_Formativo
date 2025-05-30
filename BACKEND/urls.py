@@ -15,6 +15,7 @@ router.register(r'inventario', views.InventarioView, 'inventario')
 router.register(r'carrito', views.CarritoView, 'carrito')
 router.register(r'carrito-item', views.CarritoItemView, 'carrito-item')
 router.register(r'estado-carrito', views.EstadoCarritoView, 'estado-carrito')
+router.register(r'subcategoria', views.SubcategoriaView, 'subcategoria')
 
 urlpatterns = [
     path('api/', include(router.urls)),
