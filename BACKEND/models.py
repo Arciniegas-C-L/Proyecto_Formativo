@@ -164,6 +164,16 @@ class TipoPago(models.Model):
     def __str__(self):
         return self.nombre
 
+class Subcategoria(models.Model):
+    idSubcategoria = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=45)
+    estado = models.BooleanField()
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='subcategorias')
+
+    def __str__(self):
+        return f"{self.nombre} (de {self.categoria.nombre})"
+
+
 class Carrito(models.Model):
     idCarrito = models.AutoField(primary_key=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True)  # Hacemos el usuario opcional

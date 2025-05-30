@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, CarritoItem, EstadoCarrito, Carrito
+from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, Subcategoria, CarritoItem, EstadoCarrito, Carrito
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,7 +40,6 @@ class CategoriaSerializer(serializers.ModelSerializer):
 class ProductoSerializer(serializers.ModelSerializer):
     categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
     categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
-
     class Meta:
         model = Producto
         fields = ['idProducto', 'nombre', 'descripcion', 'precio', 'stock', 'imagen', 'categoria', 'categoria_nombre']
@@ -101,9 +100,13 @@ class PagoSerializer(serializers.ModelSerializer):
 class TipoPagoSerializer(serializers.ModelSerializer):
     pago = PagoSerializer()  # Información del pago relacionado con el tipo de pago
 
+class Meta:
+    model = TipoPago
+    fields = ['idtipoPago', 'nombre', 'monto', 'pago']
+class SubcategoriaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TipoPago
-        fields = ['idtipoPago', 'nombre', 'monto', 'pago']
+        model = Subcategoria
+        fields = ['idSubcategoria', 'nombre', 'estado', 'categoria']
 
 class CarritoItemSerializer(serializers.ModelSerializer):
     producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
