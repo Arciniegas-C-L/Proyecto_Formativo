@@ -12,7 +12,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'password', 'telefono']
-        # Quité 'rol' de los campos para que no sea editable desde el serializer
+    
 
     def create(self, validated_data):
         rol_cliente, _ = Rol.objects.get_or_create(nombre='Cliente')
@@ -26,11 +26,9 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
 
 class ProveedorSerializer(serializers.ModelSerializer):
-    usuario = serializers.PrimaryKeyRelatedField(queryset=Usuario.objects.all()) 
-    
     class Meta:
         model = Proveedor
-        fields = ['idProveedor', 'nombre', 'tipo', 'productos', 'correo', 'telefono','estado', 'usuario']
+        fields = ['idProveedor', 'nombre', 'tipo', 'correo', 'telefono','estado',]
 
 class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -69,36 +67,36 @@ class InventarioSerializer(serializers.ModelSerializer):
         read_only_fields = ['fechaRegistro']
 
 class MovimientoSerializer(serializers.ModelSerializer):
-    inventario = InventarioSerializer()  # Información del inventario relacionado con el movimiento
+    inventario = InventarioSerializer()  
 
     class Meta:
         model = Movimiento
         fields = ['idmovimiento', 'tipo', 'cantidad', 'fecha', 'inventario']
 
 class PedidoSerializer(serializers.ModelSerializer):
-    usuario = UsuarioSerializer()  # Información del usuario relacionada con el pedido
+    usuario = UsuarioSerializer()  
 
     class Meta:
         model = Pedido
         fields = ['idPedido', 'total', 'estado', 'usuario']
 
 class PedidoProductoSerializer(serializers.ModelSerializer):
-    pedido = PedidoSerializer()  # Información del pedido relacionado
-    producto = ProductoSerializer()  # Información del producto relacionado
+    pedido = PedidoSerializer()  
+    producto = ProductoSerializer()  
 
     class Meta:
         model = PedidoProducto
         fields = ['pedido', 'producto']
 
 class PagoSerializer(serializers.ModelSerializer):
-    pedido = PedidoSerializer()  # Información del pedido relacionado con el pago
+    pedido = PedidoSerializer() 
 
     class Meta:
         model = Pago
         fields = ['idPago', 'total', 'fechaPago', 'pedido']
 
 class TipoPagoSerializer(serializers.ModelSerializer):
-    pago = PagoSerializer()  # Información del pago relacionado con el tipo de pago
+    pago = PagoSerializer()  
 
 class Meta:
     model = TipoPago

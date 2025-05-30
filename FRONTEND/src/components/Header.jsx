@@ -34,6 +34,7 @@ export function Header() {
                                     <Link to="/rol">Rol</Link>
                                     <Link to="/proveedores">Proveedor</Link>
                                     <Link to="/producto"> Producto</Link>
+                                    <Link to="/categorias">Categoria</Link>
                                 </div>
                             )}
                         </li>

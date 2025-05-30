@@ -84,7 +84,7 @@ class Proveedor(models.Model):
     correo = models.EmailField()
     telefono = models.CharField(max_length=20)
     estado = models.BooleanField(default=True)
-    usuario = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
+
     def __str__(self):
         return self.nombre
 
