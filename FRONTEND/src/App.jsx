@@ -7,13 +7,9 @@ import {Home} from './pages/Home'
 import {Sesion} from './pages/Sesion'
 import { Toaster } from 'react-hot-toast'
 import { RecuperarContrasena } from './pages/FormRecuperacion'
-<<<<<<< HEAD
-=======
-import { InventarioPage } from './pages/InventarioPage'
-import {AdminProveedores} from './pages/AdminProveedores';
+//import { InventarioPage } from './pages/InventarioPage'
+//import {AdminProveedores} from './pages/AdminProveedores';
 import { CategoriaForm } from './components/GDCandS/Categorias'
-
->>>>>>> 489f288 (feat: actualiza formulario con categorías y subcategorías)
 
 function App() {
   return (

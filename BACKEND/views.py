@@ -11,8 +11,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework import viewsets
-from .serializer import RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer, ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer, PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer
-from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion
+from .serializer import RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer, ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer, PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer, SubcategoriaSerializer
+from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion, Subcategoria
 
 # Create your views here.
 
@@ -177,3 +177,6 @@ class TipoPagoView(viewsets.ModelViewSet):
     serializer_class = TipoPagoSerializer
     queryset = TipoPago.objects.all()
     
+class SubcategoriaView(viewsets.ModelViewSet):
+    queryset = Subcategoria.objects.all()
+    serializer_class = SubcategoriaSerializer   
