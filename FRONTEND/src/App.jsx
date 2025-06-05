@@ -10,6 +10,7 @@ import { Toaster } from 'react-hot-toast'
 import { RecuperarContrasena } from './pages/FormRecuperacion'
 import { InventarioPage } from './pages/InventarioPage'
 import {AdminProveedores} from './pages/AdminProveedores';
+import {AdminUsuarios} from  './pages/AdminUsuarios';
 
 
 function App() {
@@ -17,13 +18,14 @@ function App() {
     <BrowserRouter>
       <Header />
       <Routes>
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/rol" element={<RolPage />} />
         <Route path="/rol-create" element={<RolFormPage />} />
         <Route path="/sesion" element={<Sesion />} />
         <Route path="/sesion/recuperar_contrasena" element={<RecuperarContrasena />} />
         <Route path="/proveedores" element={<AdminProveedores />} />
         <Route path="/inventario" element={<InventarioPage />} />
+        <Route path="/usuario" element={<AdminUsuarios/>}></Route>
       </Routes>
       <Toaster />
       <Footer />

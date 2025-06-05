@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import saludo from "../assets/images/saludo.webp";
 import bienvenida from "../assets/images/bienvenida.gif";
 import "../assets/css/sesion.css";
-import { loginUsuario, registerUsuario } from '../api/Usiario.api';
+import { loginUsuario, registerUsuario } from '../api/Usuario.api';
 import toast from 'react-hot-toast';
 
 export function Sesion() {

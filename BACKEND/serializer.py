@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago
+from django.contrib.auth.models import User
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
@@ -85,3 +86,8 @@ class TipoPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoPago
         fields = ['idtipoPago', 'nombre', 'monto', 'pago']
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = ['id', 'username', 'email', 'role']

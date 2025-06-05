@@ -15,5 +15,6 @@ router.register(r'inventario', views.InventarioView, 'inventario')
 
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]
 

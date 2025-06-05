@@ -13,6 +13,9 @@ from django.contrib.auth import authenticate
 from rest_framework import viewsets
 from .serializer import RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer, ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer, PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer
 from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion
+from django.contrib.auth.models import User
+from rest_framework.permissions import IsAdminUser
+from .serializer import UserSerializer
 
 # Create your views here.
 
@@ -20,7 +23,6 @@ class Rolview(viewsets.ModelViewSet):
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
     
-
 class Usuarioview(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
     queryset = Usuario.objects.all()
