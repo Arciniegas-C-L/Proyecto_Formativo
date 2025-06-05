@@ -7,6 +7,7 @@ from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.conf import settings
 import random
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
@@ -155,28 +156,38 @@ class ProveedorView(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer
     queryset = Proveedor.objects.all()
     
-class CategoriaView(viewsets.ModelViewSet):
-    serializer_class = CategoriaSerializer
+class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
     
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     queryset = Producto.objects.all()
+    parser_classes = (MultiPartParser, FormParser)  # Soportar archivos en request
 
-    def update(self, request):
-        print("Datos recibidos en update:", request.data)  # Log de los datos recibidos
+    def update(self, request, pk=None):
+        print("Datos recibidos en update:", request.data)  # Log de datos recibidos
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             if serializer.is_valid():
-                print("Datos validados:", serializer.validated_data)  # Log de los datos validados
+                print("Datos validados:", serializer.validated_data)  # Log datos validados
                 self.perform_update(serializer)
                 return Response(serializer.data)
-            print("Errores de validación:", serializer.errors)  # Log de los errores
+            print("Errores de validación:", serializer.errors)  # Log errores
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print("Error en update:", str(e))  # Log de cualquier error
+            print("Error en update:", str(e))  # Log error
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def create(self, request, *args, **kwargs):
+        print("Datos recibidos en create:", request.data)  # Log datos recibidos
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print("Errores de validación en create:", serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class InventarioView(viewsets.ModelViewSet):
     serializer_class = InventarioSerializer
@@ -379,6 +390,7 @@ class EstadoCarritoView(viewsets.ModelViewSet):
         # Si no está autenticado, mostrar estados de carritos sin usuario
         return EstadoCarrito.objects.filter(carrito__usuario__isnull=True)
 
-class SubcategoriaView(viewsets.ModelViewSet):
+
+class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
-    serializer_class = SubcategoriaSerializer 
+    serializer_class = SubcategoriaSerializer

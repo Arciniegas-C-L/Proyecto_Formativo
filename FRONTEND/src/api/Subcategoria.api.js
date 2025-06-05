@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const SubcategoriaApi = axios.create({
-  baseURL: "http://127.0.0.1:8000/BACKEND/api/subcategoria/"
+  baseURL: "http://127.0.0.1:8000/BACKEND/api/subcategoria/",
 });
 
 export const getAllSubcategorias = async () => {
@@ -16,9 +16,8 @@ export const getAllSubcategorias = async () => {
 
 export const getSubcategoriasByCategoria = async (categoriaId) => {
   try {
-    // Ajusta el parámetro de filtro según tu API
     const res = await SubcategoriaApi.get("/", {
-      params: { categoria: categoriaId }
+      params: { categoria: categoriaId },
     });
     return res.data;
   } catch (error) {
@@ -39,7 +38,7 @@ export const createSubcategoria = async (subcategoria) => {
 
 export const updateSubcategoria = async (id, subcategoria) => {
   try {
-    const res = await SubcategoriaApi.put(`/${id}/`, subcategoria);
+    const res = await SubcategoriaApi.put(`${id}/`, subcategoria);
     return res.data;
   } catch (error) {
     console.error("Error al actualizar subcategoría:", error);
@@ -49,7 +48,7 @@ export const updateSubcategoria = async (id, subcategoria) => {
 
 export const deleteSubcategoria = async (id) => {
   try {
-    await SubcategoriaApi.delete(`/${id}/`);
+    await SubcategoriaApi.delete(`${id}/`);
   } catch (error) {
     console.error("Error al eliminar subcategoría:", error);
     throw error;

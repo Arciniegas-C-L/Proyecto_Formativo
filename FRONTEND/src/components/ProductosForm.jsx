@@ -1,374 +1,263 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { createProducto, updateProducto, getCategorias } from "../api/Producto.api";
 import { toast } from "react-hot-toast";
 import "../assets/css/ProductosForm.css";
+import {
+  getCategorias,
+  getSubcategoriasPorCategoria,
+  createProducto,
+  updateProducto,
+} from "../api/Producto.api";
 
-export function ProductosForm() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const productoEditar = location.state?.producto;
-  const esEdicion = Boolean(productoEditar);
-
-  const [categorias, setCategorias] = useState([]);
+export function ProductosForm({ productoEditar = null, onSuccess }) {
   const [formData, setFormData] = useState({
     nombre: productoEditar?.nombre || "",
     descripcion: productoEditar?.descripcion || "",
-    precio: productoEditar?.precio || "",
-    stock: productoEditar?.stock || "",
-    categoria: productoEditar?.categoria?.idCategoria || "",
+    precio: productoEditar?.precio ? String(productoEditar.precio) : "",
+    stock: productoEditar?.stock ? String(productoEditar.stock) : "",
+    categoria: productoEditar?.categoria ? String(productoEditar.categoria.idCategoria) : "",
+    subcategoria: productoEditar?.subcategoria ? String(productoEditar.subcategoria.idSubcategoria) : "",
     imagen: productoEditar?.imagen || "",
-    imagenFile: null
+    imagenFile: null,
   });
+
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
+  const [cargandoSubcategorias, setCargandoSubcategorias] = useState(false);
   const [errors, setErrors] = useState({});
-  const [previewImage, setPreviewImage] = useState(productoEditar?.imagen || null);
   const [loading, setLoading] = useState(false);
-  const [cargandoCategorias, setCargandoCategorias] = useState(true);
 
-  const VALIDATION_RULES = {
-    nombre: {
-      maxLength: 45,
-      required: true
-    },
-    descripcion: {
-      maxLength: 200,
-      required: true
-    },
-    precio: {
-      required: true,
-      min: 0,
-      maxDecimals: 2
-    },
-    categoria: {
-      required: true
-    },
-    imagen: {
-      required: !productoEditar,
-      maxSize: 5 * 1024 * 1024,
-      allowedTypes: ['image/jpeg', 'image/png', 'image/gif']
-    }
-  };
-
+  // Cargar categorías al montar componente
   useEffect(() => {
-    cargarCategorias();
-    if (esEdicion) {
-      setFormData({
-        nombre: productoEditar.nombre || "",
-        descripcion: productoEditar.descripcion || "",
-        precio: productoEditar.precio || "",
-        stock: productoEditar.stock || "",
-        categoria: productoEditar.categoria?.idCategoria || "",
-        imagen: productoEditar.imagen || "",
-        imagenFile: null
-      });
-    }
-  }, [esEdicion, productoEditar]);
+    loadCategorias();
+  }, []);
 
-  const cargarCategorias = async () => {
+  // Cargar subcategorías cuando cambia categoría
+  useEffect(() => {
+    if (formData.categoria) {
+      loadSubcategorias(formData.categoria);
+    } else {
+      setSubcategorias([]);
+      setFormData(prev => ({ ...prev, subcategoria: "" }));
+    }
+  }, [formData.categoria]);
+
+  const loadCategorias = async () => {
     try {
-      const response = await getCategorias();
-      setCategorias(response.data);
-    } catch (error) {
-      console.error("Error al cargar categorías:", error);
-      toast.error("Error al cargar las categorías");
-    } finally {
-      setCargandoCategorias(false);
+      const res = await getCategorias();
+      setCategorias(res.data);
+    } catch {
+      toast.error("Error al cargar categorías");
     }
   };
 
-  const validateField = (name, value) => {
-    const rules = VALIDATION_RULES[name];
-    const newErrors = { ...errors };
-
-    if (rules.required && !value) {
-      newErrors[name] = "Este campo es obligatorio";
-    } else if (value) {
-      switch (name) {
-        case 'nombre':
-          if (value.length > rules.maxLength) {
-            newErrors[name] = `El nombre no puede tener más de ${rules.maxLength} caracteres`;
-          }
-          break;
-        case 'descripcion':
-          if (value.length > rules.maxLength) {
-            newErrors[name] = `La descripción no puede tener más de ${rules.maxLength} caracteres`;
-          }
-          break;
-        case 'precio':
-          const precioNum = parseFloat(value);
-          if (isNaN(precioNum) || precioNum < 0) {
-            newErrors[name] = "El precio debe ser un número positivo";
-          } else if (!/^\d+(\.\d{0,2})?$/.test(value)) {
-            newErrors[name] = "El precio no puede tener más de 2 decimales";
-          }
-          break;
-        case 'categoria':
-          if (!value) {
-            newErrors[name] = "Debe seleccionar una categoría";
-          }
-          break;
-        default:
-          break;
-      }
+  const loadSubcategorias = async (categoriaId) => {
+    setCargandoSubcategorias(true);
+    try {
+      const res = await getSubcategoriasPorCategoria(categoriaId);
+      setSubcategorias(res.data);
+    } catch {
+      toast.error("Error al cargar subcategorías");
+    } finally {
+      setCargandoSubcategorias(false);
     }
-
-    if (!newErrors[name]) {
-      delete newErrors[name];
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    validateField(name, value);
-  };
+    const { name, value, type, files } = e.target;
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validar tipo de archivo
-      if (!VALIDATION_RULES.imagen.allowedTypes.includes(file.type)) {
-        toast.error("Por favor, seleccione una imagen válida (JPEG, PNG o GIF)");
-        return;
+    if (type === "file") {
+      const file = files[0];
+      if (file) {
+        // Mostrar preview local al seleccionar archivo
+        const localImageUrl = URL.createObjectURL(file);
+        setFormData(prev => ({
+          ...prev,
+          imagenFile: file,
+          imagen: localImageUrl,
+        }));
       }
-
-      // Validar tamaño
-      if (file.size > VALIDATION_RULES.imagen.maxSize) {
-        toast.error("La imagen no debe superar los 5MB");
-        return;
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        imagen: URL.createObjectURL(file),
-        imagenFile: file
-      }));
-
-      // Crear preview de la imagen
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-      
-      validateField('imagen', file);
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
   const validateForm = () => {
-    let isValid = true;
-    Object.keys(VALIDATION_RULES).forEach(field => {
-      if (!validateField(field, formData[field])) {
-        isValid = false;
-      }
-    });
-    return isValid;
+    const errores = {};
+    if (!formData.nombre.trim()) errores.nombre = "El nombre es obligatorio";
+    if (!formData.descripcion.trim()) errores.descripcion = "La descripción es obligatoria";
+    if (!formData.precio || isNaN(formData.precio) || parseFloat(formData.precio) <= 0)
+      errores.precio = "Precio inválido";
+    if (!formData.stock || isNaN(formData.stock) || parseInt(formData.stock) < 0)
+      errores.stock = "Stock inválido";
+    if (!formData.categoria) errores.categoria = "Seleccione una categoría";
+    if (!formData.subcategoria) errores.subcategoria = "Seleccione una subcategoría";
+
+    setErrors(errores);
+    return Object.keys(errores).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      toast.error("Por favor, corrija los errores en el formulario");
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
+    const formDataToSend = new FormData();
+formDataToSend.append("nombre", formData.nombre.trim());
+formDataToSend.append("descripcion", formData.descripcion.trim());
+formDataToSend.append("precio", parseFloat(formData.precio));
+formDataToSend.append("stock", parseInt(formData.stock));
+formDataToSend.append("subcategoria", parseInt(formData.subcategoria)); // ✅ Solo esto
+if (formData.imagenFile) {
+  formDataToSend.append("imagen", formData.imagenFile);
+}
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('nombre', formData.nombre.trim());
-      formDataToSend.append('descripcion', formData.descripcion.trim());
-      formDataToSend.append('precio', parseFloat(formData.precio));
-      formDataToSend.append('stock', parseInt(formData.stock));
-      formDataToSend.append('categoria', parseInt(formData.categoria));
-      
-      // Solo agregamos la imagen si hay un nuevo archivo o es una creación
-      if (formData.imagenFile) {
-        formDataToSend.append('imagen', formData.imagenFile);
-      } else if (!esEdicion) {
-        // Si es una creación y no hay imagen, mostramos error
-        toast.error("Debe seleccionar una imagen para el producto");
-        setLoading(false);
-        return;
-      }
-
-      if (esEdicion) {
+      if (productoEditar) {
         await updateProducto(productoEditar.idProducto, formDataToSend);
         toast.success("Producto actualizado correctamente");
       } else {
         await createProducto(formDataToSend);
         toast.success("Producto creado correctamente");
       }
-
-      // Limpiar el formulario
-      setFormData({
-        nombre: "",
-        descripcion: "",
-        precio: "",
-        stock: "",
-        categoria: "",
-        imagen: "",
-        imagenFile: null
-      });
-      setPreviewImage(null);
-      setErrors({});
-      navigate('/producto');
+      if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Error al guardar el producto:", error);
-      const errorMessage = error.response?.data?.message || "Error al guardar el producto";
-      toast.error(errorMessage);
+      console.error("Error guardando producto:", error);
+      toast.error("Error al guardar el producto");
     } finally {
       setLoading(false);
     }
   };
 
-  if (cargandoCategorias) {
-    return (
-      <div className="form-container">
-        <div className="loading">Cargando categorías...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="form-container">
-      <h2>{esEdicion ? "Editar Producto" : "Crear Nuevo Producto"}</h2>
-      
-      <form onSubmit={handleSubmit} className="producto-form">
-        <div className="form-group">
-          <label htmlFor="nombre">Nombre del Producto</label>
+    <div className="container mt-4">
+      <h2>{productoEditar ? "Editar producto" : "Crear producto"}</h2>
+      <form onSubmit={handleSubmit} className="row g-3 mt-2" noValidate>
+        {/* Nombre */}
+        <div className="col-md-6">
+          <label htmlFor="nombre" className="form-label">Nombre</label>
           <input
             type="text"
+            className={`form-control ${errors.nombre ? "is-invalid" : ""}`}
             id="nombre"
             name="nombre"
             value={formData.nombre}
             onChange={handleInputChange}
-            required
-            maxLength={VALIDATION_RULES.nombre.maxLength}
-            placeholder={`Ingrese el nombre del producto (máx. ${VALIDATION_RULES.nombre.maxLength} caracteres)`}
-            className={errors.nombre ? 'error' : ''}
           />
-          {errors.nombre && <span className="error-message">{errors.nombre}</span>}
+          <div className="invalid-feedback">{errors.nombre}</div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="descripcion">Descripción</label>
-          <textarea
-            id="descripcion"
-            name="descripcion"
-            value={formData.descripcion}
+        {/* Precio */}
+        <div className="col-md-6">
+          <label htmlFor="precio" className="form-label">Precio</label>
+          <input
+            type="number"
+            className={`form-control ${errors.precio ? "is-invalid" : ""}`}
+            id="precio"
+            name="precio"
+            value={formData.precio}
             onChange={handleInputChange}
-            required
-            maxLength={VALIDATION_RULES.descripcion.maxLength}
-            placeholder={`Ingrese la descripción del producto (máx. ${VALIDATION_RULES.descripcion.maxLength} caracteres)`}
-            rows="3"
-            className={errors.descripcion ? 'error' : ''}
+            step="0.01"
+            min="0"
           />
-          {errors.descripcion && <span className="error-message">{errors.descripcion}</span>}
+          <div className="invalid-feedback">{errors.precio}</div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="precio">Precio</label>
-            <input
-              type="number"
-              id="precio"
-              name="precio"
-              value={formData.precio}
-              onChange={handleInputChange}
-              required
-              min="0"
-              step="0.01"
-              placeholder="Ingrese el precio (máx. 2 decimales)"
-              className={errors.precio ? 'error' : ''}
-            />
-            {errors.precio && <span className="error-message">{errors.precio}</span>}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="stock">Stock</label>
-            <input
-              type="number"
-              id="stock"
-              name="stock"
-              value={formData.stock}
-              onChange={handleInputChange}
-              required
-              min="0"
-              placeholder="Ingrese el stock"
-              className={errors.stock ? 'error' : ''}
-            />
-            {errors.stock && <span className="error-message">{errors.stock}</span>}
-          </div>
+        {/* Stock */}
+        <div className="col-md-6">
+          <label htmlFor="stock" className="form-label">Stock</label>
+          <input
+            type="number"
+            className={`form-control ${errors.stock ? "is-invalid" : ""}`}
+            id="stock"
+            name="stock"
+            value={formData.stock}
+            onChange={handleInputChange}
+            min="0"
+          />
+          <div className="invalid-feedback">{errors.stock}</div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="categoria">Categoría</label>
+        {/* Categoría */}
+        <div className="col-md-6">
+          <label htmlFor="categoria" className="form-label">Categoría</label>
           <select
+            className={`form-select ${errors.categoria ? "is-invalid" : ""}`}
             id="categoria"
             name="categoria"
             value={formData.categoria}
             onChange={handleInputChange}
-            required
-            className={errors.categoria ? 'error' : ''}
           >
             <option value="">Seleccione una categoría</option>
-            {categorias.map(categoria => (
-              <option key={categoria.idCategoria} value={categoria.idCategoria}>
-                {categoria.nombre}
+            {categorias.map((cat) => (
+              <option key={cat.idCategoria} value={String(cat.idCategoria)}>
+                {cat.nombre}
               </option>
             ))}
           </select>
-          {errors.categoria && <span className="error-message">{errors.categoria}</span>}
+          <div className="invalid-feedback">{errors.categoria}</div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="imagen">Imagen del Producto</label>
+        {/* Subcategoría */}
+        <div className="col-md-6">
+          <label htmlFor="subcategoria" className="form-label">Subcategoría</label>
+          <select
+            className={`form-select ${errors.subcategoria ? "is-invalid" : ""}`}
+            id="subcategoria"
+            name="subcategoria"
+            value={formData.subcategoria}
+            onChange={handleInputChange}
+            disabled={!formData.categoria || cargandoSubcategorias}
+          >
+            <option value="">Seleccione una subcategoría</option>
+            {subcategorias.map((sub) => (
+              <option key={sub.idSubcategoria} value={String(sub.idSubcategoria)}>
+                {sub.nombre}
+              </option>
+            ))}
+          </select>
+          <div className="invalid-feedback">{errors.subcategoria}</div>
+        </div>
+
+        {/* Descripción */}
+        <div className="col-md-12">
+          <label htmlFor="descripcion" className="form-label">Descripción</label>
+          <textarea
+            className={`form-control ${errors.descripcion ? "is-invalid" : ""}`}
+            id="descripcion"
+            name="descripcion"
+            value={formData.descripcion}
+            onChange={handleInputChange}
+            rows={3}
+          />
+          <div className="invalid-feedback">{errors.descripcion}</div>
+        </div>
+
+        {/* Imagen */}
+        <div className="col-md-6">
+          <label htmlFor="imagen" className="form-label">Imagen</label>
           <input
             type="file"
+            className="form-control"
             id="imagen"
             name="imagen"
-            onChange={handleImageChange}
-            accept="image/jpeg,image/png,image/gif"
-            required={!esEdicion}
-            className={errors.imagen ? 'error' : ''}
+            onChange={handleInputChange}
+            accept="image/*"
           />
-          <small className="help-text">
-            Formatos permitidos: JPEG, PNG, GIF. Tamaño máximo: 5MB
-          </small>
-          {errors.imagen && <span className="error-message">{errors.imagen}</span>}
-          {previewImage && (
-            <div className="image-preview">
-              <img src={previewImage} alt="Vista previa" />
+          {formData.imagen && (
+            <div className="mt-2">
+              <strong>Imagen actual:</strong><br />
+              <img src={formData.imagen} alt="Producto" className="img-thumbnail" width="150" />
             </div>
           )}
         </div>
 
-        <div className="form-actions">
-          <button 
-            type="button" 
-            className="btn-cancelar"
-            onClick={() => navigate('/producto')}
-            disabled={loading || Object.keys(errors).length > 0}
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            className="btn-guardar"
-            disabled={loading || Object.keys(errors).length > 0}
-          >
-            {loading ? "Procesando..." : (esEdicion ? "Actualizar Producto" : "Crear Producto")}
+        {/* Botón submit */}
+        <div className="col-12">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Guardando..." : productoEditar ? "Actualizar" : "Crear"}
           </button>
         </div>
       </form>
     </div>
   );
 }
-

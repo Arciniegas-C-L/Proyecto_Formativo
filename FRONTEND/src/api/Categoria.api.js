@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const CategoriaApi = axios.create({
-  baseURL: "http://127.0.0.1:8000/BACKEND/api/categoria/"
+  baseURL: "http://127.0.0.1:8000/BACKEND/api/categoria/",
 });
 
 export const getAllCategorias = async () => {
@@ -26,7 +26,7 @@ export const createCategoria = async (categoria) => {
 
 export const updateCategoria = async (id, categoria) => {
   try {
-    const res = await CategoriaApi.put(`/${id}/`, categoria);
+    const res = await CategoriaApi.put(`${id}/`, categoria);
     return res.data;
   } catch (error) {
     console.error("Error al actualizar categoría:", error);
@@ -36,7 +36,7 @@ export const updateCategoria = async (id, categoria) => {
 
 export const deleteCategoria = async (id) => {
   try {
-    await CategoriaApi.delete(`/${id}/`);
+    await CategoriaApi.delete(`${id}/`);
   } catch (error) {
     console.error("Error al eliminar categoría:", error);
     throw error;

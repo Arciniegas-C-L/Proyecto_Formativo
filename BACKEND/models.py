@@ -3,19 +3,15 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.utils import timezone
 from datetime import timedelta
 
-# Create your models here.
-class CodigoRecuperacion(models.Model):
-    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE)
-    codigo = models.CharField(max_length=6)
-    creado = models.DateTimeField(auto_now_add=True)
-    intentos = models.PositiveIntegerField(default=0)
-
-    def esta_expirado(self):
-        return timezone.now() > self.creado + timedelta(minutes=10)
+# Roles
+class Rol(models.Model):
+    idROL = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=45)
 
     def __str__(self):
-        return f"Código para {self.usuario.correo} - {self.codigo}"
+        return self.nombre
 
+# Usuarios y Manager
 class UsuarioManager(BaseUserManager):
     def create_user(self, correo, nombre, apellido, password=None, **extra_fields):
         if not correo:
@@ -31,7 +27,6 @@ class UsuarioManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(correo, nombre, apellido, password, **extra_fields)
 
-
 class Usuario(AbstractBaseUser, PermissionsMixin):
     idUsuario = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45)
@@ -39,11 +34,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     correo = models.EmailField(max_length=45, unique=True)
     telefono = models.CharField(max_length=15)
     estado = models.BooleanField(default=True)
-    rol = models.ForeignKey('Rol', on_delete=models.DO_NOTHING)
+    rol = models.ForeignKey(Rol, on_delete=models.DO_NOTHING)
     is_staff = models.BooleanField(default=False)  # Para admin
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
-    
+
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='usuarios_set',
@@ -63,15 +58,24 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['nombre', 'apellido']
 
     objects = UsuarioManager()
+
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
-    
-class Rol(models.Model):
-    idROL = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=45)
-    def __str__(self):
-        return self.nombre
 
+# Código de recuperación para usuarios
+class CodigoRecuperacion(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    codigo = models.CharField(max_length=6)
+    creado = models.DateTimeField(auto_now_add=True)
+    intentos = models.PositiveIntegerField(default=0)
+
+    def esta_expirado(self):
+        return timezone.now() > self.creado + timedelta(minutes=10)
+
+    def __str__(self):
+        return f"Código para {self.usuario.correo} - {self.codigo}"
+
+# Proveedor
 class Proveedor(models.Model):
     TIPO_PROVEEDOR_CHOICES = [
         ('nacional', 'Nacional'),
@@ -88,79 +92,12 @@ class Proveedor(models.Model):
     def __str__(self):
         return self.nombre
 
+# Categoría y Subcategoría
 class Categoria(models.Model):
     idCategoria = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=45)
+    nombre = models.CharField(max_length=45, unique=True)
     estado = models.BooleanField()
-    def __str__(self):
-        return self.nombre
 
-class Producto(models.Model):
-    idProducto = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=45)
-    descripcion = models.CharField(max_length=200)
-    precio = models.DecimalField(max_digits=30, decimal_places=2)
-    stock = models.PositiveIntegerField(default=0)
-    imagen = models.ImageField(upload_to='productos/')
-    categoria = models.ForeignKey(Categoria, on_delete=models.DO_NOTHING)
-    def __str__(self):
-        return self.nombre
-
-    def save(self, *args, **kwargs):
-        if self.stock < 0:
-            raise ValueError("El stock no puede ser negativo")
-        if self.precio <= 0:
-            raise ValueError("El precio debe ser mayor a 0")
-        super().save(*args, **kwargs)
-
-class Inventario(models.Model):
-    idInventario = models.AutoField(primary_key=True)
-    cantidad = models.IntegerField()
-    fechaRegistro = models.DateField()
-    stockMinimo = models.IntegerField()
-    producto = models.ForeignKey(Producto, on_delete=models.DO_NOTHING)
-    def __str__(self):
-        return f"Inventario {self.idInventario} de {self.producto.nombre}"
-
-class Movimiento(models.Model):
-    idmovimiento = models.AutoField(primary_key=True)
-    tipo = models.CharField(max_length=45)
-    cantidad = models.CharField(max_length=45)
-    fecha = models.DateField()
-    inventario = models.ForeignKey(Inventario, on_delete=models.DO_NOTHING)
-    def __str__(self):
-        return f"Movimiento {self.idmovimiento} ({self.tipo})"
-
-class Pedido(models.Model):
-    idPedido = models.AutoField(primary_key=True)
-    total = models.DecimalField(max_digits=30, decimal_places=2)
-    estado = models.BooleanField()
-    usuario = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
-    def __str__(self):
-        return f"Pedido {self.idPedido}"
-
-class PedidoProducto(models.Model):
-    pedido = models.ForeignKey(Pedido, on_delete=models.DO_NOTHING)
-    producto = models.ForeignKey(Producto, on_delete=models.DO_NOTHING)
-
-    class Meta:
-        unique_together = (('pedido', 'producto'),)
-    def __str__(self):
-        return f"Producto {self.producto.nombre} en Pedido {self.pedido.idPedido}"
-
-class Pago(models.Model):
-    idPago = models.AutoField(primary_key=True)
-    total = models.DecimalField(max_digits=30, decimal_places=2)
-    fechaPago = models.DateField()
-    pedido = models.ForeignKey(Pedido, on_delete=models.DO_NOTHING)
-    def __str__(self):
-        return f"Pago {self.idPago}"
-
-class TipoPago(models.Model):
-    idtipoPago = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=45)
-    monto = models.DecimalField(max_digits=30, decimal_places=2)
-    pago = models.ForeignKey(Pago, on_delete=models.DO_NOTHING)
     def __str__(self):
         return self.nombre
 
@@ -170,13 +107,87 @@ class Subcategoria(models.Model):
     estado = models.BooleanField()
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='subcategorias')
 
+    class Meta:
+        unique_together = ('nombre', 'categoria')
+
     def __str__(self):
         return f"{self.nombre} (de {self.categoria.nombre})"
 
+# Producto
+class Producto(models.Model):
+    nombre = models.CharField(max_length=45)
+    descripcion = models.TextField(max_length=200)
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    stock = models.PositiveIntegerField(default=0)
+    subcategoria = models.ForeignKey(Subcategoria, on_delete=models.CASCADE, related_name='productos')
+    imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
 
+    def __str__(self):
+        return self.nombre
+
+# Inventario y movimiento
+class Inventario(models.Model):
+    idInventario = models.AutoField(primary_key=True)
+    cantidad = models.IntegerField()
+    fechaRegistro = models.DateField()
+    stockMinimo = models.IntegerField()
+    producto = models.ForeignKey(Producto, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return f"Inventario {self.idInventario} de {self.producto.nombre}"
+
+class Movimiento(models.Model):
+    idmovimiento = models.AutoField(primary_key=True)
+    tipo = models.CharField(max_length=45)
+    cantidad = models.CharField(max_length=45)
+    fecha = models.DateField()
+    inventario = models.ForeignKey(Inventario, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return f"Movimiento {self.idmovimiento} ({self.tipo})"
+
+# Pedidos y pagos
+class Pedido(models.Model):
+    idPedido = models.AutoField(primary_key=True)
+    total = models.DecimalField(max_digits=30, decimal_places=2)
+    estado = models.BooleanField()
+    usuario = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return f"Pedido {self.idPedido}"
+
+class PedidoProducto(models.Model):
+    pedido = models.ForeignKey(Pedido, on_delete=models.DO_NOTHING)
+    producto = models.ForeignKey(Producto, on_delete=models.DO_NOTHING)
+
+    class Meta:
+        unique_together = (('pedido', 'producto'),)
+
+    def __str__(self):
+        return f"Producto {self.producto.nombre} en Pedido {self.pedido.idPedido}"
+
+class Pago(models.Model):
+    idPago = models.AutoField(primary_key=True)
+    total = models.DecimalField(max_digits=30, decimal_places=2)
+    fechaPago = models.DateField()
+    pedido = models.ForeignKey(Pedido, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return f"Pago {self.idPago}"
+
+class TipoPago(models.Model):
+    idtipoPago = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=45)
+    monto = models.DecimalField(max_digits=30, decimal_places=2)
+    pago = models.ForeignKey(Pago, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return self.nombre
+
+# Carrito de compras y items
 class Carrito(models.Model):
     idCarrito = models.AutoField(primary_key=True)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True)  # Hacemos el usuario opcional
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True)  # Opcional
     fechaCreacion = models.DateTimeField(auto_now_add=True)
     fechaActualizacion = models.DateTimeField(auto_now=True)
     estado = models.BooleanField(default=True)  # True = activo, False = convertido en pedido
@@ -206,16 +217,14 @@ class CarritoItem(models.Model):
         return f"{self.cantidad} x {self.producto.nombre} en carrito {self.carrito.idCarrito}"
 
     def save(self, *args, **kwargs):
-        # Actualizar el precio unitario al guardar
         self.precio_unitario = self.producto.precio
-        # Calcular el subtotal
         self.subtotal = self.precio_unitario * self.cantidad
         super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Item del Carrito"
         verbose_name_plural = "Items del Carrito"
-        unique_together = ('carrito', 'producto')  # Evita duplicados del mismo producto en el carrito
+        unique_together = ('carrito', 'producto')
 
 class EstadoCarrito(models.Model):
     ESTADO_CHOICES = [
@@ -226,7 +235,7 @@ class EstadoCarrito(models.Model):
         ('entregado', 'Entregado'),
         ('cancelado', 'Cancelado')
     ]
-    
+
     idEstado = models.AutoField(primary_key=True)
     carrito = models.ForeignKey(Carrito, on_delete=models.CASCADE)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activo')
@@ -239,4 +248,4 @@ class EstadoCarrito(models.Model):
     class Meta:
         verbose_name = "Estado del Carrito"
         verbose_name_plural = "Estados del Carrito"
-        ordering = ['-fechaCambio']  # Ordenar por fecha de cambio descendente
+        ordering = ['-fechaCambio']

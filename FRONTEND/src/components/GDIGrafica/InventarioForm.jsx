@@ -1,91 +1,76 @@
 import { useState, useEffect } from "react";
-import { createInventario, updateInventario } from "../../api/InventarioApi";
-import { getALLProductos } from "../../api/Producto.api";
+import { toast } from "react-hot-toast";
 import { getAllCategorias } from "../../api/Categoria.api";
 import { getSubcategoriasByCategoria } from "../../api/Subcategoria.api";
-import { toast } from "react-hot-toast";
+import { getALLProductos } from "../../api/Producto.api";
+import { createInventario, updateInventario } from "../../api/InventarioApi";
 
-export function InventarioForm({ inventarioEditado, onSuccess = () => {} }) {
+export function InventarioForm({ inventarioEditado = null, onSuccess = () => {} }) {
   const [categorias, setCategorias] = useState([]);
   const [subcategorias, setSubcategorias] = useState([]);
   const [productos, setProductos] = useState([]);
 
   const [categoriaId, setCategoriaId] = useState("");
   const [subcategoriaId, setSubcategoriaId] = useState("");
-  const [productoId, setProductoId] = useState(inventarioEditado?.producto?.idProducto || "");
+  const [productoId, setProductoId] = useState("");
 
-  const [cantidad, setCantidad] = useState(inventarioEditado?.cantidad || "");
-  const [stockMinimo, setStockMinimo] = useState(inventarioEditado?.stockMinimo || "");
-  const [fechaRegistro, setFechaRegistro] = useState(inventarioEditado?.fechaRegistro || "");
+  const [cantidad, setCantidad] = useState("");
+  const [stockMinimo, setStockMinimo] = useState("");
+  const [fechaRegistro, setFechaRegistro] = useState("");
 
+  // Cargar datos si se está editando
   useEffect(() => {
-  async function fetchCategorias() {
-    try {
-      const response = await getAllCategorias();
-      setCategorias(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error("Error cargando categorías", error);
-      toast.error("Error cargando categorías");
-      setCategorias([]);
+    if (inventarioEditado) {
+      setProductoId(inventarioEditado.producto?.idProducto || "");
+      setCantidad(inventarioEditado.cantidad || "");
+      setStockMinimo(inventarioEditado.stockMinimo || "");
+      setFechaRegistro(inventarioEditado.fechaRegistro || "");
     }
-  }
-  fetchCategorias();
-}, []);
+  }, [inventarioEditado]);
 
-useEffect(() => {
-  async function fetchSubcategorias() {
-    if (!categoriaId) {
-      setSubcategorias([]);
-      setSubcategoriaId("");
-      setProductos([]);
-      setProductoId("");
-      return;
-    }
-    try {
-      const response = await getSubcategoriasByCategoria(categoriaId);
-      setSubcategorias(Array.isArray(response.data) ? response.data : []);
-      if (Array.isArray(response.data) && response.data.length > 0) {
-        setSubcategoriaId(response.data[0].idSubcategoria);
-      } else {
-        setSubcategoriaId("NA");
-        setProductos([]);
-        setProductoId("");
+  // Cargar categorías
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const data = await getAllCategorias();
+        setCategorias(data);
+      } catch (error) {
+        toast.error("Error al cargar categorías");
       }
-    } catch (error) {
-      console.error("Error cargando subcategorías", error);
-      toast.error("Error cargando subcategorías");
-      setSubcategorias([]);
-      setSubcategoriaId("");
-    }
-  }
-  fetchSubcategorias();
-}, [categoriaId]);
+    };
+    fetchCategorias();
+  }, []);
 
-useEffect(() => {
-  async function fetchProductos() {
-    if (!subcategoriaId || subcategoriaId === "NA") {
-      setProductos([]);
-      setProductoId("");
-      return;
-    }
-    try {
-      const response = await getALLProductos();
-      const productosFiltrados = Array.isArray(response.data)
-        ? response.data.filter((p) => p.subcategoriaId === subcategoriaId)
-        : [];
-      setProductos(productosFiltrados.length ? productosFiltrados : (Array.isArray(response.data) ? response.data : []));
-      setProductoId(productosFiltrados.length ? productosFiltrados[0].idProducto : "");
-    } catch (error) {
-      console.error("Error cargando productos", error);
-      toast.error("Error cargando productos");
-      setProductos([]);
-      setProductoId("");
-    }
-  }
-  fetchProductos();
-}, [subcategoriaId]);
+  // Cargar subcategorías al seleccionar categoría
+  useEffect(() => {
+    const fetchSubcategorias = async () => {
+      if (!categoriaId) return;
+      try {
+        const data = await getSubcategoriasByCategoria(categoriaId);
+        setSubcategorias(data);
+      } catch (error) {
+        toast.error("Error al cargar subcategorías");
+      }
+    };
+    fetchSubcategorias();
+  }, [categoriaId]);
 
+  // Cargar productos al seleccionar subcategoría
+  useEffect(() => {
+    const fetchProductos = async () => {
+      if (!subcategoriaId) return;
+      try {
+        const data = await getALLProductos();
+        const filtrados = data.filter((prod) => prod.subcategoriaId === subcategoriaId);
+        setProductos(filtrados);
+      } catch (error) {
+        toast.error("Error al cargar productos");
+      }
+    };
+    fetchProductos();
+  }, [subcategoriaId]);
 
+  // Enviar formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
@@ -98,29 +83,36 @@ useEffect(() => {
     try {
       if (inventarioEditado) {
         await updateInventario(inventarioEditado.idInventario, payload);
-        toast.success("Inventario actualizado correctamente");
+        toast.success("Inventario actualizado");
       } else {
         await createInventario(payload);
-        toast.success("Inventario creado correctamente");
+        toast.success("Inventario creado");
       }
       onSuccess();
     } catch (error) {
-      console.error("Error guardando inventario", error);
-      toast.error("Error guardando inventario");
+      toast.error("Error al guardar inventario");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border rounded bg-light">
+    <form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm">
+      <h5 className="mb-3 fw-bold">{inventarioEditado ? "Editar Inventario" : "Nuevo Inventario"}</h5>
+
       <div className="mb-3">
         <label className="form-label">Categoría</label>
         <select
           className="form-select"
           value={categoriaId}
-          onChange={(e) => setCategoriaId(e.target.value)}
+          onChange={(e) => {
+            setCategoriaId(e.target.value);
+            setSubcategoriaId("");
+            setProductoId("");
+            setSubcategorias([]);
+            setProductos([]);
+          }}
           required
         >
-          <option value="">Seleccione una categoría</option>
+          <option value="">Selecciona una categoría</option>
           {categorias.map((cat) => (
             <option key={cat.idCategoria} value={cat.idCategoria}>
               {cat.nombre}
@@ -134,19 +126,19 @@ useEffect(() => {
         <select
           className="form-select"
           value={subcategoriaId}
-          onChange={(e) => setSubcategoriaId(e.target.value)}
-          disabled={subcategorias.length === 0}
+          onChange={(e) => {
+            setSubcategoriaId(e.target.value);
+            setProductoId("");
+          }}
+          disabled={!categoriaId || subcategorias.length === 0}
           required
         >
-          {subcategorias.length === 0 ? (
-            <option value="NA">N/A</option>
-          ) : (
-            subcategorias.map((sub) => (
-              <option key={sub.idSubcategoria} value={sub.idSubcategoria}>
-                {sub.nombre}
-              </option>
-            ))
-          )}
+          <option value="">Selecciona una subcategoría</option>
+          {subcategorias.map((sub) => (
+            <option key={sub.idSubcategoria} value={sub.idSubcategoria}>
+              {sub.nombre}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -156,10 +148,10 @@ useEffect(() => {
           className="form-select"
           value={productoId}
           onChange={(e) => setProductoId(e.target.value)}
+          disabled={!subcategoriaId || productos.length === 0}
           required
-          disabled={productos.length === 0}  // Aquí corregí el disabled
         >
-          <option value="">Seleccione un producto</option>
+          <option value="">Selecciona un producto</option>
           {productos.map((prod) => (
             <option key={prod.idProducto} value={prod.idProducto}>
               {prod.nombre}
@@ -180,7 +172,7 @@ useEffect(() => {
       </div>
 
       <div className="mb-3">
-        <label className="form-label">Stock Mínimo</label>
+        <label className="form-label">Stock mínimo</label>
         <input
           type="number"
           className="form-control"
@@ -191,7 +183,7 @@ useEffect(() => {
       </div>
 
       <div className="mb-3">
-        <label className="form-label">Fecha de Registro</label>
+        <label className="form-label">Fecha de registro</label>
         <input
           type="date"
           className="form-control"
@@ -201,7 +193,7 @@ useEffect(() => {
         />
       </div>
 
-      <button type="submit" className="btn btn-warning fw-bold shadow">
+      <button type="submit" className="btn btn-warning fw-bold">
         {inventarioEditado ? "Actualizar" : "Crear"}
       </button>
     </form>

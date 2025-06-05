@@ -35,13 +35,32 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = ['idCategoria', 'nombre', 'estado']
 
+    def validate_nombre(self, value):
+        if self.instance:
+            if Categoria.objects.filter(nombre__iexact=value).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError("Ya existe una categoría con este nombre.")
+        else:
+            if Categoria.objects.filter(nombre__iexact=value).exists():
+                raise serializers.ValidationError("Ya existe una categoría con este nombre.")
+        return value
+    
+class SubcategoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subcategoria
+        fields = '__all__'
+
 class ProductoSerializer(serializers.ModelSerializer):
-    categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
-    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
+    # No ponemos categoria porque no existe en Producto
+    subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all(), required=False, allow_null=True)
+    subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
+    
+    # Si quieres mostrar el nombre de la categoría (a través de subcategoria)
+    categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
+
     class Meta:
         model = Producto
-        fields = ['idProducto', 'nombre', 'descripcion', 'precio', 'stock', 'imagen', 'categoria', 'categoria_nombre']
-        read_only_fields = ['idProducto']
+        fields = '__all__'
+        read_only_fields = ['id']  # Cambiar idProducto por id si usas el id por defecto
 
     def validate_precio(self, value):
         if value <= 0:
@@ -52,6 +71,7 @@ class ProductoSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("El stock no puede ser negativo")
         return value
+
 
 class InventarioSerializer(serializers.ModelSerializer):
     producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
@@ -101,11 +121,22 @@ class TipoPagoSerializer(serializers.ModelSerializer):
 class Meta:
     model = TipoPago
     fields = ['idtipoPago', 'nombre', 'monto', 'pago']
-class SubcategoriaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subcategoria
-        fields = ['idSubcategoria', 'nombre', 'estado', 'categoria']
+class ProductoSerializer(serializers.ModelSerializer):
+    categoria = serializers.ReadOnlyField(source='subcategoria.categoria.idCategoria')  # campo solo lectura para mostrar categoría
+    categoria_nombre = serializers.ReadOnlyField(source='subcategoria.categoria.nombre')  # opcional, para mostrar nombre también
 
+    subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all(), required=True)
+
+    class Meta:
+        model = Producto
+        fields = ['id', 'nombre', 'descripcion', 'precio', 'stock', 'subcategoria', 'imagen', 'categoria', 'categoria_nombre']
+
+    def validate(self, data):
+        subcategoria = data.get('subcategoria') or getattr(self.instance, 'subcategoria', None)
+
+        if not subcategoria:
+            raise serializers.ValidationError("La subcategoría es obligatoria.")
+        return data
 class CarritoItemSerializer(serializers.ModelSerializer):
     producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
     producto_id = serializers.PrimaryKeyRelatedField(
