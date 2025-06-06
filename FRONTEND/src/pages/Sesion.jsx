@@ -29,10 +29,12 @@ export function Sesion() {
 
     try {
       const response = await loginUsuario({ correo, password });
-
-      localStorage.setItem('usuario', JSON.stringify(response.data.usuario));
+      
+      // Guardar el token en localStorage
+      localStorage.setItem('token', response.data.token);
+      
       toast.success("Inicio de sesión exitoso");
-      navigate('/home');
+      navigate('/');
     } catch (error) {
       const errorMsg = error.response?.data?.error || "Credenciales inválidas";
       toast.error("Error: " + errorMsg);

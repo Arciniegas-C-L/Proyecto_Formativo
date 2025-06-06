@@ -58,12 +58,16 @@ h3 {
 
 .navegacion ul {
     display: flex;
-    list-style-type: none;
+    align-items: center;
+    gap: 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .navegacion ul li {
-    margin: 0 10px;
-    padding: 0 10px;
+    display: flex;
+    align-items: center;
 }
 
 .navegacion ul li a {
@@ -80,4 +84,80 @@ h3 {
 hr {
     height: 70%;
     margin: auto;
+}
+
+.carrito-icono {
+    margin-left: 1rem;
+}
+
+.icono-carrito {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+.icono-carrito:hover {
+    color: #28a745;
+}
+
+.admin-menu {
+    position: relative;
+}
+
+.admin-button {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 18px;
+    font-family: "Bebas Neue", sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    transition: all ease .4s;
+}
+
+.admin-button:hover {
+    color: #FFD447;
+}
+
+.admin-button svg {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+}
+
+.admin-menu:hover .admin-button svg {
+    transform: rotate(180deg);
+}
+
+.admin-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #000000;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    padding: 8px 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-dropdown a {
+    color: #ffffff;
+    padding: 12px 16px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all ease .3s;
+    display: block;
+}
+
+.admin-dropdown a:hover {
+    background-color: #333;
+    color: #FFD447;
 }

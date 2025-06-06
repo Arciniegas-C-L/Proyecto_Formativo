@@ -94,6 +94,10 @@
     color: #000000;
 }
 
+.container-sesion .button:hover{
+    background-color: #FFD447;
+}
+
 /* animation form */
 .container-sesion .sign-up {
     transform: translateX(-100%);
@@ -122,7 +126,7 @@
 }
 
 .container-sesion .container.toggle .container-welcome {
-    transform: translateX(0);
+    transform: translateX(-6.3%);
     border-radius: 0 35% 40% 0;
     background-color: #000000;
 }

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { getAllInventario, deleteInventario } from "../../api/InventarioApi";
-import InventarioForm from "./InventarioForm";
+import { InventarioForm } from "../GDIGrafica/InventarioForm";
 import { toast } from "react-hot-toast";
 
-function InventarioList() {
+export function InventarioList() {
   const [inventario, setInventario] = useState([]);
   const [inventarioEditado, setInventarioEditado] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -79,6 +79,8 @@ function InventarioList() {
               <thead className="table-dark">
                 <tr>
                   <th>ID</th>
+                  <th>Categoría</th>
+                  <th>Subcategoría</th>
                   <th>Producto</th>
                   <th>Cantidad</th>
                   <th>Stock Mínimo</th>
@@ -90,7 +92,9 @@ function InventarioList() {
                 {inventario.map(item => (
                   <tr key={item.idInventario}>
                     <td>{item.idInventario}</td>
-                    <td>{item.producto.nombre}</td>
+                    <td>{item.producto?.categoria?.nombre || "N/A"}</td>
+                    <td>{item.producto?.subcategoria?.nombre || "N/A"}</td>
+                    <td>{item.producto?.nombre || "N/A"}</td>
                     <td>{item.cantidad}</td>
                     <td>{item.stockMinimo}</td>
                     <td>{item.fechaRegistro}</td>
@@ -118,5 +122,3 @@ function InventarioList() {
     </div>
   );
 }
-
-export default InventarioList;
