@@ -1,6 +1,6 @@
 import React from 'react';
 import '../assets/css/home.css';
-import Modelos from '../assets/images/home/Modelos.png';
+import Modelos from '../assets/images/home/señor.png';
 import Hombre from '../assets/images/home/Hombre.jpg';
 import calzado from '../assets/images/home/calzado.jpg';
 import hogar from '../assets/images/home/hogar.jpg';
@@ -8,27 +8,25 @@ import joven from '../assets/images/home/joven.jpg';
 import anciano from '../assets/images/home/anciano.jpg';
 import mujer from '../assets/images/home/mujer.jpg';
 
-
 export const Home = () => {
   return (
-    <div className="contenedor-Home">
-      <section className="inicio">
-        <div className="introduccion">
-          <div className="contenido-introduccion">
-            <h2>Ventura<hr /></h2>
-            <p className="parrafo-primero">
-              Renueva tu armario con nuestra moda<br />
-              Class and durability
+      <>
+      <section className="hero container py-5">
+    <div className="row align-items-center">
+        <div className="col-md-6 hero-contenido">
+            <h2 className="hero-titulo">La moda que se adapta a ti.</h2>
+            <p className="hero-texto">
+                ZOE une variedad, estilo y libertad en cada prenda. Para quienes eligen destacar.
             </p>
-            <a className="boton-amarillo" href="/productos">Productos</a>
-          </div>
-          <div className="imagen-modelos">
-            <img src={Modelos} alt="Modelos" />
-          </div>
+            <button className="hero-boton btn btn-warning">Ver Colección</button>
         </div>
-        <br /><br />
-      </section>
+        <div className="col-md-6 hero-imagen-container">
+            <img src={Modelos} alt="Modelo de portada" className="hero-imagen img-fluid rounded" />
+        </div>
+    </div>
+</section>
 
+      
       <section className="productos-destacados">
         <div className="Titulo-productos">
           <hr className="izquierda" />
@@ -37,12 +35,12 @@ export const Home = () => {
         </div>
         <div className="productos">
           <div className="producto-home">
-            <img src={Hombre} alt="Ropa para la familia" />
+            <img src={Hombre} alt="Ropa para mujeres, hombres y niños" />
             <h2>Ropa para Mujer, Hombre y Niño.</h2>
             <p>Ropa de alta calidad para toda la familia:</p>
           </div>
           <div className="producto-home">
-            <img src={calzado} alt="Calzado" />
+            <img src={calzado} alt="Calzado familiar cómodo y moderno" />
             <h2>Calzado para toda la Familia</h2>
             <p>
               Ofrecemos una amplia gama de calzado para hombres, mujeres y niños,
@@ -50,7 +48,7 @@ export const Home = () => {
             </p>
           </div>
           <div className="producto-home">
-            <img src={hogar} alt="Hogar" />
+            <img src={hogar} alt="Decoración y productos para el hogar" />
             <h2>Productos para el Hogar</h2>
             <p>
               Descubre nuestra selección de productos para el hogar de alta calidad:
@@ -67,10 +65,9 @@ export const Home = () => {
           <hr className="derecha" />
         </div>
         <div className="comentarios">
-          {/* Cliente 1 */}
           <div className="usuario">
             <div className="usuario-info">
-              <img src={joven} alt="Carlos Vargas" />
+              <img src={joven} alt="Foto de Carlos Vargas" />
               <div className="usuario-detalles">
                 <h3>Carlos Vargas</h3>
                 <div className="estrellas">
@@ -91,10 +88,9 @@ export const Home = () => {
             </div>
           </div>
 
-          {/* Cliente 2 */}
           <div className="usuario">
             <div className="usuario-info">
-              <img src={anciano} alt="Carlos Rodríguez" />
+              <img src={anciano} alt="Foto de Carlos Rodríguez" />
               <div className="usuario-detalles">
                 <h3>Carlos Rodríguez</h3>
                 <div className="estrellas">
@@ -115,10 +111,9 @@ export const Home = () => {
             </div>
           </div>
 
-          {/* Cliente 3 */}
           <div className="usuario">
             <div className="usuario-info">
-              <img src={mujer} alt="Ana Martínez" />
+              <img src={mujer} alt="Foto de Ana Martínez" />
               <div className="usuario-detalles">
                 <h3>Ana Martínez</h3>
                 <div className="estrellas">
@@ -142,10 +137,10 @@ export const Home = () => {
       </section>
 
       <section className="palabras-con-movimiento">
-        <marquee direction="left" duration="15" className="palabras">
-          ¡No te rindas! Cada pequeño paso te acerca a tu objetivo.
+        <marquee direction="left" scrollamount="7" className="palabras">
+          ¡Tu energía se nota desde el outfit!.
         </marquee>
       </section>
-    </div>
+    </>
   );
 };
