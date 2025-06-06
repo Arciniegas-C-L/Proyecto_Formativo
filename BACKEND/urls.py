@@ -19,5 +19,6 @@ router.register(r'subcategoria', views.SubcategoriaViewSet, 'subcategoria')
 
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]
 

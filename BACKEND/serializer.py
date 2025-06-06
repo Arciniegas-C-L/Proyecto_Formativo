@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, Subcategoria, CarritoItem, EstadoCarrito, Carrito
+from django.contrib.auth.models import User
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
@@ -287,3 +288,8 @@ class CarritoUpdateSerializer(serializers.ModelSerializer):
         )
         
         return instance
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = ['id', 'username', 'email', 'role']

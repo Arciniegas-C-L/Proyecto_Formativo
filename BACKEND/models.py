@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, AbstractUser
 from django.utils import timezone
 from datetime import timedelta
 
@@ -249,3 +249,4 @@ class EstadoCarrito(models.Model):
         verbose_name = "Estado del Carrito"
         verbose_name_plural = "Estados del Carrito"
         ordering = ['-fechaCambio']
+

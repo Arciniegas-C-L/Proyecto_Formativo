@@ -49,6 +49,9 @@ export function Header() {
                                 <FaShoppingCart />
                             </Link>
                         </li>
+                        <li>
+                            <Link to="/usuario">Gestion Usuarios</Link>
+                        </li>
                     </ul>
                 </div>
             </div>

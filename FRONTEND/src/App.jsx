@@ -15,7 +15,8 @@ import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js";impor
 import { ListaProductos } from './pages/ListaProductos'
 import { ProductosForm } from './components/ProductosForm'
 import { Catalogo } from './pages/Catalogo'
-import { Carrito } from './pages/Carrito'
+import { Carrito } from './pages/Carrito'import {AdminUsuarios} from  './pages/AdminUsuarios';
+
 
 function App() {
   const [proveedores, setProveedores] = useState([]);
@@ -50,8 +51,8 @@ function App() {
     <BrowserRouter>
       <Header />
       <Routes>
-        <Route path="/categorias" element={<CategoriaForm />} />
         <Route path="/" element={<Home />} />
+        <Route path="/categorias" element={<CategoriaForm />} />
         <Route path="/rol" element={<RolPage />} />
         <Route path="/rol-create" element={<RolFormPage />} />
         <Route path="/sesion" element={<Sesion />} />
@@ -73,6 +74,7 @@ function App() {
         <Route path="/producto/editar/:id" element={<ProductosForm />} />
         <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/carrito" element={<Carrito />} />
+        <Route path="/usuario" element={<AdminUsuarios/>}></Route>
       </Routes>
       <Toaster />
       <Footer />
