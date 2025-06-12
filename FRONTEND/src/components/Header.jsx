@@ -1,57 +1,49 @@
 import { Link } from "react-router-dom";
-import React, { useState } from "react";
+// import React, { useState } from "react";
 import { FaShoppingCart, FaChevronDown } from "react-icons/fa";
 import ZOE from "../assets/images/home/ZOE.gif";
-import "../assets/css/Header.css";
+import "../assets/css/header.css";
 
 export function Header() {
-    const [showAdminMenu, setShowAdminMenu] = useState(false);
+  return (
+    <header className="bg-dark text-white shadow-sm">
+      <div className="container-fluid d-flex align-items-center justify-content-between py-2 px-4">
+        <div className="d-flex align-items-center">
+          <div className="contenido-imagen me-3">
+            <img src={ZOE} alt="Logo de la empresa" />
+          </div>
+          <h3 className="m-0">
+            <Link to="/" className="titulo-empresa text-white text-decoration-none fw-bold">
+              Variedad y Estilos ZOE
+            </Link>
+          </h3>
+        </div>
 
-    const toggleAdminMenu = () => {
-        setShowAdminMenu(!showAdminMenu);
-    };
-
-    return (
-        <section className="nombre-empresa">
-            <div className="nombre-de-empresa">
-                <div className="contenido-imagen">
-                    <img src={ZOE} alt="Logo de la empresa" />
-                </div>
-                <h3><Link to="/" className="titulo-empresa">Variedad y Estilos ZOE</Link></h3>
-                <div className="navegacion">
-                    <ul>
-                        <li className="admin-menu">
-                            <button 
-                                className="admin-button" 
-                                onClick={toggleAdminMenu}
-                                onBlur={() => setTimeout(() => setShowAdminMenu(false), 200)}
-                            >
-                                Administrador <FaChevronDown />
-                            </button>
-                            {showAdminMenu && (
-                                <div className="admin-dropdown">
-                                    <Link to="/inventario">Inventario</Link>
-                                    <Link to="/rol">Rol</Link>
-                                    <Link to="/proveedores">Proveedor</Link>
-                                    <Link to="/producto"> Producto</Link>
-                                    <Link to="/categorias">Categoria</Link>
-                                </div>
-                            )}
-                        </li>
-                        <li>
-                            <Link to="/catalogo">Catalogo</Link>
-                        </li>
-                        <li>
-                            <Link to="/sesion">Sesión</Link>
-                        </li>
-                        <li className="carrito-icono">
-                            <Link to="/carrito" className="icono-carrito">
-                                <FaShoppingCart />
-                            </Link>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-    );
+        <nav>
+          <ul className="nav">
+            <li className="nav-item me-2">
+              <Link to="/inventario" className="nav-link enlace-boton px-3">
+                Inventario
+              </Link>
+            </li>
+            <li className="nav-item me-2">
+              <Link to="/rol" className="nav-link enlace-boton px-3">
+                Rol
+              </Link>
+            </li>
+            <li className="nav-item me-2">
+              <Link to="/proveedores" className="nav-link enlace-boton px-3">
+                Proveedor
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/sesion" className="nav-link enlace-boton px-3">
+                Sesión
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+  );
 }

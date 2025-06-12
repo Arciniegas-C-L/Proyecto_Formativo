@@ -17,13 +17,19 @@ from .serializer import (
     ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
     PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
     CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
-    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer, SubcategoriaSerializer
+    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer, 
+    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer
 )
 from .models import (
     Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
     Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
-    Carrito, CarritoItem, EstadoCarrito, Subcategoria
+    Carrito, CarritoItem, EstadoCarrito, Subcategoria, Talla, GrupoTalla
 )
+from django.contrib.auth.models import User
+from rest_framework.permissions import IsAdminUser
+from .serializer import UserSerializer
+from django.db import models
+from rest_framework import serializers
 
 # Create your views here.
 
@@ -31,7 +37,6 @@ class Rolview(viewsets.ModelViewSet):
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
     
-
 class Usuarioview(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
     queryset = Usuario.objects.all()
@@ -189,10 +194,711 @@ class ProductoView(viewsets.ModelViewSet):
         print("Errores de validación en create:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    
+class GrupoTallaViewSet(viewsets.ModelViewSet):
+    serializer_class = GrupoTallaSerializer
+    queryset = GrupoTalla.objects.all()
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        estado = self.request.query_params.get('estado', None)
+        
+        if estado is not None:
+            estado = estado.lower() == 'true'
+            queryset = queryset.filter(estado=estado)
+        
+        return queryset
+
+    @action(detail=True, methods=['get'])
+    def tallas_activas(self, request, pk=None):
+        grupo = self.get_object()
+        tallas = grupo.tallas.filter(estado=True)
+        serializer = TallaSerializer(tallas, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def agregar_talla(self, request, pk=None):
+        grupo = self.get_object()
+        serializer = TallaSerializer(data={
+            'nombre': request.data.get('nombre'),
+            'grupo_id': grupo.idGrupoTalla,
+            'estado': True
+        })
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TallaViewSet(viewsets.ModelViewSet):
+    serializer_class = TallaSerializer
+    queryset = Talla.objects.all()
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        grupo_id = self.request.query_params.get('grupo', None)
+        estado = self.request.query_params.get('estado', None)
+        
+        if grupo_id:
+            queryset = queryset.filter(grupo_id=grupo_id)
+        if estado is not None:
+            estado = estado.lower() == 'true'
+            queryset = queryset.filter(estado=estado)
+        
+        return queryset
+
+    @action(detail=True, methods=['post'])
+    def cambiar_estado(self, request, pk=None):
+        talla = self.get_object()
+        nuevo_estado = request.data.get('estado')
+        
+        if nuevo_estado is None:
+            return Response(
+                {"error": "Se requiere el campo 'estado'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        talla.estado = nuevo_estado
+        talla.save()
+        return Response(self.get_serializer(talla).data)
+
 class InventarioView(viewsets.ModelViewSet):
     serializer_class = InventarioSerializer
-    queryset = Inventario.objects.all()
-    
+    queryset = Inventario.objects.all().select_related(
+        'producto',
+        'talla',
+        'producto__subcategoria',
+        'producto__subcategoria__categoria'
+    ).order_by(
+        'producto__subcategoria__categoria__nombre',
+        'producto__subcategoria__nombre',
+        'producto__nombre',
+        'talla__nombre'
+    )
+    permission_classes = [AllowAny]
+
+    def get_serializer_class(self):
+        if self.action == 'inventario_agrupado':
+            return InventarioAgrupadoSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        producto_id = self.request.query_params.get('producto', None)
+        talla_id = self.request.query_params.get('talla', None)
+        categoria_id = self.request.query_params.get('categoria', None)
+        subcategoria_id = self.request.query_params.get('subcategoria', None)
+
+        if producto_id:
+            queryset = queryset.filter(producto_id=producto_id)
+        if talla_id:
+            queryset = queryset.filter(talla_id=talla_id)
+        if categoria_id:
+            queryset = queryset.filter(producto__subcategoria__categoria_id=categoria_id)
+        if subcategoria_id:
+            queryset = queryset.filter(producto__subcategoria_id=subcategoria_id)
+
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def por_categoria(self, request):
+        categoria_id = request.query_params.get('categoria_id')
+        if not categoria_id:
+            return Response(
+                {"error": "Se requiere el ID de la categoría"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Verificar si la categoría existe
+            categoria = Categoria.objects.filter(idCategoria=categoria_id).first()
+            if not categoria:
+                return Response(
+                    {"error": f"No existe la categoría con ID {categoria_id}"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Obtener subcategorías de la categoría
+            subcategorias = Subcategoria.objects.filter(categoria_id=categoria_id)
+            subcategorias_ids = list(subcategorias.values_list('idSubcategoria', flat=True))
+            
+            # Obtener productos de las subcategorías
+            productos = Producto.objects.filter(subcategoria__in=subcategorias_ids)
+            productos_ids = list(productos.values_list('id', flat=True))
+
+            # Filtrar inventario y organizar por subcategorías
+            inventario = self.queryset.filter(
+                producto__in=productos_ids
+            ).select_related(
+                'producto',
+                'producto__subcategoria',
+                'producto__subcategoria__categoria',
+                'talla'
+            )
+
+            # Organizar el inventario por subcategorías
+            inventario_por_subcategoria = {}
+            for inv in inventario:
+                subcategoria_id = inv.producto.subcategoria.idSubcategoria
+                if subcategoria_id not in inventario_por_subcategoria:
+                    inventario_por_subcategoria[subcategoria_id] = []
+                inventario_por_subcategoria[subcategoria_id].append(inv)
+
+            # Preparar respuesta con información organizada
+            response_data = {
+                "categoria": {
+                    "id": categoria.idCategoria,
+                    "nombre": categoria.nombre
+                },
+                "subcategorias": [
+                    {
+                        "id": sub.idSubcategoria,
+                        "nombre": sub.nombre,
+                        "stockMinimo": sub.stockMinimo,
+                        "inventario": self.get_serializer(
+                            inventario_por_subcategoria.get(sub.idSubcategoria, []),
+                            many=True
+                        ).data
+                    }
+                    for sub in subcategorias
+                ],
+                "diagnostico": {
+                    "subcategorias_count": len(subcategorias_ids),
+                    "productos_count": len(productos_ids),
+                    "inventario_count": inventario.count()
+                }
+            }
+            
+            return Response(response_data)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['get'])
+    def por_subcategoria(self, request):
+        subcategoria_id = request.query_params.get('subcategoria_id')
+        if not subcategoria_id:
+            return Response(
+                {"error": "Se requiere el ID de la subcategoría"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Verificar si la subcategoría existe
+            subcategoria = Subcategoria.objects.filter(idSubcategoria=subcategoria_id).first()
+            if not subcategoria:
+                return Response(
+                    {"error": f"No existe la subcategoría con ID {subcategoria_id}"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Filtrar inventario por productos que pertenecen a la subcategoría
+            inventario = self.queryset.filter(
+                producto__subcategoria_id=subcategoria_id
+            ).select_related(
+                'producto',
+                'producto__subcategoria',
+                'producto__subcategoria__categoria',
+                'talla'
+            )
+            
+            # Preparar respuesta con información organizada
+            response_data = {
+                "subcategoria": {
+                    "id": subcategoria.idSubcategoria,
+                    "nombre": subcategoria.nombre,
+                    "stockMinimo": subcategoria.stockMinimo,
+                    "categoria": {
+                        "id": subcategoria.categoria.idCategoria,
+                        "nombre": subcategoria.categoria.nombre
+                    }
+                },
+                "inventario": self.get_serializer(inventario, many=True).data,
+                "diagnostico": {
+                    "productos_count": inventario.values('producto').distinct().count(),
+                    "inventario_count": inventario.count()
+                }
+            }
+            
+            return Response(response_data)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['get'])
+    def stock_producto(self, request):
+        producto_id = request.query_params.get('producto', None)
+        if not producto_id:
+            return Response(
+                {"error": "Se requiere el ID del producto"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        inventarios = self.queryset.filter(producto_id=producto_id)
+        stock_por_talla = [{
+            'talla': inv.talla.nombre,
+            'stock': inv.stock_talla,
+            'stock_minimo': inv.stockMinimo
+        } for inv in inventarios]
+
+        return Response(stock_por_talla)
+
+    @action(detail=False, methods=['post'])
+    def actualizar_stock(self, request):
+        producto_id = request.data.get('producto_id')
+        talla_id = request.data.get('talla_id')
+        cantidad = request.data.get('cantidad')
+
+        if not all([producto_id, talla_id, cantidad]):
+            return Response(
+                {"error": "Se requieren producto_id, talla_id y cantidad"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            inventario = self.queryset.get(producto_id=producto_id, talla_id=talla_id)
+            inventario.stock_talla = cantidad
+            inventario.save()
+            return Response(self.get_serializer(inventario).data)
+        except Inventario.DoesNotExist:
+            return Response(
+                {"error": "No se encontró el inventario para el producto y talla especificados"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['get'])
+    def inventario_agrupado(self, request):
+        categorias = Inventario.objects.values(
+            'producto__subcategoria__categoria__idCategoria',
+            'producto__subcategoria__categoria__nombre',
+            'producto__subcategoria__categoria__estado'
+        ).distinct().order_by('producto__subcategoria__categoria__nombre')
+
+        serializer = self.get_serializer(categorias, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def categorias(self, request):
+        """
+        Devuelve todas las categorías con sus subcategorías.
+        """
+        categorias = Categoria.objects.filter(estado=True).prefetch_related('subcategorias')
+        response_data = []
+        
+        for categoria in categorias:
+            subcategorias = categoria.subcategorias.filter(estado=True)
+            categoria_data = {
+                'id': categoria.idCategoria,
+                'nombre': categoria.nombre,
+                'estado': categoria.estado,
+                'subcategorias': [{
+                    'id': sub.idSubcategoria,
+                    'nombre': sub.nombre,
+                    'estado': sub.estado,
+                    'stockMinimo': sub.stockMinimo
+                } for sub in subcategorias]
+            }
+            response_data.append(categoria_data)
+        
+        return Response(response_data)
+
+    @action(detail=False, methods=['get'])
+    def productos_por_subcategoria(self, request):
+        """
+        Devuelve todos los productos de una subcategoría específica.
+        """
+        subcategoria_id = request.query_params.get('subcategoria_id')
+        if not subcategoria_id:
+            return Response(
+                {"error": "Se requiere el ID de la subcategoría"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            subcategoria = Subcategoria.objects.select_related('categoria').get(
+                idSubcategoria=subcategoria_id,
+                estado=True
+            )
+            
+            productos = Producto.objects.filter(
+                subcategoria=subcategoria,
+                subcategoria__estado=True
+            ).prefetch_related(
+                'inventarios__talla'
+            )
+
+            productos_data = []
+            for producto in productos:
+                inventarios = producto.inventarios.all()
+                tallas_stock = [{
+                    'talla': inv.talla.nombre,
+                    'stock': inv.stock_talla,
+                    'stock_minimo': inv.stockMinimo
+                } for inv in inventarios]
+
+                productos_data.append({
+                    'id': producto.id,
+                    'nombre': producto.nombre,
+                    'descripcion': producto.descripcion,
+                    'precio': producto.precio,
+                    'stock': producto.stock,
+                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'tallas_stock': tallas_stock,
+                    'categoria': {
+                        'id': subcategoria.categoria.idCategoria,
+                        'nombre': subcategoria.categoria.nombre
+                    },
+                    'subcategoria': {
+                        'id': subcategoria.idSubcategoria,
+                        'nombre': subcategoria.nombre,
+                        'stockMinimo': subcategoria.stockMinimo
+                    }
+                })
+
+            response_data = {
+                'subcategoria': {
+                    'id': subcategoria.idSubcategoria,
+                    'nombre': subcategoria.nombre,
+                    'stockMinimo': subcategoria.stockMinimo,
+                    'categoria': {
+                        'id': subcategoria.categoria.idCategoria,
+                        'nombre': subcategoria.categoria.nombre
+                    }
+                },
+                'productos': productos_data
+            }
+
+            return Response(response_data)
+
+        except Subcategoria.DoesNotExist:
+            return Response(
+                {"error": "Subcategoría no encontrada o inactiva"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['get'])
+    def subcategorias_por_categoria(self, request):
+        """
+        Devuelve todas las subcategorías de una categoría específica.
+        """
+        categoria_id = request.query_params.get('categoria_id')
+        if not categoria_id:
+            return Response(
+                {"error": "Se requiere el ID de la categoría"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            categoria = Categoria.objects.get(
+                idCategoria=categoria_id,
+                estado=True
+            )
+            
+            subcategorias = Subcategoria.objects.filter(
+                categoria=categoria,
+                estado=True
+            ).select_related('categoria')
+
+            subcategorias_data = [{
+                'id': sub.idSubcategoria,
+                'nombre': sub.nombre,
+                'estado': sub.estado,
+                'stockMinimo': sub.stockMinimo,
+                'categoria': {
+                    'id': categoria.idCategoria,
+                    'nombre': categoria.nombre
+                }
+            } for sub in subcategorias]
+
+            response_data = {
+                'categoria': {
+                    'id': categoria.idCategoria,
+                    'nombre': categoria.nombre,
+                    'estado': categoria.estado
+                },
+                'subcategorias': subcategorias_data
+            }
+
+            return Response(response_data)
+
+        except Categoria.DoesNotExist:
+            return Response(
+                {"error": "Categoría no encontrada o inactiva"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['get'])
+    def tabla_categorias(self, request):
+        """
+        Devuelve las categorías en formato de tabla con información de navegación.
+        """
+        categorias = Categoria.objects.filter(estado=True).prefetch_related('subcategorias')
+        
+        # Obtener conteos para cada categoría
+        categorias_data = []
+        for categoria in categorias:
+            subcategorias_count = categoria.subcategorias.filter(estado=True).count()
+            productos_count = Producto.objects.filter(
+                subcategoria__categoria=categoria,
+                subcategoria__estado=True
+            ).count()
+            
+            categorias_data.append({
+                'id': categoria.idCategoria,
+                'nombre': categoria.nombre,
+                'estado': categoria.estado,
+                'subcategorias_count': subcategorias_count,
+                'productos_count': productos_count,
+                'acciones': {
+                    'ver_subcategorias': f'/inventario/tabla_subcategorias/?categoria_id={categoria.idCategoria}'
+                }
+            })
+        
+        return Response({
+            'titulo': 'Categorías',
+            'columnas': [
+                {'campo': 'nombre', 'titulo': 'Nombre de la Categoría'},
+                {'campo': 'subcategorias_count', 'titulo': 'Subcategorías'},
+                {'campo': 'productos_count', 'titulo': 'Productos'},
+                {'campo': 'estado', 'titulo': 'Estado'},
+                {'campo': 'acciones', 'titulo': 'Acciones'}
+            ],
+            'datos': categorias_data,
+            'breadcrumbs': [{'nombre': 'Inicio', 'url': '/'}]
+        })
+
+    @action(detail=False, methods=['get'])
+    def tabla_subcategorias(self, request):
+        """
+        Devuelve las subcategorías de una categoría en formato de tabla.
+        """
+        categoria_id = request.query_params.get('categoria_id')
+        if not categoria_id:
+            return Response(
+                {"error": "Se requiere el ID de la categoría"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            categoria = Categoria.objects.get(
+                idCategoria=categoria_id,
+                estado=True
+            )
+            
+            subcategorias = Subcategoria.objects.filter(
+                categoria=categoria,
+                estado=True
+            ).select_related('categoria', 'grupoTalla')
+
+            subcategorias_data = []
+            for subcategoria in subcategorias:
+                productos_count = Producto.objects.filter(
+                    subcategoria=subcategoria
+                ).count()
+                
+                stock_total = Inventario.objects.filter(
+                    producto__subcategoria=subcategoria
+                ).aggregate(
+                    total_stock=models.Sum('stock_talla')
+                )['total_stock'] or 0
+
+                subcategorias_data.append({
+                    'id': subcategoria.idSubcategoria,
+                    'nombre': subcategoria.nombre,
+                    'estado': subcategoria.estado,
+                    'stockMinimo': subcategoria.stockMinimo,
+                    'productos_count': productos_count,
+                    'stock_total': stock_total,
+                    'grupoTalla': {
+                        'idGrupoTalla': subcategoria.grupoTalla.idGrupoTalla if subcategoria.grupoTalla else None,
+                        'nombre': subcategoria.grupoTalla.nombre if subcategoria.grupoTalla else None
+                    },
+                    'acciones': {
+                        'ver_productos': f'/inventario/tabla_productos/?subcategoria_id={subcategoria.idSubcategoria}'
+                    }
+                })
+
+            return Response({
+                'titulo': f'Subcategorías de {categoria.nombre}',
+                'columnas': [
+                    {'campo': 'nombre', 'titulo': 'Nombre de la Subcategoría'},
+                    {'campo': 'productos_count', 'titulo': 'Productos'},
+                    {'campo': 'stock_total', 'titulo': 'Stock Total'},
+                    {'campo': 'stockMinimo', 'titulo': 'Stock Mínimo'},
+                    {'campo': 'estado', 'titulo': 'Estado'},
+                    {'campo': 'acciones', 'titulo': 'Acciones'}
+                ],
+                'datos': subcategorias_data,
+                'breadcrumbs': [
+                    {'nombre': 'Inicio', 'url': '/'},
+                    {'nombre': 'Categorías', 'url': '/inventario/tabla_categorias/'},
+                    {'nombre': categoria.nombre, 'url': f'/inventario/tabla_subcategorias/?categoria_id={categoria.idCategoria}'}
+                ]
+            })
+
+        except Categoria.DoesNotExist:
+            return Response(
+                {"error": "Categoría no encontrada o inactiva"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['get'])
+    def tabla_productos(self, request):
+        """
+        Devuelve los productos de una subcategoría en formato de tabla.
+        """
+        subcategoria_id = request.query_params.get('subcategoria_id')
+        if not subcategoria_id:
+            return Response(
+                {"error": "Se requiere el ID de la subcategoría"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            subcategoria = Subcategoria.objects.select_related('categoria').get(
+                idSubcategoria=subcategoria_id,
+                estado=True
+            )
+            
+            productos = Producto.objects.filter(
+                subcategoria=subcategoria
+            ).prefetch_related(
+                'inventarios__talla'
+            )
+
+            productos_data = []
+            for producto in productos:
+                inventarios = producto.inventarios.all()
+                stock_por_talla = {
+                    inv.talla.nombre: {
+                        'talla_id': inv.talla.id,
+                        'stock': inv.stock_talla,
+                        'stock_minimo': inv.stockMinimo,
+                        'stock_inicial': inv.cantidad  # Agregamos el stock inicial
+                    } for inv in inventarios
+                }
+                
+                stock_total = sum(inv.stock_talla for inv in inventarios)
+                stock_minimo_total = sum(inv.stockMinimo for inv in inventarios)
+                stock_inicial_total = sum(inv.cantidad for inv in inventarios)  # Sumamos el stock inicial total
+
+                productos_data.append({
+                    'id': producto.id,
+                    'nombre': producto.nombre,
+                    'descripcion': producto.descripcion,
+                    'precio': producto.precio,
+                    'stock': producto.stock,  # Agregamos el stock del modelo producto
+                    'stock_total': stock_total,
+                    'stock_inicial_total': stock_inicial_total,
+                    'stock_minimo_total': stock_minimo_total,
+                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'stock_por_talla': stock_por_talla,
+                    'estado_stock': 'Bajo' if stock_total <= stock_minimo_total else 'Normal',
+                    'acciones': {
+                        'editar': f'/productos/{producto.id}/',
+                        'ver_detalle': f'/productos/{producto.id}/detalle/'
+                    }
+                })
+
+            return Response({
+                'titulo': f'Productos de {subcategoria.nombre}',
+                'columnas': [
+                    {'campo': 'nombre', 'titulo': 'Nombre del Producto'},
+                    {'campo': 'precio', 'titulo': 'Precio'},
+                    {'campo': 'stock_total', 'titulo': 'Stock Total'},
+                    {'campo': 'stock_inicial_total', 'titulo': 'Stock Inicial'},
+                    {'campo': 'stock_minimo_total', 'titulo': 'Stock Mínimo'},
+                    {'campo': 'estado_stock', 'titulo': 'Estado del Stock'},
+                    {'campo': 'acciones', 'titulo': 'Acciones'}
+                ],
+                'datos': productos_data,
+                'breadcrumbs': [
+                    {'nombre': 'Inicio', 'url': '/'},
+                    {'nombre': 'Categorías', 'url': '/inventario/tabla_categorias/'},
+                    {'nombre': subcategoria.categoria.nombre, 'url': f'/inventario/tabla_subcategorias/?categoria_id={subcategoria.categoria.idCategoria}'},
+                    {'nombre': subcategoria.nombre, 'url': f'/inventario/tabla_productos/?subcategoria_id={subcategoria.idSubcategoria}'}
+                ]
+            })
+
+        except Subcategoria.DoesNotExist:
+            return Response(
+                {"error": "Subcategoría no encontrada o inactiva"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['post'])
+    def actualizar_stock_tallas(self, request):
+        producto_id = request.data.get('producto_id')
+        tallas_data = request.data.get('tallas', [])
+
+        if not producto_id or not tallas_data:
+            return Response(
+                {"error": "Se requieren producto_id y tallas"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            producto = Producto.objects.get(id=producto_id)
+            inventarios_actualizados = []
+            stock_total = 0
+
+            for talla_info in tallas_data:
+                talla_id = talla_info.get('talla_id')
+                stock = talla_info.get('stock', 0)
+                stock_minimo = talla_info.get('stock_minimo', 0)
+
+                if stock < 0 or stock_minimo < 0:
+                    return Response(
+                        {"error": "El stock y stock mínimo no pueden ser negativos"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                try:
+                    inventario = self.queryset.get(producto_id=producto_id, talla_id=talla_id)
+                    inventario.stock_talla = stock
+                    inventario.stockMinimo = stock_minimo
+                    inventario.save()
+                    inventarios_actualizados.append(inventario)
+                    stock_total += stock
+                except Inventario.DoesNotExist:
+                    return Response(
+                        {"error": f"No se encontró el inventario para la talla {talla_id}"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+            return Response({
+                "mensaje": "Stock por tallas actualizado exitosamente",
+                "inventarios": self.get_serializer(inventarios_actualizados, many=True).data,
+                "stock_total": stock_total
+            })
+
+        except Producto.DoesNotExist:
+            return Response(
+                {"error": "Producto no encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 class MovimientoView(viewsets.ModelViewSet):
     serializer_class = MovimientoSerializer
     queryset = Movimiento.objects.all()
@@ -394,3 +1100,183 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
+
+    def perform_create(self, serializer):
+        try:
+            # Obtener el primer grupo de tallas activo como grupo por defecto
+            grupo_talla_default = GrupoTalla.objects.filter(estado=True).first()
+            if not grupo_talla_default:
+                raise Exception("No hay grupos de talla disponibles para asignar por defecto")
+            
+            # Guardar la subcategoría con el grupo de tallas por defecto
+            serializer.save(grupoTalla=grupo_talla_default)
+        except Exception as e:
+            raise serializers.ValidationError(f"Error al crear la subcategoría: {str(e)}")
+
+    @action(detail=False, methods=['post'])
+    def asignar_grupo_talla_default(self, request):
+        """
+        Asigna el grupo de tallas por defecto a todas las subcategorías que no tienen grupo asignado.
+        """
+        try:
+            # Obtener el primer grupo de tallas activo como grupo por defecto
+            grupo_talla_default = GrupoTalla.objects.filter(estado=True).first()
+            if not grupo_talla_default:
+                return Response(
+                    {'error': 'No hay grupos de talla disponibles para asignar por defecto'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Obtener todas las subcategorías sin grupo de tallas
+            subcategorias_sin_grupo = Subcategoria.objects.filter(
+                estado=True,
+                grupoTalla__isnull=True
+            )
+
+            # Contador de subcategorías actualizadas
+            actualizadas = 0
+
+            # Asignar el grupo por defecto a cada subcategoría
+            for subcategoria in subcategorias_sin_grupo:
+                subcategoria.grupoTalla = grupo_talla_default
+                subcategoria.save()
+                actualizadas += 1
+
+            return Response({
+                'mensaje': f'Se asignó el grupo de tallas por defecto a {actualizadas} subcategorías',
+                'grupo_talla_default': {
+                    'id': grupo_talla_default.idGrupoTalla,
+                    'nombre': grupo_talla_default.nombre
+                }
+            })
+
+        except Exception as e:
+            print("Error al asignar grupo de tallas por defecto:", str(e))
+            import traceback
+            print("Traceback:", traceback.format_exc())
+            return Response(
+                {'error': 'Error al asignar el grupo de tallas por defecto'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['put'])
+    def actualizar_stock_minimo(self, request, pk=None):
+        try:
+            subcategoria = self.get_object()
+            stock_minimo = request.data.get('stockMinimo')
+            
+            if stock_minimo is None:
+                return Response(
+                    {'error': 'El stock mínimo es requerido'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                stock_minimo = int(stock_minimo)
+            except ValueError:
+                return Response(
+                    {'error': 'El stock mínimo debe ser un número entero'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if stock_minimo < 0:
+                return Response(
+                    {'error': 'El stock mínimo no puede ser negativo'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            subcategoria.stockMinimo = stock_minimo
+            subcategoria.save()
+            
+            serializer = self.get_serializer(subcategoria)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['put'])
+    def actualizar_grupo_talla(self, request, pk=None):
+        try:
+            print("Datos recibidos:", request.data)  # Debug
+            print("Tipo de datos:", type(request.data))  # Debug
+            
+            subcategoria = self.get_object()
+            grupo_talla_id = request.data.get('grupoTalla')
+            
+            print("ID de grupo de talla recibido:", grupo_talla_id)  # Debug
+            
+            # Validar que se proporcionó un ID de grupo de talla
+            if grupo_talla_id is None or grupo_talla_id == '':
+                return Response(
+                    {'error': 'Se requiere un ID de grupo de talla'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Validar que no se está intentando establecer a null
+            if grupo_talla_id == 'null' or grupo_talla_id == 'None':
+                return Response(
+                    {'error': 'No se permite quitar el grupo de talla'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                # Convertir a entero si es string
+                if isinstance(grupo_talla_id, str):
+                    grupo_talla_id = int(grupo_talla_id)
+            except (ValueError, TypeError):
+                return Response(
+                    {'error': 'El ID del grupo de talla debe ser un número válido'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                grupo_talla = GrupoTalla.objects.get(idGrupoTalla=grupo_talla_id)
+                
+                # Validar que no es el mismo grupo
+                if subcategoria.grupoTalla and subcategoria.grupoTalla.idGrupoTalla == grupo_talla_id:
+                    return Response(
+                        {'error': 'La subcategoría ya tiene asignado este grupo de talla'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                subcategoria.grupoTalla = grupo_talla
+                subcategoria.save()
+                
+                serializer = self.get_serializer(subcategoria)
+                return Response(serializer.data)
+                
+            except GrupoTalla.DoesNotExist:
+                return Response(
+                    {'error': f'No existe el grupo de talla con ID {grupo_talla_id}'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+        except Exception as e:
+            print("Error inesperado:", str(e))  # Debug
+            import traceback
+            print("Traceback:", traceback.format_exc())  # Debug
+            return Response(
+                {'error': 'Error al actualizar el grupo de tallas'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['get'])
+    def por_categoria(self, request):
+        categoria_id = request.query_params.get('categoria')
+        if not categoria_id:
+            return Response(
+                {'error': 'El ID de la categoría es requerido'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            subcategorias = self.queryset.filter(categoria_id=categoria_id)
+            serializer = self.get_serializer(subcategorias, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

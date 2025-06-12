@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../assets/css/ProductosForm.css";
 import {
   getCategorias,
@@ -8,7 +9,11 @@ import {
   updateProducto,
 } from "../api/Producto.api";
 
-export function ProductosForm({ productoEditar = null, onSuccess }) {
+export function ProductosForm() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const productoEditar = location.state?.producto || null;
+
   const [formData, setFormData] = useState({
     nombre: productoEditar?.nombre || "",
     descripcion: productoEditar?.descripcion || "",
@@ -103,23 +108,25 @@ export function ProductosForm({ productoEditar = null, onSuccess }) {
     setLoading(true);
 
     const formDataToSend = new FormData();
-formDataToSend.append("nombre", formData.nombre.trim());
-formDataToSend.append("descripcion", formData.descripcion.trim());
-formDataToSend.append("precio", parseFloat(formData.precio));
-formDataToSend.append("stock", parseInt(formData.stock));
-formDataToSend.append("subcategoria", parseInt(formData.subcategoria)); // ✅ Solo esto
-if (formData.imagenFile) {
-  formDataToSend.append("imagen", formData.imagenFile);
-}
+    formDataToSend.append("nombre", formData.nombre.trim());
+    formDataToSend.append("descripcion", formData.descripcion.trim());
+    formDataToSend.append("precio", parseFloat(formData.precio));
+    formDataToSend.append("stock", parseInt(formData.stock));
+    formDataToSend.append("subcategoria", parseInt(formData.subcategoria));
+    if (formData.imagenFile) {
+      formDataToSend.append("imagen", formData.imagenFile);
+    }
+
     try {
       if (productoEditar) {
         await updateProducto(productoEditar.idProducto, formDataToSend);
         toast.success("Producto actualizado correctamente");
+        navigate('/producto');
       } else {
         await createProducto(formDataToSend);
         toast.success("Producto creado correctamente");
+        navigate('/producto');
       }
-      if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error guardando producto:", error);
       toast.error("Error al guardar el producto");

@@ -1,7 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, AbstractUser
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # Roles
 class Rol(models.Model):
@@ -106,9 +108,13 @@ class Subcategoria(models.Model):
     nombre = models.CharField(max_length=45)
     estado = models.BooleanField()
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='subcategorias')
+    stockMinimo = models.PositiveIntegerField(default=0)
+    grupoTalla = models.ForeignKey('GrupoTalla', on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategorias')
 
     class Meta:
         unique_together = ('nombre', 'categoria')
+        verbose_name = "Subcategoría"
+        verbose_name_plural = "Subcategorías"
 
     def __str__(self):
         return f"{self.nombre} (de {self.categoria.nombre})"
@@ -128,13 +134,121 @@ class Producto(models.Model):
 # Inventario y movimiento
 class Inventario(models.Model):
     idInventario = models.AutoField(primary_key=True)
-    cantidad = models.IntegerField()
-    fechaRegistro = models.DateField()
-    stockMinimo = models.IntegerField()
-    producto = models.ForeignKey(Producto, on_delete=models.DO_NOTHING)
+    cantidad = models.IntegerField(default=0)
+    fechaRegistro = models.DateField(auto_now_add=True)
+    stockMinimo = models.IntegerField(default=0)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='inventarios')
+    talla = models.ForeignKey('Talla', on_delete=models.CASCADE, related_name='inventarios')
+    stock_talla = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('producto', 'talla')
+        ordering = ['producto__subcategoria__categoria__nombre', 'producto__subcategoria__nombre', 'producto__nombre', 'talla__nombre']
 
     def __str__(self):
-        return f"Inventario {self.idInventario} de {self.producto.nombre}"
+        return f"Inventario {self.idInventario} de {self.producto.nombre} - Talla {self.talla.nombre}"
+
+    @property
+    def categoria(self):
+        return self.producto.subcategoria.categoria
+
+    @property
+    def subcategoria(self):
+        return self.producto.subcategoria
+
+    @classmethod
+    def crear_inventario_para_producto(cls, producto, tallas=None):
+        """
+        Crea registros de inventario para un producto con todas sus tallas disponibles.
+        Si no se proporcionan tallas, usa las tallas del grupo de tallas de la subcategoría.
+        """
+        if not tallas:
+            if producto.subcategoria.grupoTalla:
+                tallas = producto.subcategoria.grupoTalla.tallas.filter(estado=True)
+            else:
+                return []
+
+        inventarios_creados = []
+        for talla in tallas:
+            inventario, created = cls.objects.get_or_create(
+                producto=producto,
+                talla=talla,
+                defaults={
+                    'cantidad': 0,
+                    'stockMinimo': producto.subcategoria.stockMinimo,
+                    'stock_talla': 0
+                }
+            )
+            if created:
+                inventarios_creados.append(inventario)
+
+        return inventarios_creados
+
+    @classmethod
+    def crear_inventario_para_subcategoria(cls, subcategoria):
+        """
+        Crea registros de inventario para todos los productos de una subcategoría.
+        """
+        productos = subcategoria.productos.all()
+        tallas = subcategoria.grupoTalla.tallas.filter(estado=True) if subcategoria.grupoTalla else []
+
+        inventarios_creados = []
+        for producto in productos:
+            inventarios = cls.crear_inventario_para_producto(producto, tallas)
+            inventarios_creados.extend(inventarios)
+
+        return inventarios_creados
+
+    @classmethod
+    def crear_inventario_para_categoria(cls, categoria):
+        """
+        Crea registros de inventario para todos los productos de una categoría.
+        """
+        subcategorias = categoria.subcategorias.all()
+        inventarios_creados = []
+
+        for subcategoria in subcategorias:
+            inventarios = cls.crear_inventario_para_subcategoria(subcategoria)
+            inventarios_creados.extend(inventarios)
+
+        return inventarios_creados
+
+# Agregar señales para crear inventario automáticamente
+@receiver(post_save, sender=Producto)
+def crear_inventario_producto(sender, instance, created, **kwargs):
+    """
+    Cuando se crea un nuevo producto, crear automáticamente sus registros de inventario.
+    """
+    if created:
+        Inventario.crear_inventario_para_producto(instance)
+
+@receiver(post_save, sender=Subcategoria)
+def actualizar_inventario_subcategoria(sender, instance, created, **kwargs):
+    """
+    Cuando se crea una nueva subcategoría o se actualiza su grupo de tallas,
+    actualizar el inventario de sus productos.
+    """
+    if created:
+        # Si es una nueva subcategoría, simplemente crear el inventario
+        Inventario.crear_inventario_para_subcategoria(instance)
+    elif 'grupoTalla' in kwargs.get('update_fields', []):
+        try:
+            # Obtener los productos de la subcategoría
+            productos = instance.productos.all()
+            
+            # Para cada producto
+            for producto in productos:
+                # Eliminar los registros de inventario existentes
+                Inventario.objects.filter(producto=producto).delete()
+                
+                # Crear nuevos registros de inventario con las nuevas tallas
+                if instance.grupoTalla:
+                    tallas = instance.grupoTalla.tallas.filter(estado=True)
+                    Inventario.crear_inventario_para_producto(producto, tallas)
+        except Exception as e:
+            print(f"Error al actualizar inventario para subcategoría {instance.idSubcategoria}: {str(e)}")
+            # No propagamos la excepción para evitar que falle la actualización del grupo de tallas
+            pass
 
 class Movimiento(models.Model):
     idmovimiento = models.AutoField(primary_key=True)
@@ -249,3 +363,29 @@ class EstadoCarrito(models.Model):
         verbose_name = "Estado del Carrito"
         verbose_name_plural = "Estados del Carrito"
         ordering = ['-fechaCambio']
+
+class GrupoTalla(models.Model):
+    idGrupoTalla = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=45, unique=True)  # Ej: 'Calzado', 'Ropa', 'Accesorios'
+    descripcion = models.TextField(blank=True, null=True)
+    estado = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Grupo de Tallas"
+        verbose_name_plural = "Grupos de Tallas"
+
+class Talla(models.Model):
+    nombre = models.CharField(max_length=10)  # Ej: 'S', 'M', 'L', '38', etc.
+    grupo = models.ForeignKey(GrupoTalla, on_delete=models.CASCADE, related_name='tallas')
+    estado = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('nombre', 'grupo')
+        verbose_name = "Talla"
+        verbose_name_plural = "Tallas"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.grupo.nombre})"

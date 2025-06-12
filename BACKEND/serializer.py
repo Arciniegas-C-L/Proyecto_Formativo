@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, Subcategoria, CarritoItem, EstadoCarrito, Carrito
+from .models import (
+    Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, 
+    Pedido, PedidoProducto, Pago, TipoPago, Subcategoria, CarritoItem, 
+    EstadoCarrito, Carrito, Talla, GrupoTalla
+)
+from django.contrib.auth.models import User
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,22 +50,116 @@ class CategoriaSerializer(serializers.ModelSerializer):
         return value
     
 class SubcategoriaSerializer(serializers.ModelSerializer):
+    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
+    grupo_talla_nombre = serializers.CharField(source='grupoTalla.nombre', read_only=True)
+    tallas_disponibles = serializers.SerializerMethodField()
+
     class Meta:
         model = Subcategoria
-        fields = '__all__'
+        fields = [
+            'idSubcategoria',
+            'nombre',
+            'estado',
+            'categoria',
+            'categoria_nombre',
+            'stockMinimo',
+            'grupoTalla',
+            'grupo_talla_nombre',
+            'tallas_disponibles'
+        ]
+
+    def get_tallas_disponibles(self, obj):
+        if obj.grupoTalla:
+            return [talla.nombre for talla in obj.grupoTalla.tallas.filter(estado=True)]
+        return []
+
+    def validate_stockMinimo(self, value):
+        if value < 0:
+            raise serializers.ValidationError("El stock mínimo no puede ser negativo")
+        return value
+
+class GrupoTallaSerializer(serializers.ModelSerializer):
+    tallas = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GrupoTalla
+        fields = ['idGrupoTalla', 'nombre', 'descripcion', 'estado', 'tallas']
+
+    def get_tallas(self, obj):
+        tallas = obj.tallas.filter(estado=True)
+        return [{
+            'id': talla.id,
+            'nombre': talla.nombre,
+            'estado': talla.estado
+        } for talla in tallas]
+
+    def validate_nombre(self, value):
+        if self.instance:
+            if GrupoTalla.objects.filter(nombre__iexact=value).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError("Ya existe un grupo de tallas con este nombre.")
+        else:
+            if GrupoTalla.objects.filter(nombre__iexact=value).exists():
+                raise serializers.ValidationError("Ya existe un grupo de tallas con este nombre.")
+        return value
+
+class TallaSerializer(serializers.ModelSerializer):
+    grupo = GrupoTallaSerializer(read_only=True)
+    grupo_id = serializers.PrimaryKeyRelatedField(
+        queryset=GrupoTalla.objects.all(),
+        source='grupo',
+        write_only=True
+    )
+
+    class Meta:
+        model = Talla
+        fields = ['id', 'nombre', 'grupo', 'grupo_id', 'estado']
+
+    def validate(self, data):
+        grupo = data.get('grupo')
+        nombre = data.get('nombre')
+        
+        if self.instance:
+            # Si estamos actualizando, excluimos la instancia actual
+            if Talla.objects.filter(grupo=grupo, nombre__iexact=nombre).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError(
+                    f"Ya existe una talla con el nombre '{nombre}' en este grupo."
+                )
+        else:
+            # Si estamos creando
+            if Talla.objects.filter(grupo=grupo, nombre__iexact=nombre).exists():
+                raise serializers.ValidationError(
+                    f"Ya existe una talla con el nombre '{nombre}' en este grupo."
+                )
+        
+        return data
 
 class ProductoSerializer(serializers.ModelSerializer):
-    # No ponemos categoria porque no existe en Producto
     subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all(), required=False, allow_null=True)
     subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
-    
-    # Si quieres mostrar el nombre de la categoría (a través de subcategoria)
     categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
+    inventario_tallas = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
-        fields = '__all__'
-        read_only_fields = ['id']  # Cambiar idProducto por id si usas el id por defecto
+        fields = [
+            'id', 
+            'nombre', 
+            'descripcion', 
+            'precio', 
+            'stock', 
+            'subcategoria', 
+            'subcategoria_nombre',
+            'categoria_nombre',
+            'imagen',
+            'inventario_tallas'
+        ]
+
+    def get_inventario_tallas(self, obj):
+        inventarios = Inventario.objects.filter(producto=obj).select_related('talla')
+        return [{
+            'talla': inventario.talla.nombre,
+            'stock': inventario.stock_talla
+        } for inventario in inventarios]
 
     def validate_precio(self, value):
         if value <= 0:
@@ -74,17 +173,110 @@ class ProductoSerializer(serializers.ModelSerializer):
 
 
 class InventarioSerializer(serializers.ModelSerializer):
-    producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
+    producto = ProductoSerializer(read_only=True)
     producto_id = serializers.PrimaryKeyRelatedField(
         queryset=Producto.objects.all(),
         source='producto',
         write_only=True
     )
+    talla = TallaSerializer(read_only=True)
+    talla_id = serializers.PrimaryKeyRelatedField(
+        queryset=Talla.objects.filter(estado=True),
+        source='talla',
+        write_only=True
+    )
+    categoria = serializers.SerializerMethodField()
+    subcategoria = serializers.SerializerMethodField()
 
     class Meta:
         model = Inventario
-        fields = ['idInventario', 'cantidad', 'fechaRegistro', 'stockMinimo', 'producto', 'producto_id']
+        fields = [
+            'idInventario', 
+            'cantidad', 
+            'fechaRegistro', 
+            'stockMinimo', 
+            'producto', 
+            'producto_id',
+            'talla',
+            'talla_id',
+            'stock_talla',
+            'categoria',
+            'subcategoria'
+        ]
         read_only_fields = ['fechaRegistro']
+
+    def get_categoria(self, obj):
+        return {
+            'id': obj.producto.subcategoria.categoria.idCategoria,
+            'nombre': obj.producto.subcategoria.categoria.nombre,
+            'estado': obj.producto.subcategoria.categoria.estado
+        }
+
+    def get_subcategoria(self, obj):
+        return {
+            'id': obj.producto.subcategoria.idSubcategoria,
+            'nombre': obj.producto.subcategoria.nombre,
+            'estado': obj.producto.subcategoria.estado,
+            'stockMinimo': obj.producto.subcategoria.stockMinimo
+        }
+
+    def validate(self, data):
+        # Validar que no exista ya un inventario con el mismo producto y talla
+        producto = data.get('producto')
+        talla = data.get('talla')
+        
+        if self.instance:
+            # Si estamos actualizando, excluimos la instancia actual
+            if Inventario.objects.filter(producto=producto, talla=talla).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError("Ya existe un inventario para este producto y talla.")
+        else:
+            # Si estamos creando
+            if Inventario.objects.filter(producto=producto, talla=talla).exists():
+                raise serializers.ValidationError("Ya existe un inventario para este producto y talla.")
+        
+        return data
+
+class InventarioAgrupadoSerializer(serializers.Serializer):
+    categoria = serializers.SerializerMethodField()
+    subcategorias = serializers.SerializerMethodField()
+
+    def get_categoria(self, obj):
+        return {
+            'id': obj['categoria__idCategoria'],
+            'nombre': obj['categoria__nombre'],
+            'estado': obj['categoria__estado']
+        }
+
+    def get_subcategorias(self, obj):
+        subcategorias = Inventario.objects.filter(
+            producto__subcategoria__categoria__idCategoria=obj['categoria__idCategoria']
+        ).values(
+            'producto__subcategoria__idSubcategoria',
+            'producto__subcategoria__nombre',
+            'producto__subcategoria__estado',
+            'producto__subcategoria__stockMinimo'
+        ).distinct()
+
+        subcategorias_data = []
+        for subcat in subcategorias:
+            productos = Inventario.objects.filter(
+                producto__subcategoria__idSubcategoria=subcat['producto__subcategoria__idSubcategoria']
+            ).select_related(
+                'producto',
+                'talla',
+                'producto__subcategoria',
+                'producto__subcategoria__categoria'
+            )
+
+            subcategorias_data.append({
+                'id': subcat['producto__subcategoria__idSubcategoria'],
+                'nombre': subcat['producto__subcategoria__nombre'],
+                'estado': subcat['producto__subcategoria__estado'],
+                'stockMinimo': subcat['producto__subcategoria__stockMinimo'],
+                'productos': InventarioSerializer(productos, many=True).data
+            })
+
+        return subcategorias_data
 
 class MovimientoSerializer(serializers.ModelSerializer):
     inventario = InventarioSerializer()  
@@ -121,22 +313,7 @@ class TipoPagoSerializer(serializers.ModelSerializer):
 class Meta:
     model = TipoPago
     fields = ['idtipoPago', 'nombre', 'monto', 'pago']
-class ProductoSerializer(serializers.ModelSerializer):
-    categoria = serializers.ReadOnlyField(source='subcategoria.categoria.idCategoria')  # campo solo lectura para mostrar categoría
-    categoria_nombre = serializers.ReadOnlyField(source='subcategoria.categoria.nombre')  # opcional, para mostrar nombre también
 
-    subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all(), required=True)
-
-    class Meta:
-        model = Producto
-        fields = ['id', 'nombre', 'descripcion', 'precio', 'stock', 'subcategoria', 'imagen', 'categoria', 'categoria_nombre']
-
-    def validate(self, data):
-        subcategoria = data.get('subcategoria') or getattr(self.instance, 'subcategoria', None)
-
-        if not subcategoria:
-            raise serializers.ValidationError("La subcategoría es obligatoria.")
-        return data
 class CarritoItemSerializer(serializers.ModelSerializer):
     producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
     producto_id = serializers.PrimaryKeyRelatedField(
@@ -287,3 +464,8 @@ class CarritoUpdateSerializer(serializers.ModelSerializer):
         )
         
         return instance
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = ['id', 'username', 'email', 'role']

@@ -9,11 +9,34 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .header-acciones h2 {
     color: #333;
     margin: 0;
+}
+
+.header-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.busqueda-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 250px;
+    font-size: 14px;
+}
+
+.busqueda-input:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
 }
 
 .btn-crear {
@@ -27,11 +50,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
 }
 
 .btn-crear:hover {
     background-color: #cba015;
+    transform: translateY(-1px);
 }
 
 .tabla-container {
@@ -58,6 +82,9 @@
     background-color: #f8f9fa;
     font-weight: bold;
     color: #333;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .tabla-productos tr:hover {
@@ -69,6 +96,11 @@
     height: 50px;
     object-fit: cover;
     border-radius: 4px;
+    transition: transform 0.2s ease;
+}
+
+.celda-imagen img:hover {
+    transform: scale(1.1);
 }
 
 .celda-descripcion {
@@ -76,6 +108,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: help;
 }
 
 .celda-acciones {
@@ -84,6 +117,7 @@
     justify-content: flex-start;
 }
 
+.btn-ver,
 .btn-editar,
 .btn-eliminar {
     background: none;
@@ -91,10 +125,19 @@
     padding: 8px;
     cursor: pointer;
     border-radius: 4px;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.btn-ver {
+    color: #2196F3;
+}
+
+.btn-ver:hover {
+    background-color: #e3f2fd;
+    color: #1976D2;
 }
 
 .btn-editar {
@@ -122,6 +165,37 @@
     padding: 20px;
 }
 
+.error-message {
+    text-align: center;
+    padding: 20px;
+    background-color: #fff5f5;
+    border: 1px solid #feb2b2;
+    border-radius: 8px;
+    color: #c53030;
+}
+
+.btn-reintentar {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background-color: #e53e3e;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-reintentar:hover {
+    background-color: #c53030;
+}
+
+.no-resultados {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header-acciones {
@@ -130,13 +204,28 @@
         align-items: stretch;
     }
 
+    .header-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .busqueda-input {
+        width: 100%;
+        min-width: unset;
+    }
+
     .btn-crear {
+        width: 100%;
         justify-content: center;
     }
 
     .tabla-container {
         margin: 0 -20px;
         border-radius: 0;
+    }
+
+    .celda-acciones {
+        flex-wrap: wrap;
     }
 }
 
@@ -154,4 +243,19 @@
 
 .tabla-productos tbody tr {
     animation: fadeIn 0.3s ease-out;
+}
+
+/* Tooltip para descripciones largas */
+.celda-descripcion:hover::after {
+    content: attr(title);
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    max-width: 300px;
+    white-space: normal;
+    word-wrap: break-word;
 } 

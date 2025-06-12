@@ -1,4 +1,4 @@
-import {InventarioList} from "../components/GDIGrafica/InventarioList";
+import InventarioTabla from "../components/GDIGrafica/InventarioTabla";
 import { Toaster } from "react-hot-toast";
 
 export function InventarioPage() {
@@ -7,7 +7,8 @@ export function InventarioPage() {
       <div className="text-center mb-4">
         <h1 className="display-5 font-monospace">Gestión de Inventario</h1>
       </div>
-      <InventarioList />
+      <InventarioTabla />
+      <Toaster />
     </div>
   );
 }

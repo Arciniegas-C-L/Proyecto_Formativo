@@ -17,6 +17,7 @@
 .container-sesion .container {
     width: 800px;
     height: 500px;
+    padding: 0;
     display: flex;
     position: relative;
     border-color: white;
@@ -126,7 +127,7 @@
 }
 
 .container-sesion .container.toggle .container-welcome {
-    transform: translateX(-6.3%);
+    transform: translateX(0);
     border-radius: 0 35% 40% 0;
     background-color: #000000;
 }

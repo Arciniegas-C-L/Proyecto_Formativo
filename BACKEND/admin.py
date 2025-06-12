@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, Subcategoria
+from .models import Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, Pedido, PedidoProducto, Pago, TipoPago, Subcategoria, Talla, GrupoTalla
 # Register your models here.
 admin.site.register(Rol)
 admin.site.register(Usuario)
@@ -13,3 +13,5 @@ admin.site.register(PedidoProducto)
 admin.site.register(Pago)
 admin.site.register(TipoPago)
 admin.site.register(Subcategoria)
+admin.site.register(Talla)
+admin.site.register(GrupoTalla)
