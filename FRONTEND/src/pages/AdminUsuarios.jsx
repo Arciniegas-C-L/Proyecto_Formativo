@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { fetchUsuario, updateUsuario, handleToggleEstado } from "../api/Usuario.api.js";
+import { fetchUsuario, updateUsuario, createUsuario, handleToggleEstado } from "../api/Usuario.api";
+import {ListaUsuario} from './ListaUsuario';
+import { Link } from "react-router-dom";
 
 export function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -9,14 +10,14 @@ export function AdminUsuarios() {
     nombre: "",
     apellido: "",
     correo: "",
+    password: "",
     telefono: "",
-    rol: "usuario",
+    rol: "",
     estado: true
   });
   const [editingId, setEditingId] = useState(null);
-  const [filtroEstado, setFiltroEstado]= useState ("todos");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
 
-  // Obtener todos los usuarios desde la API
   const cargarUsuarios = async () => {
     try {
       const response = await fetchUsuario();
@@ -26,24 +27,24 @@ export function AdminUsuarios() {
     }
   };
 
-  // Cargar al iniciar
   useEffect(() => {
     cargarUsuarios();
   }, []);
 
-  // Crear o actualizar un usuario
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingId) {
         await updateUsuario(editingId, form);
+      } else {
+        await createUsuario(form);
       }
-      // Reiniciar formulario
       setForm({
         nombre: "",
         apellido: "",
         correo: "",
         telefono: "",
+        password: "",
         rol: "usuario",
         estado: true
       });
@@ -54,34 +55,35 @@ export function AdminUsuarios() {
     }
   };
 
-  // Cargar usuario al formulario para editar
   const handleEdit = (usuario) => {
     setForm({
       nombre: usuario.nombre,
       apellido: usuario.apellido,
       correo: usuario.correo,
       telefono: usuario.telefono,
+      password: usuario.password,
       rol: usuario.rol,
-      estado: usuario.estado
+      estado: usuario.estado === true || usuario.estado === "true"
     });
     setEditingId(usuario.idUsuario);
   };
 
-  // Inactivar usuario
   const handleToggleEstado = async (usuario) => {
     try {
-      const usuarioActualizado = {...usuario, estado: !usuario.estado};
+      const usuarioActualizado = { ...usuario, estado: !usuario.estado };
       await updateUsuario(usuario.idUsuario, usuarioActualizado);
       cargarUsuarios();
     } catch (error) {
       console.error("Error al cambiar el estado del usuario:", error.response?.data || error.message);
     }
   };
-  const usuariosFiltrados = usuarios.filter (u => {
+
+  const usuariosFiltrados = usuarios.filter(u => {
     if (filtroEstado === "activos") return u.estado === true;
     if (filtroEstado === "inactivos") return u.estado === false;
-    return true; // todos 
+    return true;
   });
+
   const total = usuarios.length;
   const activos = usuarios.filter(u => u.estado).length;
   const inactivos = total - activos;
@@ -89,7 +91,7 @@ export function AdminUsuarios() {
   return (
     <div className="container mt-4">
       <h2 className="text-center fw-bold text-primary">Gestión de Usuarios</h2>
-      
+
       {/* Filtros y contadores */}
       <div className="d-flex justify-content-between align-items-center my-3">
         <div>
@@ -99,8 +101,8 @@ export function AdminUsuarios() {
         </div>
         <div>
           <span className="me-3">Total: <strong>{total}</strong></span>
-          <span className="me-3">activos: <strong className="text-success">{activos}</strong></span>
-          <span>inactivos: <strong className="text-danger">{inactivos}</strong></span>
+          <span className="me-3">Activos: <strong className="text-success">{activos}</strong></span>
+          <span>Inactivos: <strong className="text-danger">{inactivos}</strong></span>
         </div>
       </div>
 
@@ -116,7 +118,6 @@ export function AdminUsuarios() {
             required
           />
         </div>
-
         <div className="col-md-6">
           <input
             type="text"
@@ -127,7 +128,6 @@ export function AdminUsuarios() {
             required
           />
         </div>
-
         <div className="col-md-6">
           <input
             type="email"
@@ -138,7 +138,6 @@ export function AdminUsuarios() {
             required
           />
         </div>
-
         <div className="col-md-6">
           <input
             type="tel"
@@ -149,6 +148,15 @@ export function AdminUsuarios() {
             required
           />
         </div>
+        <div className="col-md-6">
+          <input type="password"
+          className="form-control"
+          placeholder="Password"
+          value={form.password}
+          onChange={(e) => setForm({...form, password: e.target.value})}
+          required 
+          />
+        </div>
 
         <div className="col-md-6">
           <select
@@ -156,31 +164,30 @@ export function AdminUsuarios() {
             value={form.rol}
             onChange={(e) => setForm({ ...form, rol: e.target.value })}
           >
-            {<option value="usuario">Usuario</option>}
+            <option value="usuario">Usuario</option>
             <option value="admin">Administrador</option>
           </select>
         </div>
-
         <div className="col-md-6">
           <select
             className="form-select"
-            value={form.estado}
+            value={form.estado.toString()}
             onChange={(e) => setForm({ ...form, estado: e.target.value === "true" })}
           >
             <option value="true">Activo</option>
             <option value="false">Inactivo</option>
           </select>
         </div>
-
-        <div className="col-12 text-center">
+        <div className="col-12 text-start  mt-3">
           <button type="submit" className="btn btn-primary fw-bold px-4 shadow">
             {editingId ? "Actualizar Usuario" : "Registrar Usuario"}
           </button>
+          <Link to="/ListaUsuario" className="btn btn-secondary">Ir a otra pagina</Link>
         </div>
       </form>
 
-      {/* Tabla */}
-      <table className="table table-striped mt-4">
+      {/* Tabla de usuarios */}
+      {/*<table className="table table-striped mt-4">
         <thead className="bg-dark text-light">
           <tr>
             <th>Nombre</th>
@@ -189,6 +196,7 @@ export function AdminUsuarios() {
             <th>Teléfono</th>
             <th>Rol</th>
             <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -200,16 +208,18 @@ export function AdminUsuarios() {
               <td>{u.telefono}</td>
               <td>{u.rol}</td>
               <td className={u.estado ? "fw-bold text-success" : "fw-bold text-danger"}>
-                {u.estado ? "activo" : "inactivo"}
+                {u.estado ? "Activo" : "Inactivo"}
               </td>
               <td>
                 <button onClick={() => handleEdit(u)} className="btn btn-sm btn-primary">Editar</button>
-                <button onClick={() => handleToggleEstado(u)} className={`btn btn-sm ms-2 ${u.estado ? "btn-danger" : "btn-success"}`}>{u.estado ? "Inactivar": "Activar"}</button>
+                <button onClick={() => handleToggleEstado(u)} className={`btn btn-sm ms-2 ${u.estado ? "btn-danger" : "btn-success"}`}>
+                  {u.estado ? "Inactivar" : "Activar"}
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </table>*/}
     </div>
   );
 }

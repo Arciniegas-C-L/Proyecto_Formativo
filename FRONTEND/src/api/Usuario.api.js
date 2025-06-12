@@ -20,11 +20,12 @@ export const resetearContrasena = (data) => {
     return UsuarioApi.post('reset_password/', data);
 };
 
+
 // Para la gestion de Usuarios
 
 export const fetchUsuario = () => UsuarioApi.get("");
-
+export const createUsuario = (Usuario) => UsuarioApi.post("/", Usuario); 
 export const updateUsuario = async (id, Usuario) => UsuarioApi.put(`/${id}/`, Usuario);
-
 export const handleToggleEstado = (id, Usuario) => UsuarioApi.put(`/${id}/`, Usuario);
+
 

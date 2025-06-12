@@ -11,6 +11,7 @@ import { RecuperarContrasena } from './pages/FormRecuperacion'
 import { InventarioPage } from './pages/InventarioPage'
 import {AdminProveedores} from './pages/AdminProveedores';
 import {AdminUsuarios} from  './pages/AdminUsuarios';
+import {ListaUsuario} from './pages/ListaUsuario';
 
 
 function App() {
@@ -25,7 +26,8 @@ function App() {
         <Route path="/sesion/recuperar_contrasena" element={<RecuperarContrasena />} />
         <Route path="/proveedores" element={<AdminProveedores />} />
         <Route path="/inventario" element={<InventarioPage />} />
-        <Route path="/usuario" element={<AdminUsuarios/>}></Route>
+        <Route path="/usuario/*" element={<AdminUsuarios/>}></Route>
+        <Route path='/ListaUsuario' element = {<ListaUsuario/>}></Route>
       </Routes>
       <Toaster />
       <Footer />
