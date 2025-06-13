@@ -129,6 +129,7 @@ hr.derecha {
 
 .producto-home img {
   max-width: 90%;
+  height: 300px;
   border-radius: 10px;
   margin-bottom: 15px;
 }

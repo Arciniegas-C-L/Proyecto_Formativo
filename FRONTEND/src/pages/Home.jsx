@@ -37,7 +37,7 @@ export const Home = () => {
           <div className="producto-home">
             <img src={Hombre} alt="Ropa para mujeres, hombres y niños" />
             <h2>Ropa para Mujer, Hombre y Niño.</h2>
-            <p>Ropa de alta calidad para toda la familia:</p>
+            <p>Ropa de alta calidad para toda la familia: Hombres, mujeres, niños y niñas.</p>
           </div>
           <div className="producto-home">
             <img src={calzado} alt="Calzado familiar cómodo y moderno" />
