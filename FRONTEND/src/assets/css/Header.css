@@ -1,3 +1,4 @@
+/* Fuente y fondo general */
 body {
   font-family: 'Urbanist', sans-serif;
   margin: 0;
@@ -7,8 +8,8 @@ body {
 
 /* Logo */
 .contenido-imagen img {
-  width: 85px;
-  height: 85px;
+  width: 70px;
+  height: 70px;
   object-fit: cover;
   border-radius: 50%;
   border: 3px solid #FFD447;
@@ -18,21 +19,29 @@ body {
 /* Título de empresa */
 .titulo-empresa {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 28px;
+  font-size: 26px;
+  margin-left: 1px;
   letter-spacing: 1px;
   font-weight: bold;
+  color: #ffffff;
 }
 
-/* Estilo base para los enlaces de navegación */
+/* Enlaces del navbar */
 .enlace-boton {
   font-size: 18px;
   font-family: "Bebas Neue", sans-serif;
   font-weight: bold;
-  color: #ffffff !important; 
+  color: #ffffff !important;
+  text-decoration: none;
+  padding: 8px 12px;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
 }
 
-/* Hover para botones */
+/* Efecto hover en enlaces */
 .enlace-boton:hover {
   background-color: #FFD447 !important;
   color: #2a2a2a !important;
@@ -42,7 +51,37 @@ body {
   cursor: pointer;
 }
 
-/* Encabezado fondo oscuro claro */
+/* Ícono de sesión */
+.enlace-boton .bi {
+  font-size: 20px;
+  vertical-align: middle;
+}
+
+/* Fondo del header */
 header.bg-dark {
   background-color: #2c2c2c !important;
+}
+
+.d-flex.gap-3 {
+  gap: 0.75rem; /* reducido de 1rem a 0.75rem */
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+  header .container-fluid {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  nav ul.nav {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .enlace-boton {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 10px;
+  }
 }
