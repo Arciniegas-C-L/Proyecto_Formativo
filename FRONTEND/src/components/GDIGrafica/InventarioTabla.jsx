@@ -177,7 +177,6 @@ const InventarioTabla = () => {
         estado: grupo.estado
       }));
       
-      console.log('Grupos de talla cargados:', gruposFormateados); // Para debugging
       setGruposTalla(gruposFormateados);
     } catch (error) {
       console.error("Error al cargar grupos de talla:", error);
@@ -390,11 +389,11 @@ const InventarioTabla = () => {
                 <TableCell>
                   <Chip
                     label={`${subcategoria.stock_total} unidades`}
-                    color={subcategoria.stock_total <= subcategoria.stockMinimo ? "error" : "success"}
+                    color={subcategoria.stock_total <= 5 ? "error" : "success"}
                     size="small"
                   />
                 </TableCell>
-                <TableCell align="right">{subcategoria.stockMinimo}</TableCell>
+                <TableCell align="right">5</TableCell>
                 <TableCell>
                   <Chip
                     label={subcategoria.estado ? "Activo" : "Inactivo"}

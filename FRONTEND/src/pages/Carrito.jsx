@@ -34,17 +34,13 @@ export function Carrito() {
             
             if (carritosActivos.length > 0) {
                 const carritoActivo = carritosActivos[0];
-                console.log('Carrito activo:', carritoActivo); // Log para debug
                 setCarrito(carritoActivo);
                 if (carritoActivo.items && Array.isArray(carritoActivo.items)) {
-                    console.log('Items del carrito:', carritoActivo.items); // Log para debug
                     setItems(carritoActivo.items);
                 } else {
-                    console.log('No hay items en el carrito o formato inválido'); // Log para debug
                     setItems([]);
                 }
             } else {
-                console.log('No hay carritos activos'); // Log para debug
                 setCarrito(null);
                 setItems([]);
             }
@@ -63,11 +59,9 @@ export function Carrito() {
         try {
             if (!carrito) return;
 
-            console.log('Actualizando cantidad:', { itemId, nuevaCantidad }); // Log para debug
             const response = await actualizarCantidad(carrito.idCarrito, itemId, nuevaCantidad);
             
             if (response.data) {
-                console.log('Respuesta del servidor:', response.data); // Log para debug
                 
                 // Verificar que los items y productos estén presentes
                 if (response.data.items && Array.isArray(response.data.items)) {
@@ -85,7 +79,6 @@ export function Carrito() {
                         };
                     }).filter(Boolean); // Filtrar items nulos
                     
-                    console.log('Items actualizados:', itemsActualizados); // Log para debug
                     
                     setCarrito({
                         ...response.data,
