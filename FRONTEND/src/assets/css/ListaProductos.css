@@ -1,0 +1,261 @@
+.lista-productos-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header-acciones {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header-acciones h2 {
+    color: #333;
+    margin: 0;
+}
+
+.header-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.busqueda-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 250px;
+    font-size: 14px;
+}
+
+.busqueda-input:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+.btn-crear {
+    background-color: #FFD447;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-crear:hover {
+    background-color: #cba015;
+    transform: translateY(-1px);
+}
+
+.tabla-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.tabla-productos {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.tabla-productos th,
+.tabla-productos td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.tabla-productos th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.tabla-productos tr:hover {
+    background-color: #f8f9fa;
+}
+
+.celda-imagen img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    transition: transform 0.2s ease;
+}
+
+.celda-imagen img:hover {
+    transform: scale(1.1);
+}
+
+.celda-descripcion {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: help;
+}
+
+.celda-acciones {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.btn-ver,
+.btn-editar,
+.btn-eliminar {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-ver {
+    color: #2196F3;
+}
+
+.btn-ver:hover {
+    background-color: #e3f2fd;
+    color: #1976D2;
+}
+
+.btn-editar {
+    color: #2c5282;
+}
+
+.btn-editar:hover {
+    background-color: #ebf8ff;
+    color: #2c5282;
+}
+
+.btn-eliminar {
+    color: #e53e3e;
+}
+
+.btn-eliminar:hover {
+    background-color: #fff5f5;
+    color: #e53e3e;
+}
+
+.loading {
+    text-align: center;
+    font-size: 1.2em;
+    color: #666;
+    padding: 20px;
+}
+
+.error-message {
+    text-align: center;
+    padding: 20px;
+    background-color: #fff5f5;
+    border: 1px solid #feb2b2;
+    border-radius: 8px;
+    color: #c53030;
+}
+
+.btn-reintentar {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background-color: #e53e3e;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-reintentar:hover {
+    background-color: #c53030;
+}
+
+.no-resultados {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-acciones {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    .header-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .busqueda-input {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .btn-crear {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .tabla-container {
+        margin: 0 -20px;
+        border-radius: 0;
+    }
+
+    .celda-acciones {
+        flex-wrap: wrap;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tabla-productos tbody tr {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Tooltip para descripciones largas */
+.celda-descripcion:hover::after {
+    content: attr(title);
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    max-width: 300px;
+    white-space: normal;
+    word-wrap: break-word;
+} 

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import React from "react";
+// import React, { useState } from "react";
+import { FaShoppingCart, FaChevronDown } from "react-icons/fa";
 import ZOE from "../assets/images/home/ZOE.gif";
 import "../assets/css/header.css";
 import "bootstrap/dist/css/bootstrap.min.css";

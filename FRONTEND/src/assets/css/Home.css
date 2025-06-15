@@ -6,7 +6,6 @@ body {
   font-family: 'Urbanist', sans-serif;
 }
 
-
 /* CONTENEDOR PRINCIPAL */
 .contenedor-Home {
   padding: 30px 20px;
@@ -51,18 +50,15 @@ body {
     0 0 10px rgba(0, 0, 0, 0.6);
   letter-spacing: 2px;
   margin-bottom: 10px;
-  text-align: center;
 }
 
 .hero-texto {
   font-size: 1.2rem;
-  margin-top: 0; 
+  margin-top: 0;
   color: #ffffff;
-  text-shadow: 0 0 4px rgba(0, 0, 0, 0.6); 
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
   max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
+  margin: 0 auto;
 }
 
 .hero-boton {
@@ -79,7 +75,6 @@ body {
 .hero-boton:hover {
   background-color: #e6c200;
 }
-
 
 /* TÍTULOS CON ESTILO */
 .Titulo-productos {
@@ -108,7 +103,8 @@ hr.derecha {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 25px;
+  gap: 30px;
+  margin: 40px 0;
 }
 
 .producto-home {
@@ -130,18 +126,22 @@ hr.derecha {
 .producto-home img {
   max-width: 90%;
   height: 300px;
+  object-fit: cover;
   border-radius: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 35px;
 }
 
 .producto-home h2 {
   font-size: 1.2rem;
   color: #FFD700;
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .producto-home p {
   font-size: 1rem;
   color: #ccc;
+  line-height: 1.4;
 }
 
 /* COMENTARIOS DE CLIENTES */
@@ -149,134 +149,143 @@ hr.derecha {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 25px;
+  gap: 40px;
+  padding: 40px 0;
 }
 
 .usuario {
-  background-color: #1e1e1e;
-  border-radius: 15px;
-  padding: 20px;
-  width: 280px;
-  box-shadow: 0 2px 12px rgba(255, 215, 0, 0.1);
-  transition: transform 0.3s ease;
+  background-color: #1a1a1a;
+  border-radius: 18px;
+  padding: 25px 20px;
+  width: 300px;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .usuario:hover {
-  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.25);
 }
 
 .usuario-info {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .usuario-info img {
-  width: 55px;
-  height: 55px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
   margin-right: 15px;
   border: 2px solid #FFD700;
+  box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  transition: transform 0.3s ease;
+}
+
+.usuario:hover .usuario-info img {
+  transform: scale(1.05);
 }
 
 .usuario-detalles h3 {
   margin: 0;
+  font-size: 1.1rem;
   color: #FFD700;
 }
 
 .estrellas i {
   color: #FFD700;
   margin-right: 2px;
+  font-size: 0.95rem;
 }
 
 .comentario-usuario p {
   font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.4;
   margin-bottom: 10px;
-  color: #ccc;
+  color: #ddd;
 }
 
 .fecha {
   font-size: 0.8rem;
-  color: #888;
+  color: #999;
+  text-align: right;
+  display: block;
 }
 
 /* FRASE MOTIVACIONAL */
 .palabras-con-movimiento {
   margin-top: 60px;
   background-color: #FFD700;
-  padding: 20px;
+  padding: 20px 0;
   border-radius: 12px;
-  text-align: center;
   overflow: hidden;
   position: relative;
   height: 50px;
+  text-align: center;
 }
 
 .palabras {
-  position: absolute;
+  display: inline-block;
   white-space: nowrap;
   will-change: transform;
-  animation: moverTexto 12s linear infinite;
+  animation: moverTexto 15s linear infinite;
   font-size: 1.3rem;
   font-weight: bold;
   color: #111;
 }
 
-
-
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .inicio {
-    flex-direction: column;
-    padding: 40px 20px;
-    text-align: center;
-  }
-
-  .productos,
-  .comentarios {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .producto-home,
-  .usuario {
-    width: 90%;
-  }
-
-  .contenido-introduccion h2 {
-    font-size: 2.4rem;
-  }
-
-  .parrafo-primero {
-    font-size: 1.2rem;
-  }
-
-  .imagen-modelos {
-    max-width: 100%;
-    margin-top: 30px;
-  }
-
-  .hero {
-    flex-direction: column;
-    text-align: center;
-    padding: 30px 20px;
-  }
-
-  .hero-boton {
-    margin: 0 auto;
-  }
-
-  .hero-imagen-container {
-    margin-top: 30px;
-  }
+.palabras span {
+  display: inline-block;
+  padding-right: 100px;
 }
+
 @keyframes moverTexto {
   0% {
     transform: translateX(100%);
   }
   100% {
     transform: translateX(-100%);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .producto-home,
+  .usuario {
+    width: 90%;
+  }
+
+  .hero-titulo {
+    font-size: 2rem;
+  }
+
+  .hero-texto {
+    font-size: 1rem;
+  }
+
+  .palabras {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .producto-home,
+  .usuario {
+    width: 100%;
+    padding: 20px 15px;
+  }
+
+  .producto-home img {
+    height: 220px;
+  }
+
+  .comentario-usuario p {
+    font-size: 0.9rem;
+  }
+
+  .palabras {
+    font-size: 1rem;
   }
 }

@@ -1,5 +1,5 @@
 import { toast } from "react-hot-toast";
-import InventarioForm from "./GDIGrafica/InventarioForm";
+import { InventarioForm } from "./GDIGrafica/InventarioForm";
 
 export function InventarioFormPage() {
   const handleSuccess = () => {

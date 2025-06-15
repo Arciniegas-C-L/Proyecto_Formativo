@@ -17,6 +17,7 @@
 .container-sesion .container {
     width: 800px;
     height: 500px;
+    padding: 0;
     display: flex;
     position: relative;
     border-color: white;
@@ -92,6 +93,10 @@
     margin-top: 10px;
     background-color: #FFD447;
     color: #000000;
+}
+
+.container-sesion .button:hover{
+    background-color: #FFD447;
 }
 
 /* animation form */
