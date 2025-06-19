@@ -31,7 +31,6 @@ export const agregarProducto = (id, data) => {
         producto: parseInt(data.producto),
         cantidad: parseInt(data.cantidad)
     };
-    console.log('Enviando datos al backend:', requestData); // Log para debug
     return CarritoApi.post(`${id}/agregar_producto/`, requestData);
 };
 export const actualizarCantidad = (id, itemId, cantidad) => CarritoApi.post(`${id}/actualizar_cantidad/`, {

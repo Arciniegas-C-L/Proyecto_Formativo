@@ -1,3 +1,4 @@
+/* Fuente y fondo general */
 body {
   font-family: 'Urbanist', sans-serif;
   margin: 0;
@@ -7,8 +8,8 @@ body {
 
 /* Logo */
 .contenido-imagen img {
-  width: 85px;
-  height: 85px;
+  width: 70px;
+  height: 70px;
   object-fit: cover;
   border-radius: 50%;
   border: 3px solid #FFD447;
@@ -18,21 +19,29 @@ body {
 /* Título de empresa */
 .titulo-empresa {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 28px;
+  font-size: 26px;
+  margin-left: 1px;
   letter-spacing: 1px;
   font-weight: bold;
+  color: #ffffff;
 }
 
-/* Estilo base para los enlaces de navegación */
+/* Enlaces del navbar */
 .enlace-boton {
   font-size: 18px;
   font-family: "Bebas Neue", sans-serif;
   font-weight: bold;
-  color: #ffffff !important; 
+  color: #ffffff !important;
+  text-decoration: none;
+  padding: 8px 12px;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
 }
 
-/* Hover para botones */
+/* Efecto hover en enlaces */
 .enlace-boton:hover {
   background-color: #FFD447 !important;
   color: #2a2a2a !important;
@@ -40,108 +49,39 @@ body {
   box-shadow: 0 4px 12px rgba(255, 212, 71, 0.5);
   transform: translateY(-2px);
   cursor: pointer;
-.navegacion ul {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
 }
 
-.navegacion ul li {
-    display: flex;
-    align-items: center;
+/* Ícono de sesión */
+.enlace-boton .bi {
+  font-size: 20px;
+  vertical-align: middle;
 }
 
-.navegacion ul li a {
-    text-decoration: none;
-    color: #ffffff;
-    font-size: 18px;
-    transition: all ease .4s;
+/* Fondo del header */
+header.bg-dark {
+  background-color: #2c2c2c !important;
 }
 
-.navegacion ul li a:hover {
-    color: #FFD447;
+.d-flex.gap-3 {
+  gap: 0.75rem; /* reducido de 1rem a 0.75rem */
 }
 
-hr {
-    height: 70%;
-    margin: auto;
-}
-
-.carrito-icono {
-    margin-left: 1rem;
-}
-
-.icono-carrito {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: #333;
-    transition: color 0.3s ease;
-}
-
-.icono-carrito:hover {
-    color: #28a745;
-}
-
-.admin-menu {
-    position: relative;
-}
-
-.admin-button {
-    background: none;
-    border: none;
-    color: #ffffff;
-    font-size: 18px;
-    font-family: "Bebas Neue", sans-serif;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0;
-    transition: all ease .4s;
-}
-
-.admin-button:hover {
-    color: #FFD447;
-}
-
-.admin-button svg {
-    font-size: 14px;
-    transition: transform 0.3s ease;
-}
-
-.admin-menu:hover .admin-button svg {
-    transform: rotate(180deg);
-}
-
-.admin-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #000000;
-    min-width: 200px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-    border-radius: 4px;
-    padding: 8px 0;
-    z-index: 1000;
-    display: flex;
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+  header .container-fluid {
     flex-direction: column;
-}
+    align-items: flex-start;
+  }
 
-.admin-dropdown a {
-    color: #ffffff;
-    padding: 12px 16px;
-    text-decoration: none;
-    font-size: 16px;
-    transition: all ease .3s;
-    display: block;
-}
+  nav ul.nav {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+  }
 
-.admin-dropdown a:hover {
-    background-color: #333;
-    color: #FFD447;
+  .enlace-boton {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 10px;
+  }
 }
