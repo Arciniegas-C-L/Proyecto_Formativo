@@ -17,19 +17,16 @@ import {
   Paper,
   IconButton,
   Typography,
-  Switch,
-  FormControlLabel,
   Alert,
   Chip,
   Stack,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import {
   getAllGruposTalla,
   createGrupoTalla,
   updateGrupoTalla,
   deleteGrupoTalla,
-  cambiarEstadoGrupoTalla,
 } from '../api/GrupoTalla.api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -44,7 +41,6 @@ export const GrupoTalla = () => {
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    estado: true,
   });
 
   useEffect(() => {
@@ -78,14 +74,12 @@ export const GrupoTalla = () => {
       setFormData({
         nombre: grupo.nombre,
         descripcion: grupo.descripcion || '',
-        estado: grupo.estado,
       });
     } else {
       setEditingGrupo(null);
       setFormData({
         nombre: '',
         descripcion: '',
-        estado: true,
       });
     }
     setOpenDialog(true);
@@ -98,15 +92,14 @@ export const GrupoTalla = () => {
     setFormData({
       nombre: '',
       descripcion: '',
-      estado: true,
     });
   };
 
   const handleInputChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === 'estado' ? checked : value,
+      [name]: value,
     });
     setError('');
   };
@@ -154,14 +147,9 @@ export const GrupoTalla = () => {
     }
   };
 
-  const handleEstadoChange = async (id, estado) => {
-    try {
-      await cambiarEstadoGrupoTalla(id, !estado);
-      toast.success('Estado del grupo de talla actualizado exitosamente');
-      cargarGruposTalla();
-    } catch (error) {
-      handleError(error);
-    }
+  const handleAsignarTallas = (grupo) => {
+    // Redirigir a la página de tallas
+    navigate('/tallas');
   };
 
   return (
@@ -199,7 +187,6 @@ export const GrupoTalla = () => {
                 <TableCell>Nombre</TableCell>
                 <TableCell>Descripción</TableCell>
                 <TableCell>Tallas Asociadas</TableCell>
-                <TableCell>Estado</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
             </TableHead>
@@ -215,34 +202,30 @@ export const GrupoTalla = () => {
                           key={talla.id}
                           label={talla.nombre}
                           size="small"
-                          color={talla.estado ? "primary" : "default"}
+                          color="primary"
                         />
                       ))}
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={grupo.estado}
-                          onChange={(e) => handleEstadoChange(grupo.idGrupoTalla, grupo.estado)}
-                          name="estado"
-                          color="primary"
-                        />
-                      }
-                      label={grupo.estado ? 'Activo' : 'Inactivo'}
-                    />
-                  </TableCell>
-                  <TableCell>
                     <IconButton
                       color="primary"
                       onClick={() => handleOpenDialog(grupo)}
+                      title="Editar"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
+                      color="secondary"
+                      onClick={() => handleAsignarTallas(grupo)}
+                      title="Asignar Tallas"
+                    >
+                      <AddIcon />
+                    </IconButton>
+                    <IconButton
                       color="error"
                       onClick={() => handleDelete(grupo.idGrupoTalla)}
+                      title="Eliminar"
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -285,18 +268,6 @@ export const GrupoTalla = () => {
               margin="normal"
               multiline
               rows={3}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.estado}
-                  onChange={handleInputChange}
-                  name="estado"
-                  color="primary"
-                />
-              }
-              label="Activo"
-              margin="normal"
             />
           </DialogContent>
           <DialogActions>

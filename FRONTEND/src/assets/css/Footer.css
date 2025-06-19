@@ -21,9 +21,7 @@
   width: 100%;
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;
-  border-top: 3px solid #FFD447;
-  gap: 40px;
+  flex-wrap: wrap;gap: 40px;
 }
 
 .footer-main {

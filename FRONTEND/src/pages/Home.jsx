@@ -11,20 +11,20 @@ import mujer from '../assets/images/home/mujer.jpg';
 export const Home = () => {
   return (
       <>
-      <section className="hero container py-5">
-    <div className="row align-items-center">
-        <div className="col-md-6 hero-contenido">
-            <h2 className="hero-titulo">La moda que se adapta a ti.</h2>
-            <p className="hero-texto">
-                ZOE une variedad, estilo y libertad en cada prenda. Para quienes eligen destacar.
-            </p>
-            <button className="hero-boton btn btn-warning">Ver Colección</button>
-        </div>
-        <div className="col-md-6 hero-imagen-container">
-            <img src={Modelos} alt="Modelo de portada" className="hero-imagen img-fluid rounded" />
-        </div>
-    </div>
+      <section className="hero">
+  <div className="hero-overlay"></div>
+
+  <div className="hero-contenido text-white text-center">
+    <h2 className="hero-titulo">La moda que se adapta a ti.</h2>
+    <p className="hero-texto">
+      ZOE une variedad, estilo y libertad en cada prenda. Para quienes eligen destacar.
+    </p>
+    <a href="#Catalogo" className="hero-boton btn btn-warning btn-lg">
+      Ver Catalogo
+    </a>
+  </div>
 </section>
+
 
       
       <section className="productos-destacados">
@@ -37,7 +37,7 @@ export const Home = () => {
           <div className="producto-home">
             <img src={Hombre} alt="Ropa para mujeres, hombres y niños" />
             <h2>Ropa para Mujer, Hombre y Niño.</h2>
-            <p>Ropa de alta calidad para toda la familia:</p>
+            <p>Ropa de alta calidad para toda la familia: Hombres, mujeres, niños y niñas.</p>
           </div>
           <div className="producto-home">
             <img src={calzado} alt="Calzado familiar cómodo y moderno" />
