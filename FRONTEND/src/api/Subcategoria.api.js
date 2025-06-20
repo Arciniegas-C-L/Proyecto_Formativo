@@ -10,19 +10,21 @@ const SubcategoriaApi = axios.create({
   }
 });
 
+// ✅ Obtener todas las subcategorías (res.data.results si paginación)
 export const getAllSubcategorias = async () => {
   try {
-    const res = await SubcategoriaApi.get("/");
-    return res.data;
+    const res = await SubcategoriaApi.get('/');
+    return Array.isArray(res.data) ? res.data : res.data.results;
   } catch (error) {
     console.error("Error al obtener subcategorías:", error);
     throw error;
   }
 };
 
+// ✅ Subcategorías por categoría
 export const getSubcategoriasByCategoria = async (categoriaId) => {
   try {
-    const res = await SubcategoriaApi.get("/por_categoria/", {
+    const res = await SubcategoriaApi.get('por_categoria/', {
       params: { categoria: categoriaId },
     });
     return res.data;
@@ -32,16 +34,19 @@ export const getSubcategoriasByCategoria = async (categoriaId) => {
   }
 };
 
-export const createSubcategoria = async (subcategoria) => {
+// ✅ Crear nueva subcategoría
+export const createSubcategoria = async (data) => {
   try {
-    const res = await SubcategoriaApi.post("/", subcategoria);
-    return res.data;
+    console.log("🟡 Enviando datos:", data);
+    const response = await SubcategoriaApi.post('/', data); // 🔧 CORREGIDO aquí
+    return response.data;
   } catch (error) {
-    console.error("Error al crear subcategoría:", error);
+    console.error("🔴 Error al crear subcategoría:", error.response?.data || error.message);
     throw error;
   }
 };
 
+// ✅ Actualizar subcategoría
 export const updateSubcategoria = async (id, subcategoria) => {
   try {
     const res = await SubcategoriaApi.put(`${id}/`, subcategoria);
@@ -52,6 +57,7 @@ export const updateSubcategoria = async (id, subcategoria) => {
   }
 };
 
+// ✅ Eliminar subcategoría
 export const deleteSubcategoria = async (id) => {
   try {
     await SubcategoriaApi.delete(`${id}/`);
@@ -61,13 +67,13 @@ export const deleteSubcategoria = async (id) => {
   }
 };
 
+// ✅ Actualizar grupo de talla en una subcategoría
 export const updateGrupoTalla = async (subcategoriaId, grupoTallaId) => {
   if (!subcategoriaId || !grupoTallaId) {
     throw new Error('Se requieren tanto el ID de la subcategoría como el ID del grupo de talla');
   }
 
   try {
-    // Asegurarse de que grupoTallaId sea un número
     const grupoTallaIdNum = Number(grupoTallaId);
     if (isNaN(grupoTallaIdNum)) {
       throw new Error('El ID del grupo de talla debe ser un número válido');
@@ -77,34 +83,18 @@ export const updateGrupoTalla = async (subcategoriaId, grupoTallaId) => {
       `${subcategoriaId}/actualizar_grupo_talla/`,
       { grupoTalla: grupoTallaIdNum }
     );
-    
+
     return response.data;
   } catch (error) {
-    // Manejar errores específicos del backend
-    if (error.response?.data?.error) {
-      throw new Error(error.response.data.error);
-    }
-    
-    // Manejar errores HTTP específicos
-    switch (error.response?.status) {
-      case 400:
-        if (error.response.data?.error?.includes('ya tiene asignado')) {
-          throw new Error('La subcategoría ya tiene asignado este grupo de talla');
-        }
-        throw new Error(error.response.data?.error || 'Datos inválidos para la actualización');
-      case 404:
-        throw new Error('No se encontró la subcategoría o el grupo de talla');
-      case 500:
-        throw new Error('Error interno del servidor al actualizar el grupo de talla');
-      default:
-        throw new Error('Error al actualizar el grupo de talla: ' + (error.message || 'Error desconocido'));
-    }
+    const mensaje = error.response?.data?.error || error.message || 'Error desconocido';
+    throw new Error(`Error al actualizar el grupo de talla: ${mensaje}`);
   }
 };
 
+// ✅ Asignar grupo de talla por defecto
 export const asignarGrupoTallaDefault = async () => {
   try {
-    const response = await SubcategoriaApi.post('asignar_grupo_talla_default/');
+    const response = await SubcategoriaApi.post('asignar_grupo_talla_default/', {});
     return response.data;
   } catch (error) {
     console.error('Error al asignar grupo de tallas por defecto:', error.response?.data || error.message);

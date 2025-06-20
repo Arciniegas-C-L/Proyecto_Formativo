@@ -8,3 +8,4 @@ export const getALLRoles = () => RolApi.get("/");
 export const createRol = (Rol) => RolApi.post("/", Rol);
 export const deleteRol = (id) => RolApi.delete(`/${id}`);
 export const updateRol = (id, Rol) => RolApi.put(`/${id}`, Rol);
+export const getRolesPorPagina = (url = "") => RolApi.get(url);

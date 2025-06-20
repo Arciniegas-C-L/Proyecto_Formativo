@@ -2,69 +2,77 @@ import axios from 'axios';
 
 const BASE_URL = 'http://127.0.0.1:8000/BACKEND/api';
 
-// Instancia de axios para GrupoTalla
+// Instancia de Axios
 const GrupoTallaApi = axios.create({
-    baseURL: `${BASE_URL}/grupo-talla/`,
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
+  baseURL: `${BASE_URL}/grupo-talla/`, // Confirma que esta URL coincide con la de tus rutas DRF
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
 });
 
-// Funciones para GrupoTalla
-export const getAllGruposTalla = async () => {
-    try {
-        const response = await GrupoTallaApi.get('');
-        // Asegurarse de que la respuesta incluya las tallas asociadas
-        const gruposTalla = response.data.map(grupo => ({
-            ...grupo,
-            Tallas: grupo.tallas || [] // Renombramos 'tallas' a 'Tallas' para mantener consistencia con el frontend
-        }));
-        return { ...response, data: gruposTalla };
-    } catch (error) {
-        console.error('Error al obtener grupos de talla:', error);
-        throw error;
-    }
+// ✅ Obtener grupos de talla con paginación
+export const getGruposTallaPaginados = async (page = 1, pageSize = 10) => {
+  try {
+    const response = await GrupoTallaApi.get('', {
+      params: {
+        page,
+        page_size: pageSize,
+      },
+    });
+
+    const data = response.data;
+
+    // Validación robusta de estructura esperada
+    const resultados = Array.isArray(data.results) ? data.results : [];
+
+    // Aseguramos que cada grupo tenga la propiedad 'Tallas'
+    const gruposConTallas = resultados.map(grupo => ({
+      ...grupo,
+      Tallas: grupo.tallas || []
+    }));
+
+    return {
+      resultados: gruposConTallas,
+      count: data.count || 0,
+      next: data.next || null,
+      previous: data.previous || null,
+    };
+  } catch (error) {
+    console.error('❌ Error al obtener grupos de talla paginados:', error);
+    throw error;
+  }
 };
 
-export const getGrupoTallaById = async (id) => {
-    try {
-        const response = await GrupoTallaApi.get(`${id}/`);
-        return {
-            ...response,
-            data: {
-                ...response.data,
-                Tallas: response.data.tallas || []
-            }
-        };
-    } catch (error) {
-        console.error('Error al obtener grupo de talla:', error);
-        throw error;
-    }
+// ✅ Crear un grupo de talla
+export const createGrupoTalla = async (data) => {
+  try {
+    const response = await GrupoTallaApi.post('', data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error al crear grupo de talla:', error);
+    throw error;
+  }
 };
 
-export const createGrupoTalla = (data) => GrupoTallaApi.post('', data);
-export const updateGrupoTalla = (id, data) => GrupoTallaApi.put(`${id}/`, data);
-export const deleteGrupoTalla = (id) => GrupoTallaApi.delete(`${id}/`);
-export const cambiarEstadoGrupoTalla = (id, estado) => GrupoTallaApi.patch(`${id}/cambiar_estado/`, { estado });
-
-// Funciones específicas para tallas dentro de un grupo
-export const getTallasActivasByGrupo = async (id) => {
-    try {
-        const response = await GrupoTallaApi.get(`${id}/tallas_activas/`);
-        return response;
-    } catch (error) {
-        console.error('Error al obtener tallas activas del grupo:', error);
-        throw error;
-    }
+// ✅ Actualizar un grupo de talla
+export const updateGrupoTalla = async (id, data) => {
+  try {
+    const response = await GrupoTallaApi.put(`${id}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error al actualizar grupo de talla:', error);
+    throw error;
+  }
 };
 
-export const agregarTallaToGrupo = async (id, talla) => {
-    try {
-        const response = await GrupoTallaApi.post(`${id}/agregar_talla/`, talla);
-        return response;
-    } catch (error) {
-        console.error('Error al agregar talla al grupo:', error);
-        throw error;
-    }
-}; 
+// ✅ Eliminar un grupo de talla
+export const deleteGrupoTalla = async (id) => {
+  try {
+    const response = await GrupoTallaApi.delete(`${id}/`);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error al eliminar grupo de talla:', error);
+    throw error;
+  }
+};

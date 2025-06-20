@@ -42,3 +42,5 @@ export const deleteCategoria = async (id) => {
     throw error;
   }
 };
+
+export const getCategoriasPaginadas = (url = "") => CategoriaApi.get(url);

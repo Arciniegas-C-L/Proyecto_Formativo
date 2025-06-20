@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getALLProductos } from '../api/Producto.api';
+import { getProductosPaginados } from '../api/Producto.api';
 import { createCarrito, agregarProducto, fetchCarritos } from '../api/CarritoApi';
 import { toast } from 'react-hot-toast';
 import { FaMinus, FaPlus, FaShoppingCart } from 'react-icons/fa';
@@ -39,7 +39,7 @@ export function Catalogo() {
 
     const cargarProductos = async () => {
         try {
-            const response = await getALLProductos();
+            const response = await getProductosPaginados();
             setProductos(response.data);
             // Inicializar cantidades en 1 para cada producto
             const cantidadesIniciales = {};

@@ -1,3 +1,4 @@
+from rest_framework import filters
 from rest_framework.decorators import api_view, permission_classes, action
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -20,6 +21,8 @@ from .serializer import (
     CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer, 
     SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer
 )
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
     Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
@@ -30,6 +33,7 @@ from rest_framework.permissions import IsAdminUser
 from .serializer import UserSerializer
 from django.db import models
 from rest_framework import serializers
+from rest_framework.pagination import PageNumberPagination
 
 # Create your views here.
 
@@ -162,8 +166,13 @@ class ProveedorView(viewsets.ModelViewSet):
     queryset = Proveedor.objects.all()
     
 class CategoriaViewSet(viewsets.ModelViewSet):
-    queryset = Categoria.objects.all()
+    queryset = Categoria.objects.all().order_by('-idCategoria')  # Orden descendente por ID
     serializer_class = CategoriaSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    search_fields = ['nombre']
+    filterset_fields = ['estado']
+    ordering_fields = ['idCategoria', 'nombre']
+    permission_classes = [AllowAny]
     
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
@@ -195,19 +204,26 @@ class ProductoView(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
+class GrupoTallaPagination(PageNumberPagination):
+    page_size = 5  # Puedes ajustar este valor según el frontend
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+
+
 class GrupoTallaViewSet(viewsets.ModelViewSet):
     serializer_class = GrupoTallaSerializer
     queryset = GrupoTalla.objects.all()
     permission_classes = [AllowAny]
+    pagination_class = GrupoTallaPagination  # ✅ Activa paginación
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        estado = self.request.query_params.get('estado', None)
-        
+        estado = self.request.query_params.get('estado')
+
         if estado is not None:
-            estado = estado.lower() == 'true'
-            queryset = queryset.filter(estado=estado)
-        
+            estado_bool = estado.lower() == 'true'
+            queryset = queryset.filter(estado=estado_bool)
+
         return queryset
 
     @action(detail=True, methods=['get'])
@@ -220,50 +236,39 @@ class GrupoTallaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def agregar_talla(self, request, pk=None):
         grupo = self.get_object()
-        serializer = TallaSerializer(data={
+        data = {
             'nombre': request.data.get('nombre'),
-            'grupo_id': grupo.idGrupoTalla,
+            'grupo': grupo.idGrupoTalla,  # Asegúrate de que el campo sea 'grupo' o el nombre correcto del ForeignKey
             'estado': True
-        })
-        
+        }
+        serializer = TallaSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class TallaPagination(PageNumberPagination):
+    page_size = 10  # Puedes cambiar este número
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 class TallaViewSet(viewsets.ModelViewSet):
     serializer_class = TallaSerializer
     queryset = Talla.objects.all()
     permission_classes = [AllowAny]
+    pagination_class = TallaPagination  
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        grupo_id = self.request.query_params.get('grupo', None)
-        estado = self.request.query_params.get('estado', None)
-        
+        grupo_id = self.request.query_params.get('grupo')
+        estado = self.request.query_params.get('estado')
+
         if grupo_id:
             queryset = queryset.filter(grupo_id=grupo_id)
         if estado is not None:
             estado = estado.lower() == 'true'
             queryset = queryset.filter(estado=estado)
-        
+
         return queryset
-
-    @action(detail=True, methods=['post'])
-    def cambiar_estado(self, request, pk=None):
-        talla = self.get_object()
-        nuevo_estado = request.data.get('estado')
-        
-        if nuevo_estado is None:
-            return Response(
-                {"error": "Se requiere el campo 'estado'"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        talla.estado = nuevo_estado
-        talla.save()
-        return Response(self.get_serializer(talla).data)
-
 class InventarioView(viewsets.ModelViewSet):
     serializer_class = InventarioSerializer
     queryset = Inventario.objects.all().select_related(
@@ -1097,29 +1102,53 @@ class EstadoCarritoView(viewsets.ModelViewSet):
         return EstadoCarrito.objects.filter(carrito__usuario__isnull=True)
 
 
+
+class CategoriaViewSet(viewsets.ModelViewSet):
+    queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
+
+    @action(detail=False, methods=['get'])
+    def subcategorias(self, request):
+        """
+        Devuelve todas las subcategorías de las categorías activas.
+        """
+        categorias = self.queryset.filter(estado=True).prefetch_related('subcategorias')
+        response_data = []
+
+        for categoria in categorias:
+            subcategorias = categoria.subcategorias.filter(estado=True)
+            categoria_data = {
+                'id': categoria.idCategoria,
+                'nombre': categoria.nombre,
+                'estado': categoria.estado,
+                'subcategorias': [{
+                    'id': sub.idSubcategoria,
+                    'nombre': sub.nombre,
+                    'estado': sub.estado,
+                    'stockMinimo': sub.stockMinimo
+                } for sub in subcategorias]
+            }
+            response_data.append(categoria_data)
+
+        return Response(response_data)
+
+
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
 
     def perform_create(self, serializer):
         try:
-            # Obtener el primer grupo de tallas activo como grupo por defecto
             grupo_talla_default = GrupoTalla.objects.filter(estado=True).first()
             if not grupo_talla_default:
                 raise Exception("No hay grupos de talla disponibles para asignar por defecto")
-            
-            # Guardar la subcategoría con el grupo de tallas por defecto
             serializer.save(grupoTalla=grupo_talla_default)
         except Exception as e:
             raise serializers.ValidationError(f"Error al crear la subcategoría: {str(e)}")
 
     @action(detail=False, methods=['post'])
     def asignar_grupo_talla_default(self, request):
-        """
-        Asigna el grupo de tallas por defecto a todas las subcategorías que no tienen grupo asignado.
-        """
         try:
-            # Obtener el primer grupo de tallas activo como grupo por defecto
             grupo_talla_default = GrupoTalla.objects.filter(estado=True).first()
             if not grupo_talla_default:
                 return Response(
@@ -1127,16 +1156,12 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Obtener todas las subcategorías sin grupo de tallas
             subcategorias_sin_grupo = Subcategoria.objects.filter(
                 estado=True,
                 grupoTalla__isnull=True
             )
 
-            # Contador de subcategorías actualizadas
             actualizadas = 0
-
-            # Asignar el grupo por defecto a cada subcategoría
             for subcategoria in subcategorias_sin_grupo:
                 subcategoria.grupoTalla = grupo_talla_default
                 subcategoria.save()
@@ -1164,65 +1189,63 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
         try:
             subcategoria = self.get_object()
             stock_minimo = request.data.get('stockMinimo')
-            
+
             if stock_minimo is None:
                 return Response(
-                    {'error': 'El stock mínimo es requerido'}, 
+                    {'error': 'El stock mínimo es requerido'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             try:
                 stock_minimo = int(stock_minimo)
             except ValueError:
                 return Response(
-                    {'error': 'El stock mínimo debe ser un número entero'}, 
+                    {'error': 'El stock mínimo debe ser un número entero'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             if stock_minimo < 0:
                 return Response(
-                    {'error': 'El stock mínimo no puede ser negativo'}, 
+                    {'error': 'El stock mínimo no puede ser negativo'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             subcategoria.stockMinimo = stock_minimo
             subcategoria.save()
-            
+
             serializer = self.get_serializer(subcategoria)
             return Response(serializer.data)
+
         except Exception as e:
             return Response(
-                {'error': str(e)}, 
+                {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
     @action(detail=True, methods=['put'])
     def actualizar_grupo_talla(self, request, pk=None):
         try:
-            print("Datos recibidos:", request.data)  # Debug
-            print("Tipo de datos:", type(request.data))  # Debug
-            
+            print("Datos recibidos:", request.data)
+            print("Tipo de datos:", type(request.data))
+
             subcategoria = self.get_object()
             grupo_talla_id = request.data.get('grupoTalla')
-            
-            print("ID de grupo de talla recibido:", grupo_talla_id)  # Debug
-            
-            # Validar que se proporcionó un ID de grupo de talla
+
+            print("ID de grupo de talla recibido:", grupo_talla_id)
+
             if grupo_talla_id is None or grupo_talla_id == '':
                 return Response(
                     {'error': 'Se requiere un ID de grupo de talla'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
-            # Validar que no se está intentando establecer a null
+
             if grupo_talla_id == 'null' or grupo_talla_id == 'None':
                 return Response(
                     {'error': 'No se permite quitar el grupo de talla'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             try:
-                # Convertir a entero si es string
                 if isinstance(grupo_talla_id, str):
                     grupo_talla_id = int(grupo_talla_id)
             except (ValueError, TypeError):
@@ -1230,33 +1253,32 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
                     {'error': 'El ID del grupo de talla debe ser un número válido'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             try:
                 grupo_talla = GrupoTalla.objects.get(idGrupoTalla=grupo_talla_id)
-                
-                # Validar que no es el mismo grupo
+
                 if subcategoria.grupoTalla and subcategoria.grupoTalla.idGrupoTalla == grupo_talla_id:
                     return Response(
                         {'error': 'La subcategoría ya tiene asignado este grupo de talla'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+
                 subcategoria.grupoTalla = grupo_talla
                 subcategoria.save()
-                
+
                 serializer = self.get_serializer(subcategoria)
                 return Response(serializer.data)
-                
+
             except GrupoTalla.DoesNotExist:
                 return Response(
                     {'error': f'No existe el grupo de talla con ID {grupo_talla_id}'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-            
+
         except Exception as e:
-            print("Error inesperado:", str(e))  # Debug
+            print("Error inesperado:", str(e))
             import traceback
-            print("Traceback:", traceback.format_exc())  # Debug
+            print("Traceback:", traceback.format_exc())
             return Response(
                 {'error': 'Error al actualizar el grupo de tallas'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1267,16 +1289,16 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
         categoria_id = request.query_params.get('categoria')
         if not categoria_id:
             return Response(
-                {'error': 'El ID de la categoría es requerido'}, 
+                {'error': 'El ID de la categoría es requerido'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             subcategorias = self.queryset.filter(categoria_id=categoria_id)
             serializer = self.get_serializer(subcategorias, many=True)
             return Response(serializer.data)
         except Exception as e:
             return Response(
-                {'error': str(e)}, 
+                {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

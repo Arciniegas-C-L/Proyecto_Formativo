@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getALLProductos, deleteProducto } from '../api/Producto.api';
+import { getProductosPaginados, deleteProducto } from '../api/Producto.api';
 import { toast } from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import '../assets/css/ListaProductos.css';
@@ -20,7 +20,7 @@ export function ListaProductos() {
         try {
             setLoading(true);
             setError(null);
-            const response = await getALLProductos();
+            const response = await getProductosPaginados();
             
             if (response.data) {
                 setProductos(response.data);
@@ -133,11 +133,14 @@ export function ListaProductos() {
         }
     };
 
-    const productosFiltrados = productos.filter(producto =>
-        producto.nombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-        producto.descripcion.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-        producto.categoria_nombre.toLowerCase().includes(filtroBusqueda.toLowerCase())
-    );
+   const productosFiltrados = Array.isArray(productos)
+  ? productos.filter(producto =>
+      producto.nombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
+      producto.descripcion.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
+      producto.categoria_nombre.toLowerCase().includes(filtroBusqueda.toLowerCase())
+    )
+  : [];
+
 
     if (loading && productos.length === 0) {
         return (

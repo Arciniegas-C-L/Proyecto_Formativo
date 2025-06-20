@@ -1,67 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import {
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Typography,
-  Alert,
-  Chip,
-  Stack,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  TextField, Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, Paper, IconButton, Typography, Alert, Stack, Chip, Pagination
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { Edit, Delete, Add } from '@mui/icons-material';
 import {
-  getAllGruposTalla,
+  getGruposTallaPaginados,
   createGrupoTalla,
   updateGrupoTalla,
-  deleteGrupoTalla,
+  deleteGrupoTalla
 } from '../api/GrupoTalla.api';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
-export const GrupoTalla = () => {
-  const navigate = useNavigate();
+const GrupoTalla = () => {
   const [gruposTalla, setGruposTalla] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingGrupo, setEditingGrupo] = useState(null);
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    descripcion: '',
-  });
+
+  // Paginación
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 5;
 
   useEffect(() => {
-    cargarGruposTalla();
-  }, []);
+    cargarGruposTalla(page);
+  }, [page]);
 
-  const handleError = (error) => {
-    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
-    setError(errorMessage);
-    toast.error(errorMessage);
-  };
-
-  const cargarGruposTalla = async () => {
+  const cargarGruposTalla = async (pagina) => {
     try {
       setLoading(true);
-      const response = await getAllGruposTalla();
-      setGruposTalla(response.data || []);
-    } catch (error) {
-      handleError(error);
-      console.error('Error:', error);
-      setGruposTalla([]);
+      const { resultados, count } = await getGruposTallaPaginados(pagina, pageSize);
+      setGruposTalla(resultados);
+      setTotalCount(count);
+    } catch (err) {
+      toast.error('Error al cargar los grupos de talla');
     } finally {
       setLoading(false);
     }
@@ -69,202 +45,145 @@ export const GrupoTalla = () => {
 
   const handleOpenDialog = (grupo = null) => {
     setError('');
-    if (grupo) {
-      setEditingGrupo(grupo);
-      setFormData({
-        nombre: grupo.nombre,
-        descripcion: grupo.descripcion || '',
-      });
-    } else {
-      setEditingGrupo(null);
-      setFormData({
-        nombre: '',
-        descripcion: '',
-      });
-    }
+    setEditingGrupo(grupo);
+    setFormData(grupo ? {
+      nombre: grupo.nombre,
+      descripcion: grupo.descripcion || ''
+    } : { nombre: '', descripcion: '' });
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingGrupo(null);
+    setFormData({ nombre: '', descripcion: '' });
     setError('');
-    setFormData({
-      nombre: '',
-      descripcion: '',
-    });
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    setError('');
-  };
-
-  const validateForm = () => {
-    if (!formData.nombre.trim()) {
-      setError('El nombre es requerido');
-      return false;
-    }
-    if (formData.nombre.length > 45) {
-      setError('El nombre no puede tener más de 45 caracteres');
-      return false;
-    }
-    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    setError('');
+    if (!formData.nombre.trim()) {
+      return setError('El nombre es requerido');
+    }
+    if (formData.nombre.length > 45) {
+      return setError('Máximo 45 caracteres');
+    }
 
     try {
       if (editingGrupo) {
-        await updateGrupoTalla(editingGrupo.id, formData);
-        toast.success('Grupo de talla actualizado exitosamente');
+        await updateGrupoTalla(editingGrupo.idGrupoTalla, formData);
+        toast.success('Actualizado correctamente');
       } else {
         await createGrupoTalla(formData);
-        toast.success('Grupo de talla creado exitosamente');
+        toast.success('Creado correctamente');
       }
       handleCloseDialog();
-      cargarGruposTalla();
-    } catch (error) {
-      handleError(error);
+      cargarGruposTalla(page);
+    } catch (err) {
+      setError('Ocurrió un error al guardar');
+      toast.error('Error al guardar el grupo');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar este grupo de talla?')) {
-      try {
-        await deleteGrupoTalla(id);
-        toast.success('Grupo de talla eliminado exitosamente');
-        cargarGruposTalla();
-      } catch (error) {
-        handleError(error);
-      }
+    if (!window.confirm('¿Desea eliminar este grupo?')) return;
+    try {
+      await deleteGrupoTalla(id);
+      toast.success('Eliminado correctamente');
+      cargarGruposTalla(page);
+    } catch (err) {
+      toast.error('Error al eliminar');
     }
-  };
-
-  const handleAsignarTallas = (grupo) => {
-    // Redirigir a la página de tallas
-    navigate('/tallas');
   };
 
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Gestión de Grupos de Talla
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpenDialog()}
-        >
-          Nuevo Grupo de Talla
+        <Typography variant="h4">Gestión de Grupos de Talla</Typography>
+        <Button variant="contained" color="primary" onClick={() => handleOpenDialog()}>
+          Nuevo Grupo
         </Button>
       </Box>
 
       <TableContainer component={Paper}>
-        {loading ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>Cargando grupos de talla...</Typography>
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Alert severity="error">{error}</Alert>
-          </Box>
-        ) : !gruposTalla || gruposTalla.length === 0 ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>No hay grupos de talla disponibles</Typography>
-          </Box>
-        ) : (
-          <Table>
-            <TableHead>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nombre</TableCell>
+              <TableCell>Descripción</TableCell>
+              <TableCell>Tallas</TableCell>
+              <TableCell>Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Tallas Asociadas</TableCell>
-                <TableCell>Acciones</TableCell>
+                <TableCell colSpan={4}>Cargando...</TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {gruposTalla.map((grupo) => (
+            ) : gruposTalla.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4}>No hay grupos disponibles</TableCell>
+              </TableRow>
+            ) : (
+              gruposTalla.map((grupo) => (
                 <TableRow key={grupo.idGrupoTalla}>
                   <TableCell>{grupo.nombre}</TableCell>
                   <TableCell>{grupo.descripcion || '-'}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                      {(grupo.Tallas  || []).map((talla) => (
-                        <Chip
-                          key={talla.id}
-                          label={talla.nombre}
-                          size="small"
-                          color="primary"
-                        />
+                      {(grupo.Tallas || []).map((talla) => (
+                        <Chip key={talla.id} label={talla.nombre} size="small" />
                       ))}
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpenDialog(grupo)}
-                      title="Editar"
-                    >
-                      <EditIcon />
+                    <IconButton onClick={() => handleOpenDialog(grupo)} title="Editar">
+                      <Edit />
                     </IconButton>
-                    <IconButton
-                      color="secondary"
-                      onClick={() => handleAsignarTallas(grupo)}
-                      title="Asignar Tallas"
-                    >
-                      <AddIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(grupo.idGrupoTalla)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon />
+                    <IconButton onClick={() => handleDelete(grupo.idGrupoTalla)} title="Eliminar">
+                      <Delete />
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+              ))
+            )}
+          </TableBody>
+        </Table>
       </TableContainer>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingGrupo ? 'Editar Grupo de Talla' : 'Nuevo Grupo de Talla'}
-        </DialogTitle>
+      {/* Paginación */}
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+        <Pagination
+          count={Math.ceil(totalCount / pageSize)}
+          page={page}
+          onChange={(e, value) => setPage(value)}
+          color="primary"
+        />
+      </Box>
+
+      {/* Diálogo para Crear/Editar */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>{editingGrupo ? 'Editar' : 'Nuevo'} Grupo</DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <TextField
               fullWidth
               label="Nombre"
               name="nombre"
               value={formData.nombre}
-              onChange={handleInputChange}
-              margin="normal"
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               required
               inputProps={{ maxLength: 45 }}
-              helperText={`${formData.nombre.length}/45 caracteres`}
+              margin="normal"
             />
             <TextField
               fullWidth
               label="Descripción"
               name="descripcion"
               value={formData.descripcion}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               margin="normal"
               multiline
               rows={3}
@@ -272,9 +191,7 @@ export const GrupoTalla = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button type="submit" variant="contained" color="primary">
-              {editingGrupo ? 'Actualizar' : 'Crear'}
-            </Button>
+            <Button type="submit" variant="contained">Guardar</Button>
           </DialogActions>
         </form>
       </Dialog>

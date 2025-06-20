@@ -52,7 +52,9 @@ class CategoriaSerializer(serializers.ModelSerializer):
 class SubcategoriaSerializer(serializers.ModelSerializer):
     categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
     grupo_talla_nombre = serializers.CharField(source='grupoTalla.nombre', read_only=True)
+    stockMinimo = serializers.IntegerField(required=False, default=0)
     tallas_disponibles = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Subcategoria
@@ -64,6 +66,12 @@ class SubcategoriaSerializer(serializers.ModelSerializer):
             'categoria_nombre',
             'stockMinimo',
             'grupoTalla',
+            'grupo_talla_nombre',
+            'tallas_disponibles'
+        ]
+        read_only_fields = [
+            'idSubcategoria',
+            'categoria_nombre',
             'grupo_talla_nombre',
             'tallas_disponibles'
         ]

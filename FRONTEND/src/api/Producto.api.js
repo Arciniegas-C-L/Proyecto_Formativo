@@ -29,7 +29,9 @@ ProductoApi.interceptors.response.use(
   }
 );
 
-export const getALLProductos = () => ProductoApi.get("/");
+export const getProductosPaginados = (page = 1, pageSize = 10) =>
+  ProductoApi.get(`/?page=${page}&page_size=${pageSize}`);
+
 export const createProducto = (producto) => ProductoApi.post("/", producto);
 export const deleteProducto = async (id) => {
   try {

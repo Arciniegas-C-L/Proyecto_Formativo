@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import React from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { fetchUsuario, updateUsuario, handleToggleEstado } from "../api/Usuario.api.js";
+import { fetchUsuario, updateUsuario, /*handleToggleEstado*/ } from "../api/Usuario.api.js";
 
 export function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([]);

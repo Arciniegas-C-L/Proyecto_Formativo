@@ -51,7 +51,7 @@ import {
   createTalla
 } from "../../api/Talla.api";
 import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
-import { getAllGruposTalla, getTallasActivasByGrupo } from "../../api/GrupoTalla.api";
+import { getGruposTallaPaginados} from "../../api/GrupoTalla.api";
 
 // Constante para la URL base del backend
 const BACKEND_URL = "http://127.0.0.1:8000";
@@ -81,6 +81,7 @@ const InventarioTabla = () => {
     severity: 'info' // 'error', 'warning', 'info', 'success'
   });
   const navigate = useNavigate();
+  
   const [openNoCategoriasDialog, setOpenNoCategoriasDialog] = useState(false);
   const [contador, setContador] = useState(10);
   const [openNoGrupoTallaDialog, setOpenNoGrupoTallaDialog] = useState(false);
@@ -247,7 +248,7 @@ const InventarioTabla = () => {
 
   const cargarGruposTalla = async () => {
     try {
-      const response = await getAllGruposTalla();
+      const response = await getGruposTallaPaginados();
       const gruposData = response.data;
       
       const gruposFormateados = gruposData.map(grupo => ({

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+//import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -27,18 +27,19 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
-  getAllTallas,
+  getTallasPaginadas,
   createTalla,
   updateTalla,
   deleteTalla,
   cambiarEstadoTalla,
 } from '../api/Talla.api';
-import { getAllGruposTalla } from '../api/GrupoTalla.api';
+import { getGruposTallaPaginados } from '../api/GrupoTalla.api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export const Tallas = () => {
-  const navigate = useNavigate();
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [paginaActual, setPaginaActual] = useState(1);
   const [tallas, setTallas] = useState([]);
   const [gruposTalla, setGruposTalla] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -52,36 +53,41 @@ export const Tallas = () => {
     estado: true,
   });
 
-  useEffect(() => {
-    cargarTallas();
-    cargarGruposTalla();
-  }, []);
-
+  
   const handleError = (error) => {
     const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
     setError(errorMessage);
     toast.error(errorMessage);
   };
 
-  const cargarTallas = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllTallas();
-      setTallas(response.data || []);
-    } catch (error) {
-      handleError(error);
-      console.error('Error:', error);
+  const cargarTallas = async (pagina = 1) => {
+  try {
+    setLoading(true);
+    const response = await getTallasPaginadas(pagina);
+
+    if (Array.isArray(response.data.results)) {
+      setTallas(response.data.results);
+      setTotalPaginas(Math.ceil(response.data.count / 10));
+    } else {
       setTallas([]);
-    } finally {
-      setLoading(false);
+      toast.error('La respuesta del servidor no es válida');
     }
-  };
+  } catch (error) {
+    handleError(error);
+    setTallas([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  
 
   const cargarGruposTalla = async () => {
     try {
       setLoadingGrupos(true);
-      const response = await getAllGruposTalla();
-      setGruposTalla(response.data || []);
+      const { results } = await getGruposTallaPaginados();
+      setGruposTalla(results || []);
     } catch (error) {
       handleError(error);
       console.error('Error al cargar grupos de talla:', error);
@@ -90,7 +96,7 @@ export const Tallas = () => {
       setLoadingGrupos(false);
     }
   };
-
+  
   const handleOpenDialog = (talla = null) => {
     setError('');
     if (talla) {
@@ -179,16 +185,22 @@ export const Tallas = () => {
   };
 
   const handleEstadoChange = async (id, estado) => {
-    try {
-      await cambiarEstadoTalla(id, !estado);
-      toast.success('Estado de la talla actualizado exitosamente');
-      cargarTallas();
-    } catch (error) {
-      handleError(error);
-    }
-  };
+  try {
+    await cambiarEstadoTalla(id, !estado);
+    toast.success('Estado de la talla actualizado exitosamente');
+    cargarTallas();
+  } catch (error) {
+    handleError(error);
+  }
+}; // <-- CIERRE DE FUNCIÓN
 
-  return (
+useEffect(() => {
+  cargarTallas(paginaActual);
+  cargarGruposTalla();
+}, [paginaActual]);
+
+
+return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4" component="h1">
@@ -263,7 +275,32 @@ export const Tallas = () => {
           </Table>
         )}
       </TableContainer>
-
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+  <Button
+    onClick={() => setPaginaActual((prev) => Math.max(prev - 1, 1))}
+    disabled={paginaActual === 1}
+    sx={{ mx: 1 }}
+  >
+    Anterior
+  </Button>
+  {Array.from({ length: totalPaginas }, (_, index) => (
+    <Button
+      key={index + 1}
+      onClick={() => setPaginaActual(index + 1)}
+      variant={paginaActual === index + 1 ? 'contained' : 'outlined'}
+      sx={{ mx: 0.5 }}
+    >
+      {index + 1}
+    </Button>
+  ))}
+  <Button
+    onClick={() => setPaginaActual((prev) => Math.min(prev + 1, totalPaginas))}
+    disabled={paginaActual === totalPaginas}
+    sx={{ mx: 1 }}
+  >
+    Siguiente
+  </Button>
+</Box>
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {editingTalla ? 'Editar Talla' : 'Nueva Talla'}
@@ -333,4 +370,4 @@ export const Tallas = () => {
   );
 };
 
-export default Tallas;
+export default Tallas;  
