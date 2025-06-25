@@ -75,6 +75,88 @@ body {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   border: 1.5px solid #000;
+
+body {
+  background-color: #f5f5f5;
+  font-family: 'Urbanist', sans-serif;
+}
+
+/*  FILTROS  */
+.filtros {
+  background: white;
+  border-radius: 15px;
+  padding: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.filtros h5 {
+  font-weight: bold;
+  color: #1a1a1a;
+}
+
+.filtros h6 {
+  font-weight: bold;
+  color: #555;
+}
+
+/*  BOTONES CATEGORÍA  */
+.btn-categoria {
+  background: linear-gradient( to right, #2c2c2c, #FFD447 )!important;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  width: 100%;
+  margin-bottom: 8px;
+  transition: 0.2s;
+}
+
+.btn-categoria:hover,
+.btn-categoria.active {
+  background-color: #d6d6d6;
+  color: #000;
+}
+
+/*  BOTONES SUBCATEGORÍA  */
+.btn-subcategoria {
+  background-color: #f3f3f3;
+  color: #555;
+  border: 1px solid #ccc;
+  font-weight: bold;
+  width: 100%;
+  margin-bottom: 8px;
+  transition: 0.2s;
+}
+
+.btn-subcategoria:hover,
+.btn-subcategoria.btn-warning {
+  background-color: #ffd700;
+  color: #000;
+}
+
+/*  BOTÓN LIMPIAR FILTROS  */
+.btn-limpiar {
+  background-color: #ff6b6b;
+  color: white;
+  font-weight: bold;
+  border: none;
+  width: 100%;
+}
+
+.btn-limpiar:hover {
+  background-color: #e74c3c;
+}
+
+/* TARJETAS PRODUCTO  */
+.producto-card {
+  border-radius: 15px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: white;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  padding: 15px;
+  height: auto;
 }
 
 .producto-card:hover {
@@ -84,12 +166,20 @@ body {
 /* Contenedor de imagen del producto */
 .img-container {
   height: 220px;
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+/*  IMAGEN   */
+.img-container {
+  height: 300px;
   width: 100%;
   background-color: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .card-img-top {
@@ -98,12 +188,20 @@ body {
   object-fit: cover;
 }
 
+
 /* Cuerpo de la tarjeta */
 .card-body {
   padding-top: 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+/*  CONTENIDO TARJETA  */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-top: 10px;
 }
 
 .card-title {
@@ -123,6 +221,19 @@ body {
 
 .talla-btn {
   padding: 5px 10px;
+  font-size: 1.1rem;
+  color: #1a1a1a;
+}
+
+.descripcion {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+/*  TALLAS  */
+.talla-btn {
+  padding: 6px 12px;
   border-radius: 8px;
   background-color: #fff;
   border: 2px solid #000;
@@ -131,6 +242,10 @@ body {
   cursor: pointer;
   transition: 0.2s;
   text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-right: 5px;
+  margin-bottom: 5px;
 }
 
 .talla-btn:hover {
@@ -144,8 +259,11 @@ body {
   border-color: #ffd700;
 }
 
+
 /* Stock disponibles */
 
+
+/*  STOCK INFO   */
 .alert-info {
   background-color: #fffbe6;
   border: 2px solid #ffd700;
@@ -154,13 +272,18 @@ body {
   border-radius: 10px;
   font-size: 0.9rem;
   padding: 6px 10px;
+  padding: 8px 12px;
   margin-top: 10px;
   text-align: center;
 }
 
+
 /* Boton carrito */
 
 .btn-warning {
+
+/*  BOTÓN CARRITO   */
+.btn-dark {
   font-weight: bold;
   border-radius: 10px;
   padding: 10px;
@@ -196,5 +319,29 @@ body {
 
   .producto-card {
     border-radius: 10px;
+
+  color: #1a1a1a;
+  transition: background-color 0.3s ease;
+  border: none;
+  margin-top: 10px;
+}
+
+.btn-dark:hover {
+  background-color: #e6c200;
+}
+
+/* PREVENCIÓN SELECCIÓN DE TEXTO  */
+.card-body * {
+  user-select: none;
+}
+
+/*  RESPONSIVE  */
+@media (max-width: 768px) {
+  .img-container {
+    height: 250px;
+  }
+
+  .card-img-top {
+    object-fit: cover;
   }
 }
