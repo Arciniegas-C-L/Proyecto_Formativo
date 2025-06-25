@@ -35,8 +35,11 @@ import {
   Visibility as VisibilityIcon,
   Home as HomeIcon,
   ImageNotSupported as ImageNotSupportedIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  Warning as WarningIcon,
+  Add as AddIcon
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import {
   getTablaCategorias,
   getTablaSubcategorias,
@@ -77,12 +80,18 @@ const InventarioTabla = () => {
     message: '',
     severity: 'info' // 'error', 'warning', 'info', 'success'
   });
+  const navigate = useNavigate();
+  const [openNoCategoriasDialog, setOpenNoCategoriasDialog] = useState(false);
+  const [contador, setContador] = useState(10);
+  const [openNoGrupoTallaDialog, setOpenNoGrupoTallaDialog] = useState(false);
+  const [contadorGrupoTalla, setContadorGrupoTalla] = useState(5);
 
   // Cargar categorías y grupos de talla al montar el componente
   useEffect(() => {
     const inicializar = async () => {
       try {
         setLoading(true);
+        
         // Primero asignar grupo de tallas por defecto a las subcategorías que no lo tienen
         try {
           await asignarGrupoTallaDefault();
@@ -90,11 +99,11 @@ const InventarioTabla = () => {
           console.error('Error al asignar grupo de tallas por defecto:', error);
           // Continuar con la carga aunque falle la asignación por defecto
         }
-        // Luego cargar categorías y grupos de talla
-        await Promise.all([
-          cargarCategorias(),
-          cargarGruposTalla()
-        ]);
+        
+        // Primero cargar grupos de talla, luego categorías
+        await cargarGruposTalla();
+        await cargarCategorias();
+        
       } catch (error) {
         console.error('Error al inicializar:', error);
         showSnackbar('Error al inicializar el componente', 'error');
@@ -105,10 +114,59 @@ const InventarioTabla = () => {
     inicializar();
   }, []); // Solo se ejecuta al montar el componente
 
+  // useEffect para el contador de redirección
+  useEffect(() => {
+    let interval;
+    if (openNoCategoriasDialog && contador > 0) {
+      interval = setInterval(() => {
+        setContador(prev => {
+          if (prev <= 1) {
+            navigate('/categorias');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [openNoCategoriasDialog, contador, navigate]);
+
+  // useEffect para el contador de redirección de grupos de talla
+  useEffect(() => {
+    let interval;
+    if (openNoGrupoTallaDialog && contadorGrupoTalla > 0) {
+      interval = setInterval(() => {
+        setContadorGrupoTalla(prev => {
+          if (prev <= 1) {
+            navigate('/grupo-talla');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [openNoGrupoTallaDialog, contadorGrupoTalla, navigate]);
+
   const cargarCategorias = async () => {
     try {
       setLoading(true);
       const data = await getTablaCategorias();
+      
+      // Verificar si no hay categorías
+      if (!data.datos || data.datos.length === 0) {
+        setOpenNoCategoriasDialog(true);
+        return;
+      }
+      
       setCurrentData(data);
       setCurrentView("categorias");
       setBreadcrumbs([{ text: "Categorías", active: true }]);
@@ -125,7 +183,21 @@ const InventarioTabla = () => {
   const cargarSubcategorias = async (categoriaId, categoriaNombre) => {
     try {
       setLoading(true);
+      
       const data = await getTablaSubcategorias(categoriaId);
+      
+      // Verificar si hay grupos de talla disponibles en el sistema
+      if (!gruposTalla || gruposTalla.length === 0) {
+        setOpenNoGrupoTallaDialog(true);
+        return;
+      }
+      
+      // Verificar si hay subcategorías
+      if (!data.datos || data.datos.length === 0) {
+        showSnackbar(`No hay subcategorías en la categoría "${categoriaNombre}"`, 'info');
+        return;
+      }
+      
       setCurrentData(data);
       setCurrentView("subcategorias");
       setSelectedCategoria({ id: categoriaId, nombre: categoriaNombre });
@@ -146,6 +218,13 @@ const InventarioTabla = () => {
     try {
       setLoading(true);
       const data = await getTablaProductos(subcategoriaId);
+      
+      // Verificar si hay productos
+      if (!data.datos || data.datos.length === 0) {
+        showSnackbar(`No hay productos en la subcategoría "${subcategoriaNombre}"`, 'info');
+        return;
+      }
+      
       setCurrentData(data);
       setCurrentView("productos");
       setSelectedSubcategoria({ id: subcategoriaId, nombre: subcategoriaNombre });
@@ -177,7 +256,6 @@ const InventarioTabla = () => {
         estado: grupo.estado
       }));
       
-      console.log('Grupos de talla cargados:', gruposFormateados); // Para debugging
       setGruposTalla(gruposFormateados);
     } catch (error) {
       console.error("Error al cargar grupos de talla:", error);
@@ -390,11 +468,11 @@ const InventarioTabla = () => {
                 <TableCell>
                   <Chip
                     label={`${subcategoria.stock_total} unidades`}
-                    color={subcategoria.stock_total <= subcategoria.stockMinimo ? "error" : "success"}
+                    color={subcategoria.stock_total <= 5 ? "error" : "success"}
                     size="small"
                   />
                 </TableCell>
-                <TableCell align="right">{subcategoria.stockMinimo}</TableCell>
+                <TableCell align="right">5</TableCell>
                 <TableCell>
                   <Chip
                     label={subcategoria.estado ? "Activo" : "Inactivo"}
@@ -412,9 +490,10 @@ const InventarioTabla = () => {
                     </IconButton>
                     <IconButton
                       color="primary"
-                      onClick={() => handleOpenGrupoTallaDialog(subcategoria)}
+                      onClick={() => handleCrearProducto(subcategoria)}
+                      title="Crear producto"
                     >
-                      <EditIcon />
+                      <AddIcon />
                     </IconButton>
                   </Box>
                 </TableCell>
@@ -712,7 +791,120 @@ const InventarioTabla = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
+  const handleRedireccionManual = () => {
+    navigate('/categorias');
+  };
+
+  const handleCerrarDialogo = () => {
+    setOpenNoCategoriasDialog(false);
+    setContador(10);
+  };
+
+  const handleRedireccionManualGrupoTalla = () => {
+    navigate('/grupo-talla');
+  };
+
+  const handleCerrarDialogoGrupoTalla = () => {
+    setOpenNoGrupoTallaDialog(false);
+    setContadorGrupoTalla(5);
+  };
+
+  const handleCrearProducto = (subcategoria) => {
+    navigate(`/producto/crear?subcategoria=${subcategoria.id}&subcategoriaNombre=${encodeURIComponent(subcategoria.nombre)}`);
+  };
+
   if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Si el diálogo de no categorías está abierto, solo mostrar el diálogo
+  if (openNoCategoriasDialog) {
+    return (
+      <Box sx={{ width: '100%' }}>
+        {/* Diálogo para cuando no hay categorías */}
+        <Dialog 
+          open={openNoCategoriasDialog} 
+          onClose={handleCerrarDialogo}
+          maxWidth="sm"
+          fullWidth
+          disableEscapeKeyDown
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningIcon color="warning" />
+            No hay categorías disponibles
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              No se encontraron categorías en el sistema. Para continuar, necesitas crear al menos una categoría.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Serás redirigido automáticamente a la página de categorías en {contador} segundos.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCerrarDialogo} color="primary">
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleRedireccionManual} 
+              variant="contained" 
+              color="primary"
+            >
+              Ir a Categorías Ahora
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  // Si el diálogo de no grupos de talla está abierto, solo mostrar el diálogo
+  if (openNoGrupoTallaDialog) {
+    return (
+      <Box sx={{ width: '100%' }}>
+        {/* Diálogo para cuando no hay grupos de talla */}
+        <Dialog 
+          open={openNoGrupoTallaDialog} 
+          onClose={handleCerrarDialogoGrupoTalla}
+          maxWidth="sm"
+          fullWidth
+          disableEscapeKeyDown
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningIcon color="warning" />
+            Grupos de Talla Requeridos
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              No se encontraron grupos de talla en el sistema. Para continuar, necesitas crear al menos un grupo de talla antes de poder gestionar las subcategorías.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Serás redirigido automáticamente a la página de grupos de talla en {contadorGrupoTalla} segundos.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCerrarDialogoGrupoTalla} color="primary">
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleRedireccionManualGrupoTalla} 
+              variant="contained" 
+              color="primary"
+            >
+              Ir a Grupos de Talla Ahora
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  // Si no hay datos actuales, mostrar un mensaje de carga
+  if (!currentData) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />

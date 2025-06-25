@@ -105,7 +105,6 @@ export const updateGrupoTalla = async (subcategoriaId, grupoTallaId) => {
 export const asignarGrupoTallaDefault = async () => {
   try {
     const response = await SubcategoriaApi.post('asignar_grupo_talla_default/');
-    console.log('Respuesta de asignación de grupo por defecto:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error al asignar grupo de tallas por defecto:', error.response?.data || error.message);

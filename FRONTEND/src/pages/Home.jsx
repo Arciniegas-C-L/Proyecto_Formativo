@@ -7,6 +7,7 @@ import colcha from "../assets/images/home/colcha.jpg";
 import joven from "../assets/images/home/joven.jpg";
 import anciano from "../assets/images/home/anciano.jpg";
 import mujer from "../assets/images/home/mujer.jpg";
+import { Link } from "react-router-dom";
 
 export const Home = () => {
   return (
@@ -20,9 +21,9 @@ export const Home = () => {
             ZOE une variedad, estilo y libertad en cada prenda. Para quienes
             eligen destacar.
           </p>
-          <a href="#Catalogo" className="hero-boton btn btn-warning btn-lg">
+          <Link to="/catalogo" className="hero-boton btn btn-warning btn-lg">
             Ver Catalogo
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -151,9 +152,18 @@ export const Home = () => {
 
       <section className="palabras-con-movimiento">
         <div className="palabras">
-          <span>Si te hace sonreír al espejo, es tuyo.</span>
-          <span>¡Tu energía se nota desde el outfit!</span>
-          <span>Estilo real, sin filtros.</span>
+          <div className="frase">
+            <i className="bi bi-star-fill"></i>
+            <span>Si te hace sonreír al espejo, es tuyo.</span>
+          </div>
+          <div className="frase">
+            <i className="bi bi-lightning-fill"></i>
+            <span>¡Tu energía se nota desde el outfit!</span>
+          </div>
+          <div className="frase">
+            <i className="bi bi-gem"></i>
+            <span>Estilo real, sin filtros.</span>
+          </div>
         </div>
       </section>
     </>

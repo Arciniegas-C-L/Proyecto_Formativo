@@ -4,7 +4,7 @@ import { FaShoppingCart, FaChevronDown } from "react-icons/fa";
 import ZOE from "../assets/images/home/ZOE.gif";
 import "../assets/css/header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css"; 
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 export function Header() {
   return (
@@ -34,30 +34,7 @@ export function Header() {
                 <i className="bi bi-house-door-fill"></i> Inicio
               </Link>
             </li>
-            <li className="nav-item">
-              <Link
-                to="/inventario"
-                className="nav-link enlace-boton px-3 d-flex align-items-center gap-2"
-              >
-                <i className="bi bi-box-seam"></i> Inventario
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link
-                to="/proveedores"
-                className="nav-link enlace-boton px-3 d-flex align-items-center gap-2"
-              >
-                <i className="bi bi-truck"></i> Proveedor
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link
-                to="/rol"
-                className="nav-link enlace-boton px-3 d-flex align-items-center gap-2"
-              >
-                <i className="bi bi-person-badge"></i> Rol
-              </Link>
-            </li>
+
             <li className="nav-item">
               <Link
                 to="/sesion"
