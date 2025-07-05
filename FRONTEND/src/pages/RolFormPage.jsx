@@ -6,25 +6,42 @@ import { toast } from 'react-hot-toast'
 export function RolFormPage() {
 
     const { register, handleSubmit, formState: { errors } } = useForm()
-
     const navigate = useNavigate()
 
-    const onSubmit = handleSubmit( async data => {
+    const onSubmit = handleSubmit(async data => {
         await createRol(data)
         toast.success('Rol Creado')
         navigate("/rol")
     })
-    
-    return (
-        <div>
 
-        <form onSubmit={onSubmit}>
-            <input type="text" placeholder="Nombre" 
-            {...register("nombre", {required: true})}/>
-            {errors.nombre && <span>El nombre es requerido</span>}
-            <button>Guardar</button>
-        </form>
-        
+    return (
+        <div className="container mt-5 d-flex justify-content-center">
+            <div className="bg-white p-4 rounded shadow w-50">
+                <h3 className="text-center mb-4">Crear Rol</h3>
+
+                <form onSubmit={onSubmit}>
+                    <div className="form-group mb-3">
+                        <label className="form-label">Nombre</label>
+                        <input
+                            type="text"
+                            placeholder="Nombre"
+                            className={`form-control ${errors.nombre ? 'is-invalid' : ''}`}
+                            {...register("nombre", { required: true })}
+                        />
+                        {errors.nombre && (
+                            <div className="invalid-feedback">
+                                El nombre es requerido
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="d-flex justify-content-end">
+                        <button className="btn btn-success text-white fw-bold shadow-sm px-4 py-2">
+                            Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     )
 }
