@@ -20,6 +20,8 @@ import { Carrito } from './pages/Carrito'
 import {AdminUsuarios} from  './pages/AdminUsuarios';
 import Tallas from './pages/Tallas';
 import GrupoTalla from './pages/GrupoTalla';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 
 function App() {
