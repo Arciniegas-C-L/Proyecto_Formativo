@@ -1,101 +1,95 @@
+/*Estilos Generales*/
 body {
-  background-color: #f5f5f5;
+  background-color: #f8f9fa;
   font-family: 'Urbanist', sans-serif;
 }
 
-/*  FILTROS  */
-.filtros {
-  background: white;
-  border-radius: 15px;
-  padding: 1rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+/* Títulos de sección de filtros */
+.filtro-titulo {
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
 
-.filtros h5 {
-  font-weight: bold;
-  color: #1a1a1a;
+/* Contenedor de botones de filtros (categorías y subcategorías) */
+.filtro-grupo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
 }
 
-.filtros h6 {
-  font-weight: bold;
-  color: #555;
-}
-
-/*  BOTONES CATEGORÍA  */
-.btn-categoria {
-  background: linear-gradient( to right, #2c2c2c, #FFD447 )!important;
-  font-weight: bold;
-  border: 1px solid #ccc;
-  width: 100%;
-  margin-bottom: 8px;
-  transition: 0.2s;
-}
-
-.btn-categoria:hover,
-.btn-categoria.active {
-  background-color: #d6d6d6;
-  color: #000;
-}
-
-/*  BOTONES SUBCATEGORÍA  */
+/* Botones de categoría y subcategoría */
+.btn-categoria,
 .btn-subcategoria {
-  background-color: #f3f3f3;
-  color: #555;
-  border: 1px solid #ccc;
-  font-weight: bold;
-  width: 100%;
-  margin-bottom: 8px;
-  transition: 0.2s;
+  background-color: #ffeaf3;
+  color: #222;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  font-weight: 500;
+  transition: 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.btn-subcategoria:hover,
-.btn-subcategoria.btn-warning {
+/* Botones activos */
+.btn-categoria.active,
+.btn-subcategoria.active {
   background-color: #ffd700;
   color: #000;
+  border: 1px solid #000;
 }
 
-/*  BOTÓN LIMPIAR FILTROS  */
+/* Botón "Limpiar filtros" */
 .btn-limpiar {
-  background-color: #ff6b6b;
-  color: white;
-  font-weight: bold;
+  background-color: #5c5c5c;
+  color: #fff;
   border: none;
-  width: 100%;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  font-weight: 500;
+  transition: background-color 0.3s;
 }
 
 .btn-limpiar:hover {
-  background-color: #e74c3c;
+  background-color: #3d3d3d;
 }
 
-/* TARJETAS PRODUCTO  */
+/* Tarjetas Productos*/
+
 .producto-card {
-  border-radius: 15px;
-  overflow: hidden;
+  background-color: #fff;
+  border-radius: 12px;
+  transition: transform 0.2s ease-in-out;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background-color: white;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  padding: 15px;
-  height: auto;
+  height: 100%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1.5px solid #000;
 }
 
 .producto-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
-/*  IMAGEN   */
+/* Contenedor de imagen del producto */
 .img-container {
-  height: 300px;
+  height: 220px;
   width: 100%;
   background-color: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  border-radius: 12px;
 }
 
 .card-img-top {
@@ -104,37 +98,39 @@ body {
   object-fit: cover;
 }
 
-/*  CONTENIDO TARJETA  */
+/* Cuerpo de la tarjeta */
 .card-body {
+  padding-top: 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding-top: 10px;
 }
 
 .card-title {
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #1a1a1a;
+  text-align: center;
 }
 
 .descripcion {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #555;
-  margin-bottom: 0.5rem;
+  text-align: center;
 }
 
-/*  TALLAS  */
+/* Botones tallas */
+
 .talla-btn {
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 8px;
   background-color: #fff;
   border: 2px solid #000;
   font-weight: bold;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: 0.2s;
-  margin-right: 5px;
-  margin-bottom: 5px;
+  text-transform: uppercase;
 }
 
 .talla-btn:hover {
@@ -148,7 +144,8 @@ body {
   border-color: #ffd700;
 }
 
-/*  STOCK INFO   */
+/* Stock disponibles */
+
 .alert-info {
   background-color: #fffbe6;
   border: 2px solid #ffd700;
@@ -156,39 +153,48 @@ body {
   font-weight: bold;
   border-radius: 10px;
   font-size: 0.9rem;
-  padding: 8px 12px;
+  padding: 6px 10px;
   margin-top: 10px;
   text-align: center;
 }
 
-/*  BOTÓN CARRITO   */
-.btn-dark {
+/* Boton carrito */
+
+.btn-warning {
   font-weight: bold;
   border-radius: 10px;
   padding: 10px;
   background-color: #ffd700;
-  color: #1a1a1a;
+  color: #000;
   transition: background-color 0.3s ease;
   border: none;
   margin-top: 10px;
+  text-transform: capitalize;
 }
 
-.btn-dark:hover {
+.btn-warning:hover {
   background-color: #e6c200;
 }
 
-/* PREVENCIÓN SELECCIÓN DE TEXTO  */
-.card-body * {
-  user-select: none;
-}
+/* Responsive*/
 
-/*  RESPONSIVE  */
 @media (max-width: 768px) {
-  .img-container {
-    height: 250px;
+  .filtro-grupo {
+    gap: 0.4rem;
   }
 
-  .card-img-top {
-    object-fit: cover;
+  .btn-categoria,
+  .btn-subcategoria,
+  .btn-limpiar {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+  }
+
+  .img-container {
+    height: 200px;
+  }
+
+  .producto-card {
+    border-radius: 10px;
   }
 }
