@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getALLProductos, deleteProducto } from '../api/Producto.api';
+import { getALLProductos, deleteProducto } from '../../api/Producto.api';
 import { toast } from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
-import '../assets/css/ListaProductos.css';
+import '../../assets/css/ListaProductos.css';
 
 export function ListaProductos() {
     const [productos, setProductos] = useState([]);

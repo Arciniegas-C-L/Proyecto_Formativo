@@ -1,5 +1,5 @@
     import { useEffect, useState } from 'react';
-    import { getALLRoles, updateRol } from '../api/Rol.api';
+    import { getALLRoles, updateRol } from '../../api/Rol.api';
     import { Link } from 'react-router-dom';
 
     export function ListaRol() {

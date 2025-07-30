@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getALLProductos } from '../api/Producto.api';
-import { createCarrito, agregarProducto, fetchCarritos } from '../api/CarritoApi';
+import { getALLProductos } from '../../api/Producto.api';
+import { createCarrito, agregarProducto, fetchCarritos } from '../../api/CarritoApi';
 import { toast } from 'react-hot-toast';
 import { FaMinus, FaPlus, FaShoppingCart } from 'react-icons/fa';
-import '../assets/css/Catalogo.css';
+import '../../assets/css/Catalogo.css';
 
 export function Catalogo() {
     const [productos, setProductos] = useState([]);

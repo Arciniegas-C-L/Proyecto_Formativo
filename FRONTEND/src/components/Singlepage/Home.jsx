@@ -1,12 +1,12 @@
 import React from 'react';
-import '../assets/css/home.css';
-import Modelos from '../assets/images/home/señor.png';
-import Hombre from '../assets/images/home/Hombre.jpg';
-import calzado from '../assets/images/home/calzado.jpg';
-import hogar from '../assets/images/home/hogar.jpg';
-import joven from '../assets/images/home/joven.jpg';
-import anciano from '../assets/images/home/anciano.jpg';
-import mujer from '../assets/images/home/mujer.jpg';
+import '../../assets/css/Home.css';
+import Modelos from '../../assets/images/home/señor.png';
+import Hombre from '../../assets/images/home/Hombre.jpg';
+import calzado from '../../assets/images/home/calzado.jpg';
+import hogar from '../../assets/images/home/hogar.jpg';
+import joven from '../../assets/images/home/joven.jpg';
+import anciano from '../../assets/images/home/anciano.jpg';
+import mujer from '../../assets/images/home/mujer.jpg';
 
 export const Home = () => {
   return (

@@ -1,7 +1,7 @@
 // FormRecuperacion.jsx
 import { useState } from "react";
 import { VerificarCodigo } from "./FormCambio";
-import "../assets/css/formRecuperacion.css";
+import "../../assets/css/formRecuperacion.css";
 
 export function RecuperarContrasena() {
     const [correo, setCorreo] = useState("");

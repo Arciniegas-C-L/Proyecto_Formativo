@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getAllTallas, createTalla, updateTalla, deleteTalla } from '../api/Talla.api';
-import { getAllGruposTalla } from '../api/GrupoTalla.api';
+import { getAllTallas, createTalla, updateTalla, deleteTalla } from '../../api/Talla.api';
+import { getAllGruposTalla } from '../../api/GrupoTalla.api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Modal, Button, Form, Table, Alert, Pagination } from 'react-bootstrap';
 
-export const Tallas = () => {
+export function Tallas() {
   const [tallas, setTallas] = useState([]);
   const [gruposTalla, setGruposTalla] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -211,6 +211,3 @@ export const Tallas = () => {
     </div>
   );
 };
-
-export default Tallas;
-
