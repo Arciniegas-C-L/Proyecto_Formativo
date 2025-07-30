@@ -26,7 +26,8 @@
   font-weight: bold;
   font-size: 1.2rem;
   margin-bottom: 15px;
-  color: #FFD700;
+  color: #00d4ff;
+  transition: none !important; 
 }
 
 .link {
@@ -39,19 +40,21 @@
 }
 
 .link:hover {
-  color: #FFD700;
+  color: #f26be2;
 }
 
+/* Íconos  */
 .link:hover .icono-footer {
-  color: #FFD700;
-  transform: rotate(5deg);
-  transition: all 0.3s ease;
+  color: #f26be2;
+  transform: none !important;
+  transition: none !important;
 }
 
 .icono-footer {
   margin-right: 10px;
   font-size: 1.2rem;
   color: #fff;
+  transition: none !important;
 }
 
 .footer-bottom {
@@ -59,6 +62,7 @@
   padding-top: 20px;
   color: #999;
   font-size: 0.9rem;
+  border-top: none !important; 
 }
 
 @media (max-width: 768px) {

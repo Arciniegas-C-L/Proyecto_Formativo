@@ -15,7 +15,7 @@ import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js"
 import { CategoriaForm } from './components/GDCandS/Categorias'
 import { ListaProductos } from './pages/ListaProductos'
 import { ProductosForm } from './components/ProductosForm'
-import { Catalogo } from './pages/Catalogo.jsx'
+import Catalogo from './components/Catalogo/Catalogo';
 import { Carrito } from './pages/Carrito'
 import {AdminUsuarios} from  './pages/AdminUsuarios';
 import Tallas from './pages/Tallas';
