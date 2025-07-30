@@ -46,10 +46,7 @@ import {
   getTablaProductos,
   actualizarStockTallas
 } from "../../api/InventarioApi";
-import {
-  updateTalla,
-  createTalla
-} from "../../api/Talla.api";
+import {updateTalla,createTalla} from "../../api/Talla.api";
 import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
 import { getAllGruposTalla, getTallasActivasByGrupo } from "../../api/GrupoTalla.api";
 

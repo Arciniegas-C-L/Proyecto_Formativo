@@ -3,9 +3,9 @@ import {
   fetchProveedores,
   createProveedor,
   updateProveedor,
-} from "../api/Proveedor.api.js";
+} from "../../api/Proveedor.api.js";
 import { useNavigate } from "react-router-dom";
-import "../assets/css/Proveedores.css";
+import "../../assets/css/Proveedores.css";
 
 export function AdminProveedores({ proveedorEditar, onEditComplete }) {
   const [form, setForm] = useState({

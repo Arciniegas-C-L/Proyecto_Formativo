@@ -1,91 +1,334 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { RolPage } from "./pages/RolPage";
-import { RolFormPage } from "./pages/RolFormPage";
-import { Header } from "./components/Header";
-import { Footer } from "./components/Footer";
-import { Home } from "./pages/Home";
-import { Sesion } from "./pages/Sesion";
-import { Toaster } from "react-hot-toast";
-import { RecuperarContrasena } from "./pages/FormRecuperacion";
-import { InventarioPage } from "./pages/InventarioPage";
-import { AdminProveedores } from "./pages/AdminProveedores";
-import ProveedoresRegistrados from "./pages/ProveedoresRegistrados";
-import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js"
-import { CategoriaForm } from './components/GDCandS/Categorias'
-import { ListaProductos } from './pages/ListaProductos'
-import { ProductosForm } from './components/ProductosForm'
-import Catalogo from './components/Catalogo/Catalogo';
-import { Carrito } from './pages/Carrito'
-import {AdminUsuarios} from  './pages/AdminUsuarios';
-import Tallas from './pages/Tallas';
-import GrupoTalla from './pages/GrupoTalla';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+  FormControlLabel,
+  Alert,
+} from '@mui/material';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  getAllTallas,
+  createTalla,
+  updateTalla,
+  deleteTalla,
+  cambiarEstadoTalla,
+} from '../api/Talla.api';
+import { getAllGruposTalla } from '../api/GrupoTalla.api';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-
-function App() {
-  const [proveedores, setProveedores] = useState([]);
+export const Tallas = () => {
+  const navigate = useNavigate();
+  const [tallas, setTallas] = useState([]);
+  const [gruposTalla, setGruposTalla] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingTalla, setEditingTalla] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadingGrupos, setLoadingGrupos] = useState(true);
+  const [formData, setFormData] = useState({
+    nombre: '',
+    grupo_id: '',
+    estado: true,
+  });
 
   useEffect(() => {
-    const cargarProveedores = async () => {
-      try {
-        const response = await fetchProveedores();
-        setProveedores(response.data);
-      } catch (error) {
-        console.error("Error al cargar proveedores:", error);
-      }
-    };
-
-    cargarProveedores();
+    cargarTallas();
+    cargarGruposTalla();
   }, []);
 
-  const handleEliminar = async (id) => {
+  const handleError = (error) => {
+    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
+    setError(errorMessage);
+    toast.error(errorMessage);
+  };
+
+  const cargarTallas = async () => {
     try {
-      await deleteProveedor(id);
-      setProveedores(proveedores.filter((prov) => prov.id !== id));
+      setLoading(true);
+      const response = await getAllTallas();
+      setTallas(response.data || []);
     } catch (error) {
-      console.error("Error al eliminar proveedor:", error);
+      handleError(error);
+      setTallas([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditar = (proveedor) => {
-    console.log("Editar proveedor", proveedor);
+  const cargarGruposTalla = async () => {
+    try {
+      setLoadingGrupos(true);
+      const response = await getAllGruposTalla();
+      setGruposTalla(response.data || []);
+    } catch (error) {
+      handleError(error);
+      setGruposTalla([]);
+    } finally {
+      setLoadingGrupos(false);
+    }
+  };
+
+  const handleOpenDialog = (talla = null) => {
+    setError('');
+    if (talla) {
+      setEditingTalla(talla);
+      setFormData({
+        nombre: talla.nombre,
+        grupo_id: talla.grupo.idGrupoTalla,
+        estado: talla.estado,
+      });
+    } else {
+      setEditingTalla(null);
+      setFormData({
+        nombre: '',
+        grupo_id: '',
+        estado: true,
+      });
+    }
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEditingTalla(null);
+    setError('');
+    setFormData({
+      nombre: '',
+      grupo_id: '',
+      estado: true,
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: name === 'estado' ? checked : value,
+    });
+    setError('');
+  };
+
+  const validateForm = () => {
+    if (!formData.nombre.trim()) {
+      setError('El nombre es requerido');
+      return false;
+    }
+    if (!formData.grupo_id) {
+      setError('Debe seleccionar un grupo de talla');
+      return false;
+    }
+    if (formData.nombre.length > 10) {
+      setError('El nombre no puede tener más de 10 caracteres');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    try {
+      if (editingTalla) {
+        await updateTalla(editingTalla.id, formData);
+        toast.success('Talla actualizada exitosamente');
+      } else {
+        await createTalla(formData);
+        toast.success('Talla creada exitosamente');
+      }
+      handleCloseDialog();
+      cargarTallas();
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('¿Está seguro de eliminar esta talla?')) {
+      try {
+        await deleteTalla(id);
+        toast.success('Talla eliminada exitosamente');
+        cargarTallas();
+      } catch (error) {
+        handleError(error);
+      }
+    }
+  };
+
+  const handleEstadoChange = async (id, estado) => {
+    try {
+      await cambiarEstadoTalla(id, !estado);
+      toast.success('Estado de la talla actualizado exitosamente');
+      cargarTallas();
+    } catch (error) {
+      handleError(error);
+    }
   };
 
   return (
-    <BrowserRouter>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/categorias" element={<CategoriaForm />} />
-        <Route path="/rol" element={<RolPage />} />
-        <Route path="/rol-create" element={<RolFormPage />} />
-        <Route path="/sesion" element={<Sesion />} />
-        <Route path="/sesion/recuperar_contrasena" element={<RecuperarContrasena />} />
-        <Route path="/proveedores" element={<AdminProveedores />} />
-        <Route path="/inventario" element={<InventarioPage />} />
-        <Route
-          path="/proveedores_registrados"
-          element={
-            <ProveedoresRegistrados
-              proveedores={proveedores}
-              onEliminar={handleEliminar}
-              onEditar={handleEditar}
-            />
-          }
-        />
-        <Route path="/producto" element={<ListaProductos />} />
-        <Route path="/producto/crear" element={<ProductosForm />} />
-        <Route path="/producto/editar/:id" element={<ProductosForm />} />
-        <Route path="/catalogo" element={<Catalogo />} />
-        <Route path="/carrito" element={<Carrito />} />
-        <Route path="/usuario" element={<AdminUsuarios/>} />
-        <Route path="/tallas" element={<Tallas/>} />
-        <Route path="/grupo-talla" element={<GrupoTalla/>} />
-      </Routes>
-      <Toaster />
-      <Footer />
-    </BrowserRouter>
-  );
-}
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Gestión de Tallas
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => handleOpenDialog()}
+        >
+          Nueva Talla
+        </Button>
+      </Box>
 
-export default App;
+      <TableContainer component={Paper}>
+        {loading ? (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography>Cargando tallas...</Typography>
+          </Box>
+        ) : error ? (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Alert severity="error">{error}</Alert>
+          </Box>
+        ) : !tallas || tallas.length === 0 ? (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography>No hay tallas disponibles</Typography>
+          </Box>
+        ) : (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Grupo de Talla</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {tallas.map((talla) => (
+                <TableRow key={talla.id}>
+                  <TableCell>{talla.nombre}</TableCell>
+                  <TableCell>{talla.grupo.nombre}</TableCell>
+                  <TableCell>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={talla.estado}
+                          onChange={() => handleEstadoChange(talla.id, talla.estado)}
+                          color="primary"
+                        />
+                      }
+                      label={talla.estado ? 'Activo' : 'Inactivo'}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpenDialog(talla)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(talla.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </TableContainer>
+
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {editingTalla ? 'Editar Talla' : 'Nueva Talla'}
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <TextField
+              fullWidth
+              label="Nombre"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleInputChange}
+              margin="normal"
+              required
+              inputProps={{ maxLength: 10 }}
+              helperText={`${formData.nombre.length}/10 caracteres`}
+            />
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Grupo de Talla</InputLabel>
+              <Select
+                name="grupo_id"
+                value={formData.grupo_id}
+                onChange={handleInputChange}
+                label="Grupo de Talla"
+                disabled={loadingGrupos}
+              >
+                {loadingGrupos ? (
+                  <MenuItem disabled>Cargando grupos...</MenuItem>
+                ) : !gruposTalla || gruposTalla.length === 0 ? (
+                  <MenuItem disabled>No hay grupos disponibles</MenuItem>
+                ) : (
+                  gruposTalla.map((grupo) => (
+                    <MenuItem key={grupo.idGrupoTalla} value={grupo.idGrupoTalla}>
+                      {grupo.nombre}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.estado}
+                  onChange={handleInputChange}
+                  name="estado"
+                  color="primary"
+                />
+              }
+              label="Activo"
+              margin="normal"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog}>Cancelar</Button>
+            <Button type="submit" variant="contained" color="primary">
+              {editingTalla ? 'Actualizar' : 'Crear'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default Tallas;

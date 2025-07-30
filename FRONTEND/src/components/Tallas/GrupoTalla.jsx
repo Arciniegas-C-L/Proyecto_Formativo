@@ -27,7 +27,7 @@ import {
   createGrupoTalla,
   updateGrupoTalla,
   deleteGrupoTalla,
-} from '../api/GrupoTalla.api';
+} from '../../api/GrupoTalla.api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 

@@ -3,10 +3,10 @@ import {
   fetchProveedores,
   updateProveedor,
   deleteProveedor,
-} from "../api/Proveedor.api";
-import "../assets/css/ProveedorRegistro.css";
+} from "../../api/Proveedor.api";
+import "../../assets/css/ProveedorRegistro.css";
 
-export default function ProveedoresRegistrados() {
+export function ProveedoresRegistrados() {
   const [proveedores, setProveedores] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});

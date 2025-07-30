@@ -1,0 +1,13 @@
+import {AdminUsuarios} from "../components/Usuarios/AdminUsuarios.jsx";
+
+export const AdminUsuariosPage = () => {
+  return (
+    <div className="container mt-4">
+      <h1>Administración de Usuarios</h1>
+      <p>En esta página puedes gestionar los usuarios del sistema.</p>
+      {/* Aquí puedes incluir el componente AdminUsuarios */}
+      <AdminUsuarios />
+    </div>
+  );
+}
+

@@ -70,7 +70,6 @@ export const Tallas = () => {
       setTallas(response.data || []);
     } catch (error) {
       handleError(error);
-      console.error('Error:', error);
       setTallas([]);
     } finally {
       setLoading(false);
@@ -84,7 +83,6 @@ export const Tallas = () => {
       setGruposTalla(response.data || []);
     } catch (error) {
       handleError(error);
-      console.error('Error al cargar grupos de talla:', error);
       setGruposTalla([]);
     } finally {
       setLoadingGrupos(false);
@@ -128,7 +126,7 @@ export const Tallas = () => {
       ...formData,
       [name]: name === 'estado' ? checked : value,
     });
-    setError(''); // Limpiar error al cambiar el input
+    setError('');
   };
 
   const validateForm = () => {

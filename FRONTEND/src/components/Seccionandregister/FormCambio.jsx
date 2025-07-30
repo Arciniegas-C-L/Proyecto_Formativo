@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../assets/css/formCambio.css";
+import "../../assets/css/formCambio.css";
 import { RecuperarContrasena } from "./FormRecuperacion";
 
 export function VerificarCodigo({ correo }) {

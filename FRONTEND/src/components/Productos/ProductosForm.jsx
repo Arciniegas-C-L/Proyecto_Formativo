@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../assets/css/ProductosForm.css";
+import "../../assets/css/ProductosForm.css";
 import {
   getCategorias,
   getSubcategoriasPorCategoria,
   createProducto,
   updateProducto,
-} from "../api/Producto.api";
+} from "../../api/Producto.api";
 
 export function ProductosForm() {
   const navigate = useNavigate();
