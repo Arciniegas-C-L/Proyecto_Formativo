@@ -846,9 +846,6 @@ const InventarioTabla = () => {
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCerrarDialogo} color="primary">
-              Cancelar
-            </Button>
             <Button 
               onClick={handleRedireccionManual} 
               variant="contained" 
@@ -887,9 +884,6 @@ const InventarioTabla = () => {
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCerrarDialogoGrupoTalla} color="primary">
-              Cancelar
-            </Button>
             <Button 
               onClick={handleRedireccionManualGrupoTalla} 
               variant="contained" 
