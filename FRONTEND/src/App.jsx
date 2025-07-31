@@ -65,7 +65,7 @@ function App() {
 
   return (
     // Se configura el enrutador de la aplicación
-    <BrowserRouter>
+    <>
       {/* Cabecera común para todas las rutas */}
       <Header />
 
@@ -92,13 +92,9 @@ function App() {
             />
           }
         />
-
-        {/* Rutas para productos */}
         <Route path="/producto" element={<ListaProductosPage />} />
         <Route path="/producto/crear" element={<ProductosFormPage />} />
         <Route path="/producto/editar/:id" element={<ProductosFormPage />} />
-
-        {/* Otras páginas */}
         <Route path="/catalogo" element={<CatalogoPage />} />
         <Route path="/usuario" element={<AdminUsuariosPage />} />
         <Route path="/tallas" element={<TallasPage />} />
@@ -110,7 +106,7 @@ function App() {
 
       {/* Pie de página común para todas las rutas */}
       <Footer />
-    </BrowserRouter>
+    </>
   );
 }
 

@@ -1,206 +1,211 @@
-//Importamos las dependencias necesarias
+import React, { useEffect, useState } from "react";
+import { getALLProductos } from "../../api/Producto.api";
+import { getAllCategorias } from "../../api/Categoria.api";
+import "../../assets/css/Catalogo.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-import React, { useState, useEffect } from 'react';
-import { getALLProductos } from '../../api/Producto.api';
-import { createCarrito, agregarProducto, fetchCarritos } from '../../api/CarritoApi';
-import { toast } from 'react-hot-toast';
-import { FaMinus, FaPlus, FaShoppingCart } from 'react-icons/fa';
-import '../../assets/css/Catalogo.css';
-
-
-//Exportamos el componente
+// Cambié export function por export default function
 export function Catalogo() {
+  const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
+  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState("");
+  const [tallaSeleccionada, setTallaSeleccionada] = useState({});
 
-    //Creamos hooks que nos permiten cambiar los estados
-    const [productos, setProductos] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [carritoId, setCarritoId] = useState(null);
-    const [agregandoProducto, setAgregandoProducto] = useState(false);
-    const [cantidades, setCantidades] = useState({});
-    const [carrito, setCarrito] = useState(null);
+  const capitalizar = (texto) =>
+    texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
 
-    //Useeffect para cargar las funciones que contiene cuando se monte este componente en el navegador
-    useEffect(() => {
-        cargarProductos();
-        inicializarCarrito();
-    }, []);
+  const cargarProductos = async () => {
+    try {
+      const res = await getALLProductos();
+      const productosData = res.data || [];
 
-    //Función para obtener o crear un carrito activo al iniciar el componente
-    const inicializarCarrito = async () => {
-        try {
-            const response = await fetchCarritos();
-            const carritosActivos = response.data.filter(carrito => carrito.estado === true);
-            
-            if (carritosActivos.length > 0) {
-                setCarritoId(carritosActivos[0].idCarrito);
-                setCarrito(carritosActivos[0]);
-            } else {
-                const nuevoCarrito = await createCarrito({ estado: true });
-                setCarritoId(nuevoCarrito.data.idCarrito);
-                setCarrito(nuevoCarrito.data);
-            }
-        } catch (error) {
-            console.error('Error al inicializar el carrito:', error);
-            toast.error('Error al inicializar el carrito');
-        }
-    };
+      const productosValidos = productosData.filter(
+        (p) =>
+          p.categoria_nombre &&
+          p.subcategoria_nombre &&
+          Array.isArray(p.inventario_tallas)
+      );
 
-    //Función para cargar los productos y establecer cantidad inicial en 1
-    const cargarProductos = async () => {
-        try {
-            const response = await getALLProductos();
-            setProductos(response.data);
-            // Inicializar cantidades en 1 para cada producto
-            const cantidadesIniciales = {};
-            response.data.forEach(producto => {
-                cantidadesIniciales[producto.idProducto] = 1;
-            });
-            setCantidades(cantidadesIniciales);
-        } catch (error) {
-            console.error('Error al cargar productos:', error);
-            toast.error('Error al cargar los productos');
-        } finally {
-            setLoading(false);
-        }
-    };
+      setProductos(productosValidos);
 
-    //Función para actualizar la cantidad de un producto si es mayor a 0
-    const handleCambiarCantidad = (productoId, nuevaCantidad) => {
-        if (nuevaCantidad < 1) return;
-        setCantidades(prev => ({
-            ...prev,
-            [productoId]: nuevaCantidad
-        }));
-    };
+      const subMap = {};
+      productosValidos.forEach((p) => {
+        const cat = p.categoria_nombre;
+        const sub = p.subcategoria_nombre;
+        if (!subMap[cat]) subMap[cat] = new Set();
+        subMap[cat].add(sub);
+      });
 
-    //Función para agregar un producto al carrito validando stock y cantidad
-    const handleAgregarAlCarrito = async (producto) => {
-        try {
-            if (!carrito) {
-                await inicializarCarrito();
-            }
+      const subFinal = {};
+      Object.keys(subMap).forEach((cat) => {
+        subFinal[cat] = Array.from(subMap[cat]);
+      });
 
-            if (!carrito) {
-                toast.error('No se pudo inicializar el carrito');
-                return;
-            }
-
-            // Validar que la cantidad sea positiva
-            if (cantidades[producto.idProducto] <= 0) {
-                toast.error('La cantidad debe ser mayor a 0');
-                return;
-            }
-
-            // Validar que haya suficiente stock
-            if (cantidades[producto.idProducto] > producto.stock) {
-                toast.error(`No hay suficiente stock disponible. Stock actual: ${producto.stock}`);
-                return;
-            }
-
-            const response = await agregarProducto(carrito.idCarrito, {
-                producto: producto.idProducto,
-                cantidad: cantidades[producto.idProducto]
-            });
-            
-            // Actualizar el estado del carrito con la respuesta del servidor
-            if (response.data) {
-                setCarrito(response.data);
-                // Si la respuesta incluye información actualizada del producto, actualizar el stock
-                const productoActualizado = response.data.items.find(item => item.producto.idProducto === producto.idProducto)?.producto;
-                if (productoActualizado) {
-                    setProductos(prevProductos => 
-                        prevProductos.map(p => 
-                            p.idProducto === productoActualizado.idProducto 
-                                ? { ...p, stock: productoActualizado.stock }
-                                : p
-                        )
-                    );
-                }
-                toast.success('Producto agregado al carrito');
-            }
-        } catch (error) {
-            console.error('Error al agregar al carrito:', error);
-            let mensajeError = 'Error al agregar el producto al carrito';
-            
-            if (error.response) {
-                switch (error.response.status) {
-                    case 400:
-                        mensajeError = error.response.data.error || 'Datos inválidos';
-                        break;
-                    case 404:
-                        mensajeError = 'Producto o carrito no encontrado';
-                        break;
-                    case 409:
-                        mensajeError = 'El producto ya está en el carrito';
-                        break;
-                    default:
-                        mensajeError = 'Error al agregar el producto al carrito';
-                }
-            }
-            
-            toast.error(mensajeError);
-        }
-    };
-
-    //Suspenso de carga
-    if (loading) {
-        return (
-            <div className="catalogo-container">
-                <div className="loading">Cargando productos...</div>
-            </div>
-        );
+      setSubcategoriasPorCategoria(subFinal);
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
     }
+  };
 
+  const cargarCategorias = async () => {
+    try {
+      const data = await getAllCategorias();
+      const nombres = data.map((cat) => cat.nombre);
+      setCategorias(nombres);
+    } catch (error) {
+      console.error("Error al cargar categorías:", error);
+    }
+  };
+
+  useEffect(() => {
+    cargarCategorias();
+    cargarProductos();
+
+    const interval = setInterval(() => {
+      cargarCategorias();
+      cargarProductos();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const seleccionarCategoria = (cat) => {
+    setCategoriaSeleccionada(cat);
+    setSubcategoriaSeleccionada("");
+  };
+
+  const seleccionarSubcategoria = (sub) => {
+    setSubcategoriaSeleccionada(sub);
+  };
+
+  const limpiarFiltros = () => {
+    setCategoriaSeleccionada("");
+    setSubcategoriaSeleccionada("");
+  };
+
+  const mostrarStock = (productoId, talla, stock) => {
+    setTallaSeleccionada((prev) => ({
+      ...prev,
+      [productoId]: { talla, stock },
+    }));
+  };
+
+  const productosFiltrados = productos.filter((producto) => {
+    if (!categoriaSeleccionada) return true;
+    if (!subcategoriaSeleccionada) {
+      return producto.categoria_nombre === categoriaSeleccionada;
+    }
     return (
-        <div className="catalogo-container">
-            <h2>Catálogo de Productos</h2>
-            <div className="productos-grid">
-                {productos.map(producto => (
-                    <div key={producto.idProducto} className="producto-card">
-                        <div className="producto-imagen">
-                            <img 
-                                src={producto.imagen || "https://via.placeholder.com/200"} 
-                                alt={producto.nombre}
-                            />
-                        </div>
-                        
-                        <div className="producto-info">
-                            <h3>{producto.nombre}</h3>
-                            <p className="producto-descripcion">{producto.descripcion}</p>
-                            <p className="producto-precio">${producto.precio}</p>
-                            <p className="producto-categoria">{producto.categoria_nombre}</p>
-                        </div>
-
-                        <div className="producto-acciones">
-                            <div className="cantidad-selector">
-                                <button 
-                                    className="btn-cantidad"
-                                    onClick={() => handleCambiarCantidad(producto.idProducto, cantidades[producto.idProducto] - 1)}
-                                    disabled={cantidades[producto.idProducto] <= 1}
-                                >
-                                    <FaMinus />
-                                </button>
-                                <span>{cantidades[producto.idProducto]}</span>
-                                <button 
-                                    className="btn-cantidad"
-                                    onClick={() => handleCambiarCantidad(producto.idProducto, cantidades[producto.idProducto] + 1)}
-                                >
-                                    <FaPlus />
-                                </button>
-                            </div>
-
-                            <button 
-                                className="btn-agregar"
-                                onClick={() => handleAgregarAlCarrito(producto)}
-                                disabled={agregandoProducto}
-                            >
-                                <FaShoppingCart />
-                                {agregandoProducto ? 'Agregando...' : 'Agregar al Carrito'}
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
+      producto.categoria_nombre === categoriaSeleccionada &&
+      producto.subcategoria_nombre === subcategoriaSeleccionada
     );
+  });
+
+  return (
+    <div className="container-fluid py-4">
+      <div className="row">
+        {/* FILTROS */}
+        <div className="col-md-3 mb-4">
+          <div className="card shadow-sm p-3 filtros">
+            <h5 className="mb-3">Categorías</h5>
+            {categorias.map((cat) => (
+              <button
+                key={cat}
+                className={`btn btn-categoria mb-1 ${categoriaSeleccionada === cat ? "active" : ""}`}
+                onClick={() => seleccionarCategoria(cat)}
+              >
+                {capitalizar(cat)}
+              </button>
+            ))}
+
+            {categoriaSeleccionada && subcategoriasPorCategoria[categoriaSeleccionada] && (
+              <>
+                <hr />
+                <h6 className="mt-2">Subcategorías</h6>
+                {subcategoriasPorCategoria[categoriaSeleccionada]?.map((sub) => (
+                  <button
+                    key={sub}
+                    className={`btn btn-subcategoria mb-1 ${subcategoriaSeleccionada === sub ? "btn-warning" : ""}`}
+                    onClick={() => seleccionarSubcategoria(sub)}
+                  >
+                    {capitalizar(sub)}
+                  </button>
+                ))}
+              </>
+            )}
+
+            {(categoriaSeleccionada || subcategoriaSeleccionada) && (
+              <button className="btn btn-limpiar mt-3" onClick={limpiarFiltros}>
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* CATÁLOGO */}
+        <div className="col-md-9">
+          <h2 className="text-center mb-4">Catálogo de Productos</h2>
+          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+            {productosFiltrados.length === 0 ? (
+              <div className="col text-center">
+                <div className="alert alert-warning w-100">
+                  No hay productos para mostrar.
+                </div>
+              </div>
+            ) : (
+              productosFiltrados.map((producto) => (
+                <div className="col d-flex" key={producto.id}>
+                  <div className="card shadow producto-card w-100">
+                    <div className="img-container">
+                      <img
+                        src={producto.imagen}
+                        alt={producto.nombre}
+                        className="card-img-top"
+                      />
+                    </div>
+                    <div className="card-body d-flex flex-column">
+                      <h5 className="card-title">{capitalizar(producto.nombre)}</h5>
+                      <p className="card-text descripcion">{producto.descripcion}</p>
+                      <p className="card-text">
+                        <strong>Precio:</strong> ${producto.precio}
+                      </p>
+                      <p className="card-text">
+                        <strong>Subcategoría:</strong> {capitalizar(producto.subcategoria_nombre)}
+                      </p>
+
+                      <div className="mt-2">
+                        <strong>Tallas:</strong>
+                        <div className="d-flex flex-wrap gap-2 mt-1">
+                          {producto.inventario_tallas.map((inv, i) => (
+                            <button
+                              key={i}
+                              className={`talla-btn ${tallaSeleccionada[producto.id]?.talla === inv.talla ? "selected" : ""}`}
+                              onClick={() => mostrarStock(producto.id, inv.talla, inv.stock)}
+                            >
+                              {inv.talla}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {tallaSeleccionada[producto.id] && (
+                        <div className="alert alert-info mt-2 p-1 text-center">
+                          Productos disponibles:{" "}
+                          <strong>{tallaSeleccionada[producto.id].stock}</strong>
+                        </div>
+                      )}
+
+                      <button className="btn btn-dark mt-auto">Agregar al carrito</button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

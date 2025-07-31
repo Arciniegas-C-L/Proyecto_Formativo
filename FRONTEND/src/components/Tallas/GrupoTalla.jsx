@@ -32,18 +32,20 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export const GrupoTalla = () => {
-  const navigate = useNavigate(); // Hook para redirigir entre rutas
-const [gruposTalla, setGruposTalla] = useState([]); // Lista de grupos de talla
-const [openDialog, setOpenDialog] = useState(false); // Estado para mostrar u ocultar el formulario
-const [editingGrupo, setEditingGrupo] = useState(null); // Grupo que se está editando (null si es nuevo)
-const [error, setError] = useState(''); // Mensaje de error
-const [loading, setLoading] = useState(true); // Indicador de carga
-const [formData, setFormData] = useState({ nombre: '', descripcion: '' }); // Datos del formulario
+  const navigate = useNavigate();
+  const [gruposTalla, setGruposTalla] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingGrupo, setEditingGrupo] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+  });
 
-// Carga los grupos de talla al montar el componente
-useEffect(() => {
-  cargarGruposTalla();
-}, []);
+  useEffect(() => {
+    cargarGruposTalla();
+  }, []);
 
 // Maneja errores y muestra mensaje en pantalla
 const handleError = (error) => {
@@ -67,36 +69,42 @@ const cargarGruposTalla = async () => {
   }
 };
 
-// Abre el formulario, con datos si se va a editar
-const handleOpenDialog = (grupo = null) => {
-  setError('');
-  if (grupo) {
-    setEditingGrupo(grupo);
-    setFormData({
-      nombre: grupo.nombre,
-      descripcion: grupo.descripcion || '',
-    });
-  } else {
+  const handleOpenDialog = (grupo = null) => {
+    setError('');
+    if (grupo) {
+      setEditingGrupo(grupo);
+      setFormData({
+        nombre: grupo.nombre,
+        descripcion: grupo.descripcion || '',
+      });
+    } else {
+      setEditingGrupo(null);
+      setFormData({
+        nombre: '',
+        descripcion: '',
+      });
+    }
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
     setEditingGrupo(null);
-    setFormData({ nombre: '', descripcion: '' });
-  }
-  setOpenDialog(true);
-};
+    setError('');
+    setFormData({
+      nombre: '',
+      descripcion: '',
+    });
+  };
 
-// Cierra el formulario y reinicia estados
-const handleCloseDialog = () => {
-  setOpenDialog(false);
-  setEditingGrupo(null);
-  setError('');
-  setFormData({ nombre: '', descripcion: '' });
-};
-
-// Actualiza los campos del formulario en tiempo real
-const handleInputChange = (e) => {
-  const { name, value } = e.target;
-  setFormData({ ...formData, [name]: value });
-  setError('');
-};
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+    setError('');
+  };
 
 // Valida los datos del formulario antes de enviar
 const validateForm = () => {
@@ -144,11 +152,10 @@ const handleDelete = async (id) => {
   }
 };
 
-// Redirige a la vista de tallas para asignarlas a un grupo
-const handleAsignarTallas = (grupo) => {
-  navigate('/tallas');
-};
-
+  const handleAsignarTallas = (grupo) => {
+    // Redirigir a la página de tallas
+    navigate('/tallas');
+  };
 
   return (
     <Box sx={{ p: 3 }}>

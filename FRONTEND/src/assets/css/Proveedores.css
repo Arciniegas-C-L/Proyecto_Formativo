@@ -69,7 +69,6 @@ select.input {
   font-weight: 700;
   border: none;
   cursor: pointer;
-  text-transform: uppercase;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
   min-width: 140px;

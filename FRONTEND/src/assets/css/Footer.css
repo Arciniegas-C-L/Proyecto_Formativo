@@ -1,101 +1,87 @@
 .footer {
-  position: static;
-  width: 100%;
-  bottom: 0;
-  left: 0;
+  background-color: #1a1a1a;
+  color: #fff;
+  padding: 40px 20px 10px;
   font-family: 'Urbanist', sans-serif;
-  background-color: #2c2c2c;
-  color: #ffffff;
 }
 
-.footer-container,
-.container-footer {
-  width: 100%;
+.footer-container {
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .footer-contenido {
-  background-color: #2c2c2c;
-  padding: 50px 40px 40px;
-  width: 100%;
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;gap: 40px;
+  flex-wrap: wrap;
+  gap: 30px;
 }
 
-.footer-main {
-  flex: 1 1 100%;
-  margin: 10px 20px;
-}
-
-/* Sección de enlaces */
 .links {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 220px;
-  max-width: 250px;
-  margin: 0 15px;
+  flex: 1;
+  min-width: 200px;
 }
 
 .links p {
-  font-size: 1.4rem;
-  margin-bottom: 20px;
-  font-weight: 700;
-  color: #FFD447;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-family: 'Urbanist', sans-serif;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #00d4ff;
+  transition: none !important; 
 }
 
-.links a {
-  font-size: 1rem;
-  text-decoration: none;
-  margin-bottom: 15px;
-  font-weight: 500;
-  color: #dbd8e3;
-  transition: color 0.3s ease, padding-left 0.3s ease;
+.link {
   display: flex;
   align-items: center;
-}
-
-.links a:hover {
-  color: #FFD447;
-  padding-left: 10px;
-}
-
-/* Iconos en los links */
-.icono-footer {
-  color: #FFD447;
-  margin-right: 10px;
-  vertical-align: middle;
-  font-size: 1.2rem;
+  color: #ccc;
+  text-decoration: none;
+  margin-bottom: 10px;
   transition: color 0.3s ease;
 }
 
-.links a:hover .icono-footer {
-  color: #fff;
+.link:hover {
+  color: #f26be2;
 }
 
-/* Responsive */
+/* Íconos  */
+.link:hover .icono-footer {
+  color: #f26be2;
+  transform: none !important;
+  transition: none !important;
+}
+
+.icono-footer {
+  margin-right: 10px;
+  font-size: 1.2rem;
+  color: #fff;
+  transition: none !important;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 20px;
+  color: #999;
+  font-size: 0.9rem;
+  border-top: none !important; 
+}
+
 @media (max-width: 768px) {
   .footer-contenido {
     flex-direction: column;
-    padding: 30px 20px 20px;
-    gap: 30px;
-  }
-
-  .links {
-    flex: 1 1 100%;
-    max-width: 100%;
-    margin: 0;
-  }
-
-  .links p {
+    align-items: center;
     text-align: center;
   }
 
-  .links a {
+  .links {
+    margin-bottom: 30px;
+  }
+
+  .link {
     justify-content: center;
+  }
+
+  .footer-bottom {
+    padding-top: 10px;
+    font-size: 0.8rem;
   }
 }
