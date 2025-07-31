@@ -6,114 +6,132 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Modal, Button, Form, Table, Alert, Pagination } from 'react-bootstrap';
 
 export function Tallas() {
-  const [tallas, setTallas] = useState([]);
-  const [gruposTalla, setGruposTalla] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTalla, setEditingTalla] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ nombre: '', grupo_id: '' });
+  // Estados para almacenar datos y controlar la UI
+const [tallas, setTallas] = useState([]); // Lista de tallas
+const [gruposTalla, setGruposTalla] = useState([]); // Lista de grupos de talla
+const [showModal, setShowModal] = useState(false); // Mostrar/ocultar modal
+const [editingTalla, setEditingTalla] = useState(null); // Talla que se está editando
+const [error, setError] = useState(''); // Mensaje de error
+const [loading, setLoading] = useState(true); // Cargando datos
+const [formData, setFormData] = useState({ nombre: '', grupo_id: '' }); // Datos del formulario
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const tallasPerPage = 10;
+// Estados para paginación
+const [currentPage, setCurrentPage] = useState(1);
+const tallasPerPage = 10; // Cantidad de tallas por página
 
-  useEffect(() => {
-    cargarTallas();
-    cargarGruposTalla();
-  }, []);
+// Carga inicial de datos al montar el componente
+useEffect(() => {
+  cargarTallas();
+  cargarGruposTalla();
+}, []);
 
-  const handleError = (error) => {
-    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
-    setError(errorMessage);
-    toast.error(errorMessage);
-  };
+// Manejo de errores con mensaje para el usuario
+const handleError = (error) => {
+  const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
+  setError(errorMessage);
+  toast.error(errorMessage);
+};
 
-  const cargarTallas = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllTallas();
-      setTallas(response.data || []);
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+// Obtener todas las tallas desde la API
+const cargarTallas = async () => {
+  try {
+    setLoading(true);
+    const response = await getAllTallas();
+    setTallas(response.data || []);
+  } catch (error) {
+    handleError(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const cargarGruposTalla = async () => {
-    try {
-      const response = await getAllGruposTalla();
-      setGruposTalla(response.data || []);
-    } catch (error) {
-      handleError(error);
-    }
-  };
+// Obtener todos los grupos de talla desde la API
+const cargarGruposTalla = async () => {
+  try {
+    const response = await getAllGruposTalla();
+    setGruposTalla(response.data || []);
+  } catch (error) {
+    handleError(error);
+  }
+};
 
-  const handleOpenModal = (talla = null) => {
-    setError('');
-    if (talla) {
-      setEditingTalla(talla);
-      setFormData({ nombre: talla.nombre, grupo_id: talla.grupo.idGrupoTalla });
-    } else {
-      setEditingTalla(null);
-      setFormData({ nombre: '', grupo_id: '' });
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
+// Abrir el modal para crear o editar una talla
+const handleOpenModal = (talla = null) => {
+  setError('');
+  if (talla) {
+    // Editar: se precargan los datos de la talla seleccionada
+    setEditingTalla(talla);
+    setFormData({ nombre: talla.nombre, grupo_id: talla.grupo.idGrupoTalla });
+  } else {
+    // Crear: se limpia el formulario
     setEditingTalla(null);
     setFormData({ nombre: '', grupo_id: '' });
-    setError('');
-  };
+  }
+  setShowModal(true);
+};
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+// Cerrar el modal y limpiar el formulario
+const handleCloseModal = () => {
+  setShowModal(false);
+  setEditingTalla(null);
+  setFormData({ nombre: '', grupo_id: '' });
+  setError('');
+};
 
-  const validateForm = () => {
-    if (!formData.nombre.trim()) return setError('El nombre es requerido');
-    if (!formData.grupo_id) return setError('Debe seleccionar un grupo de talla');
-    if (formData.nombre.length > 10) return setError('El nombre no puede tener más de 10 caracteres');
-    return true;
-  };
+// Manejar cambios en los campos del formulario
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
+  setFormData({ ...formData, [name]: value });
+};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+// Validación del formulario
+const validateForm = () => {
+  if (!formData.nombre.trim()) return setError('El nombre es requerido');
+  if (!formData.grupo_id) return setError('Debe seleccionar un grupo de talla');
+  if (formData.nombre.length > 10) return setError('El nombre no puede tener más de 10 caracteres');
+  return true;
+};
+
+// Enviar el formulario (crear o actualizar una talla)
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  try {
+    if (editingTalla) {
+      // Actualizar talla existente
+      await updateTalla(editingTalla.id, formData);
+      toast.success('Talla actualizada exitosamente');
+    } else {
+      // Crear nueva talla
+      await createTalla(formData);
+      toast.success('Talla creada exitosamente');
+    }
+    handleCloseModal();
+    cargarTallas(); // Recargar lista de tallas
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Eliminar una talla
+const handleDelete = async (id) => {
+  if (window.confirm('¿Está seguro de eliminar esta talla?')) {
     try {
-      if (editingTalla) {
-        await updateTalla(editingTalla.id, formData);
-        toast.success('Talla actualizada exitosamente');
-      } else {
-        await createTalla(formData);
-        toast.success('Talla creada exitosamente');
-      }
-      handleCloseModal();
+      await deleteTalla(id);
+      toast.success('Talla eliminada exitosamente');
       cargarTallas();
     } catch (error) {
       handleError(error);
     }
-  };
+  }
+};
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar esta talla?')) {
-      try {
-        await deleteTalla(id);
-        toast.success('Talla eliminada exitosamente');
-        cargarTallas();
-      } catch (error) {
-        handleError(error);
-      }
-    }
-  };
+// Cálculo para la paginación
+const indexOfLast = currentPage * tallasPerPage;
+const indexOfFirst = indexOfLast - tallasPerPage;
+const currentTallas = tallas.slice(indexOfFirst, indexOfLast); // Tallas a mostrar en la página actual
+const totalPages = Math.ceil(tallas.length / tallasPerPage); // Total de páginas
 
-  const indexOfLast = currentPage * tallasPerPage;
-  const indexOfFirst = indexOfLast - tallasPerPage;
-  const currentTallas = tallas.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(tallas.length / tallasPerPage);
 
   return (
     <div className="container mt-4">

@@ -3,49 +3,68 @@
     import { Link } from 'react-router-dom';
 
     export function ListaRol() {
-        const [roles, setRoles] = useState([]);
-        const [currentPage, setCurrentPage] = useState(1);
-        const [rolSeleccionado, setRolSeleccionado] = useState(null);
-        const [nombreEditado, setNombreEditado] = useState('');
-        const itemsPerPage = 5;
+       // Estado para almacenar todos los roles obtenidos desde la API
+const [roles, setRoles] = useState([]);
 
-        useEffect(() => {
-            async function MostrarRoles() {
-                const res = await getALLRoles();
-                setRoles(res.data);
-            }
-            MostrarRoles();
-        }, []);
+// Estado para controlar la página actual de la paginación
+const [currentPage, setCurrentPage] = useState(1);
 
-        const totalPages = Math.ceil(roles.length / itemsPerPage);
-        const indexOfLastItem = currentPage * itemsPerPage;
-        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        const currentItems = roles.slice(indexOfFirstItem, indexOfLastItem);
+// Estado para almacenar el rol actualmente seleccionado para editar
+const [rolSeleccionado, setRolSeleccionado] = useState(null);
 
-        const handlePageChange = (pageNumber) => {
-            if (pageNumber >= 1 && pageNumber <= totalPages) {
-                setCurrentPage(pageNumber);
-            }
-        };
+// Estado para almacenar el nuevo nombre del rol durante la edición
+const [nombreEditado, setNombreEditado] = useState('');
 
-        const seleccionarRol = (rol) => {
-            setRolSeleccionado(rol);
-            setNombreEditado(rol.nombre);
-        };
+// Cantidad de elementos a mostrar por página
+const itemsPerPage = 5;
 
-        const guardarCambios = async () => {
-            if (rolSeleccionado) {
-                await updateRol(rolSeleccionado.idROL, { nombre: nombreEditado });
+// useEffect que se ejecuta al montar el componente para cargar los roles
+useEffect(() => {
+    async function MostrarRoles() {
+        const res = await getALLRoles();
+        setRoles(res.data);
+    }
+    MostrarRoles();
+}, []);
 
-                // Recargar los datos actualizados
-                const res = await getALLRoles();
-                setRoles(res.data);
+// Calcular el número total de páginas
+const totalPages = Math.ceil(roles.length / itemsPerPage);
 
-                // Limpiar selección
-                setRolSeleccionado(null);
-                setNombreEditado('');
-            }
-        };
+// Índices para cortar la lista de roles según la página actual
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+// Obtener los roles a mostrar en la página actual
+const currentItems = roles.slice(indexOfFirstItem, indexOfLastItem);
+
+// Función para cambiar de página si está dentro del rango válido
+const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+        setCurrentPage(pageNumber);
+    }
+};
+
+// Función para seleccionar un rol y preparar su edición
+const seleccionarRol = (rol) => {
+    setRolSeleccionado(rol);
+    setNombreEditado(rol.nombre);
+};
+
+// Función para guardar los cambios del rol editado
+const guardarCambios = async () => {
+    if (rolSeleccionado) {
+        await updateRol(rolSeleccionado.idROL, { nombre: nombreEditado });
+
+        // Recargar los roles actualizados
+        const res = await getALLRoles();
+        setRoles(res.data);
+
+        // Limpiar la selección y el estado de edición
+        setRolSeleccionado(null);
+        setNombreEditado('');
+    }
+};
+
 
         return (
             <div className="container mt-5">

@@ -25,37 +25,51 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 
 function App() {
+  // Estado local para almacenar la lista de proveedores
   const [proveedores, setProveedores] = useState([]);
 
+  // Hook useEffect para cargar los proveedores cuando se monta el componente
   useEffect(() => {
     const cargarProveedores = async () => {
       try {
+        // Llamada a la API para obtener los proveedores
         const response = await fetchProveedores();
+        // Se actualiza el estado con los proveedores recibidos
         setProveedores(response.data);
       } catch (error) {
+        // Manejo de errores si la petición falla
         console.error("Error al cargar proveedores:", error);
       }
     };
 
+    // Se ejecuta la función de carga al montar el componente
     cargarProveedores();
-  }, []);
+  }, []); // El array vacío asegura que solo se ejecute una vez al montar
 
+  // Función para eliminar un proveedor por su ID
   const handleEliminar = async (id) => {
     try {
+      // Se llama a la API para eliminar el proveedor
       await deleteProveedor(id);
+      // Se actualiza el estado filtrando el proveedor eliminado
       setProveedores(proveedores.filter((prov) => prov.id !== id));
     } catch (error) {
       console.error("Error al eliminar proveedor:", error);
     }
   };
 
+  // Función para manejar la edición de un proveedor (aún sin implementación)
   const handleEditar = (proveedor) => {
     console.log("Editar proveedor", proveedor);
   };
 
   return (
+    // Se configura el enrutador de la aplicación
     <BrowserRouter>
+      {/* Cabecera común para todas las rutas */}
       <Header />
+
+      {/* Declaración de rutas */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/categorias" element={<CategoriasPage />} />
@@ -65,6 +79,9 @@ function App() {
         <Route path="/sesion/recuperar_contrasena" element={<SesionRecuperacionPage />} />
         <Route path="/proveedores" element={<AdminProvedoresPage />} />
         <Route path="/inventario" element={<InventarioPage />} />
+
+        {/* Ruta que muestra la lista de proveedores registrados, 
+            pasando funciones para eliminar y editar */}
         <Route
           path="/proveedores_registrados"
           element={
@@ -75,15 +92,23 @@ function App() {
             />
           }
         />
+
+        {/* Rutas para productos */}
         <Route path="/producto" element={<ListaProductosPage />} />
         <Route path="/producto/crear" element={<ProductosFormPage />} />
         <Route path="/producto/editar/:id" element={<ProductosFormPage />} />
+
+        {/* Otras páginas */}
         <Route path="/catalogo" element={<CatalogoPage />} />
-        <Route path="/usuario" element={<AdminUsuariosPage/>} />
-        <Route path="/tallas" element={<TallasPage/>} />
+        <Route path="/usuario" element={<AdminUsuariosPage />} />
+        <Route path="/tallas" element={<TallasPage />} />
         <Route path="/grupo-talla" element={<GrupoTallaPage />} />
       </Routes>
+
+      {/* Componente para mostrar notificaciones tipo toast */}
       <Toaster />
+
+      {/* Pie de página común para todas las rutas */}
       <Footer />
     </BrowserRouter>
   );

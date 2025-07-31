@@ -4,87 +4,109 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { fetchUsuario, updateUsuario, handleToggleEstado } from "../../api/Usuario.api.js";
 
 export function AdminUsuarios() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [form, setForm] = useState({
-    nombre: "",
-    apellido: "",
-    correo: "",
-    telefono: "",
-    rol: "usuario",
-    estado: true
-  });
-  const [editingId, setEditingId] = useState(null);
-  const [filtroEstado, setFiltroEstado]= useState ("todos");
+  // Estado para almacenar todos los usuarios
+const [usuarios, setUsuarios] = useState([]);
 
-  // Obtener todos los usuarios desde la API
-  const cargarUsuarios = async () => {
-    try {
-      const response = await fetchUsuario();
-      setUsuarios(response.data);
-    } catch (error) {
-      console.error("Error al obtener usuarios:", error.response?.data || error.message);
+// Estado para manejar los valores del formulario
+const [form, setForm] = useState({
+  nombre: "",
+  apellido: "",
+  correo: "",
+  telefono: "",
+  rol: "usuario", // valor por defecto
+  estado: true    // el usuario se crea como activo por defecto
+});
+
+// Estado para saber si estamos editando (guarda el ID del usuario a editar)
+const [editingId, setEditingId] = useState(null);
+
+// Estado para filtrar los usuarios por estado (activos, inactivos o todos)
+const [filtroEstado, setFiltroEstado] = useState("todos");
+
+// Función para obtener los usuarios desde la API y almacenarlos en el estado
+const cargarUsuarios = async () => {
+  try {
+    const response = await fetchUsuario(); // llamada a la API
+    setUsuarios(response.data);            // actualiza el estado con los usuarios recibidos
+  } catch (error) {
+    console.error("Error al obtener usuarios:", error.response?.data || error.message);
+  }
+};
+
+// useEffect se ejecuta solo una vez al montar el componente, para cargar los usuarios
+useEffect(() => {
+  cargarUsuarios();
+}, []);
+
+// Maneja el envío del formulario para crear o actualizar un usuario
+const handleSubmit = async (e) => {
+  e.preventDefault(); // evita recargar la página
+
+  try {
+    if (editingId) {
+      // Si estamos editando, llama a la función de actualizar
+      await updateUsuario(editingId, form);
     }
-  };
 
-  // Cargar al iniciar
-  useEffect(() => {
-    cargarUsuarios();
-  }, []);
-
-  // Crear o actualizar un usuario
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingId) {
-        await updateUsuario(editingId, form);
-      }
-      // Reiniciar formulario
-      setForm({
-        nombre: "",
-        apellido: "",
-        correo: "",
-        telefono: "",
-        rol: "usuario",
-        estado: true
-      });
-      setEditingId(null);
-      cargarUsuarios();
-    } catch (error) {
-      console.error("Error al registrar usuario:", error.response?.data || error.message);
-    }
-  };
-
-  // Cargar usuario al formulario para editar
-  const handleEdit = (usuario) => {
+    // Reinicia el formulario y el modo de edición
     setForm({
-      nombre: usuario.nombre,
-      apellido: usuario.apellido,
-      correo: usuario.correo,
-      telefono: usuario.telefono,
-      rol: usuario.rol,
-      estado: usuario.estado
+      nombre: "",
+      apellido: "",
+      correo: "",
+      telefono: "",
+      rol: "usuario",
+      estado: true
     });
-    setEditingId(usuario.idUsuario);
-  };
+    setEditingId(null);
 
-  // Inactivar usuario
-  const handleToggleEstado = async (usuario) => {
-    try {
-      const usuarioActualizado = {...usuario, estado: !usuario.estado};
-      await updateUsuario(usuario.idUsuario, usuarioActualizado);
-      cargarUsuarios();
-    } catch (error) {
-      console.error("Error al cambiar el estado del usuario:", error.response?.data || error.message);
-    }
-  };
-  const usuariosFiltrados = usuarios.filter (u => {
-    if (filtroEstado === "activos") return u.estado === true;
-    if (filtroEstado === "inactivos") return u.estado === false;
-    return true; // todos 
+    // Recarga la lista de usuarios
+    cargarUsuarios();
+  } catch (error) {
+    console.error("Error al registrar usuario:", error.response?.data || error.message);
+  }
+};
+
+// Carga los datos de un usuario al formulario para su edición
+const handleEdit = (usuario) => {
+  setForm({
+    nombre: usuario.nombre,
+    apellido: usuario.apellido,
+    correo: usuario.correo,
+    telefono: usuario.telefono,
+    rol: usuario.rol,
+    estado: usuario.estado
   });
-  const total = usuarios.length;
-  const activos = usuarios.filter(u => u.estado).length;
-  const inactivos = total - activos;
+  setEditingId(usuario.idUsuario); // guarda el ID del usuario a editar
+};
+
+// Cambia el estado del usuario (activo/inactivo)
+const handleToggleEstado = async (usuario) => {
+  try {
+    // Crea una copia del usuario con el estado invertido
+    const usuarioActualizado = { ...usuario, estado: !usuario.estado };
+
+    // Actualiza el usuario en la base de datos
+    await updateUsuario(usuario.idUsuario, usuarioActualizado);
+
+    // Recarga los usuarios
+    cargarUsuarios();
+  } catch (error) {
+    console.error("Error al cambiar el estado del usuario:", error.response?.data || error.message);
+  }
+};
+
+// Filtra los usuarios según el estado seleccionado (todos, activos o inactivos)
+const usuariosFiltrados = usuarios.filter(u => {
+  if (filtroEstado === "activos") return u.estado === true;
+  if (filtroEstado === "inactivos") return u.estado === false;
+  return true; // muestra todos si no hay filtro
+});
+
+// Estadísticas: total, activos e inactivos
+const total = usuarios.length;
+const activos = usuarios.filter(u => u.estado).length;
+const inactivos = total - activos;
+
 
   return (
     <div className="container mt-4">

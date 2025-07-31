@@ -7,73 +7,93 @@ import {
 import "../../assets/css/ProveedorRegistro.css";
 
 export function ProveedoresRegistrados() {
-  const [proveedores, setProveedores] = useState([]);
-  const [editId, setEditId] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [proveedorAEliminar, setProveedorAEliminar] = useState(null);
+ // Estado para almacenar la lista de proveedores obtenida de la API
+const [proveedores, setProveedores] = useState([]);
 
-  useEffect(() => {
-    cargarProveedores();
-  }, []);
+// Estado para almacenar el ID del proveedor que se está editando
+const [editId, setEditId] = useState(null);
 
-  const cargarProveedores = async () => {
-    try {
-      const response = await fetchProveedores();
-      setProveedores(response.data);
-    } catch (error) {
-      console.error("Error al cargar proveedores:", error);
-    }
-  };
+// Estado para almacenar los datos del proveedor durante la edición
+const [editData, setEditData] = useState({});
 
-  const confirmarEliminar = (id) => setProveedorAEliminar(id);
-  const cancelarEliminar = () => setProveedorAEliminar(null);
+// Estado para almacenar el ID del proveedor que se desea eliminar (para confirmar)
+const [proveedorAEliminar, setProveedorAEliminar] = useState(null);
 
-  const eliminarProveedor = async () => {
-    try {
-      await deleteProveedor(proveedorAEliminar);
-      setProveedores(proveedores.filter((p) => p.idProveedor !== proveedorAEliminar));
-      setProveedorAEliminar(null);
-    } catch (error) {
-      console.error("Error al eliminar proveedor:", error);
-    }
-  };
+// useEffect se ejecuta solo una vez al montar el componente para cargar los proveedores
+useEffect(() => {
+  cargarProveedores();
+}, []);
 
-  const comenzarEdicion = (proveedor) => {
-    setEditId(proveedor.idProveedor);
-    setEditData({
-      nombre: proveedor.nombre,
-      correo: proveedor.correo,
-      telefono: proveedor.telefono,
-      tipo: proveedor.tipo,
-      estado: proveedor.estado,
-    });
-  };
+// Función asincrónica para obtener proveedores desde la API y actualizar el estado
+const cargarProveedores = async () => {
+  try {
+    const response = await fetchProveedores(); // Llama a la función que obtiene los proveedores
+    setProveedores(response.data); // Actualiza el estado con los datos recibidos
+  } catch (error) {
+    console.error("Error al cargar proveedores:", error); // Muestra error en consola si falla
+  }
+};
 
-  const cancelarEdicion = () => {
-    setEditId(null);
-    setEditData({});
-  };
+// Función que guarda el ID del proveedor que se quiere eliminar (para mostrar confirmación)
+const confirmarEliminar = (id) => setProveedorAEliminar(id);
 
-  const guardarEdicion = async (id) => {
-    try {
-      await updateProveedor(id, editData);
-      setProveedores(
-        proveedores.map((p) =>
-          p.idProveedor === id ? { ...p, ...editData } : p
-        )
-      );
-      cancelarEdicion();
-    } catch (error) {
-      console.error("Error al actualizar proveedor:", error);
-    }
-  };
+// Función que cancela la acción de eliminar (oculta confirmación)
+const cancelarEliminar = () => setProveedorAEliminar(null);
 
-  const manejarCambio = ({ target: { name, value, type, checked } }) => {
-    setEditData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+// Función para eliminar un proveedor de la API y actualizar el estado local
+const eliminarProveedor = async () => {
+  try {
+    await deleteProveedor(proveedorAEliminar); // Elimina el proveedor de la API
+    // Filtra el proveedor eliminado del estado local
+    setProveedores(proveedores.filter((p) => p.idProveedor !== proveedorAEliminar));
+    setProveedorAEliminar(null); // Limpia el estado de eliminación
+  } catch (error) {
+    console.error("Error al eliminar proveedor:", error); // Muestra error si falla
+  }
+};
+
+// Función que prepara el formulario para editar un proveedor cargando sus datos
+const comenzarEdicion = (proveedor) => {
+  setEditId(proveedor.idProveedor); // Guarda el ID que se está editando
+  setEditData({
+    nombre: proveedor.nombre,
+    correo: proveedor.correo,
+    telefono: proveedor.telefono,
+    tipo: proveedor.tipo,
+    estado: proveedor.estado,
+  }); // Carga los datos del proveedor en el estado editData
+};
+
+// Función para cancelar la edición y limpiar los estados relacionados
+const cancelarEdicion = () => {
+  setEditId(null); // Limpia el ID en edición
+  setEditData({}); // Limpia los datos del formulario
+};
+
+// Función para guardar los cambios editados de un proveedor
+const guardarEdicion = async (id) => {
+  try {
+    await updateProveedor(id, editData); // Envía los datos editados a la API
+    // Actualiza el proveedor en el estado local con los nuevos datos
+    setProveedores(
+      proveedores.map((p) =>
+        p.idProveedor === id ? { ...p, ...editData } : p
+      )
+    );
+    cancelarEdicion(); // Limpia los estados de edición
+  } catch (error) {
+    console.error("Error al actualizar proveedor:", error); // Muestra error si falla
+  }
+};
+
+// Función que maneja el cambio de los inputs del formulario de edición
+const manejarCambio = ({ target: { name, value, type, checked } }) => {
+  setEditData((prev) => ({
+    ...prev,
+    [name]: type === "checkbox" ? checked : value, // Maneja tanto campos normales como checkboxes
+  }));
+};
+
 
   return (
     <>

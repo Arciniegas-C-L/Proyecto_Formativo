@@ -4,39 +4,48 @@ import { VerificarCodigo } from "./FormCambio";
 import "../../assets/css/formRecuperacion.css";
 
 export function RecuperarContrasena() {
-    const [correo, setCorreo] = useState("");
-    const [mensaje, setMensaje] = useState("");
-    const [error, setError] = useState("");
-    const [codigoEnviado, setCodigoEnviado] = useState(false);
+    // Estado para almacenar el correo ingresado por el usuario
+const [correo, setCorreo] = useState("");
 
-    const enviarCodigo = async (e) => {
-        e.preventDefault();
-        setMensaje("");
-        setError("");
+// Estado para mostrar mensajes de éxito
+const [mensaje, setMensaje] = useState("");
 
-        try {
-            const res = await fetch("http://127.0.0.1:8000/BACKEND/api/usuario/recuperar_contrasena/", {
+// Estado para mostrar mensajes de error
+const [error, setError] = useState("");
+
+// Estado para saber si el código fue enviado correctamente
+const [codigoEnviado, setCodigoEnviado] = useState(false);
+
+// Función que se ejecuta al enviar el formulario para recuperar contraseña
+const enviarCodigo = async (e) => {
+    e.preventDefault();      // Previene el comportamiento por defecto del formulario
+    setMensaje("");          // Limpia mensajes anteriores
+    setError("");            // Limpia errores anteriores
+
+    try {
+        const res = await fetch("http://127.0.0.1:8000/BACKEND/api/usuario/recuperar_contrasena/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ correo }),
+            body: JSON.stringify({ correo }),           // Envia el correo al backend
         });
 
         const data = await res.json();
         if (res.ok) {
-            setMensaje(data.mensaje);
-            setCodigoEnviado(true);
+            setMensaje(data.mensaje);                   // Muestra mensaje del servidor
+            setCodigoEnviado(true);                     // Habilita la siguiente etapa
         } else {
-            setError(data.error || "Error inesperado");
+            setError(data.error || "Error inesperado"); // Muestra error específico o genérico
         }
-        } catch (err) {
+    } catch (err) {
         console.error("Error al enviar código:", err);
-        setError("Error de conexión con el servidor");
-        }
-    };
-
-    if (codigoEnviado) {
-        return <VerificarCodigo correo={correo} />;
+        setError("Error de conexión con el servidor");   // Error en caso de fallo de red
     }
+};
+
+// Si el código fue enviado correctamente, muestra el componente para verificar el código
+if (codigoEnviado) {
+    return <VerificarCodigo correo={correo} />;
+};
 
     return (
         <div className="Formulario-Recuperar">

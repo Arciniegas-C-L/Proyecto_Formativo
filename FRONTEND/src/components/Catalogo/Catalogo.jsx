@@ -1,3 +1,5 @@
+//Importamos las dependencias necesarias
+
 import React, { useState, useEffect } from 'react';
 import { getALLProductos } from '../../api/Producto.api';
 import { createCarrito, agregarProducto, fetchCarritos } from '../../api/CarritoApi';
@@ -5,7 +7,11 @@ import { toast } from 'react-hot-toast';
 import { FaMinus, FaPlus, FaShoppingCart } from 'react-icons/fa';
 import '../../assets/css/Catalogo.css';
 
+
+//Exportamos el componente
 export function Catalogo() {
+
+    //Creamos hooks que nos permiten cambiar los estados
     const [productos, setProductos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [carritoId, setCarritoId] = useState(null);
@@ -13,11 +19,13 @@ export function Catalogo() {
     const [cantidades, setCantidades] = useState({});
     const [carrito, setCarrito] = useState(null);
 
+    //Useeffect para cargar las funciones que contiene cuando se monte este componente en el navegador
     useEffect(() => {
         cargarProductos();
         inicializarCarrito();
     }, []);
 
+    //Función para obtener o crear un carrito activo al iniciar el componente
     const inicializarCarrito = async () => {
         try {
             const response = await fetchCarritos();
@@ -37,6 +45,7 @@ export function Catalogo() {
         }
     };
 
+    //Función para cargar los productos y establecer cantidad inicial en 1
     const cargarProductos = async () => {
         try {
             const response = await getALLProductos();
@@ -55,6 +64,7 @@ export function Catalogo() {
         }
     };
 
+    //Función para actualizar la cantidad de un producto si es mayor a 0
     const handleCambiarCantidad = (productoId, nuevaCantidad) => {
         if (nuevaCantidad < 1) return;
         setCantidades(prev => ({
@@ -63,6 +73,7 @@ export function Catalogo() {
         }));
     };
 
+    //Función para agregar un producto al carrito validando stock y cantidad
     const handleAgregarAlCarrito = async (producto) => {
         try {
             if (!carrito) {
@@ -131,6 +142,7 @@ export function Catalogo() {
         }
     };
 
+    //Suspenso de carga
     if (loading) {
         return (
             <div className="catalogo-container">

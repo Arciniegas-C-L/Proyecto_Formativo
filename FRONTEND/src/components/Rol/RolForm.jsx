@@ -4,15 +4,19 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 
 export function RolForm() {
+// Hook de react-hook-form para registrar campos, manejar el submit y errores
+const { register, handleSubmit, formState: { errors } } = useForm();
 
-    const { register, handleSubmit, formState: { errors } } = useForm()
-    const navigate = useNavigate()
+// Hook para redireccionar a otra ruta
+const navigate = useNavigate();
 
-    const onSubmit = handleSubmit(async data => {
-        await createRol(data)
-        toast.success('Rol Creado')
-        navigate("/rol")
-    })
+// Función que se ejecuta al enviar el formulario
+const onSubmit = handleSubmit(async data => {
+    await createRol(data);
+    toast.success('Rol Creado');
+    navigate("/rol");
+});
+
 
     return (
         <div className="container mt-5 d-flex justify-content-center">

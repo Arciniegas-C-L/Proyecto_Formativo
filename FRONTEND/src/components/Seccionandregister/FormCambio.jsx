@@ -4,56 +4,60 @@ import "../../assets/css/formCambio.css";
 import { RecuperarContrasena } from "./FormRecuperacion";
 
 export function VerificarCodigo({ correo }) {
-    const [codigo, setCodigo] = useState("");
-    const [codigoVerificado, setCodigoVerificado] = useState(false);
-    const [nuevaContrasena, setNuevaContrasena] = useState("");
-    const [confirmarContrasena, setConfirmarContrasena] = useState("");
-    const [mensaje, setMensaje] = useState("");
-    const [error, setError] = useState("");
+    // Estados para manejar entradas y feedback
+const [codigo, setCodigo] = useState("");
+const [codigoVerificado, setCodigoVerificado] = useState(false);
+const [nuevaContrasena, setNuevaContrasena] = useState("");
+const [confirmarContrasena, setConfirmarContrasena] = useState("");
+const [mensaje, setMensaje] = useState("");
+const [error, setError] = useState("");
 
-    const navigate = useNavigate();
+const navigate = useNavigate();
 
-    const verificarCodigo = async (e) => {
-        e.preventDefault();
-        setError("");
-        setMensaje("");
+// Verifica el código enviado al correo
+const verificarCodigo = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMensaje("");
 
     try {
         const res = await fetch(
             "http://127.0.0.1:8000/BACKEND/api/usuario/verificar_codigo/",
             {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ correo, codigo }),
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ correo, codigo }),
             }
         );
 
         const data = await res.json();
         if (res.ok) {
-            setCodigoVerificado(true);
+            setCodigoVerificado(true);                  // Habilita el formulario de contraseña
             setMensaje("Código verificado correctamente");
         } else {
             setError(data.error || "Código incorrecto o expirado");
         }
-        } catch (err) {
-            console.error("Error al verificar código:", err);
-            setError("Error de conexión con el servidor");
-        }
-        };
+    } catch (err) {
+        console.error("Error al verificar código:", err);
+        setError("Error de conexión con el servidor");
+    }
+};
 
-    const cambiarContrasena = async (e) => {
-        e.preventDefault();
-        setError("");
-        setMensaje("");
+// Cambia la contraseña una vez verificado el código
+const cambiarContrasena = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMensaje("");
 
-        if (nuevaContrasena !== confirmarContrasena) {
-            setError("Las contraseñas no coinciden");
-            return;
-        }
+    // Validar coincidencia de contraseñas
+    if (nuevaContrasena !== confirmarContrasena) {
+        setError("Las contraseñas no coinciden");
+        return;
+    }
 
-        try {
-            const res = await fetch(
-                "http://127.0.0.1:8000/BACKEND/api/usuario/reset_password/",
+    try {
+        const res = await fetch(
+            "http://127.0.0.1:8000/BACKEND/api/usuario/reset_password/",
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -63,16 +67,16 @@ export function VerificarCodigo({ correo }) {
 
         const data = await res.json();
         if (res.ok) {
-            setMensaje(data.mensaje);
+            setMensaje(data.mensaje);                  // Muestra éxito y redirige
             setTimeout(() => navigate("/sesion"), 2000);
         } else {
             setError(data.error || "No se pudo cambiar la contraseña");
         }
-        } catch (err) {
-            console.error("Error al cambiar contraseña:", err);
-            setError("Error de conexión con el servidor");
-        }
-    };
+    } catch (err) {
+        console.error("Error al cambiar contraseña:", err);
+        setError("Error de conexión con el servidor");
+    }
+};
 
     return (
         <div>

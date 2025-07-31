@@ -7,71 +7,88 @@ import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
 
 export function Sesion() {
-  const containerRef = useRef(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
+ // Hook para hacer referencia al contenedor principal (usado para cambiar clases CSS dinámicamente)
+const containerRef = useRef(null);
 
-  const handleSignInClick = () => {
+// Estado para controlar si se está enviando un formulario (login o registro)
+const [isSubmitting, setIsSubmitting] = useState(false);
+
+// Hook de React Router para redireccionar
+const navigate = useNavigate();
+
+// Muestra el formulario de inicio de sesión (quita la clase 'toggle')
+const handleSignInClick = () => {
+  containerRef.current.classList.remove('toggle');
+};
+
+// Muestra el formulario de registro (agrega la clase 'toggle')
+const handleSignUpClick = () => {
+  containerRef.current.classList.add('toggle');
+};
+
+// Función que maneja el inicio de sesión
+const handleLogin = async (e) => {
+  e.preventDefault(); // Evita el comportamiento por defecto del formulario
+  setIsSubmitting(true); // Indica que se está procesando el envío
+
+  // Obtiene los valores del formulario
+  const form = e.target.elements;
+  const correo = form.email.value;
+  const password = form.password.value;
+
+  try {
+    // Llama a la API para iniciar sesión
+    const response = await loginUsuario({ correo, password });
+
+    // Guarda el token en localStorage
+    localStorage.setItem('token', response.data.token);
+
+    // Notifica éxito y redirige a la página principal
+    toast.success("Inicio de sesión exitoso");
+    navigate('/');
+  } catch (error) {
+    // Muestra error si las credenciales son inválidas u otro fallo
+    const errorMsg = error.response?.data?.error || "Credenciales inválidas";
+    toast.error("Error: " + errorMsg);
+  }
+
+  setIsSubmitting(false); // Finaliza el estado de envío
+};
+
+// Función que maneja el registro de usuario
+const handleRegister = async (e) => {
+  e.preventDefault(); // Previene el comportamiento por defecto del formulario
+  setIsSubmitting(true); // Inicia el estado de envío
+
+  // Obtiene los valores del formulario de registro
+  const form = e.target.elements;
+  const nombre = form.nombre.value;
+  const apellido = form.apellido.value;
+  const telefono = form.telefono.value;
+  const correo = form.correo.value;
+  const password = form.password.value;
+
+  try {
+    // Llama a la API para registrar un nuevo usuario
+    await registerUsuario({
+      nombre,
+      apellido,
+      correo,
+      password,
+      telefono,
+    });
+
+    // Notifica éxito y cambia al formulario de login
+    toast.success("Registro exitoso. Ahora inicia sesión.");
     containerRef.current.classList.remove('toggle');
-  };
+  } catch (error) {
+    // Muestra mensaje de error
+    toast.error("Error: " + JSON.stringify(error.response?.data || {}));
+  }
 
-  const handleSignUpClick = () => {
-    containerRef.current.classList.add('toggle');
-  };
+  setIsSubmitting(false); // Finaliza el estado de envío
+};
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const form = e.target.elements;
-    const correo = form.email.value;
-    const password = form.password.value;
-
-    try {
-      const response = await loginUsuario({ correo, password });
-      
-      // Guardar el token en localStorage
-      localStorage.setItem('token', response.data.token);
-      
-      toast.success("Inicio de sesión exitoso");
-      navigate('/');
-    } catch (error) {
-      const errorMsg = error.response?.data?.error || "Credenciales inválidas";
-      toast.error("Error: " + errorMsg);
-    }
-
-    setIsSubmitting(false);
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const form = e.target.elements;
-
-    const nombre = form.nombre.value;
-    const apellido = form.apellido.value;
-    const telefono = form.telefono.value;
-    const correo = form.correo.value;
-    const password = form.password.value;
-
-    try {
-      await registerUsuario({
-        nombre,
-        apellido,
-        correo,
-        password,
-        telefono,
-      });
-
-      toast.success("Registro exitoso. Ahora inicia sesión.");
-      containerRef.current.classList.remove('toggle');
-    } catch (error) {
-      toast.error("Error: " + JSON.stringify(error.response?.data || {}));
-    }
-
-    setIsSubmitting(false);
-  };
 
   return (
     <div className="container-sesion">
