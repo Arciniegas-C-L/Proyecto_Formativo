@@ -1,24 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { getALLProductos } from '../../api/Producto.api';
-import { getAllCategorias } from '../../api/Categoria.api';
-import { createCarrito, agregarProducto, fetchCarritos } from '../../api/CarritoApi';
-import Filtros from './Filtros';
-import { FaMinus, FaPlus, FaShoppingCart } from 'react-icons/fa';
-import '../../assets/css/Catalogo.css';
-import { toast } from 'react-hot-toast';
+import React, { useEffect, useState } from "react";
+import { getALLProductos } from "../../api/Producto.api";
+import { getAllCategorias } from "../../api/Categoria.api";
+import "../../assets/css/Catalogo.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-function Catalogo() {
+// Cambié export function por export default function
+export default function Catalogo() {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState("");
   const [tallaSeleccionada, setTallaSeleccionada] = useState({});
-  const [carrito, setCarrito] = useState(null);
-  const [cantidades, setCantidades] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [agregandoProducto, setAgregandoProducto] = useState(false);
 
   const capitalizar = (texto) =>
     texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
@@ -51,17 +44,8 @@ function Catalogo() {
       });
 
       setSubcategoriasPorCategoria(subFinal);
-
-      const cantidadesIniciales = {};
-      productosValidos.forEach((producto) => {
-        cantidadesIniciales[producto.idProducto] = 1;
-      });
-      setCantidades(cantidadesIniciales);
     } catch (error) {
       console.error("Error al cargar productos:", error);
-      toast.error("Error al cargar productos");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -75,32 +59,15 @@ function Catalogo() {
     }
   };
 
-  const inicializarCarrito = async () => {
-    try {
-      const response = await fetchCarritos();
-      const carritosActivos = response.data.filter(carrito => carrito.estado === true);
-
-      if (carritosActivos.length > 0) {
-        setCarrito(carritosActivos[0]);
-      } else {
-        const nuevoCarrito = await createCarrito({ estado: true });
-        setCarrito(nuevoCarrito.data);
-      }
-    } catch (error) {
-      console.error('Error al inicializar el carrito:', error);
-      toast.error('Error al inicializar el carrito');
-    }
-  };
-
   useEffect(() => {
     cargarCategorias();
     cargarProductos();
-    inicializarCarrito();
 
     const interval = setInterval(() => {
       cargarCategorias();
       cargarProductos();
     }, 5000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -125,78 +92,6 @@ function Catalogo() {
     }));
   };
 
-  const handleCambiarCantidad = (productoId, nuevaCantidad) => {
-    if (nuevaCantidad < 1) return;
-    setCantidades(prev => ({
-      ...prev,
-      [productoId]: nuevaCantidad
-    }));
-  };
-
-  const handleAgregarAlCarrito = async (producto) => {
-    try {
-      if (!carrito) {
-        await inicializarCarrito();
-      }
-
-      if (!carrito) {
-        toast.error('No se pudo inicializar el carrito');
-        return;
-      }
-
-      if (cantidades[producto.idProducto] <= 0) {
-        toast.error('La cantidad debe ser mayor a 0');
-        return;
-      }
-
-      if (cantidades[producto.idProducto] > producto.stock) {
-        toast.error(`No hay suficiente stock disponible. Stock actual: ${producto.stock}`);
-        return;
-      }
-
-      const response = await agregarProducto(carrito.idCarrito, {
-        producto: producto.idProducto,
-        cantidad: cantidades[producto.idProducto]
-      });
-
-      if (response.data) {
-        const productoActualizado = response.data.items.find(item => item.producto.idProducto === producto.idProducto)?.producto;
-        if (productoActualizado) {
-          setProductos(prev =>
-            prev.map(p =>
-              p.idProducto === productoActualizado.idProducto
-                ? { ...p, stock: productoActualizado.stock }
-                : p
-            )
-          );
-        }
-        setCarrito(response.data);
-        toast.success('Producto agregado al carrito');
-      }
-    } catch (error) {
-      console.error('Error al agregar al carrito:', error);
-      let mensajeError = 'Error al agregar el producto al carrito';
-
-      if (error.response) {
-        switch (error.response.status) {
-          case 400:
-            mensajeError = error.response.data.error || 'Datos inválidos';
-            break;
-          case 404:
-            mensajeError = 'Producto o carrito no encontrado';
-            break;
-          case 409:
-            mensajeError = 'El producto ya está en el carrito';
-            break;
-          default:
-            mensajeError = 'Error al agregar el producto al carrito';
-        }
-      }
-
-      toast.error(mensajeError);
-    }
-  };
-
   const productosFiltrados = productos.filter((producto) => {
     if (!categoriaSeleccionada) return true;
     if (!subcategoriaSeleccionada) {
@@ -208,31 +103,50 @@ function Catalogo() {
     );
   });
 
-  if (loading) {
-    return (
-      <div className="catalogo-container">
-        <div className="loading">Cargando productos...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container-fluid py-4 catalogo-container">
+    <div className="container-fluid py-4">
       <div className="row">
+        {/* FILTROS */}
         <div className="col-md-3 mb-4">
-          <Filtros
-            categorias={categorias}
-            subcategoriasPorCategoria={subcategoriasPorCategoria}
-            categoriaSeleccionada={categoriaSeleccionada}
-            subcategoriaSeleccionada={subcategoriaSeleccionada}
-            seleccionarCategoria={seleccionarCategoria}
-            seleccionarSubcategoria={seleccionarSubcategoria}
-            limpiarFiltros={limpiarFiltros}
-          />
+          <div className="card shadow-sm p-3 filtros">
+            <h5 className="mb-3">Categorías</h5>
+            {categorias.map((cat) => (
+              <button
+                key={cat}
+                className={`btn btn-categoria mb-1 ${categoriaSeleccionada === cat ? "active" : ""}`}
+                onClick={() => seleccionarCategoria(cat)}
+              >
+                {capitalizar(cat)}
+              </button>
+            ))}
+
+            {categoriaSeleccionada && subcategoriasPorCategoria[categoriaSeleccionada] && (
+              <>
+                <hr />
+                <h6 className="mt-2">Subcategorías</h6>
+                {subcategoriasPorCategoria[categoriaSeleccionada]?.map((sub) => (
+                  <button
+                    key={sub}
+                    className={`btn btn-subcategoria mb-1 ${subcategoriaSeleccionada === sub ? "btn-warning" : ""}`}
+                    onClick={() => seleccionarSubcategoria(sub)}
+                  >
+                    {capitalizar(sub)}
+                  </button>
+                ))}
+              </>
+            )}
+
+            {(categoriaSeleccionada || subcategoriaSeleccionada) && (
+              <button className="btn btn-limpiar mt-3" onClick={limpiarFiltros}>
+                Limpiar filtros
+              </button>
+            )}
+          </div>
         </div>
 
+        {/* CATÁLOGO */}
         <div className="col-md-9">
-          <h2 className="text-center mb-4 catalogo-titulo">Catálogo de Productos</h2>
+          <h2 className="text-center mb-4">Catálogo de Productos</h2>
           <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
             {productosFiltrados.length === 0 ? (
               <div className="col text-center">
@@ -242,47 +156,49 @@ function Catalogo() {
               </div>
             ) : (
               productosFiltrados.map((producto) => (
-                <div key={producto.idProducto} className="producto-card">
-                  <div className="producto-imagen">
-                    <img
-                      src={producto.imagen || "https://via.placeholder.com/200"}
-                      alt={producto.nombre}
-                    />
-                  </div>
-
-                  <div className="producto-info">
-                    <h3>{producto.nombre}</h3>
-                    <p className="producto-descripcion">{producto.descripcion}</p>
-                    <p className="producto-precio">${producto.precio}</p>
-                    <p className="producto-categoria">{producto.categoria_nombre}</p>
-                  </div>
-
-                  <div className="producto-acciones">
-                    <div className="cantidad-selector">
-                      <button
-                        className="btn-cantidad"
-                        onClick={() => handleCambiarCantidad(producto.idProducto, cantidades[producto.idProducto] - 1)}
-                        disabled={cantidades[producto.idProducto] <= 1}
-                      >
-                        <FaMinus />
-                      </button>
-                      <span>{cantidades[producto.idProducto]}</span>
-                      <button
-                        className="btn-cantidad"
-                        onClick={() => handleCambiarCantidad(producto.idProducto, cantidades[producto.idProducto] + 1)}
-                      >
-                        <FaPlus />
-                      </button>
+                <div className="col d-flex" key={producto.id}>
+                  <div className="card shadow producto-card w-100">
+                    <div className="img-container">
+                      <img
+                        src={producto.imagen}
+                        alt={producto.nombre}
+                        className="card-img-top"
+                      />
                     </div>
+                    <div className="card-body d-flex flex-column">
+                      <h5 className="card-title">{capitalizar(producto.nombre)}</h5>
+                      <p className="card-text descripcion">{producto.descripcion}</p>
+                      <p className="card-text">
+                        <strong>Precio:</strong> ${producto.precio}
+                      </p>
+                      <p className="card-text">
+                        <strong>Subcategoría:</strong> {capitalizar(producto.subcategoria_nombre)}
+                      </p>
 
-                    <button
-                      className="btn-agregar"
-                      onClick={() => handleAgregarAlCarrito(producto)}
-                      disabled={agregandoProducto}
-                    >
-                      <FaShoppingCart />
-                      {agregandoProducto ? 'Agregando...' : 'Agregar al Carrito'}
-                    </button>
+                      <div className="mt-2">
+                        <strong>Tallas:</strong>
+                        <div className="d-flex flex-wrap gap-2 mt-1">
+                          {producto.inventario_tallas.map((inv, i) => (
+                            <button
+                              key={i}
+                              className={`talla-btn ${tallaSeleccionada[producto.id]?.talla === inv.talla ? "selected" : ""}`}
+                              onClick={() => mostrarStock(producto.id, inv.talla, inv.stock)}
+                            >
+                              {inv.talla}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {tallaSeleccionada[producto.id] && (
+                        <div className="alert alert-info mt-2 p-1 text-center">
+                          Productos disponibles:{" "}
+                          <strong>{tallaSeleccionada[producto.id].stock}</strong>
+                        </div>
+                      )}
+
+                      <button className="btn btn-dark mt-auto">Agregar al carrito</button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -293,5 +209,3 @@ function Catalogo() {
     </div>
   );
 }
-
-export default Catalogo;

@@ -32,8 +32,8 @@ import {
   updateTalla,
   deleteTalla,
   cambiarEstadoTalla,
-} from '../api/Talla.api';
-import { getAllGruposTalla } from '../api/GrupoTalla.api';
+} from '../../api/Talla.api.js';
+import { getAllGruposTalla } from '../../api/GrupoTalla.api.js';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -51,17 +51,6 @@ export const Tallas = () => {
     grupo_id: '',
     estado: true,
   });
-
-  useEffect(() => {
-    cargarTallas();
-    cargarGruposTalla();
-  }, []);
-
-  const handleError = (error) => {
-    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
-    setError(errorMessage);
-    toast.error(errorMessage);
-  };
 
   const cargarTallas = async () => {
     try {
@@ -87,6 +76,17 @@ export const Tallas = () => {
     } finally {
       setLoadingGrupos(false);
     }
+  };
+
+  useEffect(() => {
+    cargarTallas();
+    cargarGruposTalla();
+  }, []);
+
+  const handleError = (error) => {
+    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
+    setError(errorMessage);
+    toast.error(errorMessage);
   };
 
   const handleOpenDialog = (talla = null) => {
@@ -192,11 +192,7 @@ export const Tallas = () => {
         <Typography variant="h4" component="h1">
           Gestión de Tallas
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpenDialog()}
-        >
+        <Button variant="contained" color="primary" onClick={() => handleOpenDialog()}>
           Nueva Talla
         </Button>
       </Box>
@@ -242,16 +238,10 @@ export const Tallas = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpenDialog(talla)}
-                    >
+                    <IconButton color="primary" onClick={() => handleOpenDialog(talla)}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(talla.id)}
-                    >
+                    <IconButton color="error" onClick={() => handleDelete(talla.id)}>
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -263,9 +253,7 @@ export const Tallas = () => {
       </TableContainer>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingTalla ? 'Editar Talla' : 'Nueva Talla'}
-        </DialogTitle>
+        <DialogTitle>{editingTalla ? 'Editar Talla' : 'Nueva Talla'}</DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
             {error && (

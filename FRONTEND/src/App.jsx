@@ -1,334 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
-  Alert,
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import {
-  getAllTallas,
-  createTalla,
-  updateTalla,
-  deleteTalla,
-  cambiarEstadoTalla,
-} from '../api/Talla.api';
-import { getAllGruposTalla } from '../api/GrupoTalla.api';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
+import { RolListaPage } from "./pages/RolListaPage.jsx";
+import { RolFormPage } from "./pages/RolFormPage.jsx";
+import { Header } from "./components/Singlepage/Header.jsx";
+import { Footer } from "./components/Singlepage/Footer.jsx";
+import { Home } from "./components/Singlepage/Home.jsx";
+import { SesionPage } from "./pages/SesionPage.jsx";
+import { Toaster } from "react-hot-toast";
+import { SesionRecuperacionPage } from "./pages/SesionRecuperacion.jsx";
+import { InventarioPage } from "./pages/InventarioPage";
+import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
+import { ProveedoresRegistradosPage } from "./pages/ProvedoresRegistradosPage.jsx";
+import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js";
+import { CategoriasPage } from './pages/Categoriaspage';
+import { ListaProductosPage } from './pages/ListaproductosPage.jsx';
+import { ProductosFormPage } from './pages/ProductosFormPage.jsx';
+import { CatalogoPage } from './pages/Catalogopage';
+import { AdminUsuariosPage } from './pages/AdminUsuariosPage.jsx';
+import { TallasPage } from './pages/Tallaspage.jsx';
+import { GrupoTallaPage } from './pages/GrupoTallePage.jsx';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
-export const Tallas = () => {
-  const navigate = useNavigate();
-  const [tallas, setTallas] = useState([]);
-  const [gruposTalla, setGruposTalla] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingTalla, setEditingTalla] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadingGrupos, setLoadingGrupos] = useState(true);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    grupo_id: '',
-    estado: true,
-  });
+function App() {
+  const [proveedores, setProveedores] = useState([]);
 
   useEffect(() => {
-    cargarTallas();
-    cargarGruposTalla();
+    const cargarProveedores = async () => {
+      try {
+        const response = await fetchProveedores();
+        setProveedores(response.data);
+      } catch (error) {
+        console.error("Error al cargar proveedores:", error);
+      }
+    };
+
+    cargarProveedores();
   }, []);
 
-  const handleError = (error) => {
-    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
-    setError(errorMessage);
-    toast.error(errorMessage);
-  };
-
-  const cargarTallas = async () => {
+  const handleEliminar = async (id) => {
     try {
-      setLoading(true);
-      const response = await getAllTallas();
-      setTallas(response.data || []);
+      await deleteProveedor(id);
+      setProveedores(proveedores.filter((prov) => prov.id !== id));
     } catch (error) {
-      handleError(error);
-      setTallas([]);
-    } finally {
-      setLoading(false);
+      console.error("Error al eliminar proveedor:", error);
     }
   };
 
-  const cargarGruposTalla = async () => {
-    try {
-      setLoadingGrupos(true);
-      const response = await getAllGruposTalla();
-      setGruposTalla(response.data || []);
-    } catch (error) {
-      handleError(error);
-      setGruposTalla([]);
-    } finally {
-      setLoadingGrupos(false);
-    }
-  };
-
-  const handleOpenDialog = (talla = null) => {
-    setError('');
-    if (talla) {
-      setEditingTalla(talla);
-      setFormData({
-        nombre: talla.nombre,
-        grupo_id: talla.grupo.idGrupoTalla,
-        estado: talla.estado,
-      });
-    } else {
-      setEditingTalla(null);
-      setFormData({
-        nombre: '',
-        grupo_id: '',
-        estado: true,
-      });
-    }
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setEditingTalla(null);
-    setError('');
-    setFormData({
-      nombre: '',
-      grupo_id: '',
-      estado: true,
-    });
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === 'estado' ? checked : value,
-    });
-    setError('');
-  };
-
-  const validateForm = () => {
-    if (!formData.nombre.trim()) {
-      setError('El nombre es requerido');
-      return false;
-    }
-    if (!formData.grupo_id) {
-      setError('Debe seleccionar un grupo de talla');
-      return false;
-    }
-    if (formData.nombre.length > 10) {
-      setError('El nombre no puede tener más de 10 caracteres');
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    try {
-      if (editingTalla) {
-        await updateTalla(editingTalla.id, formData);
-        toast.success('Talla actualizada exitosamente');
-      } else {
-        await createTalla(formData);
-        toast.success('Talla creada exitosamente');
-      }
-      handleCloseDialog();
-      cargarTallas();
-    } catch (error) {
-      handleError(error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar esta talla?')) {
-      try {
-        await deleteTalla(id);
-        toast.success('Talla eliminada exitosamente');
-        cargarTallas();
-      } catch (error) {
-        handleError(error);
-      }
-    }
-  };
-
-  const handleEstadoChange = async (id, estado) => {
-    try {
-      await cambiarEstadoTalla(id, !estado);
-      toast.success('Estado de la talla actualizado exitosamente');
-      cargarTallas();
-    } catch (error) {
-      handleError(error);
-    }
+  const handleEditar = (proveedor) => {
+    console.log("Editar proveedor", proveedor);
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Gestión de Tallas
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpenDialog()}
-        >
-          Nueva Talla
-        </Button>
-      </Box>
-
-      <TableContainer component={Paper}>
-        {loading ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>Cargando tallas...</Typography>
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Alert severity="error">{error}</Alert>
-          </Box>
-        ) : !tallas || tallas.length === 0 ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>No hay tallas disponibles</Typography>
-          </Box>
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Grupo de Talla</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tallas.map((talla) => (
-                <TableRow key={talla.id}>
-                  <TableCell>{talla.nombre}</TableCell>
-                  <TableCell>{talla.grupo.nombre}</TableCell>
-                  <TableCell>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={talla.estado}
-                          onChange={() => handleEstadoChange(talla.id, talla.estado)}
-                          color="primary"
-                        />
-                      }
-                      label={talla.estado ? 'Activo' : 'Inactivo'}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpenDialog(talla)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(talla.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </TableContainer>
-
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingTalla ? 'Editar Talla' : 'Nueva Talla'}
-        </DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-            <TextField
-              fullWidth
-              label="Nombre"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleInputChange}
-              margin="normal"
-              required
-              inputProps={{ maxLength: 10 }}
-              helperText={`${formData.nombre.length}/10 caracteres`}
+    <>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/categorias" element={<CategoriasPage />} />
+        <Route path="/rol" element={<RolListaPage />} />
+        <Route path="/rol-create" element={<RolFormPage />} />
+        <Route path="/sesion" element={<SesionPage />} />
+        <Route path="/sesion/recuperar_contrasena" element={<SesionRecuperacionPage />} />
+        <Route path="/proveedores" element={<AdminProvedoresPage />} />
+        <Route path="/inventario" element={<InventarioPage />} />
+        <Route
+          path="/proveedores_registrados"
+          element={
+            <ProveedoresRegistradosPage
+              proveedores={proveedores}
+              onEliminar={handleEliminar}
+              onEditar={handleEditar}
             />
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel>Grupo de Talla</InputLabel>
-              <Select
-                name="grupo_id"
-                value={formData.grupo_id}
-                onChange={handleInputChange}
-                label="Grupo de Talla"
-                disabled={loadingGrupos}
-              >
-                {loadingGrupos ? (
-                  <MenuItem disabled>Cargando grupos...</MenuItem>
-                ) : !gruposTalla || gruposTalla.length === 0 ? (
-                  <MenuItem disabled>No hay grupos disponibles</MenuItem>
-                ) : (
-                  gruposTalla.map((grupo) => (
-                    <MenuItem key={grupo.idGrupoTalla} value={grupo.idGrupoTalla}>
-                      {grupo.nombre}
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-            </FormControl>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.estado}
-                  onChange={handleInputChange}
-                  name="estado"
-                  color="primary"
-                />
-              }
-              label="Activo"
-              margin="normal"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button type="submit" variant="contained" color="primary">
-              {editingTalla ? 'Actualizar' : 'Crear'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </Box>
+          }
+        />
+        <Route path="/producto" element={<ListaProductosPage />} />
+        <Route path="/producto/crear" element={<ProductosFormPage />} />
+        <Route path="/producto/editar/:id" element={<ProductosFormPage />} />
+        <Route path="/catalogo" element={<CatalogoPage />} />
+        <Route path="/usuario" element={<AdminUsuariosPage />} />
+        <Route path="/tallas" element={<TallasPage />} />
+        <Route path="/grupo-talla" element={<GrupoTallaPage />} />
+      </Routes>
+      <Toaster />
+      <Footer />
+    </>
   );
-};
+}
 
-export default Tallas;
+export default App;

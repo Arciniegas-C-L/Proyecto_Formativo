@@ -18,8 +18,7 @@
 }
 
 /* Contenedor principal del catálogo */
-.catalogo-container {
-  background: linear-gradient(135deg, #00D4FF, #F26BE2);
+.catalogo-container {background: var(--gradient-primary);
   font-family: 'Urbanist', sans-serif;
   color: var(--text-dark);
 }
