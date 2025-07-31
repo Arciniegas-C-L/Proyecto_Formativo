@@ -1,3 +1,7 @@
+//Este componente es la página de administración de proveedores 
+//Aqui podemos unir todos los componentes o subcomponentes para exportar a la app.jsx
+
+
 import {AdminProveedores} from "../components/Provedores/AdminProveedores";
 
 export function AdminProvedoresPage() {
