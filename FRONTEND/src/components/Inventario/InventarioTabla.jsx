@@ -729,6 +729,7 @@ const InventarioTabla = () => {
     return grupoTalla.nombre || 'Grupo sin título';
   };
 
+  
   const renderGrupoTallaSelect = (subcategoria) => {
     if (!subcategoria.grupoTalla) {
       return (
