@@ -21,7 +21,7 @@ import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
+import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 
 function App() {

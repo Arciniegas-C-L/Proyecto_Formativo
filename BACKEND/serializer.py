@@ -5,30 +5,39 @@ from .models import (
     EstadoCarrito, Carrito, Talla, GrupoTalla
 )
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rol
         fields = '__all__'
-        
+
 class UsuarioSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
 
     class Meta:
         model = Usuario
-        fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'password', 'telefono']
-    
-
-    def create(self, validated_data):
-        rol_cliente, _ = Rol.objects.get_or_create(nombre='Cliente')
-        password = validated_data.pop('password')
-        usuario = Usuario(**validated_data)
-        usuario.rol = rol_cliente
-        usuario.set_password(password)
-        usuario.save()
-        return usuario
+        fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'telefono', 'estado', 'rol_nombre']
 
 
+class LoginSerializer(serializers.Serializer):
+    correo = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        correo = data.get('correo')
+        password = data.get('password')
+
+        if correo and password:
+            user = authenticate(request=self.context.get('request'), correo=correo, password=password)
+
+            if not user:
+                raise serializers.ValidationError("Credenciales inválidas", code='authorization')
+        else:
+            raise serializers.ValidationError("Debe incluir correo y contraseña", code='authorization')
+
+        data['user'] = user
+        return data
 
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:
