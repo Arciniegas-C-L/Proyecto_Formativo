@@ -4,7 +4,7 @@ import saludo from "../../assets/images/saludo.webp";
 import bienvenida from "../../assets/images/bienvenida.gif";
 import "../../assets/css/sesion.css";
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
-import { guardarSesion } from '../../auth/authService'; 
+import { guardarSesion } from '../../auth/authService';
 import toast from 'react-hot-toast';
 
 export function Sesion() {
@@ -12,45 +12,42 @@ export function Sesion() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignInClick = () => {
-    containerRef.current.classList.remove('toggle');
-  };
+  const handleSignInClick = () => containerRef.current.classList.remove('toggle');
+  const handleSignUpClick = () => containerRef.current.classList.add('toggle');
 
-  const handleSignUpClick = () => {
-    containerRef.current.classList.add('toggle');
-  };
-
-  // ✅ LOGIN ACTUALIZADO
+  // LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     const form = e.target.elements;
-    const correo = form.email.value;
+    const correo = form.correo.value;
     const password = form.password.value;
 
     try {
-      const response = await loginUsuario({ correo, password });
+      const { data } = await loginUsuario({ correo, password });
 
-      // ⬅️ GUARDA token y rol en localStorage
-      guardarSesion(response.data.token, response.data.rol);
+      // Guardar token y usuario completo
+      guardarSesion(data.token, data.usuario);
+      localStorage.setItem("rol", data.rol);
 
-      toast.success("Inicio de sesión exitoso");
+      toast.success(`Bienvenido ${data.usuario.nombre}`);
 
-      // ⬅️ REDIRIGE SEGÚN ROL
-      if (response.data.rol === 'administrador') {
+      // Redirección según rol
+      if (data.rol === 'administrador') {
         navigate('/admin');
       } else {
-        navigate('/catalogo'); // o la ruta de usuario normal
+        navigate('/catalogo');
       }
     } catch (error) {
       const errorMsg = error.response?.data?.error || "Credenciales inválidas";
-      toast.error("Error: " + errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
+  // REGISTRO
   const handleRegister = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -60,46 +57,48 @@ export function Sesion() {
     const apellido = form.apellido.value;
     const telefono = form.telefono.value;
     const correo = form.correo.value;
-    const password = form.password.value;
+    const password = form.password.value.trim();
+
+    if (password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      await registerUsuario({
-        nombre,
-        apellido,
-        correo,
-        password,
-        telefono,
-      });
-
+      await registerUsuario({ nombre, apellido, correo, password, telefono });
       toast.success("Registro exitoso. Ahora inicia sesión.");
       containerRef.current.classList.remove('toggle');
     } catch (error) {
-      toast.error("Error: " + JSON.stringify(error.response?.data || {}));
+      const errorMsg = error.response?.data?.error || "No se pudo registrar el usuario";
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   return (
     <div className="container-sesion">
       <div className="container" ref={containerRef}>
+        {/* LOGIN */}
         <div className="container-form">
           <form className="sign-in" onSubmit={handleLogin}>
             <h2>Iniciar Sesión</h2>
             <span>Use su correo y contraseña</span>
             <div className="container-input">
-              <input type="email" name="email" placeholder="Correo" required />
+              <input type="email" name="correo" placeholder="Correo" required />
             </div>
             <div className="container-input">
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
-            <Link to="recuperar_contrasena/" className="forgot-password">¿Olvidaste tu contraseña?</Link>
+            <Link to="/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? "Procesando..." : "INICIAR SESIÓN"}
             </button>
           </form>
         </div>
 
+        {/* REGISTRO */}
         <div className="container-form">
           <form className="sign-up" onSubmit={handleRegister}>
             <h2>Registrarse</h2>
@@ -125,6 +124,7 @@ export function Sesion() {
           </form>
         </div>
 
+        {/* BIENVENIDA */}
         <div className="container-welcome">
           <div className="welcome-sign-up welcome">
             <h3>¡Bienvenido!</h3>

@@ -1,15 +1,14 @@
-import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { isAuthenticated, obtenerRol } from '../auth/authService';
+import { isAuthenticated, obtenerRol } from './authService';
 
-const ProtectedRoute = ({ children, role }) => {
-  const isAuth = isAuthenticated();
-  const userRole = obtenerRol();
+export default function ProtectedRoute({ children, role }) {
+  if (!isAuthenticated()) {
+    return <Navigate to="/sesion" />;
+  }
 
-  if (!isAuth) return <Navigate to="/login" />;
-  if (role && userRole !== role) return <Navigate to="/no-autorizado" />;
+  if (role && obtenerRol() !== role) {
+    return <Navigate to="/no-autorizado" />;
+  }
 
   return children;
-};
-
-export default ProtectedRoute;
+}

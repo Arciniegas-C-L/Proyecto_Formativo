@@ -16,18 +16,38 @@ class Rol(models.Model):
 
 # Usuarios y Manager
 class UsuarioManager(BaseUserManager):
+
     def create_user(self, correo, nombre, apellido, password=None, **extra_fields):
         if not correo:
             raise ValueError("El correo es obligatorio")
+
         correo = self.normalize_email(correo)
-        usuario = self.model(correo=correo, nombre=nombre, apellido=apellido, **extra_fields)
+        usuario = self.model(
+            correo=correo,
+            nombre=nombre,
+            apellido=apellido,
+            **extra_fields
+        )
         usuario.set_password(password)
         usuario.save(using=self._db)
         return usuario
 
+
     def create_superuser(self, correo, nombre, apellido, password, **extra_fields):
+        from BACKEND.models import Rol  # Importa aquí para evitar importaciones circulares
+
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+
+        # Asignar un rol automáticamente si no se proporcionó
+        if 'rol' not in extra_fields or extra_fields['rol'] is None:
+            try:
+                rol_admin = Rol.objects.get(nombre='administrador')  # Asegúrate de que exista este rol
+            except Rol.DoesNotExist:
+                # Crea el rol si no existe (opcional)
+                rol_admin = Rol.objects.create(nombre='administrador')
+            extra_fields['rol'] = rol_admin
+
         return self.create_user(correo, nombre, apellido, password, **extra_fields)
 
 

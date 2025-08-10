@@ -21,7 +21,7 @@ import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { ProtectedRoute } from "./auth/ProtectedRoute";
+//import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 
 function App() {
@@ -83,7 +83,7 @@ function App() {
         {/* Ruta que muestra la lista de proveedores registrados, 
             pasando funciones para eliminar y editar */}
         <Route
-          path="/proveedores_registrados"
+          path="/administrador"
           element={
             <ProveedoresRegistradosPage
               proveedores={proveedores}

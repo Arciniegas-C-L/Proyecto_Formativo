@@ -1,20 +1,24 @@
-const TOKEN_KEY = 'token';
-const USER_ROLE = 'rol';
+// src/auth/authService.js
 
-export const guardarSesion = (token, rol) => {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_ROLE, rol);
+// Guardar datos de sesión
+export const guardarSesion = (token, usuario) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("usuario", JSON.stringify(usuario));
 };
 
-export const obtenerToken = () => localStorage.getItem(TOKEN_KEY);
-export const obtenerRol = () => localStorage.getItem(USER_ROLE);
+// Obtener token
+export const obtenerToken = () => {
+    return localStorage.getItem("token");
+};
 
-export const isAuthenticated = () => !!obtenerToken();
+// Obtener usuario
+export const obtenerUsuario = () => {
+    const usuario = localStorage.getItem("usuario");
+    return usuario ? JSON.parse(usuario) : null;
+};
 
-export const isAdmin = () => obtenerRol() === 'administrador';
-export const isCliente = () => obtenerRol() === 'cliente';
-
+// Cerrar sesión
 export const cerrarSesion = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_ROLE);
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
 };

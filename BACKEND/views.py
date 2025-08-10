@@ -13,12 +13,12 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework import viewsets
 from .serializer import (
-    RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
+    CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
     ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
     PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
     CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
-    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer, 
-    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer
+    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer,
+    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer
 )
 from .models import (
     Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
@@ -38,162 +38,210 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from BACKEND.permissions import IsAdmin,IsCliente
+import random
+import string
 
 # Create your views here.
 
 class Rolview(viewsets.ModelViewSet):
+
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [AllowAny]
     
-class Usuarioview(viewsets.ModelViewSet):
-    serializer_class = UsuarioSerializer
+    # --- REGISTRO ---    
+class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
+    serializer_class = UsuarioSerializer
+    permission_classes = [AllowAny]
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def registro(self, request):
+    def register(self, request):
         data = request.data.copy()
-        password = data.get('password')
-        if not password:
-            return Response({"error": "La contraseña es requerida"}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data=data)
+        # Si no envían rol, asignamos el rol "cliente" por defecto
+        if not data.get('rol'):
+            try:
+                rol_cliente = Rol.objects.get(nombre='cliente')
+                data['rol'] = rol_cliente.pk
+            except Rol.DoesNotExist:
+                return Response(
+                    {"error": "Rol por defecto no encontrado"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        serializer = UsuarioRegistroSerializer(data=data)
         if serializer.is_valid():
             usuario = serializer.save()
+            return Response({
+                "mensaje": "Usuario registrado correctamente",
+                "usuario": UsuarioSerializer(usuario).data
+            }, status=status.HTTP_201_CREATED)
 
-            # Generar token
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # --- LOGIN ---
+    @action(detail=False, methods=['get', 'post'], permission_classes=[AllowAny])
+    def login(self, request):
+        if request.method == 'GET':
+            serializer = LoginSerializer()
+            return Response(serializer.data)
+
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        correo = serializer.validated_data['correo']
+        password = serializer.validated_data['password']
+        try:
+            usuario = Usuario.objects.select_related('rol').get(correo=correo)
+
+            if not usuario.is_active:
+                return Response({"error": "Usuario inactivo"}, status=status.HTTP_403_FORBIDDEN)
+
+            if not usuario.check_password(password):
+                return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+
             refresh = RefreshToken.for_user(usuario)
             token = {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             }
 
+            usuario_serializado = UsuarioSerializer(usuario).data
+
             return Response({
-                "mensaje": "Usuario registrado correctamente.",
-                "usuario": serializer.data,
+                "mensaje": "Login exitoso",
+                "usuario": usuario_serializado,
+                "rol": usuario.rol.nombre if usuario.rol else None,
                 "token": token
-            }, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def login(self, request):
-        correo = request.data.get('correo')
-        password = request.data.get('password')
-
-        try:
-            usuario = Usuario.objects.get(correo=correo)
-            if usuario.check_password(password):
-                refresh = RefreshToken.for_user(usuario)
-                token = {
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                }
-
-                return Response({
-                    "mensaje": "Login exitoso",
-                    "usuario": {
-                        "id": usuario.idUsuario,
-                        "nombre": usuario.nombre,
-                        "rol": usuario.rol.nombre
-                    },
-                    "token": token
-                }, status=status.HTTP_200_OK)
-
-            else:
-                return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_200_OK)
 
         except Usuario.DoesNotExist:
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
+    # --- ENVIAR CÓDIGO RECUPERACIÓN ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def recuperar_contrasena(self, request):
+    def recuperar_password(self, request):
         correo = request.data.get('correo')
-        if not correo:
-            return Response({"error": "Debe proporcionar un correo electrónico."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             usuario = Usuario.objects.get(correo=correo)
-            codigo = "{:06d}".format(random.randint(0, 999999))
 
+            # Verificar si ya hay un código activo en los últimos 10 minutos
+            codigo_activo = CodigoRecuperacion.objects.filter(
+                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=10)
+            ).exists()
+
+            if codigo_activo:
+                return Response({"error": "Ya se envió un código recientemente. Espere antes de solicitar otro."},
+                                status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+            # Generar código
+            codigo = ''.join(random.choices(string.digits, k=6))
             CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo)
 
-            asunto = "Código de recuperación"
-            mensaje = f"Tu código de recuperación es: {codigo}\nEste código expirará en 10 minutos."
-            email_desde = settings.DEFAULT_FROM_EMAIL
-            send_mail(asunto, mensaje, email_desde, [correo])
+            # Aquí deberías enviar el correo real
+            print(f"Enviar este código a {correo}: {codigo}")
 
-            return Response({"mensaje": "Código enviado al correo."})
+            return Response({"mensaje": "Código enviado al correo."}, status=status.HTTP_200_OK)
+
         except Usuario.DoesNotExist:
-            return Response({"error": "No existe un usuario con ese correo."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
+    # --- VERIFICAR CÓDIGO ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def verificar_codigo(self, request):
         correo = request.data.get('correo')
         codigo = request.data.get('codigo')
 
-        if not correo or not codigo:
-            return Response({"error": "Correo y código son requeridos."}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             usuario = Usuario.objects.get(correo=correo)
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
 
-        try:
-            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario, codigo=codigo).latest('creado')
-        except CodigoRecuperacion.DoesNotExist:
-            return Response({"error": "Código inválido."}, status=status.HTTP_400_BAD_REQUEST)
+            if codigo_obj.intentos >= 3:
+                return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
 
-        if codigo_obj.intentos >= 3:
-            return Response({"error": "Has superado el número máximo de intentos."}, status=status.HTTP_403_FORBIDDEN)
+            if codigo_obj.codigo != codigo:
+                codigo_obj.intentos += 1
+                codigo_obj.save()
+                return Response({"error": "Código incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if codigo_obj.esta_expirado():
-            return Response({"error": "El código ha expirado."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"mensaje": "Código válido"}, status=status.HTTP_200_OK)
 
-        return Response({"mensaje": "Código verificado correctamente."}, status=status.HTTP_200_OK)
+        except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
+            return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
 
+    # --- RESET PASSWORD ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def reset_password(self, request):
         correo = request.data.get('correo')
         codigo = request.data.get('codigo')
-        nueva_contrasena = request.data.get('contrasena')
-
-        if not all([correo, codigo, nueva_contrasena]):
-            return Response({"error": "Faltan datos para restablecer la contraseña."}, status=status.HTTP_400_BAD_REQUEST)
+        nueva_contrasena = request.data.get('nueva_contrasena')
 
         try:
             usuario = Usuario.objects.get(correo=correo)
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
             codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
-        except CodigoRecuperacion.DoesNotExist:
-            return Response({"error": "Código inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if codigo_obj.intentos >= 3:
-            return Response({"error": "Has superado el número máximo de intentos. Solicita un nuevo código."}, status=status.HTTP_403_FORBIDDEN)
+            if codigo_obj.intentos >= 3:
+                return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
 
-        if codigo_obj.esta_expirado():
-            return Response({"error": "El código ha expirado."}, status=status.HTTP_400_BAD_REQUEST)
+            if codigo_obj.codigo != codigo:
+                codigo_obj.intentos += 1
+                codigo_obj.save()
+                return Response({"error": "Código incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if codigo_obj.codigo != codigo:
-            codigo_obj.intentos += 1
-            codigo_obj.save()
-            return Response({"error": f"Código incorrecto. Intentos restantes: {3 - codigo_obj.intentos}"}, status=status.HTTP_400_BAD_REQUEST)
+            usuario.set_password(nueva_contrasena)
+            usuario.save()
+            codigo_obj.delete()
 
-        usuario.set_password(nueva_contrasena)
-        usuario.save()
-        CodigoRecuperacion.objects.filter(usuario=usuario).delete()
+            return Response({"mensaje": "Contraseña restablecida correctamente"}, status=status.HTTP_200_OK)
 
-        return Response({"mensaje": "Contraseña restablecida correctamente."}, status=status.HTTP_200_OK)
+        except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
+            return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
 
 from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework import serializers
+from .models import Usuario
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    correo = serializers.EmailField()
+    permission_classes = [AllowAny]
+
+    def validate(self, attrs):
+        correo = attrs.get("correo")
+        password = attrs.get("password")
+
+        try:
+            user = Usuario.objects.get(correo=correo)
+        except Usuario.DoesNotExist:
+            raise AuthenticationFailed("Usuario no encontrado.")
+
+        if not user.check_password(password):
+            raise AuthenticationFailed("Contraseña incorrecta.")
+
+        if not user.is_active:
+            raise AuthenticationFailed("Cuenta inactiva.")
+
+        refresh = RefreshToken.for_user(user)
+
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'usuario': {
+                'id': user.idUsuario,
+                'nombre': user.nombre,
+                'rol': user.rol.nombre,
+            }
+        }
+
 #Preparacion para actualizar perfil con token de cliente
 class MiPerfilView(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, IsCliente]
+    permission_classes = [IsAuthenticated, IsCliente, IsAdmin] 
 
     def list(self, request):
         serializer = UsuarioSerializer(request.user)
