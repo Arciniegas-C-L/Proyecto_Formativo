@@ -13,6 +13,13 @@ const TallaApi = axios.create({
     }
 });
 
+
+// src/api/Usuario.api.js
+import { api } from './client';
+
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
+
 // =================== FUNCIONES PARA LA API DE TALLA ===================
 
 // Obtener todas las tallas

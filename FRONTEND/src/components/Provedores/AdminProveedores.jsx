@@ -7,6 +7,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import "../../assets/css/Proveedores.css";
 
+
 export function AdminProveedores({ proveedorEditar, onEditComplete }) {
   // Estado local para el formulario del proveedor (nombre, correo, teléfono, tipo)
 const [form, setForm] = useState({

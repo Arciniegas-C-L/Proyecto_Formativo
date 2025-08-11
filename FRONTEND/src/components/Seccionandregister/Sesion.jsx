@@ -1,46 +1,56 @@
+// src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import saludo from "../../assets/images/saludo.webp";
-import bienvenida from "../../assets/images/bienvenida.gif";
-import "../../assets/css/sesion.css";
+import saludo from '../../assets/images/saludo.webp';
+import bienvenida from '../../assets/images/bienvenida.gif';
+import '../../assets/css/sesion.css';
+import { auth } from '../../auth/authService';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
-import { guardarSesion } from '../../auth/authService';
 import toast from 'react-hot-toast';
 
 export function Sesion() {
-  const containerRef = useRef(null);  
+  const { guardarSesion } = auth;
+  const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignInClick = () => containerRef.current.classList.remove('toggle');
-  const handleSignUpClick = () => containerRef.current.classList.add('toggle');
+  const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
+  const handleSignUpClick = () => containerRef.current?.classList.add('toggle');
 
   // LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     const form = e.target.elements;
     const correo = form.correo.value;
     const password = form.password.value;
 
     try {
       const { data } = await loginUsuario({ correo, password });
+      // data: { mensaje, usuario, rol, token: { access, refresh } }
 
-      // Guardar token y usuario completo
-      guardarSesion(data.token, data.usuario);
-      localStorage.setItem("rol", data.rol);
+      const access = data?.token?.access || data?.access;
+      const refresh = data?.token?.refresh || data?.refresh;
 
-      toast.success(`Bienvenido ${data.usuario.nombre}`);
+      guardarSesion({
+        access,
+        refresh,
+        usuario: data?.usuario,
+        rol: data?.rol,
+      });
 
-      // Redirección según rol
-      if (data.rol === 'administrador') {
-        navigate('/admin');
-      } else {
-        navigate('/catalogo');
-      }
+      toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
+
+      if (data?.rol === 'administrador') navigate('/admin');
+      else navigate('/catalogo');
     } catch (error) {
-      const errorMsg = error.response?.data?.error || "Credenciales inválidas";
+      const backend = error?.response?.data;
+      const errorMsg =
+        backend?.detail ||
+        backend?.non_field_errors?.[0] ||
+        backend?.mensaje ||
+        backend?.error ||
+        'Credenciales inválidas';
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -51,7 +61,6 @@ export function Sesion() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     const form = e.target.elements;
     const nombre = form.nombre.value;
     const apellido = form.apellido.value;
@@ -60,17 +69,18 @@ export function Sesion() {
     const password = form.password.value.trim();
 
     if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres.");
+      toast.error('La contraseña debe tener al menos 6 caracteres.');
       setIsSubmitting(false);
       return;
     }
 
     try {
       await registerUsuario({ nombre, apellido, correo, password, telefono });
-      toast.success("Registro exitoso. Ahora inicia sesión.");
-      containerRef.current.classList.remove('toggle');
+      toast.success('Registro exitoso. Ahora inicia sesión.');
+      containerRef.current?.classList.remove('toggle');
     } catch (error) {
-      const errorMsg = error.response?.data?.error || "No se pudo registrar el usuario";
+      const backend = error?.response?.data;
+      const errorMsg = backend?.mensaje || backend?.error || 'No se pudo registrar el usuario';
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -93,7 +103,7 @@ export function Sesion() {
             </div>
             <Link to="/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? "Procesando..." : "INICIAR SESIÓN"}
+              {isSubmitting ? 'Procesando...' : 'INICIAR SESIÓN'}
             </button>
           </form>
         </div>
@@ -119,7 +129,7 @@ export function Sesion() {
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? "Procesando..." : "REGISTRARSE"}
+              {isSubmitting ? 'Procesando...' : 'REGISTRARSE'}
             </button>
           </form>
         </div>

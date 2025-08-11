@@ -13,6 +13,13 @@ const SubcategoriaApi = axios.create({
   }
 });
 
+// src/api/Usuario.api.js
+import { api } from './client';
+
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
+
+
 // Obtener todas las subcategorías
 export const getAllSubcategorias = async () => {
   try {

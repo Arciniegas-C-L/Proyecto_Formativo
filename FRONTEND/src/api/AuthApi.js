@@ -1,4 +1,9 @@
 import axiosInstance from './axiosInstance';
+// src/api/Usuario.api.js
+import { api } from './client';
+
+export const getUsuarios = () => api.get('usuarios/');
+
 
 export async function login(email, password) {
   try {

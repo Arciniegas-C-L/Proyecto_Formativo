@@ -8,6 +8,13 @@ const RolApi = axios.create({
     baseURL: "http://127.0.0.1:8000/BACKEND/api/rol/"  // Ruta base para los recursos de roles
 });
 
+
+// src/api/Usuario.api.js
+import { api } from './client';
+
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
+
 // Función para obtener todos los roles
 // Hace una petición GET a la ruta base
 export const getALLRoles = () => RolApi.get("/");

@@ -5,6 +5,7 @@ import {
   deleteProveedor,
 } from "../../api/Proveedor.api";
 import "../../assets/css/ProveedorRegistro.css";
+import { } from "../context/AuthContext";
 
 export function ProveedoresRegistrados() {
  // Estado para almacenar la lista de proveedores obtenida de la API

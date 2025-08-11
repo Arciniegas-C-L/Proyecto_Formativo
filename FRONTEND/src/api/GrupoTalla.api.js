@@ -4,6 +4,8 @@ import axios from 'axios';
 // Definimos la URL base de la API
 const BASE_URL = 'http://127.0.0.1:8000/BACKEND/api';
 
+
+
 // Creamos una instancia de Axios específica para trabajar con "GrupoTalla"
 const GrupoTallaApi = axios.create({
     baseURL: `${BASE_URL}/grupo-talla/`, // Se configura para apuntar al endpoint de grupo-talla
@@ -12,6 +14,13 @@ const GrupoTallaApi = axios.create({
         'Accept': 'application/json'        // Tipo de contenido que se espera recibir
     }
 });
+
+// src/api/Usuario.api.js
+import { api } from './client';
+
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
+
 
 /* ---------------- FUNCIONES CRUD PARA GRUPO TALLA ---------------- */
 

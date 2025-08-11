@@ -8,6 +8,13 @@ const ProductoApi = axios.create({
   baseURL: "http://127.0.0.1:8000/BACKEND/api/producto/", // Ruta base para los endpoints de productos
 });
 
+// src/api/Usuario.api.js
+import { api } from './client';
+
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
+
+
 // Interceptor de respuestas para capturar errores centralizadamente
 ProductoApi.interceptors.response.use(
   response => response, // Si la respuesta es exitosa (2xx), se retorna tal cual

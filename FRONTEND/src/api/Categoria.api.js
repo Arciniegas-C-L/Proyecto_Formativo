@@ -1,6 +1,12 @@
 // Importamos la librería Axios, que se utiliza para hacer peticiones HTTP
 import axios from "axios";
 
+// src/api/Usuario.api.js
+import { api } from './client';
+
+export const getUsuarios = () => api.get('usuarios/');
+
+
 // Creamos una instancia personalizada de Axios con una URL base específica.
 // Todas las peticiones hechas con esta instancia usarán esta baseURL como prefijo.
 const CategoriaApi = axios.create({
