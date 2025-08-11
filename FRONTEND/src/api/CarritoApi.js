@@ -2,8 +2,6 @@ import axios from "axios";
 // src/api/Usuario.api.js
 import { api } from './client';
 
-export const getUsuarios = () => api.get('usuarios/');
-
 // URL base de la API
 const API_BASE_URL = "http://127.0.0.1:8000/BACKEND/api";
 
@@ -96,3 +94,5 @@ export const ACCIONES_CARRITO = {
     LIMPIAR: 'limpiar',
     FINALIZAR: 'finalizar'
 }; 
+
+export const getUsuarios = () => api.get('usuarios/');

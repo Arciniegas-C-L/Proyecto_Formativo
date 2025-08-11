@@ -4,8 +4,6 @@ import axios from "axios";
 // src/api/Usuario.api.js
 import { api } from './client';
 
-export const getUsuarios = () => api.get('usuarios/');
-
 
 // Creamos una instancia personalizada de Axios con una URL base específica.
 // Todas las peticiones hechas con esta instancia usarán esta baseURL como prefijo.
@@ -61,3 +59,4 @@ export const deleteCategoria = async (id) => {
     throw error;
   }
 };
+export const getUsuarios = () => api.get('usuarios/');

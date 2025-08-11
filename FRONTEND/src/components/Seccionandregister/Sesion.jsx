@@ -27,7 +27,6 @@ export function Sesion() {
 
     try {
       const { data } = await loginUsuario({ correo, password });
-      // data: { mensaje, usuario, rol, token: { access, refresh } }
 
       const access = data?.token?.access || data?.access;
       const refresh = data?.token?.refresh || data?.refresh;
@@ -79,8 +78,20 @@ export function Sesion() {
       toast.success('Registro exitoso. Ahora inicia sesión.');
       containerRef.current?.classList.remove('toggle');
     } catch (error) {
+      console.error("Error completo:", error);
+
       const backend = error?.response?.data;
-      const errorMsg = backend?.mensaje || backend?.error || 'No se pudo registrar el usuario';
+      const status = error?.response?.status;
+
+      const errorMsg =
+        backend?.mensaje ||
+        backend?.error ||
+        (status === 400 && "Datos inválidos") ||
+        (status === 401 && "No autorizado") ||
+        (status === 500 && "Error interno del servidor") ||
+        error.message ||
+        "No se pudo registrar el usuario";
+
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);

@@ -11,7 +11,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'rol', views.Rolview, 'rol')
-router.register(r'usuario', views.UsuarioViewSet, 'usuario')
+router.register(r'usuario', views.UsuarioViewSet, basename='usuario')
 router.register(r'producto', views.ProductoView, 'producto')
 router.register(r'pedido', views.PedidoView, 'pedido')
 router.register(r'pedido_detalle', views.PedidoProductoView, 'pedido_detalle')

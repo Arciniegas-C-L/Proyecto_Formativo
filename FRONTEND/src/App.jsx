@@ -25,22 +25,27 @@ import { GrupoTallaPage } from './pages/GrupoTallePage.jsx';
 
 import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js";
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
-import { AuthProvider } from "./context/AuthContext.jsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx"; // 👈 importamos useAuth
 
-function App() {
+function AppContent() {
+  const { token } = useAuth(); // 👈 accedemos al estado de sesión
   const [proveedores, setProveedores] = useState([]);
 
-  useEffect(() => {
-    const cargarProveedores = async () => {
-      try {
-        const response = await fetchProveedores();
-        setProveedores(response.data);
-      } catch (error) {
-        console.error("Error al cargar proveedores:", error);
-      }
-    };
-    cargarProveedores();
-  }, []);
+  // useEffect(() => {
+//   const cargarProveedores = async () => {
+//     if (!token) return;
+
+//     try {
+//       const response = await fetchProveedores(token);
+//       setProveedores(response.data);
+//     } catch (error) {
+//       console.error("Error al cargar proveedores:", error);
+//     }
+//   };
+
+//   cargarProveedores();
+// }, [token]);
+
 
   const handleEliminar = async (id) => {
     try {
@@ -56,129 +61,138 @@ function App() {
   };
 
   return (
+    <>
+      <Header />
+
+      <Routes>
+        {/* Públicas */}
+        <Route path="/" element={<Home />} />
+        <Route path="/sesion" element={<SesionPage />} />
+        <Route path="/sesion/recuperar_contrasena" element={<SesionRecuperacionPage />} />
+        <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
+
+        {/* Protegidas por rol */}
+        <Route
+          path="/catalogo"
+          element={
+            <RutaPrivada role="cliente">
+              <CatalogoPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/proveedores"
+          element={
+            <RutaPrivada role="administrador">
+              <AdminProvedoresPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/administrador"
+          element={
+            <RutaPrivada role="administrador">
+              <ProveedoresRegistradosPage
+                proveedores={proveedores}
+                onEliminar={handleEliminar}
+                onEditar={handleEditar}
+              />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/inventario"
+          element={
+            <RutaPrivada role="administrador">
+              <InventarioPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/producto"
+          element={
+            <RutaPrivada role="administrador">
+              <ListaProductosPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/producto/crear"
+          element={
+            <RutaPrivada role="administrador">
+              <ProductosFormPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/producto/editar/:id"
+          element={
+            <RutaPrivada role="administrador">
+              <ProductosFormPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/usuario"
+          element={
+            <RutaPrivada role="administrador">
+              <AdminUsuariosPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/tallas"
+          element={
+            <RutaPrivada role="administrador">
+              <TallasPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/grupo-talla"
+          element={
+            <RutaPrivada role="administrador">
+              <GrupoTallaPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/categorias"
+          element={
+            <RutaPrivada role={["cliente", "administrador"]}>
+              <CategoriasPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/rol"
+          element={
+            <RutaPrivada role="administrador">
+              <RolListaPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/rol-create"
+          element={
+            <RutaPrivada role="administrador">
+              <RolFormPage />
+            </RutaPrivada>
+          }
+        />
+      </Routes>
+
+      <Toaster />
+      <Footer />
+    </>
+  );
+}
+
+// 👇 Envolvemos AppContent con AuthProvider
+function App() {
+  return (
     <AuthProvider>
-        <Header />
-
-        <Routes>
-          {/* Públicas */}
-          <Route path="/" element={<Home />} />
-          <Route path="/sesion" element={<SesionPage />} />
-          <Route path="/sesion/recuperar_contrasena" element={<SesionRecuperacionPage />} />
-          <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
-
-          {/* Protegidas por rol */}
-          <Route
-            path="/catalogo"
-            element={
-              <RutaPrivada role="cliente">
-                <CatalogoPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/proveedores"
-            element={
-              <RutaPrivada role="administrador">
-                <AdminProvedoresPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/administrador"
-            element={
-              <RutaPrivada role="administrador">
-                <ProveedoresRegistradosPage
-                  proveedores={proveedores}
-                  onEliminar={handleEliminar}
-                  onEditar={handleEditar}
-                />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/inventario"
-            element={
-              <RutaPrivada role="administrador">
-                <InventarioPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/producto"
-            element={
-              <RutaPrivada role="administrador">
-                <ListaProductosPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/producto/crear"
-            element={
-              <RutaPrivada role="administrador">
-                <ProductosFormPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/producto/editar/:id"
-            element={
-              <RutaPrivada role="administrador">
-                <ProductosFormPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/usuario"
-            element={
-              <RutaPrivada role="administrador">
-                <AdminUsuariosPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/tallas"
-            element={
-              <RutaPrivada role="administrador">
-                <TallasPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/grupo-talla"
-            element={
-              <RutaPrivada role="administrador">
-                <GrupoTallaPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/categorias"
-            element={
-              <RutaPrivada role={["cliente", "administrador"]}>
-                <CategoriasPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/rol"
-            element={
-              <RutaPrivada role="administrador">
-                <RolListaPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/rol-create"
-            element={
-              <RutaPrivada role="administrador">
-                <RolFormPage />
-              </RutaPrivada>
-            }
-          />
-        </Routes>
-
-        <Toaster />
-        <Footer />
+      <AppContent />
     </AuthProvider>
   );
 }
