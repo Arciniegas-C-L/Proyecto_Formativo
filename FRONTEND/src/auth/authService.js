@@ -35,10 +35,23 @@ export const auth = {
     return localStorage.getItem(REFRESH);
   },
 
+  obtenerRol() {
+  const rol = localStorage.getItem(ROL);
+  return rol && rol.trim() !== '' ? rol : null;
+},
+
   obtenerSesion() {
     const token = auth.obtenerToken();
     const usuario = safeParse(localStorage.getItem(USER));
     const rol = localStorage.getItem(ROL);
     return { token, usuario, rol, autenticado: !!token };
-  }
+  },
+
+  tienePermiso(rolPermitido) {
+  const rolActual = auth.obtenerRol();
+  return rolActual === rolPermitido;
+}
+
 };
+
+  

@@ -18,7 +18,7 @@ from .serializer import (
     PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
     CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
     CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer,
-    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer
+    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer,
 )
 from .models import (
     Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,

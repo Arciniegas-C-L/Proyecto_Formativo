@@ -2,6 +2,8 @@
 import axios from 'axios';
 
 export const publicApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000/BACKEND/',
+  baseURL: 'http://localhost:8000/BACKEND/', // Ajusta según tu backend
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
-// No se inyecta token en peticiones públicas
