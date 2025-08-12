@@ -37,7 +37,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from BACKEND.permissions import IsAdmin,IsCliente
+from BACKEND.permissions import IsAdmin,IsCliente,IsAdminWriteClienteRead
 import random
 import string
 
@@ -241,7 +241,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 #Preparacion para actualizar perfil con token de cliente
 class MiPerfilView(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, IsCliente, IsAdmin] 
+    permission_classes = [IsAuthenticated, IsCliente, IsAdmin, IsAdminWriteClienteRead]
 
     def list(self, request):
         serializer = UsuarioSerializer(request.user)
@@ -256,18 +256,18 @@ class MiPerfilView(viewsets.ViewSet):
 class ProveedorView(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer
     queryset = Proveedor.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
-    
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     queryset = Producto.objects.all()
     parser_classes = (MultiPartParser, FormParser)  # Soportar archivos en request
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def update(self, request, pk=None):
         print("Datos recibidos en update:", request.data)  # Log de datos recibidos
@@ -297,7 +297,7 @@ class ProductoView(viewsets.ModelViewSet):
 class GrupoTallaViewSet(viewsets.ModelViewSet):
     serializer_class = GrupoTallaSerializer
     queryset = GrupoTalla.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -333,7 +333,7 @@ class GrupoTallaViewSet(viewsets.ModelViewSet):
 class TallaViewSet(viewsets.ModelViewSet):
     serializer_class = TallaSerializer
     queryset = Talla.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -376,7 +376,7 @@ class InventarioView(viewsets.ModelViewSet):
         'producto__nombre',
         'talla__nombre'
     )
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_serializer_class(self):
         if self.action == 'inventario_agrupado':
@@ -1001,31 +1001,31 @@ class InventarioView(viewsets.ModelViewSet):
 class MovimientoView(viewsets.ModelViewSet):
     serializer_class = MovimientoSerializer
     queryset = Movimiento.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente] #Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class PedidoView(viewsets.ModelViewSet):
     serializer_class = PedidoSerializer
     queryset = Pedido.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente] #Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class PedidoProductoView(viewsets.ModelViewSet):
     serializer_class = PedidoProductoSerializer
     queryset = PedidoProducto.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente] #Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class PagoView(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
     queryset = Pago.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente] #Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class TipoPagoView(viewsets.ModelViewSet):
     serializer_class = TipoPagoSerializer
     queryset = TipoPago.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente] #Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente]  # Por definir
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1191,7 +1191,7 @@ class CarritoItemView(viewsets.ModelViewSet):
 
 class EstadoCarritoView(viewsets.ModelViewSet):
     serializer_class = EstadoCarritoSerializer
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente]  # Por definir
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1204,7 +1204,7 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Por definir
 
     def perform_create(self, serializer):
         try:

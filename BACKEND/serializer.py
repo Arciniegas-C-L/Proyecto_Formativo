@@ -205,7 +205,7 @@ class TallaSerializer(serializers.ModelSerializer):
         return data
 
 class ProductoSerializer(serializers.ModelSerializer):
-    subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all(), required=False, allow_null=True)
+    subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all())
     subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
     inventario_tallas = serializers.SerializerMethodField()

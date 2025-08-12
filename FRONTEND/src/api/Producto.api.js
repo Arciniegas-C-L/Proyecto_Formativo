@@ -20,7 +20,20 @@ export const getALLProductos = async () => {
 // Crear un nuevo producto
 export const createProducto = async (producto) => {
   try {
-    return await api.post('producto/', producto);
+    const formData = new FormData();
+
+    // Iteramos y agregamos todas las propiedades del producto
+    for (const key in producto) {
+      if (producto[key] !== undefined && producto[key] !== null) {
+        formData.append(key, producto[key]);
+      }
+    }
+
+    return await api.post('producto/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data' // 👈 necesario para que Django lo entienda
+      }
+    });
   } catch (error) {
     handleProductoError(error);
   }
