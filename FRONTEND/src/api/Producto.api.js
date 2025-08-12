@@ -18,26 +18,20 @@ export const getALLProductos = async () => {
 };
 
 // Crear un nuevo producto
-export const createProducto = async (producto) => {
+export const createProducto = async (formData) => {
   try {
-    const formData = new FormData();
-
-    // Iteramos y agregamos todas las propiedades del producto
-    for (const key in producto) {
-      if (producto[key] !== undefined && producto[key] !== null) {
-        formData.append(key, producto[key]);
-      }
-    }
-
     return await api.post('producto/', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data' // 👈 necesario para que Django lo entienda
+        'Content-Type': 'multipart/form-data'
       }
     });
   } catch (error) {
+    console.error('🧵 Backend respondió:', error.response?.data); // 👈 log útil
     handleProductoError(error);
+    throw error;
   }
 };
+
 
 // Eliminar un producto por ID
 export const deleteProducto = async (id) => {
@@ -52,9 +46,29 @@ export const deleteProducto = async (id) => {
 // Actualizar un producto por ID
 export const updateProducto = async (id, producto) => {
   try {
-    return await api.put(`producto/${id}/`, producto);
+    let formData;
+
+    // Si ya viene como FormData
+    if (producto instanceof FormData) {
+      formData = producto;
+    } else {
+      formData = new FormData();
+      for (const key in producto) {
+        if (producto[key] !== undefined && producto[key] !== null) {
+          formData.append(key, producto[key]);
+        }
+      }
+    }
+
+    return await api.put(`producto/${id}/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
   } catch (error) {
+    console.error('🔍 Backend al actualizar:', error.response?.data);
     handleProductoError(error);
+    throw error;
   }
 };
 
