@@ -3,6 +3,8 @@ import { createCategoria, getAllCategorias } from "../../api/Categoria.api";
 import { createSubcategoria, getAllSubcategorias } from "../../api/Subcategoria.api";
 import ListaCategorias from "./ListaCategorias";
 
+import "../../assets/css/Categoria/Categorias.css";
+
 function SubcategoriaForm({ subcategoria, onChange }) {
   return (
     <>

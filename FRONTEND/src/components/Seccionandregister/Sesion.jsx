@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import saludo from "../../assets/images/saludo.webp";
 import bienvenida from "../../assets/images/bienvenida.gif";
-import "../../assets/css/sesion.css";
+import "../../assets/css/Seccionandregistrer/sesion.css";
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
 
@@ -88,7 +88,7 @@ export function Sesion() {
             </div>
             <Link to="recuperar_contrasena/" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? "Procesando..." : "INICIAR SESIÓN"}
+              {isSubmitting ? "Procesando..." : "Iniciar Sesión "}
             </button>
           </form>
         </div>
@@ -113,7 +113,7 @@ export function Sesion() {
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? "Procesando..." : "REGISTRARSE"}
+              {isSubmitting ? "Procesando..." : "Registrarse"}
             </button>
           </form>
         </div>

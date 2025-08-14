@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../../assets/css/ProductosForm.css";
+import "../../assets/css/Productos/ProductosForm.css";
 import {
   getCategorias,
   getSubcategoriasPorCategoria,
@@ -31,12 +31,10 @@ export function ProductosForm() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Cargar categorías al montar componente
   useEffect(() => {
     loadCategorias();
   }, []);
 
-  // Cargar subcategorías cuando cambia categoría
   useEffect(() => {
     if (formData.categoria) {
       loadSubcategorias(formData.categoria);
@@ -69,11 +67,9 @@ export function ProductosForm() {
 
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
-
     if (type === "file") {
       const file = files[0];
       if (file) {
-        // Mostrar preview local al seleccionar archivo
         const localImageUrl = URL.createObjectURL(file);
         setFormData(prev => ({
           ...prev,
@@ -96,7 +92,6 @@ export function ProductosForm() {
       errores.stock = "Stock inválido";
     if (!formData.categoria) errores.categoria = "Seleccione una categoría";
     if (!formData.subcategoria) errores.subcategoria = "Seleccione una subcategoría";
-
     setErrors(errores);
     return Object.keys(errores).length === 0;
   };
@@ -106,7 +101,6 @@ export function ProductosForm() {
     if (!validateForm()) return;
 
     setLoading(true);
-
     const formDataToSend = new FormData();
     formDataToSend.append("nombre", formData.nombre.trim());
     formDataToSend.append("descripcion", formData.descripcion.trim());
@@ -128,7 +122,6 @@ export function ProductosForm() {
         navigate('/producto');
       }
     } catch (error) {
-      console.error("Error guardando producto:", error);
       toast.error("Error al guardar el producto");
     } finally {
       setLoading(false);
@@ -136,131 +129,120 @@ export function ProductosForm() {
   };
 
   return (
-    <div className="container mt-4">
-      <h2>{productoEditar ? "Editar producto" : "Crear producto"}</h2>
-      <form onSubmit={handleSubmit} className="row g-3 mt-2" noValidate>
-        {/* Nombre */}
-        <div className="col-md-6">
-          <label htmlFor="nombre" className="form-label">Nombre</label>
-          <input
-            type="text"
-            className={`form-control ${errors.nombre ? "is-invalid" : ""}`}
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleInputChange}
-          />
-          <div className="invalid-feedback">{errors.nombre}</div>
+    <div className="form-container">
+      <h2 className="form-title">
+        {productoEditar ? "Editar producto" : "Crear producto"}
+      </h2>
+      <form onSubmit={handleSubmit} className="producto-form" noValidate>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Nombre</label>
+            <input
+              type="text"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleInputChange}
+              className={errors.nombre ? "error" : ""}
+            />
+            <span className="error-message">{errors.nombre}</span>
+          </div>
+
+          <div className="form-group">
+            <label>Precio</label>
+            <input
+              type="number"
+              name="precio"
+              value={formData.precio}
+              onChange={handleInputChange}
+              step="0.01"
+              min="0"
+              className={errors.precio ? "error" : ""}
+            />
+            <span className="error-message">{errors.precio}</span>
+          </div>
         </div>
 
-        {/* Precio */}
-        <div className="col-md-6">
-          <label htmlFor="precio" className="form-label">Precio</label>
-          <input
-            type="number"
-            className={`form-control ${errors.precio ? "is-invalid" : ""}`}
-            id="precio"
-            name="precio"
-            value={formData.precio}
-            onChange={handleInputChange}
-            step="0.01"
-            min="0"
-          />
-          <div className="invalid-feedback">{errors.precio}</div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Stock</label>
+            <input
+              type="number"
+              name="stock"
+              value={formData.stock}
+              onChange={handleInputChange}
+              min="0"
+              className={errors.stock ? "error" : ""}
+            />
+            <span className="error-message">{errors.stock}</span>
+          </div>
+
+          <div className="form-group">
+            <label>Categoría</label>
+            <select
+              name="categoria"
+              value={formData.categoria}
+              onChange={handleInputChange}
+              className={errors.categoria ? "error" : ""}
+            >
+              <option value="">Seleccione una categoría</option>
+              {categorias.map((cat) => (
+                <option key={cat.idCategoria} value={cat.idCategoria}>
+                  {cat.nombre}
+                </option>
+              ))}
+            </select>
+            <span className="error-message">{errors.categoria}</span>
+          </div>
         </div>
 
-        {/* Stock */}
-        <div className="col-md-6">
-          <label htmlFor="stock" className="form-label">Stock</label>
-          <input
-            type="number"
-            className={`form-control ${errors.stock ? "is-invalid" : ""}`}
-            id="stock"
-            name="stock"
-            value={formData.stock}
-            onChange={handleInputChange}
-            min="0"
-          />
-          <div className="invalid-feedback">{errors.stock}</div>
-        </div>
-
-        {/* Categoría */}
-        <div className="col-md-6">
-          <label htmlFor="categoria" className="form-label">Categoría</label>
+        <div className="form-group">
+          <label>Subcategoría</label>
           <select
-            className={`form-select ${errors.categoria ? "is-invalid" : ""}`}
-            id="categoria"
-            name="categoria"
-            value={formData.categoria}
-            onChange={handleInputChange}
-          >
-            <option value="">Seleccione una categoría</option>
-            {categorias.map((cat) => (
-              <option key={cat.idCategoria} value={String(cat.idCategoria)}>
-                {cat.nombre}
-              </option>
-            ))}
-          </select>
-          <div className="invalid-feedback">{errors.categoria}</div>
-        </div>
-
-        {/* Subcategoría */}
-        <div className="col-md-6">
-          <label htmlFor="subcategoria" className="form-label">Subcategoría</label>
-          <select
-            className={`form-select ${errors.subcategoria ? "is-invalid" : ""}`}
-            id="subcategoria"
             name="subcategoria"
             value={formData.subcategoria}
             onChange={handleInputChange}
             disabled={!formData.categoria || cargandoSubcategorias}
+            className={errors.subcategoria ? "error" : ""}
           >
             <option value="">Seleccione una subcategoría</option>
             {subcategorias.map((sub) => (
-              <option key={sub.idSubcategoria} value={String(sub.idSubcategoria)}>
+              <option key={sub.idSubcategoria} value={sub.idSubcategoria}>
                 {sub.nombre}
               </option>
             ))}
           </select>
-          <div className="invalid-feedback">{errors.subcategoria}</div>
+          <span className="error-message">{errors.subcategoria}</span>
         </div>
 
-        {/* Descripción */}
-        <div className="col-md-12">
-          <label htmlFor="descripcion" className="form-label">Descripción</label>
+        <div className="form-group">
+          <label>Descripción</label>
           <textarea
-            className={`form-control ${errors.descripcion ? "is-invalid" : ""}`}
-            id="descripcion"
             name="descripcion"
             value={formData.descripcion}
             onChange={handleInputChange}
             rows={3}
+            className={errors.descripcion ? "error" : ""}
           />
-          <div className="invalid-feedback">{errors.descripcion}</div>
+          <span className="error-message">{errors.descripcion}</span>
         </div>
 
-        {/* Imagen */}
-        <div className="col-md-6">
-          <label htmlFor="imagen" className="form-label">Imagen</label>
+        <div className="form-group">
+          <label>Imagen</label>
           <input
             type="file"
-            className="form-control"
-            id="imagen"
             name="imagen"
             onChange={handleInputChange}
             accept="image/*"
           />
           {formData.imagen && (
-            <div className="mt-2">
-              <strong>Imagen actual:</strong><br />
-              <img src={formData.imagen} alt="Producto" className="img-thumbnail" width="150" />
+            <div className="image-preview">
+              <img src={formData.imagen} alt="Producto" />
             </div>
           )}
         </div>
 
-        {/* Botón submit */}
-        <div className="col-12">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+        <div className="form-actions">
+          <button type="submit" className="btn-guardar" disabled={loading}>
             {loading ? "Guardando..." : productoEditar ? "Actualizar" : "Crear"}
           </button>
         </div>

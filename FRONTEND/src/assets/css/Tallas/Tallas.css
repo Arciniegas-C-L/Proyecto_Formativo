@@ -1,0 +1,247 @@
+/* Contenedor principal */
+.lista-tallas-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Urbanist', sans-serif;
+}
+
+/* Header */
+.header-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.header-acciones h2 {
+  font-size: 2rem;
+  color: #00b0e0;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.header-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Botón nueva talla */
+.btn-nueva-talla {
+  background-color: #8b3581;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.4s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.btn-nueva-talla:hover {
+  box-shadow: 0 0 10px #8b3581;
+  transform: translateY(-2px);
+}
+
+/* Contenedor tabla */
+.tabla-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow-x: auto;
+}
+
+/* Tabla */
+.tabla-tallas {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  color: #0f0f10;
+  min-width: 600px;
+}
+
+.tabla-tallas th,
+.tabla-tallas td {
+  padding: 1rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.tabla-tallas th {
+  background-color: #1A1F2E;
+  color: #00b0e0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.tabla-tallas tbody tr:hover td {
+  background-color: #f3f9ff;
+  transition: background-color 0.3s ease;
+}
+
+/* Estado */
+.estado-talla {
+  font-weight: 400; 
+}
+
+/* Botones acciones */
+.celda-acciones {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.btn-editar,
+.btn-eliminar {
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-editar {
+  background-color: #00b0e0;
+}
+
+.btn-editar:hover {
+  transform: scale(1.05);
+}
+
+.btn-eliminar {
+  background-color: #8b3581;
+}
+
+.btn-eliminar:hover {
+  transform: scale(1.05);
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  font-size: 1.2em;
+  color: #7a6eb0;
+  padding: 20px;
+}
+
+/* Modales Crear/Editar y Eliminar */
+.dialog-talla-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.form-talla-modal {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.form-talla-modal h3 {
+  margin-bottom: 20px;
+  color: #1A1F2E;
+}
+
+.form-talla-modal .form-label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.form-talla-modal .form-control,
+.form-talla-modal .form-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.form-talla-modal .form-check-label {
+  font-weight: 400; 
+}
+
+.form-talla-modal .btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.form-talla-modal .btn-primary {
+  background-color: #00b0e0;
+  color: #fff;
+  border: none;
+}
+
+.form-talla-modal .btn-primary:hover {
+  background-color: #0090b0;
+}
+
+.form-talla-modal .btn-secondary {
+  background-color: #8b3581;
+  color: #fff;
+  border: none;
+}
+
+.form-talla-modal .btn-secondary:hover {
+  background-color: #6b2b62;
+}
+
+.form-talla-modal .btn-danger {
+  background-color: #d9534f;
+  color: #fff;
+  border: none;
+}
+
+.form-talla-modal .btn-danger:hover {
+  background-color: #c9302c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-acciones {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .header-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-nueva-talla {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tabla-container {
+    margin: 0 -20px;
+    border-radius: 0;
+  }
+
+  .celda-acciones {
+    flex-wrap: wrap;
+  }
+}

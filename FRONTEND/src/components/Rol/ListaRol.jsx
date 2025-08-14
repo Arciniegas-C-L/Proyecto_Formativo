@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { getALLRoles } from '../../api/Rol.api';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { getALLRoles } from "../../api/Rol.api";
+import { Link } from "react-router-dom";
+import "../../assets/css/Rol/ListaRol.css";
 
 export function ListaRol() {
   const [roles, setRoles] = useState([]);
@@ -14,35 +15,33 @@ export function ListaRol() {
   }, []);
 
   return (
-    <div className="container mt-5">
-      <div className="d-flex justify-content-around mb-4">
-        <h3>Roles</h3>
-        <Link to="/rol-create" className="text-decoration-none btn btn-outline-success">
+    <div className="lista-rol-container">
+      <div className="lista-rol-header">
+        <h2 className="lista-rol-titulo">Listado de Roles</h2>
+        <Link to="/rol-create" className="boton-crear-rol">
           Crear Rol
         </Link>
       </div>
-      <div className="m-auto w-50 mt-2 bg-white rounded-2 overflow-hidden shadow">
-        <table className="w-100">
+
+      <div className="tabla-rol-container">
+        <table className="tabla-rol">
           <thead>
-            <tr className="justify-content-around">
-              <th className="bg-white text-muted border py-3 px-2 font-weight-bold border-bottom text-lg-center text-uppercase">
-                Id
-              </th>
-              <th className="bg-white text-muted border py-3 px-2 font-weight-bold border-bottom text-lg-center text-uppercase">
-                Nombre
-              </th>
-              <th className="bg-white text-muted border py-3 px-2 font-weight-bold border-bottom text-lg-center text-uppercase">
-                Acciones
-              </th>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {roles.map((rol) => (
-              <tr key={rol.idROL} className="justify-content-around">
-                <td className="py-3 px-2 border align-middle text-center">{rol.idROL}</td>
-                <td className="py-3 px-2 border align-middle mx-2">{rol.nombre}</td>
-                <td className="py-3 px-2 align-center border text-center">
-                  <Link to={`/rol-edit/${rol.idROL}`} className="text-decoration-none btn btn-warning">
+              <tr key={rol.idROL}>
+                <td>{rol.idROL}</td>
+                <td>{rol.nombre}</td>
+                <td>
+                  <Link
+                    to={`/rol-edit/${rol.idROL}`}
+                    className="boton-editar-rol"
+                  >
                     Editar
                   </Link>
                 </td>

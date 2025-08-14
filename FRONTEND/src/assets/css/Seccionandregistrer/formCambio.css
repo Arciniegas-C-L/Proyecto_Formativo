@@ -1,0 +1,87 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.verificar-modal {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 1.2rem;
+  width: 100%;
+  max-width: 450px;
+  font-family: 'Urbanist', sans-serif;
+  text-align: center;
+}
+
+.titulo-form {
+  color: #9333ea;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.verificar-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.7rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  transition: border-color 0.3s;
+}
+
+.verificar-input:focus {
+  outline: none;
+  border-color: #0ea5e9; 
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
+.verificar-btn {
+  background-color: #f26be2; 
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s;
+}
+
+.verificar-btn:hover {
+  background-color: #e055cd;
+}
+
+.mensaje-ok {
+  color: #16a34a;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+.mensaje-error {
+  color: #dc2626;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .verificar-modal {
+    padding: 1.5rem;
+    max-width: 90%;
+  }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+  .verificar-modal {
+    padding: 1.8rem;
+    max-width: 400px;
+  }
+}

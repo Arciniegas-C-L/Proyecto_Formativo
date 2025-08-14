@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { getALLProductos } from "../../api/Producto.api";
 import { getAllCategorias } from "../../api/Categoria.api";
-import "../../assets/css/Catalogo.css";
+import FiltrosCatalogo from "./FiltrosCatalogo";
+import ProductoCard from "./ProductoCard";
+import "../../assets/css/Catalogo/Catalogo.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-// Cambié export function por export default function
+/** Componente principal que muestra filtros y productos **/
 export default function Catalogo() {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -104,49 +106,25 @@ export default function Catalogo() {
   });
 
   return (
-    <div className="container-fluid py-4">
+    <div className="catalogo-container container-fluid py-4">
       <div className="row">
-        {/* FILTROS */}
         <div className="col-md-3 mb-4">
-          <div className="card shadow-sm p-3 filtros">
-            <h5 className="mb-3">Categorías</h5>
-            {categorias.map((cat) => (
-              <button
-                key={cat}
-                className={`btn btn-categoria mb-1 ${categoriaSeleccionada === cat ? "active" : ""}`}
-                onClick={() => seleccionarCategoria(cat)}
-              >
-                {capitalizar(cat)}
-              </button>
-            ))}
-
-            {categoriaSeleccionada && subcategoriasPorCategoria[categoriaSeleccionada] && (
-              <>
-                <hr />
-                <h6 className="mt-2">Subcategorías</h6>
-                {subcategoriasPorCategoria[categoriaSeleccionada]?.map((sub) => (
-                  <button
-                    key={sub}
-                    className={`btn btn-subcategoria mb-1 ${subcategoriaSeleccionada === sub ? "btn-warning" : ""}`}
-                    onClick={() => seleccionarSubcategoria(sub)}
-                  >
-                    {capitalizar(sub)}
-                  </button>
-                ))}
-              </>
-            )}
-
-            {(categoriaSeleccionada || subcategoriaSeleccionada) && (
-              <button className="btn btn-limpiar mt-3" onClick={limpiarFiltros}>
-                Limpiar filtros
-              </button>
-            )}
-          </div>
+          <FiltrosCatalogo
+            categorias={categorias}
+            categoriaSeleccionada={categoriaSeleccionada}
+            subcategoriasPorCategoria={subcategoriasPorCategoria}
+            subcategoriaSeleccionada={subcategoriaSeleccionada}
+            capitalizar={capitalizar}
+            seleccionarCategoria={seleccionarCategoria}
+            seleccionarSubcategoria={seleccionarSubcategoria}
+            limpiarFiltros={limpiarFiltros}
+          />
         </div>
 
-        {/* CATÁLOGO */}
         <div className="col-md-9">
-          <h2 className="text-center mb-4">Catálogo de Productos</h2>
+          <h2 className="catalogo-titulo text-center mb-4">
+            Catálogo de Productos
+          </h2>
           <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
             {productosFiltrados.length === 0 ? (
               <div className="col text-center">
@@ -156,51 +134,13 @@ export default function Catalogo() {
               </div>
             ) : (
               productosFiltrados.map((producto) => (
-                <div className="col d-flex" key={producto.id}>
-                  <div className="card shadow producto-card w-100">
-                    <div className="img-container">
-                      <img
-                        src={producto.imagen}
-                        alt={producto.nombre}
-                        className="card-img-top"
-                      />
-                    </div>
-                    <div className="card-body d-flex flex-column">
-                      <h5 className="card-title">{capitalizar(producto.nombre)}</h5>
-                      <p className="card-text descripcion">{producto.descripcion}</p>
-                      <p className="card-text">
-                        <strong>Precio:</strong> ${producto.precio}
-                      </p>
-                      <p className="card-text">
-                        <strong>Subcategoría:</strong> {capitalizar(producto.subcategoria_nombre)}
-                      </p>
-
-                      <div className="mt-2">
-                        <strong>Tallas:</strong>
-                        <div className="d-flex flex-wrap gap-2 mt-1">
-                          {producto.inventario_tallas.map((inv, i) => (
-                            <button
-                              key={i}
-                              className={`talla-btn ${tallaSeleccionada[producto.id]?.talla === inv.talla ? "selected" : ""}`}
-                              onClick={() => mostrarStock(producto.id, inv.talla, inv.stock)}
-                            >
-                              {inv.talla}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {tallaSeleccionada[producto.id] && (
-                        <div className="alert alert-info mt-2 p-1 text-center">
-                          Productos disponibles:{" "}
-                          <strong>{tallaSeleccionada[producto.id].stock}</strong>
-                        </div>
-                      )}
-
-                      <button className="btn btn-dark mt-auto">Agregar al carrito</button>
-                    </div>
-                  </div>
-                </div>
+                <ProductoCard
+                  key={producto.id}
+                  producto={producto}
+                  capitalizar={capitalizar}
+                  tallaSeleccionada={tallaSeleccionada[producto.id]}
+                  mostrarStock={mostrarStock}
+                />
               ))
             )}
           </div>

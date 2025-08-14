@@ -1,17 +1,16 @@
 import React from "react";
+import "../../assets/css/Catalogo/Filtros.css";
 
-function Filtros({
+export default function FiltrosCatalogo({
   categorias,
-  subcategoriasPorCategoria,
   categoriaSeleccionada,
+  subcategoriasPorCategoria,
   subcategoriaSeleccionada,
+  capitalizar,
   seleccionarCategoria,
   seleccionarSubcategoria,
   limpiarFiltros,
 }) {
-  const capitalizar = (texto) =>
-    texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
-
   return (
     <div className="card shadow-sm p-3 filtros">
       <h5 className="mb-3">Categorías</h5>
@@ -54,5 +53,3 @@ function Filtros({
     </div>
   );
 }
-
-export default Filtros;

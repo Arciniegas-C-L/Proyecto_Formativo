@@ -1,0 +1,139 @@
+
+.catalogo-container {
+  background: linear-gradient(135deg, #fbd0f4 0%, #c3f1ff 100%);
+  padding: 20px;
+}
+
+/* Título */
+.catalogo-titulo {
+  font-size: 3.2rem;
+  background: linear-gradient(45deg, #F26BE2, #00D4FF, #9D4EDD);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+/* filtros  */
+.catalogo-container .col-md-3 {
+  min-height: 100%;
+}
+
+.filtros-container {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.filtros-container h5 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #444;
+}
+
+.filtros-container button {
+  width: 100%;
+}
+
+/* productos  */
+.catalogo-container .col-md-9 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.productos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* Tarjeta de producto */
+.producto-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.producto-card:hover {
+  transform: translateY(-3px);
+}
+
+.producto-imagen {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.producto-info {
+  padding: 15px;
+  flex: 1;
+}
+
+.producto-nombre {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.producto-precio {
+  color: #e67e22;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.producto-descripcion {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+/* Botones + y - */
+.cantidad-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cantidad-btn {
+  background-color: #e67e22;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cantidad-btn:hover {
+  background-color: #cf711f;
+}
+
+.cantidad-display {
+  font-weight: bold;
+  min-width: 30px;
+  text-align: center;
+}
+
+/*  Responsive */
+@media (max-width: 768px) {
+  .catalogo-container .row {
+    flex-direction: column;
+  }
+
+  .catalogo-container .col-md-3 {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .catalogo-container .col-md-9 {
+    width: 100%;
+  }
+}

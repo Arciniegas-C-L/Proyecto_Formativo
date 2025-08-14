@@ -1,0 +1,111 @@
+.Formulario-Recuperar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #fbd0f4 0%, #c3f1ff 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.Formulario-Recuperar .formulario {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  gap: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 2px solid #ffd9f7;
+  transition: transform 0.3s ease;
+}
+
+.Formulario-Recuperar .formulario:hover {
+  transform: scale(1.01);
+}
+
+.Formulario-Recuperar .titulo-Recuperar {
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 34px;
+  font-family: "Bebas Neue", sans-serif;
+  color: #c084fc; /* tono lila/dorado suave */
+}
+
+.Formulario-Recuperar input {
+  width: 100%;
+  max-width: 450px;
+  padding: 14px 18px;
+  border: 1.8px solid #c084fc;
+  border-radius: 10px;
+  font-size: 18px;
+  font-family: "Urbanist", sans-serif;
+  background-color: #fef9ff;
+  transition: border 0.3s, box-shadow 0.3s;
+}
+
+.Formulario-Recuperar input:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
+}
+
+.Formulario-Recuperar button {
+  width: 100%;
+  max-width: 450px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.Formulario-Recuperar button:hover {
+  background-color: #1a1a1a;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+
+@media (max-width: 576px) {
+  .Formulario-Recuperar .formulario {
+    padding: 20px;
+    width: 100%;
+  }
+
+  .Formulario-Recuperar .titulo-Recuperar {
+    font-size: 26px;
+  }
+
+  .Formulario-Recuperar input,
+  .Formulario-Recuperar button {
+    max-width: 300px;
+    font-size: 16px;
+    padding: 12px;
+  }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+  .Formulario-Recuperar .formulario {
+    padding: 30px;
+  }
+
+  .Formulario-Recuperar .titulo-Recuperar {
+    font-size: 30px;
+  }
+
+  .Formulario-Recuperar input,
+  .Formulario-Recuperar button {
+    max-width: 350px;
+    font-size: 17px;
+  }
+}

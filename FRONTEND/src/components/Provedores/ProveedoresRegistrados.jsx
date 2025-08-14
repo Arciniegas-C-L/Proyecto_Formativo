@@ -1,11 +1,27 @@
+// Importación de React y hooks necesarios
 import React, { useEffect, useState } from "react";
+
+// Importación de funciones de la API para manejar proveedores
 import {
   fetchProveedores,
   updateProveedor,
   deleteProveedor,
 } from "../../api/Proveedor.api";
-import "../../assets/css/ProveedorRegistro.css";
 
+// Importación del archivo CSS específico de este componente
+import "../../assets/css/Proveedores/ProveedorRegistro.css";
+
+// Importación de íconos que se utilizan en los botones
+import {
+  FaEdit,
+  FaTrash,
+  FaSave,
+  FaTimes,
+  FaPlane,
+} from "react-icons/fa";
+import { PiFlagBannerBold } from "react-icons/pi";
+
+// Definición del componente principal
 export function ProveedoresRegistrados() {
   const [proveedores, setProveedores] = useState([]);
   const [editId, setEditId] = useState(null);
@@ -31,7 +47,9 @@ export function ProveedoresRegistrados() {
   const eliminarProveedor = async () => {
     try {
       await deleteProveedor(proveedorAEliminar);
-      setProveedores(proveedores.filter((p) => p.idProveedor !== proveedorAEliminar));
+      setProveedores(
+        proveedores.filter((p) => p.idProveedor !== proveedorAEliminar)
+      );
       setProveedorAEliminar(null);
     } catch (error) {
       console.error("Error al eliminar proveedor:", error);
@@ -76,34 +94,26 @@ export function ProveedoresRegistrados() {
   };
 
   return (
-    <>
-      <div className="container">
-        <h2 className="titulo-proveedores">
-          Lista de Proveedores Registrados
-        </h2>
+    <div className="proveedores-registrados">
+      <h2 className="titulo-proveedores">Lista de Proveedores Registrados</h2>
 
-        {proveedorAEliminar && (
-          <div className="alert">
-            <p>¿Seguro que quieres eliminar este proveedor?</p>
-            <div>
-              <button
-                className="btn btn-eliminar"
-                onClick={eliminarProveedor}
-              >
-                Aceptar
-              </button>
-              <button
-                className="btn btn-cancelar"
-                onClick={cancelarEliminar}
-              >
-                Cancelar
-              </button>
-            </div>
+      {proveedorAEliminar && (
+        <div className="alerta">
+          <p>¿Seguro que quieres eliminar este proveedor?</p>
+          <div className="alerta-botones">
+            <button className="btn-eliminar" onClick={eliminarProveedor}>
+              Eliminar
+            </button>
+            <button className="btn-cancelar" onClick={cancelarEliminar}>
+              Cancelar
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        <table className="table table-bordered">
-          <thead className="table-dark">
+      <div className="tabla-responsive">
+        <table className="tabla-proveedores">
+          <thead>
             <tr>
               <th>Nombre</th>
               <th>Correo</th>
@@ -113,22 +123,25 @@ export function ProveedoresRegistrados() {
               <th>Acciones</th>
             </tr>
           </thead>
+
+          {/*  AQUI AGREGO EL <tbody> PARA QUE FUNCIONE EL HOVER */}
           <tbody>
             {proveedores.length === 0 ? (
               <tr>
-                <td colSpan="6" className="text-center">
+                <td colSpan="6" className="sin-proveedores">
                   No hay proveedores registrados
                 </td>
               </tr>
             ) : (
               proveedores.map((proveedor) => {
                 const isEditing = editId === proveedor.idProveedor;
+
                 return (
                   <tr key={proveedor.idProveedor}>
                     <td>
                       {isEditing ? (
                         <input
-                          className="form-control"
+                          className="input-proveedor"
                           type="text"
                           name="nombre"
                           value={editData.nombre}
@@ -141,7 +154,7 @@ export function ProveedoresRegistrados() {
                     <td>
                       {isEditing ? (
                         <input
-                          className="form-control"
+                          className="input-proveedor"
                           type="email"
                           name="correo"
                           value={editData.correo}
@@ -154,7 +167,7 @@ export function ProveedoresRegistrados() {
                     <td>
                       {isEditing ? (
                         <input
-                          className="form-control"
+                          className="input-proveedor"
                           type="text"
                           name="telefono"
                           value={editData.telefono}
@@ -166,24 +179,37 @@ export function ProveedoresRegistrados() {
                     </td>
                     <td>
                       {isEditing ? (
-                        <input
-                          className="form-control"
-                          type="text"
+                        <select
+                          className="input-proveedor"
                           name="tipo"
                           value={editData.tipo}
                           onChange={manejarCambio}
-                        />
+                        >
+                          <option value="nacional">Nacional</option>
+                          <option value="importado">Importado</option>
+                        </select>
                       ) : (
-                        proveedor.tipo
+                        <span className="badge">
+                          {proveedor.tipo === "nacional" ? (
+                            <span>
+                              <PiFlagBannerBold /> Nacional
+                            </span>
+                          ) : (
+                            <span>
+                              <FaPlane /> Importado
+                            </span>
+                          )}
+                        </span>
                       )}
                     </td>
-                    <td className="text-center">
+                    <td className="col-estado">
                       {isEditing ? (
                         <input
                           type="checkbox"
                           name="estado"
                           checked={editData.estado}
                           onChange={manejarCambio}
+                          className="checkbox-proveedor"
                         />
                       ) : proveedor.estado ? (
                         <span className="badge bg-success">Activo</span>
@@ -192,37 +218,47 @@ export function ProveedoresRegistrados() {
                       )}
                     </td>
                     <td>
-                      {isEditing ? (
-                        <>
-                          <button
-                            className="btn btn-guardar me-2"
-                            onClick={() => guardarEdicion(proveedor.idProveedor)}
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            className="btn btn-cancelar"
-                            onClick={cancelarEdicion}
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="btn btn-editar"
-                            onClick={() => comenzarEdicion(proveedor)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            className="btn btn-eliminar"
-                            onClick={() => confirmarEliminar(proveedor.idProveedor)}
-                          >
-                            Eliminar
-                          </button>
-                        </>
-                      )}
+                      <div className="botones-acciones">
+                        {isEditing ? (
+                          <>
+                            <button
+                              className="btn btn-guardar"
+                              onClick={() =>
+                                guardarEdicion(proveedor.idProveedor)
+                              }
+                              title="Guardar cambios"
+                            >
+                              <FaSave />
+                            </button>
+                            <button
+                              className="btn btn-cancelar"
+                              onClick={cancelarEdicion}
+                              title="Cancelar edición"
+                            >
+                              <FaTimes />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="btn-editar"
+                              onClick={() => comenzarEdicion(proveedor)}
+                              title="Editar proveedor"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              className="btn-eliminar"
+                              onClick={() =>
+                                confirmarEliminar(proveedor.idProveedor)
+                              }
+                              title="Eliminar proveedor"
+                            >
+                              <FaTrash />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -231,6 +267,6 @@ export function ProveedoresRegistrados() {
           </tbody>
         </table>
       </div>
-    </>
+    </div>
   );
 }

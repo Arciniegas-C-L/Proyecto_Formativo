@@ -3,6 +3,7 @@
   padding: 0;
   box-sizing: border-box;
   font-family: "Montserrat", sans-serif;
+  
 }
 
 .container-sesion {
@@ -11,7 +12,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #00D4FF, #F26BE2);
+  
 }
 
 .container-sesion .container {
@@ -22,8 +23,8 @@
   position: relative;
   border-radius: 15px;
   overflow: hidden;
-  background-color: #1A1F2E;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+  background-color: #1F1F2E;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
 }
 
 .container-sesion .container-form {
@@ -42,14 +43,13 @@
 .container-sesion .container-form h2 {
   font-size: 30px;
   margin-bottom: 20px;
-  color: #FFFFFF;
-  transition: none;
+  color: #ffffff;
 }
 
 .container-sesion .container-form span {
   font-size: 15px;
   margin-bottom: 10px;
-  color: #ccc;
+  color: #bbbbbb;
 }
 
 .container-sesion .container-input {
@@ -71,15 +71,15 @@
   width: 100%;
   height: 100%;
   background-color: transparent;
-  color: #fff;
+  color: #ffffff;
 }
 
 .container-sesion .container-input input::placeholder {
-  color: #999;
+  color: #aaa;
 }
 
 .container-sesion .container-form a {
-  color: #00D4FF;
+  color: #A78BFA;
   font-size: 14px;
   margin-bottom: 20px;
   margin-top: 5px;
@@ -98,9 +98,10 @@
   border-radius: 5px;
   cursor: pointer;
   margin-top: 10px;
-  background: linear-gradient(45deg, #F26BE2, #00D4FF);
-  color: #ffffff;
+  background: linear-gradient(45deg, #A78BFA, #60A5FA);
+  color: black;
   font-weight: bold;
+  text-transform: none;
 }
 
 .container-sesion .button:hover {
@@ -127,7 +128,7 @@
   height: 100%;
   display: flex;
   align-items: center;
-  background-color: #111;
+  background-color: #111827;
   transform: translateX(100%);
   transition: transform 0.5s ease-in-out, border-radius 0.5s ease-in-out;
   overflow: hidden;
@@ -147,7 +148,6 @@
   gap: 10px;
   color: white;
   padding: 0 50px;
-  transition: none;
 }
 
 .container-sesion .welcome-sign-in {
@@ -156,20 +156,21 @@
 
 .container-sesion .container-welcome h3 {
   font-size: 40px;
-  color: #F26BE2;
+  color: #A78BFA;
   margin-bottom: 10px;
 }
 
 .container-sesion .container-welcome p {
   font-size: 14px;
   text-align: center;
-  color: #ccc;
+  color: #cccccc;
 }
 
 .container-sesion .container-welcome .button {
-  border: 2px solid #00D4FF;
+  border: 2px solid #A78BFA;
   background-color: transparent;
-  color: #00D4FF;
+  color: black;
+  text-transform: none;
 }
 
 .container-sesion .container.toggle .welcome-sign-in {
@@ -186,7 +187,7 @@
   margin: 15px 0;
 }
 
-/* Teléfonos */
+/* Responsive: Teléfonos */
 @media (max-width: 576px) {
   .container-sesion {
     height: 70vh;
@@ -228,6 +229,7 @@
     height: 28px;
     font-size: 10px;
     margin-top: 6px;
+    text-transform: none;
   }
 
   .container-sesion .container-welcome {
@@ -258,7 +260,7 @@
   }
 }
 
-/* Tablets */
+/* Responsive: Tablets */
 @media (min-width: 577px) and (max-width: 768px) {
   .container-sesion {
     height: 90vh;
@@ -299,6 +301,7 @@
     height: 40px;
     font-size: 13px;
     margin-top: 10px;
+    text-transform: none;
   }
 
   .container-sesion .container-welcome {

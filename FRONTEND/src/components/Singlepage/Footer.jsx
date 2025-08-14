@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaBuilding, FaInfoCircle, FaHome, FaBoxOpen, FaPhone } from 'react-icons/fa';
-import '../../assets/css/Footer.css';
+import "../../assets/css/SinglePage/Footer.css";
 
 export function Footer() {
   return (

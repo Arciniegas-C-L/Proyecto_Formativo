@@ -1,0 +1,79 @@
+/* CONTENEDOR PRINCIPAL */
+.tallas-container {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+/* CONTENEDOR DE BOTONES */
+.botones-tallas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+/* BOTÓN DE TALLA */
+.talla-button {
+  background-color: transparent;
+  border: 1.8px solid #F26BE2;
+  color: #F26BE2;
+  font-weight: 500;
+  padding: 0.4rem 1rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.talla-button:hover,
+.talla-button.selected {
+  background-color: #F26BE2;
+  color: #ffffff;
+}
+
+/* STOCK DISPONIBLE */
+.stock-disponible {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #000;
+  font-style: italic;
+}
+
+
+/* ------------------------ */
+/* RESPONSIVE DESIGN */
+/* ------------------------ */
+
+@media (max-width: 768px) {
+  .tallas-container {
+    align-items: stretch;
+  }
+
+  .talla-button {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.9rem;
+  }
+
+  .stock-disponible {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .botones-tallas {
+    justify-content: center;
+  }
+
+  .talla-button {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.8rem;
+  }
+
+  .stock-disponible {
+    font-size: 0.75rem;
+    text-align: center;
+  }
+}

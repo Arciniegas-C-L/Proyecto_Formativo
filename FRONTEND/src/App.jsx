@@ -15,11 +15,13 @@ import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js";
 import { CategoriasPage } from './pages/Categoriaspage';
 import { ListaProductosPage } from './pages/ListaproductosPage.jsx';
 import { ProductosFormPage } from './pages/ProductosFormPage.jsx';
-import { CatalogoPage } from './pages/Catalogopage';
+import Catalogopage from "./pages/Catalogopage.jsx"; 
 import { AdminUsuariosPage } from './pages/AdminUsuariosPage.jsx';
 import { TallasPage } from './pages/Tallaspage.jsx';
 import { GrupoTallaPage } from './pages/GrupoTallePage.jsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import "../src/assets/css/Layout/Layout.css";
+
 
 function App() {
   const [proveedores, setProveedores] = useState([]);
@@ -50,9 +52,10 @@ function App() {
     console.log("Editar proveedor", proveedor);
   };
 
-  return (
-    <>
-      <Header />
+return (
+  <div className="app-container">
+    <Header />
+    <main className="main-content">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/categorias" element={<CategoriasPage />} />
@@ -75,15 +78,16 @@ function App() {
         <Route path="/producto" element={<ListaProductosPage />} />
         <Route path="/producto/crear" element={<ProductosFormPage />} />
         <Route path="/producto/editar/:id" element={<ProductosFormPage />} />
-        <Route path="/catalogo" element={<CatalogoPage />} />
+        <Route path="/catalogo" element={<Catalogopage />} />
         <Route path="/usuario" element={<AdminUsuariosPage />} />
         <Route path="/tallas" element={<TallasPage />} />
         <Route path="/grupo-talla" element={<GrupoTallaPage />} />
       </Routes>
       <Toaster />
-      <Footer />
-    </>
-  );
+    </main>
+    <Footer />
+  </div>
+);
 }
 
 export default App;

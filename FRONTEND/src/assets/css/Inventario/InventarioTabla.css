@@ -1,0 +1,188 @@
+/* Titulo principal */
+.titulo-inventario {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #00b0e0;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Contenedor responsivo para tablas */
+.inventario-tabla-responsive {
+  width: 100%;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+/* Tabla inventario */
+.inventario-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Hover filas */
+.inventario-tabla tbody tr:hover td {
+  background-color: #f3f9ff;
+  transition: background-color 0.3s ease;
+}
+
+/* Celdas */
+.inventario-tabla th,
+.inventario-tabla td {
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Encabezado tabla */
+.inventario-tabla th {
+  background-color: #1a1f2e;
+  color: #00b0e0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Celdas normales */
+.inventario-tabla td {
+  color: #0f0f10;
+  background-color: #fff;
+}
+
+/* Filas hover */
+.inventario-tabla tbody tr:hover {
+  background-color: #f3f9ff;
+  transition: background-color 0.2s ease;
+}
+
+/* Badges para estados */
+.badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #c3c3c9;
+  transition: background-color 0.2s ease;
+  color: #fff;
+}
+
+.bg-success {
+  background-color: #4caf50 !important;
+  color: #fff !important;
+}
+
+.bg-danger {
+  background-color: #b00020 !important;
+  color: #fff !important;
+}
+
+.bg-secondary {
+  background-color: #9aa0a6 !important;
+  color: #fff !important;
+}
+
+/* Botones */
+.btn-editar,
+.btn-guardar {
+  border: none !important;
+  padding: 0.4rem 0.8rem !important;
+  border-radius: 6px !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  color: white !important;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-editar {
+  background-color: #00b0e0 !important;
+}
+
+.btn-guardar {
+  background-color: #433c49 !important;
+}
+
+.btn-editar:hover,
+.btn-guardar:hover {
+  transform: scale(1.05);
+}
+
+/* Botones acciones contenedor */
+.botones-acciones {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Select grupo talla */
+.input-grupo-talla {
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #0f0f10;
+  background-color: #f4f5f9;
+  color: #0f0f10;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+/* Producto con imagen y texto */
+.td-producto {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.img-producto {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.img-placeholder {
+  font-size: 1.8rem;
+  color: #00b0e0;
+}
+
+/* Stock por tallas */
+.stock-tallas {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Breadcrumb personalizado */
+.inventario-breadcrumb {
+  background: transparent;
+  padding-left: 0;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.inventario-breadcrumb li.breadcrumb-item {
+  color: #0f0f10;
+  cursor: pointer;
+}
+
+.inventario-breadcrumb li.breadcrumb-item.active {
+  color: #00b0e0;
+  cursor: default;
+}
+
+/* Texto carga */
+.loading-text {
+  text-align: center;
+  font-weight: 600;
+  color: #00b0;
+}

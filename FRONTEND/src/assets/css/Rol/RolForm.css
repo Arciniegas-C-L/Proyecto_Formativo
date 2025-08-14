@@ -1,0 +1,112 @@
+.rol-form-container {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 1.2rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+  margin: 3rem auto;
+  font-family: 'Urbanist', sans-serif;
+  transition: all 0.3s ease;
+}
+
+.rol-title {
+  text-align: center;
+  font-size: 2rem;
+  color: #9333ea; 
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+.rol-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.rol-field {
+  margin-bottom: 1.5rem;
+}
+
+.rol-label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.rol-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border-radius: 0.7rem;
+  border: 1px solid #cbd5e1;
+  transition: border-color 0.3s;
+}
+
+.rol-input:focus {
+  border-color: #9333ea;
+  outline: none;
+}
+
+.rol-invalid {
+  border-color: #f43f5e; 
+}
+
+.rol-error {
+  color: #f43f5e;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+  display: block;
+}
+
+.rol-submit-container {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rol-button {
+  background-color: #0ea5e9; 
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.rol-button:hover {
+  background-color: #0284c7;
+}
+
+/* Responsive */
+
+@media (max-width: 600px) {
+  .rol-form-container {
+    padding: 1.5rem;
+    margin: 2rem 1rem;
+    border-radius: 1rem;
+  }
+
+  .rol-title {
+    font-size: 1.5rem;
+  }
+
+  .rol-input {
+    padding: 0.65rem 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .rol-button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+  }
+
+  .rol-submit-container {
+    justify-content: center;
+  }
+}

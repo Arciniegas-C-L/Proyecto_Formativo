@@ -1,321 +1,259 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
-  Alert,
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import React, { useState, useEffect } from "react";
 import {
   getAllTallas,
   createTalla,
   updateTalla,
   deleteTalla,
   cambiarEstadoTalla,
-} from '../../api/Talla.api.js';
-import { getAllGruposTalla } from '../../api/GrupoTalla.api.js';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+} from "../../api/Talla.api.js";
+import { getAllGruposTalla } from "../../api/GrupoTalla.api.js";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "../../assets/css/Tallas/Tallas.css";
+import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { useLocation } from "react-router-dom"; 
 
-export const Tallas = () => {
-  const navigate = useNavigate();
+const Tallas = () => {
+  const location = useLocation(); 
   const [tallas, setTallas] = useState([]);
   const [gruposTalla, setGruposTalla] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [tallaToDelete, setTallaToDelete] = useState(null);
   const [editingTalla, setEditingTalla] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadingGrupos, setLoadingGrupos] = useState(true);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    grupo_id: '',
-    estado: true,
-  });
-
-  const cargarTallas = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllTallas();
-      setTallas(response.data || []);
-    } catch (error) {
-      handleError(error);
-      setTallas([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cargarGruposTalla = async () => {
-    try {
-      setLoadingGrupos(true);
-      const response = await getAllGruposTalla();
-      setGruposTalla(response.data || []);
-    } catch (error) {
-      handleError(error);
-      setGruposTalla([]);
-    } finally {
-      setLoadingGrupos(false);
-    }
-  };
+  const [formData, setFormData] = useState({ nombre: "", grupo_id: "", estado: true });
+  const [error, setError] = useState("");
 
   useEffect(() => {
     cargarTallas();
     cargarGruposTalla();
   }, []);
 
-  const handleError = (error) => {
-    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
-    setError(errorMessage);
-    toast.error(errorMessage);
+  const cargarTallas = async () => {
+    try {
+      const res = await getAllTallas();
+      setTallas(res.data || []);
+    } catch {
+      toast.error("Error al cargar tallas");
+      setTallas([]);
+    }
+  };
+
+  const cargarGruposTalla = async () => {
+    try {
+      const res = await getAllGruposTalla();
+      setGruposTalla(res.data || []);
+    } catch {
+      toast.error("Error al cargar grupos de talla");
+      setGruposTalla([]);
+    }
   };
 
   const handleOpenDialog = (talla = null) => {
-    setError('');
+    setError("");
+
     if (talla) {
+      // EDITAR TALLA EXISTENTE
       setEditingTalla(talla);
       setFormData({
         nombre: talla.nombre,
-        grupo_id: talla.grupo.idGrupoTalla,
+        grupo_id: talla.grupo?.id ?? talla.grupo_id ?? "",
         estado: talla.estado,
       });
     } else {
+      // NUEVA TALLA
       setEditingTalla(null);
-      setFormData({
-        nombre: '',
-        grupo_id: '',
-        estado: true,
-      });
+      let grupoIdDesdeNavegacion = location.state?.grupoId || "";
+      setFormData({ nombre: "", grupo_id: grupoIdDesdeNavegacion, estado: true });
     }
+
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingTalla(null);
-    setError('');
-    setFormData({
-      nombre: '',
-      grupo_id: '',
-      estado: true,
-    });
+    setFormData({ nombre: "", grupo_id: "", estado: true });
+    setError("");
   };
 
   const handleInputChange = (e) => {
-    const { name, value, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === 'estado' ? checked : value,
-    });
-    setError('');
-  };
-
-  const validateForm = () => {
-    if (!formData.nombre.trim()) {
-      setError('El nombre es requerido');
-      return false;
-    }
-    if (!formData.grupo_id) {
-      setError('Debe seleccionar un grupo de talla');
-      return false;
-    }
-    if (formData.nombre.length > 10) {
-      setError('El nombre no puede tener más de 10 caracteres');
-      return false;
-    }
-    return true;
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
+    if (!formData.nombre.trim() || !formData.grupo_id) {
+      setError("Todos los campos son obligatorios");
+      return;
+    }
     try {
       if (editingTalla) {
         await updateTalla(editingTalla.id, formData);
-        toast.success('Talla actualizada exitosamente');
+        toast.success("Talla actualizada exitosamente");
       } else {
         await createTalla(formData);
-        toast.success('Talla creada exitosamente');
+        toast.success("Talla creada exitosamente");
       }
       handleCloseDialog();
       cargarTallas();
-    } catch (error) {
-      handleError(error);
+    } catch {
+      toast.error("Error al guardar la talla");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar esta talla?')) {
-      try {
-        await deleteTalla(id);
-        toast.success('Talla eliminada exitosamente');
-        cargarTallas();
-      } catch (error) {
-        handleError(error);
-      }
-    }
+  const handleDeleteClick = (talla) => {
+    setTallaToDelete(talla);
+    setOpenDeleteDialog(true);
   };
 
-  const handleEstadoChange = async (id, estado) => {
+  const confirmDelete = async () => {
     try {
-      await cambiarEstadoTalla(id, !estado);
-      toast.success('Estado de la talla actualizado exitosamente');
+      if (!tallaToDelete) return;
+      await deleteTalla(tallaToDelete.id);
+      toast.success("Talla eliminada exitosamente");
+      setOpenDeleteDialog(false);
+      setTallaToDelete(null);
       cargarTallas();
-    } catch (error) {
-      handleError(error);
+    } catch {
+      toast.error("Error al eliminar la talla");
+    }
+  };
+
+  const handleEstadoChange = async (talla) => {
+    try {
+      await cambiarEstadoTalla(talla.id, !talla.estado);
+      toast.success("Estado actualizado");
+      cargarTallas();
+    } catch {
+      toast.error("Error al cambiar estado");
     }
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Gestión de Tallas
-        </Typography>
-        <Button variant="contained" color="primary" onClick={() => handleOpenDialog()}>
-          Nueva Talla
-        </Button>
-      </Box>
+    <div className="lista-tallas-container">
+      <div className="header-acciones">
+        <h2>Gestión de Tallas</h2>
+        <div className="header-controls">
+          <button className="btn-nueva-talla" onClick={() => handleOpenDialog()}>
+            <FaPlus />
+            Nueva Talla
+          </button>
+        </div>
+      </div>
 
-      <TableContainer component={Paper}>
-        {loading ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>Cargando tallas...</Typography>
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Alert severity="error">{error}</Alert>
-          </Box>
-        ) : !tallas || tallas.length === 0 ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>No hay tallas disponibles</Typography>
-          </Box>
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Grupo de Talla</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tallas.map((talla) => (
-                <TableRow key={talla.id}>
-                  <TableCell>{talla.nombre}</TableCell>
-                  <TableCell>{talla.grupo.nombre}</TableCell>
-                  <TableCell>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={talla.estado}
-                          onChange={() => handleEstadoChange(talla.id, talla.estado)}
-                          color="primary"
-                        />
-                      }
-                      label={talla.estado ? 'Activo' : 'Inactivo'}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton color="primary" onClick={() => handleOpenDialog(talla)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => handleDelete(talla.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </TableContainer>
-
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingTalla ? 'Editar Talla' : 'Nueva Talla'}</DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
+      <div className="tabla-container">
+        <table className="tabla-tallas">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Grupo</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tallas.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="loading">
+                  No hay tallas registradas
+                </td>
+              </tr>
+            ) : (
+              tallas.map((talla, index) => (
+                <tr key={talla.id ?? index}>
+                  <td>{talla.nombre}</td>
+                  <td>{talla.grupo?.nombre}</td>
+                  <td className="estado-talla">{talla.estado ? "Activo" : "Inactivo"}</td>
+                  <td className="celda-acciones">
+                    <button className="btn-editar" onClick={() => handleOpenDialog(talla)}>
+                      <FaEdit />
+                    </button>
+                    <button className="btn-eliminar" onClick={() => handleDeleteClick(talla)}>
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
-            <TextField
-              fullWidth
-              label="Nombre"
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal Crear/Editar */}
+      {openDialog && (
+        <div className="dialog-talla-modal">
+          <div className="form-talla-modal">
+            <h3>{editingTalla ? "Editar Talla" : "Nueva Talla"}</h3>
+            {error && <div className="text-danger mb-2">{error}</div>}
+
+            <label className="form-label">Nombre *</label>
+            <input
+              className="form-control mb-2"
               name="nombre"
               value={formData.nombre}
               onChange={handleInputChange}
-              margin="normal"
-              required
-              inputProps={{ maxLength: 10 }}
-              helperText={`${formData.nombre.length}/10 caracteres`}
+              maxLength={10}
             />
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel>Grupo de Talla</InputLabel>
-              <Select
-                name="grupo_id"
-                value={formData.grupo_id}
+            <small className="text-muted mb-2 d-block">{formData.nombre.length}/10 caracteres</small>
+
+            <label className="form-label">Grupo de Talla *</label>
+            <select
+              className="form-select mb-2"
+              name="grupo_id"
+              value={formData.grupo_id}
+              onChange={handleInputChange}
+            >
+              <option value="">Seleccione un grupo</option>
+              {gruposTalla.map((g, idx) => (
+                <option key={g.id ?? idx} value={g.id ?? g.idGrupoTalla}>
+                  {g.nombre}
+                </option>
+              ))}
+            </select>
+
+            <div className="form-check form-switch mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                name="estado"
+                checked={formData.estado}
                 onChange={handleInputChange}
-                label="Grupo de Talla"
-                disabled={loadingGrupos}
-              >
-                {loadingGrupos ? (
-                  <MenuItem disabled>Cargando grupos...</MenuItem>
-                ) : !gruposTalla || gruposTalla.length === 0 ? (
-                  <MenuItem disabled>No hay grupos disponibles</MenuItem>
-                ) : (
-                  gruposTalla.map((grupo) => (
-                    <MenuItem key={grupo.idGrupoTalla} value={grupo.idGrupoTalla}>
-                      {grupo.nombre}
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-            </FormControl>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.estado}
-                  onChange={handleInputChange}
-                  name="estado"
-                  color="primary"
-                />
-              }
-              label="Activo"
-              margin="normal"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button type="submit" variant="contained" color="primary">
-              {editingTalla ? 'Actualizar' : 'Crear'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </Box>
+              />
+              <label className="form-check-label">Activo</label>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2">
+              <button className="btn btn-secondary" onClick={handleCloseDialog}>
+                Cancelar
+              </button>
+              <button className="btn btn-primary" onClick={handleSubmit}>
+                {editingTalla ? "Actualizar" : "Crear"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal eliminar */}
+      {openDeleteDialog && (
+        <div className="dialog-talla-modal">
+          <div className="form-talla-modal text-center">
+            <p>¿Seguro que quieres eliminar la talla "{tallaToDelete?.nombre}"?</p>
+            <div className="d-flex justify-content-center gap-2 mt-3">
+              <button className="btn btn-danger" onClick={confirmDelete}>
+                Eliminar
+              </button>
+              <button className="btn btn-secondary" onClick={() => setOpenDeleteDialog(false)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

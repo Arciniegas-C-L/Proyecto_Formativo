@@ -1,54 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Typography,
-  Alert,
-  Chip,
-  Stack,
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getAllGruposTalla,
   createGrupoTalla,
   updateGrupoTalla,
   deleteGrupoTalla,
-} from '../../api/GrupoTalla.api';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+} from "../../api/GrupoTalla.api";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "../../assets/css/Tallas/GrupoTalla.css";
+import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 
-export const GrupoTalla = () => {
+const GrupoTalla = () => {
   const navigate = useNavigate();
   const [gruposTalla, setGruposTalla] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingGrupo, setEditingGrupo] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    descripcion: '',
-  });
+  const [formData, setFormData] = useState({ nombre: "", descripcion: "" });
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [deleteGrupoId, setDeleteGrupoId] = useState(null);
 
   useEffect(() => {
     cargarGruposTalla();
   }, []);
 
   const handleError = (error) => {
-    const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
+    const errorMessage =
+      error.response?.data?.detail || "Error al realizar la operación";
     setError(errorMessage);
     toast.error(errorMessage);
   };
@@ -60,7 +40,6 @@ export const GrupoTalla = () => {
       setGruposTalla(response.data || []);
     } catch (error) {
       handleError(error);
-      console.error('Error:', error);
       setGruposTalla([]);
     } finally {
       setLoading(false);
@@ -68,19 +47,16 @@ export const GrupoTalla = () => {
   };
 
   const handleOpenDialog = (grupo = null) => {
-    setError('');
+    setError("");
     if (grupo) {
       setEditingGrupo(grupo);
       setFormData({
         nombre: grupo.nombre,
-        descripcion: grupo.descripcion || '',
+        descripcion: grupo.descripcion || "",
       });
     } else {
       setEditingGrupo(null);
-      setFormData({
-        nombre: '',
-        descripcion: '',
-      });
+      setFormData({ nombre: "", descripcion: "" });
     }
     setOpenDialog(true);
   };
@@ -88,29 +64,23 @@ export const GrupoTalla = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingGrupo(null);
-    setError('');
-    setFormData({
-      nombre: '',
-      descripcion: '',
-    });
+    setError("");
+    setFormData({ nombre: "", descripcion: "" });
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    setError('');
+    setFormData({ ...formData, [name]: value });
+    setError("");
   };
 
   const validateForm = () => {
     if (!formData.nombre.trim()) {
-      setError('El nombre es requerido');
+      setError("El nombre es requerido");
       return false;
     }
     if (formData.nombre.length > 45) {
-      setError('El nombre no puede tener más de 45 caracteres');
+      setError("El nombre no puede tener más de 45 caracteres");
       return false;
     }
     return true;
@@ -122,11 +92,11 @@ export const GrupoTalla = () => {
 
     try {
       if (editingGrupo) {
-        await updateGrupoTalla(editingGrupo.id, formData);
-        toast.success('Grupo de talla actualizado exitosamente');
+        await updateGrupoTalla(editingGrupo.idGrupoTalla, formData);
+        toast.success("Grupo de talla actualizado exitosamente");
       } else {
         await createGrupoTalla(formData);
-        toast.success('Grupo de talla creado exitosamente');
+        toast.success("Grupo de talla creado exitosamente");
       }
       handleCloseDialog();
       cargarGruposTalla();
@@ -135,150 +105,158 @@ export const GrupoTalla = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Está seguro de eliminar este grupo de talla?')) {
-      try {
-        await deleteGrupoTalla(id);
-        toast.success('Grupo de talla eliminado exitosamente');
-        cargarGruposTalla();
-      } catch (error) {
-        handleError(error);
-      }
+  const handleDeleteModalOpen = (id) => {
+    setDeleteGrupoId(id);
+    setOpenDeleteModal(true);
+  };
+
+  const handleDeleteModalClose = () => {
+    setDeleteGrupoId(null);
+    setOpenDeleteModal(false);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteGrupoTalla(deleteGrupoId);
+      toast.success("Grupo de talla eliminado exitosamente");
+      cargarGruposTalla();
+    } catch (error) {
+      handleError(error);
+    } finally {
+      handleDeleteModalClose();
     }
   };
 
   const handleAsignarTallas = (grupo) => {
-    // Redirigir a la página de tallas
-    navigate('/tallas');
+    // Pasamos el id del grupo al estado de navegación
+    navigate("/tallas", { state: { grupoId: grupo.idGrupoTalla } });
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Gestión de Grupos de Talla
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpenDialog()}
-        >
-          Nuevo Grupo de Talla
-        </Button>
-      </Box>
+    <div className="grupo-talla-container">
+      {/* HEADER */}
+      <div className="grupo-header">
+        <h2>Gestión de Grupos de Talla</h2>
+        <button className="btn-grupo-nuevo" onClick={() => handleOpenDialog()}>
+          <FaPlus /> Nuevo Grupo
+        </button>
+      </div>
 
-      <TableContainer component={Paper}>
+      {/* TABLA PRINCIPAL */}
+      <div className="grupo-tabla-container">
         {loading ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>Cargando grupos de talla...</Typography>
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Alert severity="error">{error}</Alert>
-          </Box>
-        ) : !gruposTalla || gruposTalla.length === 0 ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography>No hay grupos de talla disponibles</Typography>
-          </Box>
+          <div className="loading">Cargando...</div>
+        ) : gruposTalla.length === 0 ? (
+          <div className="loading">No hay grupos de talla registrados</div>
         ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Tallas Asociadas</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+          <table className="grupo-tabla">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Tallas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
               {gruposTalla.map((grupo) => (
-                <TableRow key={grupo.idGrupoTalla}>
-                  <TableCell>{grupo.nombre}</TableCell>
-                  <TableCell>{grupo.descripcion || '-'}</TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                      {(grupo.Tallas  || []).map((talla) => (
-                        <Chip
-                          key={talla.id}
-                          label={talla.nombre}
-                          size="small"
-                          color="primary"
-                        />
-                      ))}
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
+                <tr key={grupo.idGrupoTalla}>
+                  <td>{grupo.nombre}</td>
+                  <td>{grupo.descripcion || "-"}</td>
+                  <td>
+                    {(grupo.Tallas || []).map((talla) => (
+                      <span key={talla.id} className="chip-talla">
+                        {talla.nombre}
+                      </span>
+                    ))}
+                  </td>
+                  <td className="acciones-grupo">
+                    <button
+                      className="btn-grupo-editar"
                       onClick={() => handleOpenDialog(grupo)}
-                      title="Editar"
                     >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="secondary"
-                      onClick={() => handleAsignarTallas(grupo)}
-                      title="Asignar Tallas"
-                    >
-                      <AddIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(grupo.idGrupoTalla)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </TableContainer>
+                      <FaEdit />
+                    </button>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingGrupo ? 'Editar Grupo de Talla' : 'Nuevo Grupo de Talla'}
-        </DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-            <TextField
-              fullWidth
-              label="Nombre"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleInputChange}
-              margin="normal"
-              required
-              inputProps={{ maxLength: 45 }}
-              helperText={`${formData.nombre.length}/45 caracteres`}
-            />
-            <TextField
-              fullWidth
-              label="Descripción"
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleInputChange}
-              margin="normal"
-              multiline
-              rows={3}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button type="submit" variant="contained" color="primary">
-              {editingGrupo ? 'Actualizar' : 'Crear'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </Box>
+                    {/* BOTÓN PARA ASIGNAR TALLAS */}
+                    <button
+                      className="btn-grupo-asignar"
+                      onClick={() => handleAsignarTallas(grupo)}
+                    >
+                      Asignar
+                    </button>
+
+                    <button
+                      className="btn-grupo-eliminar"
+                      onClick={() => handleDeleteModalOpen(grupo.idGrupoTalla)}
+                    >
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* MODAL CREAR / EDITAR */}
+      {openDialog && (
+        <div className="grupo-modal">
+          <div className="grupo-modal-content">
+            <h3>{editingGrupo ? "Editar Grupo de Talla" : "Nuevo Grupo de Talla"}</h3>
+            {error && <div className="text-error">{error}</div>}
+            <form onSubmit={handleSubmit}>
+              <label>Nombre *</label>
+              <input
+                type="text"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleInputChange}
+                maxLength={45}
+                required
+              />
+              <label>Descripción</label>
+              <textarea
+                name="descripcion"
+                value={formData.descripcion}
+                onChange={handleInputChange}
+                rows="3"
+              ></textarea>
+              <div className="grupo-modal-buttons">
+                <button
+                  type="button"
+                  className="btn-cancelar"
+                  onClick={handleCloseDialog}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-guardar">
+                  {editingGrupo ? "Actualizar" : "Crear"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ELIMINAR */}
+      {openDeleteModal && (
+        <div className="grupo-modal-eliminar">
+          <div className="grupo-modal-eliminar-content">
+            <p>¿Está seguro de eliminar este grupo de talla?</p>
+            <div className="grupo-modal-eliminar-buttons">
+              <button className="btn-eliminar" onClick={handleDelete}>
+                Eliminar
+              </button>
+              <button className="btn-cancelar" onClick={handleDeleteModalClose}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

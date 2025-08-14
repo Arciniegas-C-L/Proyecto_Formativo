@@ -1,9 +1,12 @@
-import Catalogo from "../components/Catalogo/Catalogo.jsx";
+import React from "react";
+import Catalogo from "../components/Catalogo/Catalogo";
 
-export const CatalogoPage = () => {
+const Catalogopage = () => {
   return (
-    <div>
-        <Catalogo />
+    <div className="catalogo-page">
+      <Catalogo />
     </div>
-   );
+  );
 };
+
+export default Catalogopage;
