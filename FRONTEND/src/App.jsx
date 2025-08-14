@@ -20,6 +20,7 @@ import { CatalogoPage } from './pages/Catalogopage'
 import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
+import { Perfil } from "./components/Perfil/Perfil.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
@@ -99,6 +100,7 @@ function App() {
         <Route path="/usuario" element={<AdminUsuariosPage />} />
         <Route path="/tallas" element={<TallasPage />} />
         <Route path="/grupo-talla" element={<GrupoTallaPage />} />
+        <Route path="/perfil" element={<Perfil />} />
       </Routes>
 
       {/* Componente para mostrar notificaciones tipo toast */}
