@@ -62,6 +62,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     apellido = models.CharField(max_length=45)
     correo = models.EmailField(max_length=45, unique=True)
     telefono = models.CharField(max_length=15)
+    direccion = models.CharField(max_length=255, blank=True, null=True) 
     estado = models.BooleanField(default=True)
 
     # Se recomienda `on_delete=models.PROTECT` para no perder relaciones si un rol es eliminado

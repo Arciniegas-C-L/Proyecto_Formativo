@@ -14,14 +14,18 @@ import { RolListaPage } from "./pages/RolListaPage.jsx";
 import { RolFormPage } from "./pages/RolFormPage.jsx";
 import { InventarioPage } from "./pages/InventarioPage.jsx";
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
-import { ProveedoresRegistradosPage } from "./pages/ProvedoresRegistradosPage.jsx";
-import { CategoriasPage } from './pages/Categoriaspage';
-import { ListaProductosPage } from './pages/ListaproductosPage.jsx';
-import { ProductosFormPage } from './pages/ProductosFormPage.jsx';
-import { CatalogoPage } from './pages/Catalogopage';
-import { AdminUsuariosPage } from './pages/AdminUsuariosPage.jsx';
-import { TallasPage } from './pages/Tallaspage.jsx';
-import { GrupoTallaPage } from './pages/GrupoTallePage.jsx';
+import {ProveedoresRegistradosPage} from "./pages/ProvedoresRegistradosPage.jsx";
+import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js"
+import { CategoriasPage } from './pages/Categoriaspage'
+import { ListaProductosPage } from './pages/ListaproductosPage.jsx'
+import { ProductosFormPage } from './pages/ProductosFormPage.jsx'
+import { CatalogoPage } from './pages/Catalogopage'
+//import { Carrito } from './pages/Carrito'
+import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
+import {TallasPage} from './pages/Tallaspage.jsx';
+import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
+import { PerfilPage } from "./pages/PerfilPage.jsx";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js";
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -177,6 +181,14 @@ function AppContent() {
           element={
             <RutaPrivada role="administrador">
               <RolFormPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/perfil"
+          element={
+            <RutaPrivada role={["cliente", "administrador"]}>
+              <PerfilPage />
             </RutaPrivada>
           }
         />

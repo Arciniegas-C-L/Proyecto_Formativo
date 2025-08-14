@@ -1,0 +1,310 @@
+/* ======== ESTILO GENERAL ======== */
+.perfil-container {
+    width: 100%;
+    margin: 0;
+    padding: 2rem;
+    background: linear-gradient(135deg, #fbd0f4 0%, #c3f1ff 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    color: #C9D1D9;
+    font-family: "Poppins", sans-serif;
+}
+
+/* ======== CABECERA PERFIL ======== */
+.dashboard-perfil {
+    display: flex;
+    background: #1A1F2E;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+/* ======== INFORMACIÓN DEL PERFIL ======== */
+.perfil-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    gap: 1.5rem;
+    background: linear-gradient(180deg, #1A1F2E 0%, #141926 100%);
+    border-right: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+/* Avatar */
+.perfil-avatar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+}
+
+.perfil-avatar img {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 3px solid #00D4FF;
+    object-fit: cover;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+}
+
+.perfil-avatar img:hover {
+    transform: scale(1.07);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+}
+
+.titulo-opciones {
+    text-align: center;
+    background: linear-gradient(90deg, #F26BE2, #00D4FF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.titulo-opciones h3 {
+    font-size: 2.3rem;
+    font-weight: 600;
+}
+
+/* Nombre */
+.perfil-avatar h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+/* Botón editar avatar */
+.edit-avatar-btn {
+    padding: 0.6rem 1.4rem;
+    background: linear-gradient(90deg, #F26BE2, #9D4EDD);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.edit-avatar-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 14px rgba(242, 107, 226, 0.5);
+}
+
+/* ======== OPCIONES ======== */
+.perfil-opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.perfil-opciones button {
+    background: #2A2F3E;
+    border: none;
+    border-radius: 10px;
+    padding: 0.8rem;
+    color: #FFFFFF;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #00D4FF;
+}
+
+.perfil-opciones button:hover {
+    background: #00D4FF;
+    color: #0A0E1A;
+    transform: translateY(-2px);
+}
+
+/* ======== CONTENIDO PRINCIPAL ======== */
+.mostrar-opciones {
+    flex: 2;
+    background: #0A0E1A;
+    padding: 2rem;
+    color: #E8EAED;
+    border-radius: 0 16px 16px 0;
+}
+
+/* ======== BOTONES GENERALES ======== */
+.save-btn {
+    background: linear-gradient(90deg, #FFB800, #ff8800);
+    color: #0A0E1A;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+    background: linear-gradient(90deg, #F26BE2, #9D4EDD);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* ======== GALERÍA DE OPCIONES ======== */
+.option-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.option-avatar {
+    width: 6rem;
+    height: 6rem;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    object-fit: cover;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.option-avatar:hover {
+    border-color: #00D4FF;
+    transform: scale(1.08);
+}
+
+.option-avatar.selected {
+    border-color: #F26BE2;
+    box-shadow: 0 0 10px rgba(242, 107, 226, 0.5);
+}
+
+/* ======== PREVISUALIZACIÓN DE AVATAR ======== */
+.avatar-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+}
+
+.avatar-preview-image {
+    width: 9rem;
+    height: 9rem;
+    border-radius: 50%;
+    border: 3px solid #00D4FF;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.avatar-preview-image:hover {
+    transform: scale(1.07);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+}
+
+.avatar-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: .5rem;
+    margin-bottom: 1rem;
+}
+
+.avatar-buttons button {
+    background: #2A2F3E;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.avatar-buttons button:hover {
+    background: #00D4FF;
+    color: #0A0E1A;
+    transform: scale(1.04);
+}
+
+/* ======== FORMULARIO DATOS PERSONALES ======== */
+.datos-section h3 {
+    text-align: center;
+}
+
+.datos-section1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 1rem;
+    margin: auto;
+}
+
+.form-datos {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    max-width: 480px;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.form-datos label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #C9D1D9;
+}
+
+.form-datos input {
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1.5px solid #2A2F3E;
+    background: #1A1F2E;
+    color: #E8EAED;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-datos input:focus {
+    outline: none;
+    border-color: #00D4FF;
+    background: #0A0E1A;
+    box-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+}
+
+.form-datos input[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-datos button {
+    align-self: flex-start;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(90deg, #FFB800, #ff8800);
+    color: #0A0E1A;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0.8rem;
+}
+
+.form-datos button:hover {
+    background: linear-gradient(90deg, #F26BE2, #9D4EDD);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* ======== RESPONSIVE ======== */
+@media (max-width: 992px) {
+    .dashboard-perfil {
+        flex-direction: column;
+    }
+    .mostrar-opciones {
+        border-radius: 0 0 16px 16px;
+    }
+}
+
+@media (max-width: 600px) {
+    .perfil-container {
+        padding: 1rem;
+    }
+    .perfil-avatar img {
+        width: 100px;
+        height: 100px;
+    }
+    .perfil-avatar h2 {
+        font-size: 1.2rem;
+    }
+    .mostrar-opciones {
+        padding: 1rem;
+    }
+}
