@@ -1,280 +1,175 @@
 import React, { useState } from "react";
 import { updateCategoria } from "../../api/Categoria.api";
 import { updateSubcategoria } from "../../api/Subcategoria.api";
+import "../../assets/css/Categoria/ListaCategoria.css";
 
 function ListaCategorias({ categorias, onCategoriasActualizadas }) {
-  const [categoriasEdit, setCategoriasEdit] = useState(categorias);
-  const [modoEdicionCat, setModoEdicionCat] = useState({});
-  const [modoEdicionSub, setModoEdicionSub] = useState({});
-  const [mostrarSubcategorias, setMostrarSubcategorias] = useState({});
+  const [categoriasEditadas, setCategoriasEditadas] = useState(categorias);
+  const [editarCategoria, setEditarCategoria] = useState({});
+  const [editarSubcategoria, setEditarSubcategoria] = useState({});
+  const [mostrarSub, setMostrarSub] = useState({});
 
-  const handleCategoriaChange = (id, field, value) => {
-    setCategoriasEdit((prev) =>
-      prev.map((cat) =>
-        cat.idCategoria === id ? { ...cat, [field]: value } : cat
-      )
+  const cambiarCategoria = (id, campo, valor) => {
+    setCategoriasEditadas(prev =>
+      prev.map(cat => (cat.idCategoria === id ? { ...cat, [campo]: valor } : cat))
     );
   };
 
-  const handleSubcategoriaChange = (catId, subId, field, value) => {
-    setCategoriasEdit((prev) =>
-      prev.map((cat) => {
+  const cambiarSubcategoria = (catId, subId, campo, valor) => {
+    setCategoriasEditadas(prev =>
+      prev.map(cat => {
         if (cat.idCategoria === catId) {
-          const nuevasSubcategorias = cat.subcategorias.map((sub) =>
-            sub.idSubcategoria === subId ? { ...sub, [field]: value } : sub
+          const nuevasSub = cat.subcategorias.map(sub =>
+            sub.idSubcategoria === subId ? { ...sub, [campo]: valor } : sub
           );
-          return { ...cat, subcategorias: nuevasSubcategorias };
+          return { ...cat, subcategorias: nuevasSub };
         }
         return cat;
       })
     );
   };
 
-  const guardarCategoria = async (cat) => {
+  const guardarCategoria = async cat => {
     try {
-      await updateCategoria(cat.idCategoria, {
-        nombre: cat.nombre,
-        estado: cat.estado,
-      });
+      await updateCategoria(cat.idCategoria, { nombre: cat.nombre, estado: cat.estado });
       alert("Categoría actualizada correctamente");
-      setModoEdicionCat((prev) => ({ ...prev, [cat.idCategoria]: false }));
+      setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: false }));
       onCategoriasActualizadas();
-    } catch (error) {
-      console.error("Error actualizando categoría", error);
+    } catch {
       alert("Error al actualizar categoría");
     }
   };
 
   const guardarSubcategoria = async (catId, sub) => {
     try {
-      await updateSubcategoria(sub.idSubcategoria, {
-        nombre: sub.nombre,
-        estado: sub.estado,
-        categoria: catId,
-      });
+      await updateSubcategoria(sub.idSubcategoria, { nombre: sub.nombre, estado: sub.estado, categoria: catId });
       alert("Subcategoría actualizada correctamente");
-      setModoEdicionSub((prev) => ({ ...prev, [sub.idSubcategoria]: false }));
+      setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: false }));
       onCategoriasActualizadas();
-    } catch (error) {
-      console.error("Error actualizando subcategoría", error);
+    } catch {
       alert("Error al actualizar subcategoría");
     }
   };
 
   return (
-    <div className="mt-4">
-      <h3>Listado de Categorías y Subcategorías (Editable)</h3>
-      <table className="table table-bordered">
-        <thead className="table-dark">
-          <tr>
-            <th>Categoría</th>
-            <th>Estado</th>
-            <th>Editar</th>
-            <th>Guardar</th>
-            <th>Ver Subcategorías</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categoriasEdit.length === 0 ? (
-            <tr>
-              <td colSpan="5" className="text-center">
-                No hay categorías
-              </td>
-            </tr>
-          ) : (
-            categoriasEdit.map((cat) => (
-              <React.Fragment key={cat.idCategoria}>
-                <tr style={{ backgroundColor: "white" }}>
-                  <td>
-                    {modoEdicionCat[cat.idCategoria] ? (
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={cat.nombre}
-                        onChange={(e) =>
-                          handleCategoriaChange(cat.idCategoria, "nombre", e.target.value)
-                        }
-                      />
-                    ) : (
-                      cat.nombre
-                    )}
-                  </td>
-                  <td className="text-center" style={{ fontWeight: "bold", color: cat.estado ? "green" : "red" }}>
-                    {modoEdicionCat[cat.idCategoria] ? (
-                      <input
-                        type="checkbox"
-                        checked={cat.estado}
-                        onChange={(e) =>
-                          handleCategoriaChange(cat.idCategoria, "estado", e.target.checked)
-                        }
-                      />
-                    ) : cat.estado ? (
-                      "Activo"
-                    ) : (
-                      "Inactivo"
-                    )}
-                  </td>
-                  <td className="text-center">
-                    {!modoEdicionCat[cat.idCategoria] ? (
+    <div className="contenedor-categorias">
+      <h3 className="titulo-categorias">Listado de Categorías y Subcategorías</h3>
+
+      {categoriasEditadas.length === 0 ? (
+        <p className="mensaje-vacio">No hay categorías registradas</p>
+      ) : (
+        <div className="contenedor-tarjetas">
+          {categoriasEditadas.map(cat => (
+            <div key={cat.idCategoria} className="tarjeta-categoria">
+              <div className="header-tarjeta">
+                <input
+                  type="text"
+                  className="input-categoria"
+                  value={cat.nombre}
+                  disabled={!editarCategoria[cat.idCategoria]}
+                  onChange={e => cambiarCategoria(cat.idCategoria, "nombre", e.target.value)}
+                />
+                <label className="label-check">
+                  <input
+                    type="checkbox"
+                    className="checkbox"
+                    checked={cat.estado}
+                    disabled={!editarCategoria[cat.idCategoria]}
+                    onChange={e => cambiarCategoria(cat.idCategoria, "estado", e.target.checked)}
+                  />
+                  Activo
+                </label>
+                <div className="grupo-botones">
+                  {!editarCategoria[cat.idCategoria] ? (
+                    <button
+                      className="btn-editar"
+                      onClick={() => setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: true }))}
+                    >
+                      Editar
+                    </button>
+                  ) : (
+                    <>
                       <button
-                        className="btn btn-sm btn-warning"
-                        onClick={() =>
-                          setModoEdicionCat((prev) => ({
-                            ...prev,
-                            [cat.idCategoria]: true,
-                          }))
-                        }
-                      >
-                        Editar
-                      </button>
-                    ) : (
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() =>
-                          setModoEdicionCat((prev) => ({
-                            ...prev,
-                            [cat.idCategoria]: false,
-                          }))
-                        }
+                        className="btn-cancelar"
+                        onClick={() => setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: false }))}
                       >
                         Cancelar
                       </button>
-                    )}
-                  </td>
-                  <td className="text-center">
-                    {modoEdicionCat[cat.idCategoria] && (
                       <button
-                        className="btn btn-sm btn-primary"
+                        className="btn-guardar"
                         onClick={() => guardarCategoria(cat)}
                       >
                         Guardar
                       </button>
-                    )}
-                  </td>
-                  <td className="text-center">
-                    <button
-                      className="btn btn-sm btn-info"
-                      onClick={() =>
-                        setMostrarSubcategorias((prev) => ({
-                          ...prev,
-                          [cat.idCategoria]: !prev[cat.idCategoria],
-                        }))
-                      }
-                    >
-                      {mostrarSubcategorias[cat.idCategoria] ? "Ocultar" : "Mostrar"}
-                    </button>
-                  </td>
-                </tr>
+                    </>
+                  )}
+                  <button
+                    className="btn-subcategorias"
+                    onClick={() => setMostrarSub(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))}
+                  >
+                    {mostrarSub[cat.idCategoria] ? "Ocultar Subcategorías" : "Mostrar Subcategorías"}
+                  </button>
+                </div>
+              </div>
 
-                {mostrarSubcategorias[cat.idCategoria] && (
-                  <tr>
-                    <td colSpan="5" style={{ backgroundColor: "#f8f9fa" }}>
-                      {cat.subcategorias && cat.subcategorias.length > 0 ? (
-                        <table className="table table-bordered mb-0">
-                          <thead className="table-secondary">
-                            <tr>
-                              <th>Nombre Subcategoría</th>
-                              <th>Estado</th>
-                              <th>Editar</th>
-                              <th>Guardar</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {cat.subcategorias.map((sub) => (
-                              <tr key={sub.idSubcategoria}>
-                                <td>
-                                  {modoEdicionSub[sub.idSubcategoria] ? (
-                                    <input
-                                      type="text"
-                                      className="form-control"
-                                      value={sub.nombre}
-                                      onChange={(e) =>
-                                        handleSubcategoriaChange(
-                                          cat.idCategoria,
-                                          sub.idSubcategoria,
-                                          "nombre",
-                                          e.target.value
-                                        )
-                                      }
-                                    />
-                                  ) : (
-                                    sub.nombre
-                                  )}
-                                </td>
-                                <td className="text-center" style={{ fontWeight: "bold", color: sub.estado ? "green" : "red" }}>
-                                  {modoEdicionSub[sub.idSubcategoria] ? (
-                                    <input
-                                      type="checkbox"
-                                      checked={sub.estado}
-                                      onChange={(e) =>
-                                        handleSubcategoriaChange(
-                                          cat.idCategoria,
-                                          sub.idSubcategoria,
-                                          "estado",
-                                          e.target.checked
-                                        )
-                                      }
-                                    />
-                                  ) : sub.estado ? (
-                                    "Activo"
-                                  ) : (
-                                    "Inactivo"
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  {!modoEdicionSub[sub.idSubcategoria] ? (
-                                    <button
-                                      className="btn btn-sm btn-warning"
-                                      onClick={() =>
-                                        setModoEdicionSub((prev) => ({
-                                          ...prev,
-                                          [sub.idSubcategoria]: true,
-                                        }))
-                                      }
-                                    >
-                                      Editar
-                                    </button>
-                                  ) : (
-                                    <button
-                                      className="btn btn-sm btn-secondary"
-                                      onClick={() =>
-                                        setModoEdicionSub((prev) => ({
-                                          ...prev,
-                                          [sub.idSubcategoria]: false,
-                                        }))
-                                      }
-                                    >
-                                      Cancelar
-                                    </button>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  {modoEdicionSub[sub.idSubcategoria] && (
-                                    <button
-                                      className="btn btn-sm btn-success"
-                                      onClick={() =>
-                                        guardarSubcategoria(cat.idCategoria, sub)
-                                      }
-                                    >
-                                      Guardar
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <em>No hay subcategorías</em>
-                      )}
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))
-          )}
-        </tbody>
-      </table>
+              {mostrarSub[cat.idCategoria] && (
+                <div className="subcategorias">
+                  {cat.subcategorias.length > 0 ? (
+                    cat.subcategorias.map(sub => (
+                      <div key={sub.idSubcategoria} className="fila-subcategoria">
+                        <input
+                          type="text"
+                          className="input-subcategoria"
+                          value={sub.nombre}
+                          disabled={!editarSubcategoria[sub.idSubcategoria]}
+                          onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "nombre", e.target.value)}
+                        />
+                        <label className="label-check">
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={sub.estado}
+                            disabled={!editarSubcategoria[sub.idSubcategoria]}
+                            onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "estado", e.target.checked)}
+                          />
+                          Activo
+                        </label>
+                        <div className="grupo-botones">
+                          {!editarSubcategoria[sub.idSubcategoria] ? (
+                            <button
+                              className="btn-editar"
+                              onClick={() => setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: true }))}
+                            >
+                              Editar
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                className="btn-cancelar"
+                                onClick={() => setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: false }))}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                className="btn-guardar"
+                                onClick={() => guardarSubcategoria(cat.idCategoria, sub)}
+                              >
+                                Guardar
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <em className="mensaje-vacio-sub">No hay subcategorías</em>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,118 +1,242 @@
 import React, { useState, useEffect } from "react";
-import "../../assets/css/Inventario/InventarioTabla.css";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Chip,
+  Breadcrumbs,
+  Link,
+  Typography,
+  Box,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Stack,
+  Alert,
+  FormHelperText,
+  Snackbar
+} from "@mui/material";
+import {
+  NavigateNext as NavigateNextIcon,
+  Edit as EditIcon,
+  Visibility as VisibilityIcon,
+  Home as HomeIcon,
+  ImageNotSupported as ImageNotSupportedIcon,
+  Save as SaveIcon,
+  Warning as WarningIcon,
+  Add as AddIcon
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-
 import {
   getTablaCategorias,
   getTablaSubcategorias,
   getTablaProductos,
+  actualizarStockTallas
 } from "../../api/InventarioApi";
+import {updateTalla,createTalla} from "../../api/Talla.api";
+import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
+import { getAllGruposTalla, getTallasActivasByGrupo } from "../../api/GrupoTalla.api";
 
-import {
-  updateGrupoTalla,
-  asignarGrupoTallaDefault,
-} from "../../api/Subcategoria.api";
-
-import { getAllGruposTalla } from "../../api/GrupoTalla.api";
-
-import {
-  FaEye,
-  FaSave,
-  FaPlus,
-  FaImage,
-} from "react-icons/fa";
-
+// Constante para la URL base del backend
 const BACKEND_URL = "http://127.0.0.1:8000";
 
 const InventarioTabla = () => {
-  const [currentView, setCurrentView] = useState("categorias");
-  const [currentData, setCurrentData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [selectedCategoria, setSelectedCategoria] = useState(null);
   const [selectedSubcategoria, setSelectedSubcategoria] = useState(null);
-
   const [gruposTalla, setGruposTalla] = useState([]);
-
+  const [tallasActivas, setTallasActivas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState("categorias"); // categorias, subcategorias, productos
+  const [currentData, setCurrentData] = useState(null);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
-
+  const [subcategoriaEnEdicion, setSubcategoriaEnEdicion] = useState(null);
+  const [openGrupoTallaDialog, setOpenGrupoTallaDialog] = useState(false);
+  const [openStockDialog, setOpenStockDialog] = useState(false);
+  const [selectedProducto, setSelectedProducto] = useState(null);
+  const [stockForm, setStockForm] = useState({});
+  const [stockMinimoForm, setStockMinimoForm] = useState({});
+  const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info' // 'error', 'warning', 'info', 'success'
+  });
   const navigate = useNavigate();
+  const [openNoCategoriasDialog, setOpenNoCategoriasDialog] = useState(false);
+  const [contador, setContador] = useState(10);
+  const [openNoGrupoTallaDialog, setOpenNoGrupoTallaDialog] = useState(false);
+  const [contadorGrupoTalla, setContadorGrupoTalla] = useState(5);
 
-  // Cargar inicial
+  // Cargar categorías y grupos de talla al montar el componente
   useEffect(() => {
-    const initialize = async () => {
-      setLoading(true);
+    const inicializar = async () => {
       try {
-        await asignarGrupoTallaDefault();
-      } catch {
-        // ignorar errores
+        setLoading(true);
+        
+        // Primero asignar grupo de tallas por defecto a las subcategorías que no lo tienen
+        try {
+          await asignarGrupoTallaDefault();
+        } catch (error) {
+          console.error('Error al asignar grupo de tallas por defecto:', error);
+          // Continuar con la carga aunque falle la asignación por defecto
+        }
+        
+        // Primero cargar grupos de talla, luego categorías
+        await cargarGruposTalla();
+        await cargarCategorias();
+        
+      } catch (error) {
+        console.error('Error al inicializar:', error);
+        showSnackbar('Error al inicializar el componente', 'error');
+      } finally {
+        setLoading(false);
       }
-      await cargarGruposTalla();
-      await cargarCategorias();
-      setLoading(false);
     };
-    initialize();
-  }, []);
+    inicializar();
+  }, []); // Solo se ejecuta al montar el componente
+
+  // useEffect para el contador de redirección
+  useEffect(() => {
+    let interval;
+    if (openNoCategoriasDialog && contador > 0) {
+      interval = setInterval(() => {
+        setContador(prev => {
+          if (prev <= 1) {
+            navigate('/categorias');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [openNoCategoriasDialog, contador, navigate]);
+
+  // useEffect para el contador de redirección de grupos de talla
+  useEffect(() => {
+    let interval;
+    if (openNoGrupoTallaDialog && contadorGrupoTalla > 0) {
+      interval = setInterval(() => {
+        setContadorGrupoTalla(prev => {
+          if (prev <= 1) {
+            navigate('/grupo-talla');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [openNoGrupoTallaDialog, contadorGrupoTalla, navigate]);
 
   const cargarCategorias = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const data = await getTablaCategorias();
-      if (!data || !data.datos) throw new Error("No hay categorías");
+      
+      // Verificar si no hay categorías
+      if (!data.datos || data.datos.length === 0) {
+        setOpenNoCategoriasDialog(true);
+        return;
+      }
+      
       setCurrentData(data);
       setCurrentView("categorias");
+      setBreadcrumbs([{ text: "Categorías", active: true }]);
       setSelectedCategoria(null);
       setSelectedSubcategoria(null);
-      setBreadcrumbs([{ text: "Categorías", active: true }]);
     } catch (error) {
-      mostrarSnackbar("Error al cargar categorías", "error");
+      console.error("Error al cargar las categorías:", error);
+      showSnackbar("Error al cargar las categorías", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const cargarSubcategorias = async (categoriaId, categoriaNombre) => {
-    setLoading(true);
     try {
+      setLoading(true);
+      
       const data = await getTablaSubcategorias(categoriaId);
-      if (!data || !data.datos) throw new Error("No hay subcategorías");
+      
+      // Verificar si hay grupos de talla disponibles en el sistema
+      if (!gruposTalla || gruposTalla.length === 0) {
+        setOpenNoGrupoTallaDialog(true);
+        return;
+      }
+      
+      // Verificar si hay subcategorías
+      if (!data.datos || data.datos.length === 0) {
+        showSnackbar(`No hay subcategorías en la categoría "${categoriaNombre}"`, 'info');
+        return;
+      }
+      
       setCurrentData(data);
       setCurrentView("subcategorias");
       setSelectedCategoria({ id: categoriaId, nombre: categoriaNombre });
-      setSelectedSubcategoria(null);
       setBreadcrumbs([
         { text: "Categorías", active: false, onClick: cargarCategorias },
-        { text: categoriaNombre, active: true },
+        { text: categoriaNombre, active: true }
       ]);
+      setSelectedSubcategoria(null);
     } catch (error) {
-      mostrarSnackbar(`No hay subcategorías en ${categoriaNombre}`, "info");
+      console.error("Error al cargar las subcategorías:", error);
+      showSnackbar("Error al cargar las subcategorías", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const cargarProductos = async (subcategoriaId, subcategoriaNombre) => {
-    setLoading(true);
     try {
+      setLoading(true);
       const data = await getTablaProductos(subcategoriaId);
-      if (!data || !data.datos) throw new Error("No hay productos");
+      
+      // Verificar si hay productos
+      if (!data.datos || data.datos.length === 0) {
+        showSnackbar(`No hay productos en la subcategoría "${subcategoriaNombre}"`, 'info');
+        return;
+      }
+      
       setCurrentData(data);
       setCurrentView("productos");
       setSelectedSubcategoria({ id: subcategoriaId, nombre: subcategoriaNombre });
       setBreadcrumbs([
         { text: "Categorías", active: false, onClick: cargarCategorias },
-        {
-          text: selectedCategoria?.nombre,
-          active: false,
-          onClick: () =>
-            cargarSubcategorias(selectedCategoria.id, selectedCategoria.nombre),
+        { 
+          text: selectedCategoria.nombre, 
+          active: false, 
+          onClick: () => cargarSubcategorias(selectedCategoria.id, selectedCategoria.nombre)
         },
-        { text: subcategoriaNombre, active: true },
+        { text: subcategoriaNombre, active: true }
       ]);
     } catch (error) {
-      mostrarSnackbar(`No hay productos en ${subcategoriaNombre}`, "info");
+      console.error("Error al cargar los productos:", error);
+      showSnackbar("Error al cargar los productos", "error");
     } finally {
       setLoading(false);
     }
@@ -120,280 +244,726 @@ const InventarioTabla = () => {
 
   const cargarGruposTalla = async () => {
     try {
-      const res = await getAllGruposTalla();
-      const grupos = res.data || [];
-      setGruposTalla(
-        grupos.map((g) => ({
-          idGrupoTalla: Number(g.idGrupoTalla || g.id),
-          nombre: g.nombre,
-          estado: g.estado,
-        }))
-      );
-    } catch {
+      const response = await getAllGruposTalla();
+      const gruposData = response.data;
+      
+      const gruposFormateados = gruposData.map(grupo => ({
+        idGrupoTalla: Number(grupo.idGrupoTalla || grupo.id),
+        nombre: grupo.nombre,
+        estado: grupo.estado
+      }));
+      
+      setGruposTalla(gruposFormateados);
+    } catch (error) {
+      console.error("Error al cargar grupos de talla:", error);
+      showSnackbar("Error al cargar los grupos de talla", "error");
       setGruposTalla([]);
     }
   };
 
-  const handleGrupoTallaChange = async (e, subcategoria) => {
-    const nuevoId = Number(e.target.value);
-    if (!nuevoId) return mostrarSnackbar("Seleccione un grupo de tallas", "error");
-    if (nuevoId === Number(subcategoria.grupoTalla?.idGrupoTalla)) {
-      return mostrarSnackbar("Ya está seleccionado este grupo", "info");
+  const handleOpenGrupoTallaDialog = async (subcategoria) => {
+    setSubcategoriaEnEdicion(subcategoria);
+    setOpenGrupoTallaDialog(true);
+    if (subcategoria.grupoTalla) {
+      try {
+        const response = await getTallasActivasByGrupo(subcategoria.grupoTalla.idGrupoTalla);
+        setTallasActivas(response.data);
+      } catch (error) {
+        console.error('Error al cargar tallas activas:', error);
+        showSnackbar('Error al cargar tallas activas', 'error');
+      }
     }
-    setLoading(true);
+  };
+
+  const handleOpenStockDialog = (producto) => {
+    setSelectedProducto(producto);
+    const stockInicial = {};
+    const stockMinimoInicial = {};
+    Object.entries(producto.stock_por_talla).forEach(([talla, info]) => {
+      stockInicial[talla] = info.stock;
+      stockMinimoInicial[talla] = info.stock_minimo;
+    });
+    setStockForm(stockInicial);
+    setStockMinimoForm(stockMinimoInicial);
+    setOpenStockDialog(true);
+  };
+
+  const handleCloseGrupoTallaDialog = () => {
+    setOpenGrupoTallaDialog(false);
+    setSubcategoriaEnEdicion(null);
+    setTallasActivas([]);
+  };
+
+  const handleCloseStockDialog = () => {
+    setOpenStockDialog(false);
+    setSelectedProducto(null);
+    setStockForm({});
+    setStockMinimoForm({});
+    setError('');
+  };
+
+  const handleGrupoTallaChange = async (event, subcategoria) => {
     try {
-      await updateGrupoTalla(subcategoria.id, nuevoId);
-      mostrarSnackbar("Grupo de talla actualizado", "success");
-      cargarCategorias();
+      const nuevoGrupoId = Number(event.target.value);
+      
+      // Validar que se seleccionó un grupo
+      if (!nuevoGrupoId) {
+        showSnackbar('Debe seleccionar un grupo de tallas', 'error');
+        return;
+      }
+
+      // Validar que el grupo existe
+      const grupoExiste = gruposTalla.some(grupo => grupo.idGrupoTalla === nuevoGrupoId);
+      if (!grupoExiste) {
+        showSnackbar('El grupo de talla seleccionado no existe', 'error');
+        return;
+      }
+
+      // Validar que no es el mismo grupo
+      const grupoActualId = Number(subcategoria.grupoTalla?.idGrupoTalla);
+      if (grupoActualId === nuevoGrupoId) {
+        showSnackbar('Ya está seleccionado este grupo de tallas', 'info');
+        return;
+      }
+
+      // Mostrar indicador de carga
+      setLoading(true);
+      
+      try {
+        await updateGrupoTalla(subcategoria.id, nuevoGrupoId);
+        showSnackbar('Grupo de talla actualizado correctamente', 'success');
+        await cargarDatos(); // Recargar datos
+      } catch (error) {
+        // Si el error es porque ya tiene asignado ese grupo, mostrarlo como info
+        if (error.message.includes('ya tiene asignado este grupo de talla')) {
+          showSnackbar('Ya está seleccionado este grupo de tallas', 'info');
+        } else {
+          throw error; // Propagar otros errores
+        }
+      }
     } catch (error) {
-      mostrarSnackbar("Error al actualizar grupo de talla", "error");
+      console.error('Error al actualizar grupo de talla:', error);
+      showSnackbar(
+        error.response?.data?.error || error.message || 'Error al actualizar el grupo de talla',
+        'error'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const mostrarSnackbar = (msg, sev = "info") => {
-    setSnackbar({ open: true, message: msg, severity: sev });
-    setTimeout(() => setSnackbar({ open: false, message: "", severity: "info" }), 4000);
+  const handleStockChange = (talla, value) => {
+    const newValue = parseInt(value) || 0;
+    const stockTotal = selectedProducto?.stock || 0;
+    const stockActual = Object.values(stockForm).reduce((sum, stock) => sum + (parseInt(stock) || 0), 0);
+    const stockActualSinTalla = stockActual - (parseInt(stockForm[talla]) || 0);
+    const stockDisponible = stockTotal - stockActualSinTalla;
+
+    if (newValue > stockDisponible) {
+      setError(`No puedes asignar más de ${stockDisponible} unidades a la talla ${talla}`);
+      return;
+    }
+
+    setStockForm(prev => ({
+      ...prev,
+      [talla]: newValue
+    }));
+    setError(null);
   };
 
-  // Render tablas
+  const handleStockMinimoChange = (talla, value) => {
+    setStockMinimoForm(prev => ({
+      ...prev,
+      [talla]: parseInt(value) || 0
+    }));
+  };
+
+  const handleSaveStock = async () => {
+    try {
+      const stockTotal = Object.values(stockForm).reduce((sum, stock) => sum + (parseInt(stock) || 0), 0);
+      if (stockTotal > selectedProducto.stock) {
+        setError('La suma de los stocks por talla no puede exceder el stock total del producto');
+        return;
+      }
+
+      // Preparar los datos para la actualización
+      const tallasData = Object.entries(selectedProducto.stock_por_talla).map(([talla, info]) => ({
+        talla_id: info.talla_id,
+        stock: stockForm[talla] || 0,
+        stock_minimo: stockMinimoForm[talla] || info.stock_minimo
+      }));
+
+      await actualizarStockTallas(selectedProducto.id, tallasData);
+      showSnackbar('Stock por tallas actualizado exitosamente', 'success');
+      handleCloseStockDialog();
+      cargarProductos(selectedSubcategoria.id, selectedSubcategoria.nombre);
+    } catch (error) {
+      console.error('Error al actualizar stock:', error);
+      showSnackbar(error.response?.data?.error || 'Error al distribuir el stock', 'error');
+    }
+  };
 
   const renderCategoriasTable = () => (
-    <div className="inventario-tabla-responsive">
-      <table className="inventario-tabla">
-        <thead>
-          <tr>
-            {currentData.columnas.map((col) => (
-              <th key={col.campo}>{col.titulo}</th>
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            {currentData.columnas.map((columna) => (
+              <TableCell key={columna.campo}>{columna.titulo}</TableCell>
             ))}
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentData.datos.map((cat) => (
-            <tr key={cat.id} onClick={() => cargarSubcategorias(cat.id, cat.nombre)} className="fila-clickable">
-              <td title={cat.nombre}>{cat.nombre}</td>
-              <td>{cat.subcategorias_count}</td>
-              <td>{cat.productos_count}</td>
-              <td>
-                <span className={`badge ${cat.estado ? "bg-success" : "bg-secondary"}`}>
-                  {cat.estado ? "Activo" : "Inactivo"}
-                </span>
-              </td>
-              <td>
-                <button
-                  className="btn-editar"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    cargarSubcategorias(cat.id, cat.nombre);
-                  }}
-                  title="Ver subcategorías"
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {currentData.datos.map((categoria) => (
+            <TableRow key={categoria.id}>
+              <TableCell>{categoria.nombre}</TableCell>
+              <TableCell>{categoria.subcategorias_count}</TableCell>
+              <TableCell>{categoria.productos_count}</TableCell>
+              <TableCell>
+                <Chip
+                  label={categoria.estado ? "Activo" : "Inactivo"}
+                  color={categoria.estado ? "success" : "error"}
+                  size="small"
+                />
+              </TableCell>
+              <TableCell>
+                <IconButton
+                  color="primary"
+                  onClick={() => cargarSubcategorias(categoria.id, categoria.nombre)}
                 >
-                  <FaEye />
-                </button>
-              </td>
-            </tr>
+                  <VisibilityIcon />
+                </IconButton>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 
-  const renderSubcategoriasTable = () => (
-    <div className="inventario-tabla-responsive">
-      <table className="inventario-tabla">
-        <thead>
-          <tr>
-            {currentData.columnas.map((col) => (
-              <th key={col.campo}>{col.titulo}</th>
+  const renderSubcategoriasTable = () => {
+    if (loading) {
+      return <CircularProgress />;
+    }
+
+    return (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {currentData.columnas.map((columna) => (
+                <TableCell key={columna.campo}>{columna.titulo}</TableCell>
+              ))}
+              <TableCell>Grupo de Talla</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {currentData.datos.map((subcategoria) => (
+              <TableRow key={subcategoria.id}>
+                <TableCell>{subcategoria.nombre}</TableCell>
+                <TableCell align="right">{subcategoria.productos_count}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={`${subcategoria.stock_total} unidades`}
+                    color={subcategoria.stock_total <= 5 ? "error" : "success"}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell align="right">5</TableCell>
+                <TableCell>
+                  <Chip
+                    label={subcategoria.estado ? "Activo" : "Inactivo"}
+                    color={subcategoria.estado ? "success" : "error"}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <IconButton
+                      color="primary"
+                      onClick={() => cargarProductos(subcategoria.id, subcategoria.nombre)}
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleCrearProducto(subcategoria)}
+                      title="Crear producto"
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  {renderGrupoTallaSelect(subcategoria)}
+                </TableCell>
+              </TableRow>
             ))}
-            <th>Grupo de Talla</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentData.datos.map((sub) => (
-            <tr key={sub.id}>
-              <td title={sub.nombre}>{sub.nombre}</td>
-              <td>{sub.productos_count}</td>
-              <td>
-                <span className={`badge ${sub.stock_total <= 5 ? "bg-danger" : "bg-success"}`}>
-                  {sub.stock_total} unidades
-                </span>
-              </td>
-              <td>5</td>
-              <td>
-                <span className={`badge ${sub.estado ? "bg-success" : "bg-secondary"}`}>
-                  {sub.estado ? "Activo" : "Inactivo"}
-                </span>
-              </td>
-              <td>
-                <select
-                  className="input-grupo-talla"
-                  value={Number(sub.grupoTalla?.idGrupoTalla || 0)}
-                  onChange={(e) => handleGrupoTallaChange(e, sub)}
-                  disabled={loading}
-                >
-                  <option value={0} disabled>
-                    Seleccionar grupo
-                  </option>
-                  {gruposTalla
-                    .filter((g) => g.estado)
-                    .map((grupo) => (
-                      <option key={grupo.idGrupoTalla} value={grupo.idGrupoTalla}>
-                        {grupo.nombre}
-                      </option>
-                    ))}
-                </select>
-              </td>
-              <td>
-                <div className="botones-acciones">
-                  <button
-                    className="btn-editar"
-                    onClick={() => cargarProductos(sub.id, sub.nombre)}
-                    title="Ver productos"
-                  >
-                    <FaEye />
-                  </button>
-                  <button
-                    className="btn-guardar"
-                    onClick={() => navigate(`/producto/crear?subcategoria=${sub.id}&subcategoriaNombre=${encodeURIComponent(sub.nombre)}`)}
-                    title="Crear producto"
-                  >
-                    <FaPlus />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
 
   const renderProductosTable = () => (
-    <div className="inventario-tabla-responsive">
-      <table className="inventario-tabla">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Precio</th>
-            <th>Stock Total</th>
-            <th>Stock Mínimo</th>
-            <th>Stock por Tallas</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentData.datos.map((prod) => {
-            const totalStock = Object.values(prod.stock_por_talla).reduce(
-              (acc, val) => acc + (val.stock || 0),
-              0
-            );
-            return (
-              <tr key={prod.id}>
-                <td className="td-producto">
-                  {prod.imagen ? (
-                    <img
-                      src={`${BACKEND_URL}${prod.imagen}`}
-                      alt={prod.nombre}
-                      className="img-producto"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <FaImage className="img-placeholder" />
-                  )}
-                  <span title={prod.nombre}>{prod.nombre}</span>
-                </td>
-                <td>${prod.precio.toLocaleString("es-CO")}</td>
-                <td>
-                  <span className={`badge ${totalStock <= 5 ? "bg-danger" : "bg-success"}`}>
-                    {totalStock} unidades
-                  </span>
-                </td>
-                <td>5</td>
-                <td>
-                  {/* Aquí podrías mostrar tallas con stock, simplificado */}
-                  <div className="stock-tallas">
-                    {Object.entries(prod.stock_por_talla).map(([talla, info]) => (
-                      <span
-                        key={talla}
-                        className={`badge ${
-                          info.stock <= 5 ? "bg-danger" : "bg-success"
-                        }`}
-                        title={`Stock talla ${talla}`}
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Producto</TableCell>
+            <TableCell align="right">Precio</TableCell>
+            <TableCell align="right">Stock Total</TableCell>
+            <TableCell>Stock Mínimo</TableCell>
+            <TableCell>Stock por Tallas</TableCell>
+            <TableCell>Acciones</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {currentData.datos.map((producto) => (
+            <TableRow key={producto.id}>
+              {/* Columna de Producto (imagen y nombre) */}
+              <TableCell>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {producto.imagen ? (
+                    <>
+                      <img
+                        src={`${BACKEND_URL}${producto.imagen}`}
+                        alt={producto.nombre}
+                        style={{ 
+                          width: 40, 
+                          height: 40, 
+                          objectFit: 'cover', 
+                          borderRadius: 4,
+                          border: '1px solid #e0e0e0'
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                        loading="lazy"
+                      />
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          display: 'none',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#f5f5f5',
+                          borderRadius: 1,
+                          border: '1px solid #e0e0e0'
+                        }}
                       >
-                        {talla}: {info.stock}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td>
-                  <div className="botones-acciones">
-                    <button className="btn-guardar" title="Guardar cambios" disabled>
-                      <FaSave />
-                    </button>
-                    <button
-                      className="btn-editar"
-                      title="Ver detalles"
-                      onClick={() => window.open(prod.acciones?.ver_detalle, "_blank")}
+                        <ImageNotSupportedIcon sx={{ color: '#9e9e9e' }} />
+                      </Box>
+                    </>
+                  ) : (
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: 1,
+                        border: '1px solid #e0e0e0'
+                      }}
                     >
-                      <FaEye />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                      <ImageNotSupportedIcon sx={{ color: '#9e9e9e' }} />
+                    </Box>
+                  )}
+                  <Typography variant="body2" noWrap>
+                    {producto.nombre}
+                  </Typography>
+                </Box>
+              </TableCell>
+
+              {/* Columna de Precio */}
+              <TableCell align="right">
+                ${producto.precio.toLocaleString('es-CO')}
+              </TableCell>
+
+              {/* Columna de Stock Total */}
+              <TableCell align="right">
+                <Chip
+                  label={`${Object.values(producto.stock_por_talla).reduce((sum, info) => sum + (info.stock || 0), 0)} unidades`}
+                  color={Object.values(producto.stock_por_talla).reduce((sum, info) => sum + (info.stock || 0), 0) <= 5 ? "error" : "success"}
+                  size="small"
+                />
+              </TableCell>
+
+              {/* Columna de Stock Mínimo */}
+              <TableCell>
+                <Typography>5</Typography>
+              </TableCell>
+
+              {/* Columna de Stock por Tallas */}
+              <TableCell>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleOpenStockDialog(producto)}
+                  startIcon={<EditIcon />}
+                >
+                  Distribuir Stock
+                </Button>
+                <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {Object.entries(producto.stock_por_talla).map(([talla, info]) => (
+                    <Chip
+                      key={talla}
+                      label={`${talla}: ${info.stock}`}
+                      size="small"
+                      color={info.stock <= 5 ? "error" : "success"}
+                    />
+                  ))}
+                </Box>
+              </TableCell>
+
+              {/* Columna de Acciones */}
+              <TableCell>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton 
+                    color="primary" 
+                    size="small"
+                    onClick={() => handleSaveStock(producto)}
+                    title="Guardar cambios"
+                  >
+                    <SaveIcon />
+                  </IconButton>
+                  <IconButton 
+                    color="primary" 
+                    size="small"
+                    onClick={() => window.location.href = producto.acciones.ver_detalle}
+                    title="Ver detalles"
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                </Box>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 
-  return (
-    <section className="inventario-tabla-container">
-      <h1 className="titulo-inventario">Gestión de Inventario</h1>
+  {/* Diálogo para gestionar el stock por talla */}
+  const StockDialog = () => {
+    const stockTotal = selectedProducto?.stock || 0;
+    const stockDistribuido = Object.values(stockForm).reduce((sum, stock) => sum + (parseInt(stock) || 0), 0);
+    const stockRestante = stockTotal - stockDistribuido;
 
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb inventario-breadcrumb">
-          {breadcrumbs.map((crumb, idx) => (
-            <li
-              key={idx}
-              className={`breadcrumb-item ${crumb.active ? "active" : ""}`}
-              onClick={!crumb.active ? crumb.onClick : undefined}
-              style={{ cursor: !crumb.active ? "pointer" : "default" }}
-              aria-current={crumb.active ? "page" : undefined}
+    return (
+      <Dialog open={openStockDialog} onClose={handleCloseStockDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Distribuir Stock por Talla</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          <Typography variant="subtitle1" sx={{ mb: 2 }}>
+            {selectedProducto?.nombre}
+          </Typography>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Stock Total del Producto: {stockTotal} unidades
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Stock Distribuido: {stockDistribuido} unidades
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ 
+              color: stockRestante < 0 ? 'error.main' : 'text.secondary',
+              fontWeight: stockRestante < 0 ? 'bold' : 'normal'
+            }}>
+              Stock Restante: {stockRestante} unidades
+            </Typography>
+          </Box>
+          <Stack spacing={2}>
+            {Object.entries(selectedProducto?.stock_por_talla || {}).map(([talla, info]) => {
+              const stockActualSinTalla = stockDistribuido - (parseInt(stockForm[talla]) || 0);
+              const stockDisponible = stockTotal - stockActualSinTalla;
+
+              return (
+                <Box key={talla} sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                  <Typography sx={{ minWidth: 60 }}>{talla}:</Typography>
+                  <TextField
+                    label="Stock"
+                    type="number"
+                    size="small"
+                    value={stockForm[talla] || 0}
+                    onChange={(e) => handleStockChange(talla, e.target.value)}
+                    sx={{ width: 120 }}
+                    inputProps={{ 
+                      min: 0,
+                      max: stockDisponible
+                    }}
+                    helperText={`Máximo disponible: ${stockDisponible} unidades`}
+                    error={parseInt(stockForm[talla] || 0) > stockDisponible}
+                  />
+                </Box>
+              );
+            })}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseStockDialog}>Cancelar</Button>
+          <Button 
+            onClick={handleSaveStock} 
+            variant="contained" 
+            color="primary"
+            disabled={stockRestante < 0}
+          >
+            Guardar Distribución
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  const renderGrupoTallaValue = (grupoTalla) => {
+    if (!grupoTalla || typeof grupoTalla !== 'object') {
+      return 'Seleccionar grupo de tallas';
+    }
+    return grupoTalla.nombre || 'Grupo sin título';
+  };
+
+  
+  const renderGrupoTallaSelect = (subcategoria) => {
+    if (!subcategoria.grupoTalla) {
+      return (
+        <Alert severity="warning" sx={{ mb: 1 }}>
+          No tiene grupo de tallas asignado
+        </Alert>
+      );
+    }
+
+    const grupoTallaId = Number(subcategoria.grupoTalla?.idGrupoTalla || subcategoria.grupoTalla?.id);
+
+    if (!grupoTallaId) {
+      return (
+        <Alert severity="warning" sx={{ py: 0 }}>
+          Se requiere asignar un grupo de tallas
+        </Alert>
+      );
+    }
+
+    return (
+      <FormControl fullWidth size="small">
+        <Select
+          value={grupoTallaId}
+          onChange={(e) => handleGrupoTallaChange(e, subcategoria)}
+          displayEmpty={false}
+          disabled={loading}
+        >
+          {Array.isArray(gruposTalla) && gruposTalla.length > 0 ? (
+            gruposTalla
+              .filter(grupo => grupo.estado) // Solo mostrar grupos activos
+              .map((grupo) => (
+                <MenuItem 
+                  key={grupo.idGrupoTalla} 
+                  value={grupo.idGrupoTalla}
+                  disabled={grupo.idGrupoTalla === grupoTallaId}
+                >
+                  {grupo.nombre}
+                </MenuItem>
+              ))
+          ) : (
+            <MenuItem disabled>No hay grupos disponibles</MenuItem>
+          )}
+        </Select>
+      </FormControl>
+    );
+  };
+
+  const showSnackbar = (message, severity = 'info') => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  const handleRedireccionManual = () => {
+    navigate('/categorias');
+  };
+
+  const handleCerrarDialogo = () => {
+    setOpenNoCategoriasDialog(false);
+    setContador(10);
+  };
+
+  const handleRedireccionManualGrupoTalla = () => {
+    navigate('/grupo-talla');
+  };
+
+  const handleCerrarDialogoGrupoTalla = () => {
+    setOpenNoGrupoTallaDialog(false);
+    setContadorGrupoTalla(5);
+  };
+
+  const handleCrearProducto = (subcategoria) => {
+    navigate(`/producto/crear?subcategoria=${subcategoria.id}&subcategoriaNombre=${encodeURIComponent(subcategoria.nombre)}`);
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Si el diálogo de no categorías está abierto, solo mostrar el diálogo
+  if (openNoCategoriasDialog) {
+    return (
+      <Box sx={{ width: '100%' }}>
+        {/* Diálogo para cuando no hay categorías */}
+        <Dialog 
+          open={openNoCategoriasDialog} 
+          onClose={handleCerrarDialogo}
+          maxWidth="sm"
+          fullWidth
+          disableEscapeKeyDown
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningIcon color="warning" />
+            No hay categorías disponibles
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              No se encontraron categorías en el sistema. Para continuar, necesitas crear al menos una categoría.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Serás redirigido automáticamente a la página de categorías en {contador} segundos.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={handleRedireccionManual} 
+              variant="contained" 
+              color="primary"
+            >
+              Ir a Categorías Ahora
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  // Si el diálogo de no grupos de talla está abierto, solo mostrar el diálogo
+  if (openNoGrupoTallaDialog) {
+    return (
+      <Box sx={{ width: '100%' }}>
+        {/* Diálogo para cuando no hay grupos de talla */}
+        <Dialog 
+          open={openNoGrupoTallaDialog} 
+          onClose={handleCerrarDialogoGrupoTalla}
+          maxWidth="sm"
+          fullWidth
+          disableEscapeKeyDown
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningIcon color="warning" />
+            Grupos de Talla Requeridos
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              No se encontraron grupos de talla en el sistema. Para continuar, necesitas crear al menos un grupo de talla antes de poder gestionar las subcategorías.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Serás redirigido automáticamente a la página de grupos de talla en {contadorGrupoTalla} segundos.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={handleRedireccionManualGrupoTalla} 
+              variant="contained" 
+              color="primary"
+            >
+              Ir a Grupos de Talla Ahora
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  // Si no hay datos actuales, mostrar un mensaje de carga
+  if (!currentData) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ width: '100%' }}>
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{ mb: 2 }}
+      >
+        <Link
+          component="button"
+          variant="body1"
+          onClick={() => cargarCategorias()}
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Inventario
+        </Link>
+        {breadcrumbs.map((crumb, index) => (
+          crumb.active ? (
+            <Typography key={index} color="text.primary">
+              {crumb.text}
+            </Typography>
+          ) : (
+            <Link
+              key={index}
+              component="button"
+              variant="body1"
+              onClick={crumb.onClick}
+              color="inherit"
             >
               {crumb.text}
-            </li>
-          ))}
-        </ol>
-      </nav>
+            </Link>
+          )
+        ))}
+      </Breadcrumbs>
 
-      {loading && <p className="loading-text">Cargando...</p>}
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        {currentData.titulo}
+      </Typography>
 
-      {!loading && (
-        <>
-          {currentView === "categorias" && renderCategoriasTable()}
-          {currentView === "subcategorias" && renderSubcategoriasTable()}
-          {currentView === "productos" && renderProductosTable()}
-        </>
-      )}
+      {currentView === "categorias" && renderCategoriasTable()}
+      {currentView === "subcategorias" && renderSubcategoriasTable()}
+      {currentView === "productos" && renderProductosTable()}
+      <StockDialog />
 
-      {snackbar.open && (
-        <div
-          className={`alerta snackbar alerta-${snackbar.severity}`}
-          onClick={() => setSnackbar({ open: false, message: "", severity: "info" })}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
         >
           {snackbar.message}
-        </div>
-      )}
-    </section>
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 
-export default InventarioTabla;
+export default InventarioTabla; 

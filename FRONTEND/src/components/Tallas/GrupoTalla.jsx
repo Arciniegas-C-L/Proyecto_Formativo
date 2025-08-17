@@ -204,7 +204,9 @@ const GrupoTalla = () => {
       {openDialog && (
         <div className="grupo-modal">
           <div className="grupo-modal-content">
-            <h3>{editingGrupo ? "Editar Grupo de Talla" : "Nuevo Grupo de Talla"}</h3>
+            <h3>
+              {editingGrupo ? "Editar Grupo de Talla" : "Nuevo Grupo de Talla"}
+            </h3>
             {error && <div className="text-error">{error}</div>}
             <form onSubmit={handleSubmit}>
               <label>Nombre *</label>
@@ -246,11 +248,11 @@ const GrupoTalla = () => {
           <div className="grupo-modal-eliminar-content">
             <p>¿Está seguro de eliminar este grupo de talla?</p>
             <div className="grupo-modal-eliminar-buttons">
-              <button className="btn-eliminar" onClick={handleDelete}>
-                Eliminar
-              </button>
               <button className="btn-cancelar" onClick={handleDeleteModalClose}>
                 Cancelar
+              </button>
+              <button className="btn-eliminar" onClick={handleDelete}>
+                Eliminar
               </button>
             </div>
           </div>

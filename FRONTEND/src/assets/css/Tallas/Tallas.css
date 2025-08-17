@@ -199,23 +199,23 @@
 }
 
 .form-talla-modal .btn-secondary {
-  background-color: #8b3581;
+  background-color: #6c757d;
   color: #fff;
   border: none;
 }
 
 .form-talla-modal .btn-secondary:hover {
-  background-color: #6b2b62;
+  background-color: #6c757d;
 }
 
 .form-talla-modal .btn-danger {
-  background-color: #d9534f;
+  background-color: #6c757d;
   color: #fff;
   border: none;
 }
 
 .form-talla-modal .btn-danger:hover {
-  background-color: #c9302c;
+  background-color: #6c757d;
 }
 
 /* Responsive */

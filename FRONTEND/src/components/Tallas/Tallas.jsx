@@ -11,17 +11,21 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/Tallas.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
-import { useLocation } from "react-router-dom"; 
+import { useLocation } from "react-router-dom";
 
 const Tallas = () => {
-  const location = useLocation(); 
+  const location = useLocation();
   const [tallas, setTallas] = useState([]);
   const [gruposTalla, setGruposTalla] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [tallaToDelete, setTallaToDelete] = useState(null);
   const [editingTalla, setEditingTalla] = useState(null);
-  const [formData, setFormData] = useState({ nombre: "", grupo_id: "", estado: true });
+  const [formData, setFormData] = useState({
+    nombre: "",
+    grupo_id: "",
+    estado: true,
+  });
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -64,7 +68,11 @@ const Tallas = () => {
       // NUEVA TALLA
       setEditingTalla(null);
       let grupoIdDesdeNavegacion = location.state?.grupoId || "";
-      setFormData({ nombre: "", grupo_id: grupoIdDesdeNavegacion, estado: true });
+      setFormData({
+        nombre: "",
+        grupo_id: grupoIdDesdeNavegacion,
+        estado: true,
+      });
     }
 
     setOpenDialog(true);
@@ -79,7 +87,10 @@ const Tallas = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
     setError("");
   };
 
@@ -137,7 +148,10 @@ const Tallas = () => {
       <div className="header-acciones">
         <h2>Gestión de Tallas</h2>
         <div className="header-controls">
-          <button className="btn-nueva-talla" onClick={() => handleOpenDialog()}>
+          <button
+            className="btn-nueva-talla"
+            onClick={() => handleOpenDialog()}
+          >
             <FaPlus />
             Nueva Talla
           </button>
@@ -166,12 +180,20 @@ const Tallas = () => {
                 <tr key={talla.id ?? index}>
                   <td>{talla.nombre}</td>
                   <td>{talla.grupo?.nombre}</td>
-                  <td className="estado-talla">{talla.estado ? "Activo" : "Inactivo"}</td>
+                  <td className="estado-talla">
+                    {talla.estado ? "Activo" : "Inactivo"}
+                  </td>
                   <td className="celda-acciones">
-                    <button className="btn-editar" onClick={() => handleOpenDialog(talla)}>
+                    <button
+                      className="btn-editar"
+                      onClick={() => handleOpenDialog(talla)}
+                    >
                       <FaEdit />
                     </button>
-                    <button className="btn-eliminar" onClick={() => handleDeleteClick(talla)}>
+                    <button
+                      className="btn-eliminar"
+                      onClick={() => handleDeleteClick(talla)}
+                    >
                       <FaTrash />
                     </button>
                   </td>
@@ -197,7 +219,9 @@ const Tallas = () => {
               onChange={handleInputChange}
               maxLength={10}
             />
-            <small className="text-muted mb-2 d-block">{formData.nombre.length}/10 caracteres</small>
+            <small className="text-muted mb-2 d-block">
+              {formData.nombre.length}/10 caracteres
+            </small>
 
             <label className="form-label">Grupo de Talla *</label>
             <select
@@ -241,13 +265,18 @@ const Tallas = () => {
       {openDeleteDialog && (
         <div className="dialog-talla-modal">
           <div className="form-talla-modal text-center">
-            <p>¿Seguro que quieres eliminar la talla "{tallaToDelete?.nombre}"?</p>
+            <p>
+              ¿Seguro que quieres eliminar la talla "{tallaToDelete?.nombre}"?
+            </p>
             <div className="d-flex justify-content-center gap-2 mt-3">
-              <button className="btn btn-danger" onClick={confirmDelete}>
-                Eliminar
-              </button>
-              <button className="btn btn-secondary" onClick={() => setOpenDeleteDialog(false)}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setOpenDeleteDialog(false)}
+              >
                 Cancelar
+              </button>
+              <button className="btn btn-eliminar" onClick={confirmDelete}>
+                Eliminar
               </button>
             </div>
           </div>
