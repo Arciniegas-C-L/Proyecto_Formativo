@@ -1,0 +1,138 @@
+/* Contenedor principal */
+.categorias-container {
+  max-width: 800px; 
+  margin: 20px auto; 
+  padding: 20px;     
+  font-family: 'Urbanist', sans-serif;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+}
+/* Título principal */
+.titulo-principal {
+  text-align: center;
+  font-size: 2.2rem;
+  color: #00b0e0;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Botón secundario */
+.btn-secundario {
+  background-color: #8b3581;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-secundario:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 53, 129, 0.4);
+}
+
+/* Formulario */
+.form-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Botones modo categoría */
+.btn-group-custom {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-toggle {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  color: #fff;
+}
+
+/* Colores específicos */
+.btn-toggle.nueva {
+  background-color: #00b0e0;
+}
+
+.btn-toggle.existente {
+  background-color: #8b3581;
+}
+
+.btn-toggle.activo {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-toggle:hover {
+  opacity: 0.85;
+}
+
+/* Inputs y selects */
+.input-text,
+.input-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #8b3581;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #0c0c0c;
+  background-color: #fff;
+  box-shadow: inset 0 1px 6px rgba(138,124,200,0.18);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-text:focus,
+.input-select:focus {
+  outline: none;
+  border-color: #00b0e0;
+}
+
+/* Checkboxes */
+.input-check {
+  width: 18px;
+  height: 18px;
+  accent-color: #8b3581;
+}
+
+/* Subcategoría */
+.subcategoria-box {
+  border: 1px solid #8b3581;
+  padding: 15px;
+  border-radius: 12px;
+  background-color: #f9f5fc;
+}
+
+/* Botón guardar */
+.btn-guardar {
+  background-color: #00b0e0;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-guardar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,176,224,0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .btn-group-custom {
+    flex-direction: column;
+  }
+}

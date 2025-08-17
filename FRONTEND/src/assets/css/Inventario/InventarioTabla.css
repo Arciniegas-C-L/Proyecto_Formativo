@@ -1,0 +1,327 @@
+/* InventarioTabla.css */
+
+/* Estilos generales para las tablas */
+.table-responsive {
+  border-radius: 0.375rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  overflow: hidden;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  font-weight: 600;
+  border-top: none;
+  vertical-align: middle;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.table-dark th {
+  background-color: #212529;
+  border-color: #373b3e;
+}
+
+.table-striped tbody tr:nth-of-type(odd) td {
+  background-color: rgba(0, 0, 0, 0.025);
+}
+
+.table-hover tbody tr:hover td {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+/* Estilos para las imágenes de productos */
+.product-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  border: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.product-image-placeholder {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border-radius: 0.25rem;
+  border: 1px solid #e0e0e0;
+  color: #9e9e9e;
+  flex-shrink: 0;
+}
+
+/* Estilos para badges personalizados */
+.badge {
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+/* Estilos para botones de acción */
+.btn-group .btn {
+  border-radius: 0.25rem;
+  margin-right: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Estilos para los breadcrumbs */
+.breadcrumb {
+  background-color: transparent;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb .btn-link {
+  color: var(--bs-breadcrumb-item-active-color);
+  border: none;
+  background: none;
+  text-decoration: none;
+}
+
+.breadcrumb .btn-link:hover {
+  color: var(--bs-link-hover-color);
+  text-decoration: underline;
+}
+
+/* Estilos para los modales */
+.modal.show {
+  display: block;
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.modal-title {
+  font-weight: 600;
+}
+
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+/* Estilos para alertas */
+.alert {
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffecb5;
+  color: #664d03;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border-color: #f5c2c7;
+  color: #721c24;
+}
+
+.alert-success {
+  background-color: #d1e7dd;
+  border-color: #badbcc;
+  color: #0f5132;
+}
+
+.alert-info {
+  background-color: #cff4fc;
+  border-color: #b6effb;
+  color: #055160;
+}
+
+/* Estilos para spinners de carga */
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Estilos para el toast/snackbar */
+.toast {
+  max-width: 350px;
+  font-size: 0.875rem;
+}
+
+.toast-body {
+  padding: 0.75rem;
+}
+
+/* Estilos para formularios en modales */
+.modal-body .form-label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.modal-body .form-control-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.modal-body .form-text {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.form-control.is-invalid {
+  border-color: #dc3545;
+}
+
+/* Estilos para selects */
+.form-select-sm {
+  padding: 0.25rem 1.75rem 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Estilos responsive */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .btn-group .btn {
+    margin-right: 0;
+    width: 100%;
+  }
+  
+  .product-image,
+  .product-image-placeholder {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .breadcrumb {
+    flex-wrap: wrap;
+  }
+  
+  .breadcrumb-item {
+    font-size: 0.875rem;
+  }
+  
+  .table td,
+  .table th {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+  
+  .btn-sm {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  .badge {
+    font-size: 0.65em;
+  }
+}
+
+/* Estilos para el texto truncado */
+.text-truncate {
+  max-width: 200px;
+}
+
+/* Animaciones suaves */
+.btn, .badge, .alert, .modal-content {
+  transition: all 0.15s ease-in-out;
+}
+
+.table-hover tbody tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Estilos para mejorar la accesibilidad */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Estilos para estados de loading */
+.btn:disabled {
+  opacity: 0.65;
+}
+
+/* Mejoras visuales para las tablas */
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Espaciado mejorado para elementos flex */
+.d-flex.gap-1 > * {
+  margin-right: 0.25rem;
+}
+
+.d-flex.gap-1 > *:last-child {
+  margin-right: 0;
+}
+
+.d-flex.gap-2 > * {
+  margin-right: 0.5rem;
+}
+
+.d-flex.gap-2 > *:last-child {
+  margin-right: 0;
+}
+
+.d-flex.gap-3 > * {
+  margin-right: 1rem;
+}
+
+.d-flex.gap-3 > *:last-child {
+  margin-right: 0;
+}
+
+/* Estilos para el contenedor principal */
+.container-fluid {
+  padding: 1rem;
+}
+
+/* Mejoras para la visualización en pantallas grandes */
+@media (min-width: 1200px) {
+  .table td,
+  .table th {
+    padding: 0.75rem;
+  }
+  
+  .container-fluid {
+    padding: 1.5rem;
+  }
+}

@@ -19,6 +19,8 @@ export function AdminUsuarios() {
   const [editingId, setEditingId] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState("todos");
 
+  // ===================== FUNCIONES ===================== //
+
   const cargarUsuarios = async () => {
     try {
       const response = await fetchUsuario();
@@ -40,6 +42,8 @@ export function AdminUsuarios() {
     try {
       if (editingId) {
         await updateUsuario(editingId, form);
+      } else {
+        await fetchUsuario.createUsuario(form); // Si tienes createUsuario, usarlo aquí
       }
       setForm({
         nombre: "",
@@ -56,6 +60,7 @@ export function AdminUsuarios() {
     }
   };
 
+  // Cargar datos al formulario para editar
   const handleEdit = (usuario) => {
     setForm({
       nombre: usuario.nombre,
@@ -68,16 +73,18 @@ export function AdminUsuarios() {
     setEditingId(usuario.idUsuario);
   };
 
+  // Cambiar estado activo/inactivo
   const handleToggleEstado = async (usuario) => {
     try {
       const usuarioActualizado = { ...usuario, estado: !usuario.estado };
       await updateUsuario(usuario.idUsuario, usuarioActualizado);
       cargarUsuarios();
     } catch (error) {
-      console.error("Error al cambiar el estado del usuario:", error.response?.data || error.message);
+      console.error("Error al cambiar el estado:", error.response?.data || error.message);
     }
   };
 
+  // Filtrar usuarios
   const usuariosFiltrados = usuarios.filter(u => {
     if (filtroEstado === "activos") return u.estado === true;
     if (filtroEstado === "inactivos") return u.estado === false;
@@ -93,7 +100,23 @@ export function AdminUsuarios() {
     return <p className="text-center text-danger mt-5">Acceso no autorizado</p>;
   }
 
+  // ===================== RENDER ===================== //
   return (
+    <>
+      <h2>Gestión de Usuarios</h2>
+
+    {/* Filtros */}
+    <div>
+      <button onClick={() => setFiltroEstado("todos")}>Todos</button>
+      <button onClick={() => setFiltroEstado("activos")}>Activos</button>
+      <button onClick={() => setFiltroEstado("inactivos")}>Inactivos</button>
+    </div>
+
+    <div>
+      <span>Total: {total}</span> | 
+      <span>Activos: {activos}</span> | 
+      <span>Inactivos: {inactivos}</span>
+    </div>  {/* ✅ cierre que faltaba */}
     <div className="container mt-4">
       <h2 className="text-center fw-bold text-primary">Gestión de Usuarios</h2>
 
@@ -112,41 +135,49 @@ export function AdminUsuarios() {
       </div>
 
       {/* Formulario */}
-      <form onSubmit={handleSubmit} className="row g-3 bg-light p-4 rounded shadow">
-        <div className="col-md-6">
-          <input type="text" className="form-control" placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
-        </div>
-        <div className="col-md-6">
-          <input type="text" className="form-control" placeholder="Apellido" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} required />
-        </div>
-        <div className="col-md-6">
-          <input type="email" className="form-control" placeholder="Correo" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} required />
-        </div>
-        <div className="col-md-6">
-          <input type="tel" className="form-control" placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} required />
-        </div>
-        <div className="col-md-6">
-          <select className="form-select" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
-            <option value="usuario">Usuario</option>
-            <option value="admin">Administrador</option>
-          </select>
-        </div>
-        <div className="col-md-6">
-          <select className="form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value === "true" })}>
-            <option value="true">Activo</option>
-            <option value="false">Inactivo</option>
-          </select>
-        </div>
-        <div className="col-12 text-center">
-          <button type="submit" className="btn btn-primary fw-bold px-4 shadow">
-            {editingId ? "Actualizar Usuario" : "Registrar Usuario"}
-          </button>
-        </div>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Nombre"
+          value={form.nombre}
+          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Apellido"
+          value={form.apellido}
+          onChange={(e) => setForm({ ...form, apellido: e.target.value })}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Correo"
+          value={form.correo}
+          onChange={(e) => setForm({ ...form, correo: e.target.value })}
+          required
+        />
+        <input
+          type="tel"
+          placeholder="Teléfono"
+          value={form.telefono}
+          onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+          required
+        />
+        <select value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
+          <option value="usuario">Usuario</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <select value={form.estado.toString()} onChange={(e) => setForm({ ...form, estado: e.target.value === "true" })}>
+          <option value="true">Activo</option>
+          <option value="false">Inactivo</option>
+        </select>
+        <button type="submit">{editingId ? "Actualizar Usuario" : "Registrar Usuario"}</button>
       </form>
 
-      {/* Tabla */}
-      <table className="table table-striped mt-4">
-        <thead className="bg-dark text-light">
+      {/* Tabla de usuarios */}
+      <table>
+        <thead>
           <tr>
             <th>Nombre</th>
             <th>Apellido</th>
@@ -165,12 +196,10 @@ export function AdminUsuarios() {
               <td>{u.correo}</td>
               <td>{u.telefono}</td>
               <td>{u.rol}</td>
-              <td className={u.estado ? "fw-bold text-success" : "fw-bold text-danger"}>
-                {u.estado ? "activo" : "inactivo"}
-              </td>
+              <td>{u.estado ? "activo" : "inactivo"}</td>
               <td>
-                <button onClick={() => handleEdit(u)} className="btn btn-sm btn-primary">Editar</button>
-                <button onClick={() => handleToggleEstado(u)} className={`btn btn-sm ms-2 ${u.estado ? "btn-danger" : "btn-success"}`}>
+                <button onClick={() => handleEdit(u)}>Editar</button>
+                <button onClick={() => handleToggleEstado(u)}>
                   {u.estado ? "Inactivar" : "Activar"}
                 </button>
               </td>
@@ -179,5 +208,6 @@ export function AdminUsuarios() {
         </tbody>
       </table>
     </div>
+    </>
   );
 }

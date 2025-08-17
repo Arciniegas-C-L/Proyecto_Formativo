@@ -27,7 +27,6 @@ import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import { PerfilPage } from "./pages/PerfilPage.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js";
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx"; // 👈 importamos useAuth
 
