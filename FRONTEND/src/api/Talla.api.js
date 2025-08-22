@@ -18,4 +18,4 @@ export const updateTalla = (id, data) => TallaApi.put(`${id}/`, data);
 export const deleteTalla = (id) => TallaApi.delete(`${id}/`);
 export const cambiarEstadoTalla = (id, estado) => TallaApi.patch(`${id}/cambiar_estado/`, { estado });
 export const getTallasByGrupo = (grupoId) => TallaApi.get(`/?grupo=${grupoId}`);
-export const getTallasActivas = () => TallaApi.get("/?estado=true"); 
+export const getTallasActivas = () => TallaApi.get("/?estado=true");

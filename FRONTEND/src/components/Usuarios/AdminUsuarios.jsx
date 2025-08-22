@@ -1,183 +1,169 @@
-import React, { useEffect, useState } from "react";
-import { fetchUsuario, updateUsuario } from "../../api/Usuario.api.js";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { registerUsuario } from "../../api/Usuario.api.js";
 
-export function AdminUsuarios() {
-  const [usuarios, setUsuarios] = useState([]);
+const AdminUsuarios = () => {
+  const navigate = useNavigate();
+
+  // Estado inicial del formulario
   const [form, setForm] = useState({
     nombre: "",
     apellido: "",
     correo: "",
+    password: "",
     telefono: "",
     rol: "usuario",
-    estado: true
+    estado: "activo",
   });
-  const [editingId, setEditingId] = useState(null);
-  const [filtroEstado, setFiltroEstado] = useState("todos");
 
-  // ===================== FUNCIONES ===================== //
-
-  // Obtener todos los usuarios
-  const cargarUsuarios = async () => {
-    try {
-      const response = await fetchUsuario();
-      setUsuarios(response.data);
-    } catch (error) {
-      console.error("Error al obtener usuarios:", error.response?.data || error.message);
-    }
+  // Manejo de cambios en inputs
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  useEffect(() => {
-    cargarUsuarios();
-  }, []);
-
-  // Crear o actualizar usuario
+  // Enviar formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingId) {
-        await updateUsuario(editingId, form);
-      } else {
-        await fetchUsuario.createUsuario(form); // Si tienes createUsuario, usarlo aquí
-      }
+      await registerUsuario(form);
+      alert("Usuario registrado con éxito ✅");
+
+      // Reiniciar formulario
       setForm({
         nombre: "",
         apellido: "",
         correo: "",
+        password: "",
         telefono: "",
         rol: "usuario",
-        estado: true
+        estado: "activo",
       });
-      setEditingId(null);
-      cargarUsuarios();
+
+      // Redirigir automáticamente a la lista
+      navigate("/lista-usuarios");
     } catch (error) {
-      console.error("Error al registrar usuario:", error.response?.data || error.message);
+      console.error("Error al registrar usuario:", error);
+      alert("❌ Error al registrar usuario");
     }
   };
 
-  // Cargar datos al formulario para editar
-  const handleEdit = (usuario) => {
-    setForm({
-      nombre: usuario.nombre,
-      apellido: usuario.apellido,
-      correo: usuario.correo,
-      telefono: usuario.telefono,
-      rol: usuario.rol,
-      estado: usuario.estado
-    });
-    setEditingId(usuario.idUsuario);
-  };
-
-  // Cambiar estado activo/inactivo
-  const handleToggleEstado = async (usuario) => {
-    try {
-      const usuarioActualizado = { ...usuario, estado: !usuario.estado };
-      await updateUsuario(usuario.idUsuario, usuarioActualizado);
-      cargarUsuarios();
-    } catch (error) {
-      console.error("Error al cambiar el estado:", error.response?.data || error.message);
-    }
-  };
-
-  // Filtrar usuarios
-  const usuariosFiltrados = usuarios.filter(u => {
-    if (filtroEstado === "activos") return u.estado === true;
-    if (filtroEstado === "inactivos") return u.estado === false;
-    return true;
-  });
-
-  const total = usuarios.length;
-  const activos = usuarios.filter(u => u.estado).length;
-  const inactivos = total - activos;
-
-  // ===================== RENDER ===================== //
   return (
-    <div>
-      <h2>Gestión de Usuarios</h2>
+    <div className="container mt-4">
+      <h2>Registrar Usuario</h2>
+      <form onSubmit={handleSubmit} className="row g-3">
+        {/* Nombre */}
+        <div className="col-md-6">
+          <label className="form-label">Nombre</label>
+          <input
+            type="text"
+            className="form-control"
+            name="nombre"
+            value={form.nombre}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      {/* Filtros */}
-      <div>
-        <button onClick={() => setFiltroEstado("todos")}>Todos</button>
-        <button onClick={() => setFiltroEstado("activos")}>Activos</button>
-        <button onClick={() => setFiltroEstado("inactivos")}>Inactivos</button>
-      </div>
+        {/* Apellido */}
+        <div className="col-md-6">
+          <label className="form-label">Apellido</label>
+          <input
+            type="text"
+            className="form-control"
+            name="apellido"
+            value={form.apellido}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      <div>
-        <span>Total: {total}</span> | <span>Activos: {activos}</span> | <span>Inactivos: {inactivos}</span>
-      </div>
+        {/* Correo */}
+        <div className="col-md-6">
+          <label className="form-label">Correo</label>
+          <input
+            type="email"
+            className="form-control"
+            name="correo"
+            value={form.correo}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      {/* Formulario */}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={form.nombre}
-          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Apellido"
-          value={form.apellido}
-          onChange={(e) => setForm({ ...form, apellido: e.target.value })}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Correo"
-          value={form.correo}
-          onChange={(e) => setForm({ ...form, correo: e.target.value })}
-          required
-        />
-        <input
-          type="tel"
-          placeholder="Teléfono"
-          value={form.telefono}
-          onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-          required
-        />
-        <select value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
-          <option value="usuario">Usuario</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <select value={form.estado.toString()} onChange={(e) => setForm({ ...form, estado: e.target.value === "true" })}>
-          <option value="true">Activo</option>
-          <option value="false">Inactivo</option>
-        </select>
-        <button type="submit">{editingId ? "Actualizar Usuario" : "Registrar Usuario"}</button>
+        {/* Contraseña */}
+        <div className="col-md-6">
+          <label className="form-label">Contraseña</label>
+          <input
+            type="password"
+            className="form-control"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Teléfono */}
+        <div className="col-md-6">
+          <label className="form-label">Teléfono</label>
+          <input
+            type="tel"
+            className="form-control"
+            name="telefono"
+            value={form.telefono}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Rol */}
+        <div className="col-md-3">
+          <label className="form-label">Rol</label>
+          <select
+            className="form-select"
+            name="rol"
+            value={form.rol}
+            onChange={handleChange}
+          >
+            <option value="usuario">Usuario</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+
+        {/* Estado */}
+        <div className="col-md-3">
+          <label className="form-label">Estado</label>
+          <select
+            className="form-select"
+            name="estado"
+            value={form.estado}
+            onChange={handleChange}
+          >
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+
+        {/* Botones */}
+        <div className="col-12 d-flex gap-2">
+          <button type="submit" className="btn btn-primary">
+            Registrar Usuario
+          </button>
+          {/* 🔹 Botón para redirigir a lista de usuarios */}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => navigate("/lista-usuarios")}
+          >
+            Ver Lista de Usuarios
+          </button>
+        </div>
       </form>
-
-      {/* Tabla de usuarios */}
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usuariosFiltrados.map((u) => (
-            <tr key={u.idUsuario}>
-              <td>{u.nombre}</td>
-              <td>{u.apellido}</td>
-              <td>{u.correo}</td>
-              <td>{u.telefono}</td>
-              <td>{u.rol}</td>
-              <td>{u.estado ? "activo" : "inactivo"}</td>
-              <td>
-                <button onClick={() => handleEdit(u)}>Editar</button>
-                <button onClick={() => handleToggleEstado(u)}>
-                  {u.estado ? "Inactivar" : "Activar"}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
-}
+};
+
+export default AdminUsuarios;

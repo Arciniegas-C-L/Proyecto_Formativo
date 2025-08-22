@@ -6,18 +6,20 @@ import ProductoCard from "./ProductoCard";
 import "../../assets/css/Catalogo/Catalogo.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-/** Componente principal que muestra filtros y productos **/
 export default function Catalogo() {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
-  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState("");
-  const [tallaSeleccionada, setTallaSeleccionada] = useState({});
+  const [subcategoriasSeleccionadas, setSubcategoriasSeleccionadas] = useState([]);
+  const [chipsActivos, setChipsActivos] = useState([]); // chips acumulativos
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroTemporal, setFiltroTemporal] = useState(null); // filtro temporal al tocar chip
 
   const capitalizar = (texto) =>
     texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
 
+  // Cargar productos desde API
   const cargarProductos = async () => {
     try {
       const res = await getALLProductos();
@@ -29,7 +31,6 @@ export default function Catalogo() {
           p.subcategoria_nombre &&
           Array.isArray(p.inventario_tallas)
       );
-
       setProductos(productosValidos);
 
       const subMap = {};
@@ -44,13 +45,13 @@ export default function Catalogo() {
       Object.keys(subMap).forEach((cat) => {
         subFinal[cat] = Array.from(subMap[cat]);
       });
-
       setSubcategoriasPorCategoria(subFinal);
     } catch (error) {
       console.error("Error al cargar productos:", error);
     }
   };
 
+  // Cargar categorías desde API
   const cargarCategorias = async () => {
     try {
       const data = await getAllCategorias();
@@ -64,56 +65,70 @@ export default function Catalogo() {
   useEffect(() => {
     cargarCategorias();
     cargarProductos();
-
     const interval = setInterval(() => {
       cargarCategorias();
       cargarProductos();
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
+  // Selección de categoría
   const seleccionarCategoria = (cat) => {
     setCategoriaSeleccionada(cat);
-    setSubcategoriaSeleccionada("");
+    setSubcategoriasSeleccionadas([]); // resetea subcategorías
+    setFiltroTemporal(null); // quita filtro temporal
+    if (!chipsActivos.includes(cat)) setChipsActivos((prev) => [...prev, cat]);
   };
 
+  // Selección de subcategoría
   const seleccionarSubcategoria = (sub) => {
-    setSubcategoriaSeleccionada(sub);
+    setSubcategoriasSeleccionadas([sub]); // solo un filtro activo de subcategoría
+    setFiltroTemporal(sub); // filtro visual temporal
+    if (!chipsActivos.includes(sub)) setChipsActivos((prev) => [...prev, sub]);
   };
 
+  // Limpiar todos los filtros
   const limpiarFiltros = () => {
     setCategoriaSeleccionada("");
-    setSubcategoriaSeleccionada("");
+    setSubcategoriasSeleccionadas([]);
+    setBusqueda("");
+    setFiltroTemporal(null);
+    setChipsActivos([]);
   };
 
-  const mostrarStock = (productoId, talla, stock) => {
-    setTallaSeleccionada((prev) => ({
-      ...prev,
-      [productoId]: { talla, stock },
-    }));
-  };
-
+  // Filtrado de productos
   const productosFiltrados = productos.filter((producto) => {
-    if (!categoriaSeleccionada) return true;
-    if (!subcategoriaSeleccionada) {
-      return producto.categoria_nombre === categoriaSeleccionada;
+    if (filtroTemporal) {
+      if (categorias.includes(filtroTemporal)) {
+        if (producto.categoria_nombre !== filtroTemporal) return false;
+      } else {
+        if (producto.subcategoria_nombre !== filtroTemporal) return false;
+      }
+    } else {
+      if (categoriaSeleccionada && producto.categoria_nombre !== categoriaSeleccionada)
+        return false;
+
+      if (subcategoriasSeleccionadas.length > 0 &&
+          producto.subcategoria_nombre !== subcategoriasSeleccionadas[0])
+        return false;
     }
-    return (
-      producto.categoria_nombre === categoriaSeleccionada &&
-      producto.subcategoria_nombre === subcategoriaSeleccionada
-    );
+
+    if (busqueda && !producto.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+      return false;
+
+    return true;
   });
 
   return (
     <div className="catalogo-container container-fluid py-4">
       <div className="row">
-        <div className="col-md-3 mb-4">
+        {/* Filtros lateral */}
+        <div className="col-md-2 mb-4">
           <FiltrosCatalogo
             categorias={categorias}
             categoriaSeleccionada={categoriaSeleccionada}
             subcategoriasPorCategoria={subcategoriasPorCategoria}
-            subcategoriaSeleccionada={subcategoriaSeleccionada}
+            subcategoriaSeleccionada={subcategoriasSeleccionadas}
             capitalizar={capitalizar}
             seleccionarCategoria={seleccionarCategoria}
             seleccionarSubcategoria={seleccionarSubcategoria}
@@ -121,10 +136,61 @@ export default function Catalogo() {
           />
         </div>
 
-        <div className="col-md-9">
-          <h2 className="catalogo-titulo text-center mb-4">
-            Catálogo de Productos
-          </h2>
+        {/* Buscador y productos */}
+        <div className="col-md-10">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+            <h2 className="catalogo-titulo mb-2 mb-md-0">
+              Catálogo de Productos
+            </h2>
+            <div className="catalogo-buscador">
+              <input
+                type="text"
+                placeholder="Buscar producto..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Chips acumulativos */}
+          {chipsActivos.length > 0 && (
+            <div className="catalogo-chips-container">
+              {chipsActivos.map((chip) => {
+                const esCategoria = categorias.includes(chip); // distingue categoría o subcategoría
+                return (
+                  <span
+                    key={chip}
+                    className={`${esCategoria ? "chip-categoria" : "chip-subcategoria"} ${
+                      filtroTemporal === chip ? "activo" : ""
+                    }`}
+                  >
+                    <span
+                      className="chip-nombre"
+                      style={{ cursor: "pointer", marginRight: "6px" }}
+                      onClick={() => setFiltroTemporal(chip)}
+                    >
+                      {capitalizar(chip)}
+                    </span>
+                    <span
+                      className="chip-cerrar"
+                      style={{ cursor: "pointer", fontWeight: "bold" }}
+                      onClick={() => {
+                        setChipsActivos((prev) => prev.filter((c) => c !== chip));
+                        if (filtroTemporal === chip) setFiltroTemporal(null);
+                        if (categoriaSeleccionada === chip) setCategoriaSeleccionada("");
+                        if (subcategoriasSeleccionadas.includes(chip))
+                          setSubcategoriasSeleccionadas([]);
+                      }}
+                    >
+                      X
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Productos */}
           <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
             {productosFiltrados.length === 0 ? (
               <div className="col text-center">
@@ -138,8 +204,6 @@ export default function Catalogo() {
                   key={producto.id}
                   producto={producto}
                   capitalizar={capitalizar}
-                  tallaSeleccionada={tallaSeleccionada[producto.id]}
-                  mostrarStock={mostrarStock}
                 />
               ))
             )}

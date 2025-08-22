@@ -214,9 +214,9 @@
 
 .grupo-modal-eliminar-buttons {
   display: flex;
-  justify-content: center; /* centra los botones */
-  gap: 10px; /* espacio entre botones */
-  margin-top: 15px; /* separación con el texto */
+  justify-content: center; 
+  gap: 10px; 
+  margin-top: 15px; 
 }
 
 .grupo-modal-eliminar-content .btn-eliminar {

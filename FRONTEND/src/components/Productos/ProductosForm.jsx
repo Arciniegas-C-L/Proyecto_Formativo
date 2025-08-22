@@ -14,9 +14,11 @@ export function ProductosForm() {
   const location = useLocation();
   const productoEditar = location.state?.producto || null;
 
+  // Estado inicial del formulario
   const [formData, setFormData] = useState({
     nombre: productoEditar?.nombre || "",
     descripcion: productoEditar?.descripcion || "",
+    // Guardamos el precio como string para poder poner puntos
     precio: productoEditar?.precio ? String(productoEditar.precio) : "",
     stock: productoEditar?.stock ? String(productoEditar.stock) : "",
     categoria: productoEditar?.categoria ? String(productoEditar.categoria.idCategoria) : "",
@@ -31,10 +33,12 @@ export function ProductosForm() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  // Cargar categorías al montar el componente
   useEffect(() => {
     loadCategorias();
   }, []);
 
+  // Cuando se selecciona categoría, cargar subcategorías
   useEffect(() => {
     if (formData.categoria) {
       loadSubcategorias(formData.categoria);
@@ -65,6 +69,7 @@ export function ProductosForm() {
     }
   };
 
+  // Manejo de cambios en los inputs
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
     if (type === "file") {
@@ -82,12 +87,17 @@ export function ProductosForm() {
     }
   };
 
+  // Validación simple del formulario
   const validateForm = () => {
     const errores = {};
     if (!formData.nombre.trim()) errores.nombre = "El nombre es obligatorio";
     if (!formData.descripcion.trim()) errores.descripcion = "La descripción es obligatoria";
-    if (!formData.precio || isNaN(formData.precio) || parseFloat(formData.precio) <= 0)
+
+    // Validación de precio: quitar puntos y comprobar número
+    const precioLimpio = formData.precio.replace(/\./g, '').replace(/,/g, '');
+    if (!precioLimpio || isNaN(precioLimpio) || parseInt(precioLimpio) <= 0)
       errores.precio = "Precio inválido";
+
     if (!formData.stock || isNaN(formData.stock) || parseInt(formData.stock) < 0)
       errores.stock = "Stock inválido";
     if (!formData.categoria) errores.categoria = "Seleccione una categoría";
@@ -96,6 +106,7 @@ export function ProductosForm() {
     return Object.keys(errores).length === 0;
   };
 
+  // Envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -104,7 +115,10 @@ export function ProductosForm() {
     const formDataToSend = new FormData();
     formDataToSend.append("nombre", formData.nombre.trim());
     formDataToSend.append("descripcion", formData.descripcion.trim());
-    formDataToSend.append("precio", parseFloat(formData.precio));
+
+    // Limpiar puntos y comas del precio antes de enviar al backend
+    const precioLimpio = formData.precio.replace(/\./g, '').replace(/,/g, '');
+    formDataToSend.append("precio", parseInt(precioLimpio)); // Se guarda como número entero
     formDataToSend.append("stock", parseInt(formData.stock));
     formDataToSend.append("subcategoria", parseInt(formData.subcategoria));
     if (formData.imagenFile) {
@@ -150,12 +164,10 @@ export function ProductosForm() {
           <div className="form-group">
             <label>Precio</label>
             <input
-              type="number"
+              type="text" // Para poder ingresar valores  con puntos
               name="precio"
               value={formData.precio}
               onChange={handleInputChange}
-              step="0.01"
-              min="0"
               className={errors.precio ? "error" : ""}
             />
             <span className="error-message">{errors.precio}</span>

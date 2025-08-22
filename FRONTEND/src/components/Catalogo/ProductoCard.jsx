@@ -1,18 +1,28 @@
 import React, { useState } from "react";
-import TallasDisponibles from "./TallasDisponibles";
 import "../../assets/css/Catalogo/ProductoCard.css";
+import TallasDisponibles from "./TallasDisponibles";
 
-export default function ProductoCard({
-  producto,
-  capitalizar,
-  tallaSeleccionada,
-  mostrarStock,
-}) {
-  const [cantidad, setCantidad] = useState(1);
+export default function ProductoCard({ producto, capitalizar }) {
+  const [cantidad, setCantidad] = useState(0);
+  const [tallaSeleccionada, setTallaSeleccionada] = useState(null);
 
-  const aumentarCantidad = () => setCantidad(prev => prev + 1);
+  const aumentarCantidad = () => {
+    if (tallaSeleccionada) {
+      const stock = tallaSeleccionada.stock || 0;
+      if (cantidad < stock) setCantidad((prev) => prev + 1);
+    } else {
+      setCantidad((prev) => prev + 1);
+    }
+  };
+
   const disminuirCantidad = () => {
-    if (cantidad > 1) setCantidad(prev => prev - 1);
+    if (cantidad > 0) setCantidad((prev) => prev - 1);
+  };
+
+  const mostrarStock = (productoId, talla, stock) => {
+    const inv = producto.inventario_tallas.find((t) => t.talla === talla);
+    setTallaSeleccionada(inv);
+    setCantidad(0);
   };
 
   return (
@@ -29,28 +39,47 @@ export default function ProductoCard({
           <h5 className="card-title">{capitalizar(producto.nombre)}</h5>
           <p className="card-text descripcion">{producto.descripcion}</p>
           <p className="card-text">
-            <strong>Precio:</strong> ${producto.precio}
+            <strong>Precio:</strong> $
+            {new Intl.NumberFormat("es-CO").format(producto.precio)}
           </p>
+
           <p className="card-text">
             <strong>Subcategoría:</strong>{" "}
             {capitalizar(producto.subcategoria_nombre)}
           </p>
 
-          <TallasDisponibles
-            productoId={producto.id}
-            inventarioTallas={producto.inventario_tallas}
-            tallaSeleccionada={tallaSeleccionada}
-            mostrarStock={mostrarStock}
-          />
+          {/* Tallas */}
+          {producto.inventario_tallas.length > 0 && (
+            <TallasDisponibles
+              productoId={producto.id}
+              inventarioTallas={producto.inventario_tallas}
+              tallaSeleccionada={tallaSeleccionada}
+              mostrarStock={mostrarStock}
+            />
+          )}
 
-          {/* Controles de cantidad */}
           <div className="cantidad-container my-2">
-            <button onClick={disminuirCantidad} className="btn-cantidad">-</button>
+            <button onClick={disminuirCantidad} className="btn-cantidad">
+              -
+            </button>
             <span className="cantidad">{cantidad}</span>
-            <button onClick={aumentarCantidad} className="btn-cantidad">+</button>
+            <button onClick={aumentarCantidad} className="btn-cantidad">
+              +
+            </button>
           </div>
 
-          <button className="btn btn-dark mt-auto">
+          <button
+            className="btn btn-dark mt-auto"
+            onClick={() => {
+              if (cantidad > 0) {
+                console.log(
+                  `Agregando ${cantidad} de ${producto.nombre} al carrito`
+                );
+              } else {
+                console.log("Selecciona al menos una unidad");
+              }
+            }}
+          >
             Agregar al carrito
           </button>
         </div>

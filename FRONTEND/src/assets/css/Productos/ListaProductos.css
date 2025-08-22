@@ -96,7 +96,7 @@
   min-width: 800px;
 }
 
-/* Bordes: sólo en filas para evitar líneas partidas */
+/* Bordes: */
 .lista-productos-container .tabla-productos tr {
   border-bottom: 1px solid #ccc;
   display: table-row;

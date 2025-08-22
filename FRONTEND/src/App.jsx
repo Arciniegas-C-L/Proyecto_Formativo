@@ -17,10 +17,12 @@ import { ListaProductosPage } from './pages/ListaproductosPage.jsx';
 import { ProductosFormPage } from './pages/ProductosFormPage.jsx';
 import Catalogopage from "./pages/Catalogopage.jsx"; 
 import { AdminUsuariosPage } from './pages/AdminUsuariosPage.jsx';
+import ListaUsuarios from "./components/Usuarios/ListaUsuarios.jsx";
 import { TallasPage } from './pages/Tallaspage.jsx';
 import { GrupoTallaPage } from './pages/GrupoTallePage.jsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "../src/assets/css/Layout/Layout.css";
+
 
 
 function App() {
@@ -80,6 +82,7 @@ return (
         <Route path="/producto/editar/:id" element={<ProductosFormPage />} />
         <Route path="/catalogo" element={<Catalogopage />} />
         <Route path="/usuario" element={<AdminUsuariosPage />} />
+        <Route path="/lista-usuarios" element={<ListaUsuarios />} />
         <Route path="/tallas" element={<TallasPage />} />
         <Route path="/grupo-talla" element={<GrupoTallaPage />} />
       </Routes>

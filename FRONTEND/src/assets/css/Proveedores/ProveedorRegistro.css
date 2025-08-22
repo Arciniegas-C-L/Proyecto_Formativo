@@ -97,22 +97,22 @@
   transform: scale(1.05);
 }
 
-/* Editar: Cian */
+/* Editar  */
 .btn-editar {
   background-color: #00b0e0 !important;
 }
 
-/* Eliminar: Rosa oscuro */
+/* Eliminar*/
 .btn-eliminar {
   background-color: #8b3581 !important;
 }
 
-/* Cancelar: Gris */
+/* Cancelar */
 .btn-cancelar {
   background-color: #9AA0A6 !important;
 }
 
-/* Guardar: Morado oscuro */
+/* Guardar */
 .btn-guardar {
   background-color: #433c49 !important;
 }
