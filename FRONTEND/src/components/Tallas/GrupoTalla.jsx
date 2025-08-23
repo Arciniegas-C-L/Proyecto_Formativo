@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, Typography, Alert, Chip, Stack, } from '@mui/material';
+import {
+  Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+  IconButton, Typography, Alert, Chip, Stack,
+} from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import {
   getAllGruposTalla,
@@ -14,56 +17,58 @@ import 'react-toastify/dist/ReactToastify.css';
 
 export const GrupoTalla = () => {
   const navigate = useNavigate();
+
   const [gruposTalla, setGruposTalla] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingGrupo, setEditingGrupo] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    descripcion: '',
-  });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '' });
+
+  // Modal eliminar
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     cargarGruposTalla();
   }, []);
 
-// Maneja errores y muestra mensaje en pantalla
-const handleError = (error) => {
-  const errorMessage = error.response?.data?.detail || 'Error al realizar la operación';
-  setError(errorMessage);
-  toast.error(errorMessage);
-};
+  // Maneja errores y muestra mensaje en pantalla
+  const handleError = (error) => {
+    const errorMessage =
+      error?.response?.data?.detail ||
+      error?.response?.data?.message ||
+      'Error al realizar la operación';
+    setError(errorMessage);
+    toast.error(errorMessage);
+  };
 
-// Trae todos los grupos de talla desde la API
-const cargarGruposTalla = async () => {
-  try {
-    setLoading(true);
-    const response = await getAllGruposTalla();
-    setGruposTalla(response.data || []);
-  } catch (error) {
-    handleError(error);
-    console.error('Error:', error);
-    setGruposTalla([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  // Trae todos los grupos de talla desde la API
+  const cargarGruposTalla = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllGruposTalla();
+      setGruposTalla(response?.data || []);
+    } catch (err) {
+      handleError(err);
+      console.error('Error:', err);
+      setGruposTalla([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenDialog = (grupo = null) => {
     setError('');
     if (grupo) {
       setEditingGrupo(grupo);
       setFormData({
-        nombre: grupo.nombre,
-        descripcion: grupo.descripcion || '',
+        nombre: grupo.nombre ?? '',
+        descripcion: grupo.descripcion ?? '',
       });
     } else {
       setEditingGrupo(null);
-      setFormData({
-        nombre: '',
-        descripcion: '',
-      });
+      setFormData({ nombre: '', descripcion: '' });
     }
     setOpenDialog(true);
   };
@@ -72,66 +77,70 @@ const cargarGruposTalla = async () => {
     setOpenDialog(false);
     setEditingGrupo(null);
     setError('');
-    setFormData({
-      nombre: '',
-      descripcion: '',
-    });
+    setFormData({ nombre: '', descripcion: '' });
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setError('');
   };
 
-// Valida los datos del formulario antes de enviar
-const validateForm = () => {
-  if (!formData.nombre.trim()) {
-    setError('El nombre es requerido');
-    return false;
-  }
-  if (formData.nombre.length > 45) {
-    setError('El nombre no puede tener más de 45 caracteres');
-    return false;
-  }
-  return true;
-};
-
-// Envía el formulario para crear o actualizar un grupo
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
-
-  try {
-    if (editingGrupo) {
-      await updateGrupoTalla(editingGrupo.id, formData);
-      toast.success('Grupo de talla actualizado exitosamente');
-    } else {
-      await createGrupoTalla(formData);
-      toast.success('Grupo de talla creado exitosamente');
+  // Valida los datos del formulario antes de enviar
+  const validateForm = () => {
+    if (!formData.nombre.trim()) {
+      setError('El nombre es requerido');
+      return false;
     }
-    handleCloseDialog();
-    cargarGruposTalla();
-  } catch (error) {
-    handleError(error);
-  }
-};
+    if (formData.nombre.length > 45) {
+      setError('El nombre no puede tener más de 45 caracteres');
+      return false;
+    }
+    return true;
+  };
 
-// Elimina un grupo luego de confirmar con el usuario
-const handleDelete = async (id) => {
-  if (window.confirm('¿Está seguro de eliminar este grupo de talla?')) {
+  // Envía el formulario para crear o actualizar un grupo
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
     try {
-      await deleteGrupoTalla(id);
-      toast.success('Grupo de talla eliminado exitosamente');
+      if (editingGrupo) {
+        await updateGrupoTalla(editingGrupo.idGrupoTalla, formData);
+        toast.success('Grupo de talla actualizado exitosamente');
+      } else {
+        await createGrupoTalla(formData);
+        toast.success('Grupo de talla creado exitosamente');
+      }
+      handleCloseDialog();
       cargarGruposTalla();
-    } catch (error) {
-      handleError(error);
+    } catch (err) {
+      handleError(err);
     }
-  }
-};
+  };
+
+  // Abrir/Cerrar modal eliminar
+  const handleDeleteModalOpen = (id) => {
+    setDeleteId(id);
+    setOpenDeleteModal(true);
+  };
+  const handleDeleteModalClose = () => {
+    setOpenDeleteModal(false);
+    setDeleteId(null);
+  };
+
+  // Elimina un grupo (confirmado en modal)
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteGrupoTalla(deleteId);
+      toast.success('Grupo de talla eliminado exitosamente');
+      handleDeleteModalClose();
+      cargarGruposTalla();
+    } catch (err) {
+      handleError(err);
+    }
+  };
 
   const handleAsignarTallas = (grupo) => {
     // Redirigir a la página de tallas
@@ -183,9 +192,9 @@ const handleDelete = async (id) => {
                   <TableCell>{grupo.descripcion || '-'}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                      {(grupo.Tallas  || []).map((talla) => (
+                      {(grupo.Tallas || []).map((talla) => (
                         <Chip
-                          key={talla.id}
+                          key={talla.id ?? `${talla.nombre}-${talla.valor ?? ''}`}
                           label={talla.nombre}
                           size="small"
                           color="primary"
@@ -210,7 +219,7 @@ const handleDelete = async (id) => {
                     </IconButton>
                     <IconButton
                       color="error"
-                      onClick={() => handleDelete(grupo.idGrupoTalla)}
+                      onClick={() => handleDeleteModalOpen(grupo.idGrupoTalla)}
                       title="Eliminar"
                     >
                       <DeleteIcon />
@@ -223,46 +232,57 @@ const handleDelete = async (id) => {
         )}
       </TableContainer>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      {/* MODAL CREAR / EDITAR */}
+      <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle>
           {editingGrupo ? 'Editar Grupo de Talla' : 'Nuevo Grupo de Talla'}
         </DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
+        <DialogContent dividers>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
             <TextField
-              fullWidth
-              label="Nombre"
+              label="Nombre *"
               name="nombre"
               value={formData.nombre}
               onChange={handleInputChange}
-              margin="normal"
-              required
               inputProps={{ maxLength: 45 }}
-              helperText={`${formData.nombre.length}/45 caracteres`}
+              fullWidth
+              required
+              margin="normal"
             />
             <TextField
-              fullWidth
               label="Descripción"
               name="descripcion"
               value={formData.descripcion}
               onChange={handleInputChange}
-              margin="normal"
+              fullWidth
               multiline
               rows={3}
+              margin="normal"
             />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button type="submit" variant="contained" color="primary">
-              {editingGrupo ? 'Actualizar' : 'Crear'}
-            </Button>
-          </DialogActions>
-        </form>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit}>
+            {editingGrupo ? 'Actualizar' : 'Crear'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL ELIMINAR */}
+      <Dialog open={openDeleteModal} onClose={handleDeleteModalClose}>
+        <DialogTitle>Eliminar Grupo de Talla</DialogTitle>
+        <DialogContent dividers>
+          <Typography>¿Está seguro de eliminar este grupo de talla?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteModalClose}>Cancelar</Button>
+          <Button color="error" variant="contained" onClick={handleDelete}>
+            Eliminar
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

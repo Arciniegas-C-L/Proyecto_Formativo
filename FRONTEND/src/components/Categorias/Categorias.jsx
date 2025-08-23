@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createCategoria, getAllCategorias } from "../../api/Categoria.api";
 import { createSubcategoria, getAllSubcategorias } from "../../api/Subcategoria.api";
 import ListaCategorias from "./ListaCategorias";
+import "../../assets/css/Categoria/Categorias.css";
 
 function SubcategoriaForm({ subcategoria, onChange }) {
   return (
@@ -10,7 +11,7 @@ function SubcategoriaForm({ subcategoria, onChange }) {
         <label className="form-label">Nombre Subcategoría</label>
         <input
           type="text"
-          className="form-control"
+          className="input-text"
           name="nombre"
           value={subcategoria.nombre}
           onChange={onChange}
@@ -21,7 +22,7 @@ function SubcategoriaForm({ subcategoria, onChange }) {
       <div className="form-check mb-3">
         <input
           type="checkbox"
-          className="form-check-input"
+          className="input-check"
           name="estado"
           checked={subcategoria.estado}
           onChange={onChange}
@@ -48,9 +49,9 @@ export function CategoriaForm() {
   });
 
   const [categorias, setCategorias] = useState([]);
-  const [modoCategoria, setModoCategoria] = useState("nueva"); // "nueva" o "existente"
+  const [modoCategoria, setModoCategoria] = useState("nueva"); 
   const [categoriaExistenteId, setCategoriaExistenteId] = useState("");
-  const [modoVista, setModoVista] = useState("formulario"); // "formulario" o "lista"
+  const [modoVista, setModoVista] = useState("formulario"); 
 
   useEffect(() => {
     cargarDatos();
@@ -132,12 +133,12 @@ export function CategoriaForm() {
   };
 
   return (
-    <div className="container mt-4">
-      <h2>Gestión de Categorías</h2>
+    <div className="categorias-container container mt-4">
+      <h2 className="titulo-principal">Gestión de Categorías</h2>
 
       <button
         type="button"
-        className="btn btn-secondary mb-3"
+        className="btn-secundario mb-3"
         onClick={() =>
           setModoVista(modoVista === "formulario" ? "lista" : "formulario")
         }
@@ -146,26 +147,21 @@ export function CategoriaForm() {
       </button>
 
       {modoVista === "formulario" ? (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="form-categorias">
+          {/* Botones modo categoría */}
           <div className="mb-3">
             <label className="form-label d-block">Selecciona el modo</label>
-            <div className="btn-group" role="group" aria-label="Modo de categoría">
+            <div className="btn-group-custom" role="group" aria-label="Modo de categoría">
               <button
                 type="button"
-                className={`btn ${
-                  modoCategoria === "nueva" ? "btn-primary" : "btn-outline-primary"
-                }`}
+                className={`btn-toggle nueva ${modoCategoria === "nueva" ? "activo" : ""}`}
                 onClick={() => setModoCategoria("nueva")}
               >
                 Crear nueva categoría
               </button>
               <button
                 type="button"
-                className={`btn ${
-                  modoCategoria === "existente"
-                    ? "btn-success"
-                    : "btn-outline-success"
-                }`}
+                className={`btn-toggle existente ${modoCategoria === "existente" ? "activo" : ""}`}
                 onClick={() => setModoCategoria("existente")}
               >
                 Usar categoría existente
@@ -173,13 +169,14 @@ export function CategoriaForm() {
             </div>
           </div>
 
+          {/* Formulario de categoría */}
           {modoCategoria === "nueva" ? (
             <>
               <div className="mb-3">
                 <label className="form-label">Nombre Categoría</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="input-text"
                   name="nombre"
                   value={categoria.nombre}
                   onChange={handleCategoriaChange}
@@ -190,7 +187,7 @@ export function CategoriaForm() {
               <div className="form-check mb-3">
                 <input
                   type="checkbox"
-                  className="form-check-input"
+                  className="input-check"
                   name="estado"
                   checked={categoria.estado}
                   onChange={handleCategoriaChange}
@@ -205,7 +202,7 @@ export function CategoriaForm() {
             <div className="mb-3">
               <label className="form-label">Seleccionar categoría</label>
               <select
-                className="form-select"
+                className="input-select"
                 value={categoriaExistenteId}
                 onChange={(e) => setCategoriaExistenteId(e.target.value)}
                 required
@@ -220,10 +217,11 @@ export function CategoriaForm() {
             </div>
           )}
 
+          {/* Subcategoría */}
           <div className="form-check mb-3">
             <input
               type="checkbox"
-              className="form-check-input"
+              className="input-check"
               name="usarSubcategorias"
               checked={categoria.usarSubcategorias}
               onChange={handleCategoriaChange}
@@ -235,7 +233,7 @@ export function CategoriaForm() {
           </div>
 
           {categoria.usarSubcategorias && (
-            <div className="border p-3 mb-3">
+            <div className="subcategoria-box">
               <h5>Subcategoría</h5>
               <SubcategoriaForm
                 subcategoria={subcategoria}
@@ -244,7 +242,7 @@ export function CategoriaForm() {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn-guardar">
             Guardar
           </button>
         </form>

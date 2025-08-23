@@ -1,22 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { getALLProductos } from "../../api/Producto.api";
 import { getAllCategorias } from "../../api/Categoria.api";
+import {auth} from "../../auth/authService";
 import "../../assets/css/Catalogo.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 // Cambié export function por export default function
 export function Catalogo() {
+
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState("");
   const [tallaSeleccionada, setTallaSeleccionada] = useState({});
+  const [errorProductos, setErrorProductos] = useState("");
 
   const capitalizar = (texto) =>
     texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
 
   const cargarProductos = async () => {
+    const token = auth.obtenerToken(); // ✅ usás la función centralizada
+    if (!token) {
+      setErrorProductos("Debes iniciar sesión para ver los productos.");
+      console.warn("Token no encontrado en localStorage.");
+      return;
+    }
+
     try {
       const res = await getALLProductos();
       const productosData = res.data || [];
@@ -29,6 +39,7 @@ export function Catalogo() {
       );
 
       setProductos(productosValidos);
+      setErrorProductos(""); // Limpia error si todo sale bien
 
       const subMap = {};
       productosValidos.forEach((p) => {
@@ -45,7 +56,13 @@ export function Catalogo() {
 
       setSubcategoriasPorCategoria(subFinal);
     } catch (error) {
-      console.error("Error al cargar productos:", error);
+      if (error.response?.status === 401) {
+        setErrorProductos("Tu sesión ha expirado. Vuelve a iniciar sesión.");
+        console.error("Error 401: no autorizado");
+      } else {
+        setErrorProductos("Error al cargar productos.");
+        console.error("Error al cargar productos:", error);
+      }
     }
   };
 

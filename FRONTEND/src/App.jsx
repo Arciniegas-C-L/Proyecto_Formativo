@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { RolListaPage } from "./pages/RolListaPage.jsx";
-import { RolFormPage } from "./pages/RolFormPage.jsx";
+import { Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 import { Header } from "./components/Singlepage/Header.jsx";
 import { Footer } from "./components/Singlepage/Footer.jsx";
 import { Home } from "./components/Singlepage/Home.jsx";
 import { SesionPage } from "./pages/SesionPage.jsx";
-import { Toaster } from "react-hot-toast";
 import { SesionRecuperacionPage } from "./pages/SesionRecuperacion.jsx";
-import { InventarioPage } from "./pages/InventarioPage";
+import { NoAutorizadoPage } from "./pages/NoAutorizadoPage.jsx";
+
+import { RolListaPage } from "./pages/RolListaPage.jsx";
+import { RolFormPage } from "./pages/RolFormPage.jsx";
+import { InventarioPage } from "./pages/InventarioPage.jsx";
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
 import {ProveedoresRegistradosPage} from "./pages/ProvedoresRegistradosPage.jsx";
 import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js"
@@ -23,92 +27,184 @@ import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import { Perfil } from "./components/Perfil/Perfil.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+import { RutaPrivada } from "./routes/RutaPrivada.jsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx"; // 👈 importamos useAuth
 
-
-function App() {
-  // Estado local para almacenar la lista de proveedores
+function AppContent() {
+  const { token } = useAuth(); // 👈 accedemos al estado de sesión
   const [proveedores, setProveedores] = useState([]);
 
-  // Hook useEffect para cargar los proveedores cuando se monta el componente
-  useEffect(() => {
-    const cargarProveedores = async () => {
-      try {
-        // Llamada a la API para obtener los proveedores
-        const response = await fetchProveedores();
-        // Se actualiza el estado con los proveedores recibidos
-        setProveedores(response.data);
-      } catch (error) {
-        // Manejo de errores si la petición falla
-        console.error("Error al cargar proveedores:", error);
-      }
-    };
+  // useEffect(() => {
+//   const cargarProveedores = async () => {
+//     if (!token) return;
 
-    // Se ejecuta la función de carga al montar el componente
-    cargarProveedores();
-  }, []); // El array vacío asegura que solo se ejecute una vez al montar
+//     try {
+//       const response = await fetchProveedores(token);
+//       setProveedores(response.data);
+//     } catch (error) {
+//       console.error("Error al cargar proveedores:", error);
+//     }
+//   };
 
-  // Función para eliminar un proveedor por su ID
+//   cargarProveedores();
+// }, [token]);
+
+
   const handleEliminar = async (id) => {
     try {
-      // Se llama a la API para eliminar el proveedor
       await deleteProveedor(id);
-      // Se actualiza el estado filtrando el proveedor eliminado
       setProveedores(proveedores.filter((prov) => prov.id !== id));
     } catch (error) {
       console.error("Error al eliminar proveedor:", error);
     }
   };
 
-  // Función para manejar la edición de un proveedor (aún sin implementación)
   const handleEditar = (proveedor) => {
     console.log("Editar proveedor", proveedor);
   };
 
   return (
-    // Se configura el enrutador de la aplicación
     <>
-      {/* Cabecera común para todas las rutas */}
       <Header />
 
-      {/* Declaración de rutas */}
       <Routes>
+        {/* Públicas */}
         <Route path="/" element={<Home />} />
-        <Route path="/categorias" element={<CategoriasPage />} />
-        <Route path="/rol" element={<RolListaPage />} />
-        <Route path="/rol-create" element={<RolFormPage />} />
         <Route path="/sesion" element={<SesionPage />} />
         <Route path="/sesion/recuperar_contrasena" element={<SesionRecuperacionPage />} />
-        <Route path="/proveedores" element={<AdminProvedoresPage />} />
-        <Route path="/inventario" element={<InventarioPage />} />
+        <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
 
-        {/* Ruta que muestra la lista de proveedores registrados, 
-            pasando funciones para eliminar y editar */}
+        {/* Protegidas por rol */}
         <Route
-          path="/proveedores_registrados"
+          path="/catalogo"
           element={
-            <ProveedoresRegistradosPage
-              proveedores={proveedores}
-              onEliminar={handleEliminar}
-              onEditar={handleEditar}
-            />
+            <RutaPrivada role="cliente">
+              <CatalogoPage />
+            </RutaPrivada>
           }
         />
-        <Route path="/producto" element={<ListaProductosPage />} />
-        <Route path="/producto/crear" element={<ProductosFormPage />} />
-        <Route path="/producto/editar/:id" element={<ProductosFormPage />} />
-        <Route path="/catalogo" element={<CatalogoPage />} />
-        <Route path="/usuario" element={<AdminUsuariosPage />} />
-        <Route path="/tallas" element={<TallasPage />} />
-        <Route path="/grupo-talla" element={<GrupoTallaPage />} />
-        <Route path="/perfil" element={<Perfil />} />
+        <Route
+          path="/proveedores"
+          element={
+            <RutaPrivada role="administrador">
+              <AdminProvedoresPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/administrador"
+          element={
+            <RutaPrivada role="administrador">
+              <ProveedoresRegistradosPage
+                proveedores={proveedores}
+                onEliminar={handleEliminar}
+                onEditar={handleEditar}
+              />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/inventario"
+          element={
+            <RutaPrivada role="administrador">
+              <InventarioPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/producto"
+          element={
+            <RutaPrivada role="administrador">
+              <ListaProductosPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/producto/crear"
+          element={
+            <RutaPrivada role="administrador">
+              <ProductosFormPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/producto/editar/:id"
+          element={
+            <RutaPrivada role="administrador">
+              <ProductosFormPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/usuario"
+          element={
+            <RutaPrivada role="administrador">
+              <AdminUsuariosPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/tallas"
+          element={
+            <RutaPrivada role="administrador">
+              <TallasPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/grupo-talla"
+          element={
+            <RutaPrivada role="administrador">
+              <GrupoTallaPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/categorias"
+          element={
+            <RutaPrivada role={["cliente", "administrador"]}>
+              <CategoriasPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/rol"
+          element={
+            <RutaPrivada role="administrador">
+              <RolListaPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/rol-create"
+          element={
+            <RutaPrivada role="administrador">
+              <RolFormPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/perfil"
+          element={
+            <RutaPrivada role={["cliente", "administrador"]}>
+              <PerfilPage />
+            </RutaPrivada>
+          }
+        />
       </Routes>
 
-      {/* Componente para mostrar notificaciones tipo toast */}
       <Toaster />
-
-      {/* Pie de página común para todas las rutas */}
       <Footer />
     </>
+  );
+}
+
+// 👇 Envolvemos AppContent con AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

@@ -1,9 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, AbstractUser
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, AbstractUser, Group, Permission
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 
 # Roles
 class Rol(models.Model):
@@ -15,21 +16,47 @@ class Rol(models.Model):
 
 # Usuarios y Manager
 class UsuarioManager(BaseUserManager):
+
     def create_user(self, correo, nombre, apellido, password=None, **extra_fields):
         if not correo:
             raise ValueError("El correo es obligatorio")
+
         correo = self.normalize_email(correo)
-        usuario = self.model(correo=correo, nombre=nombre, apellido=apellido, **extra_fields)
+        usuario = self.model(
+            correo=correo,
+            nombre=nombre,
+            apellido=apellido,
+            **extra_fields
+        )
         usuario.set_password(password)
         usuario.save(using=self._db)
         return usuario
 
+
     def create_superuser(self, correo, nombre, apellido, password, **extra_fields):
+        from BACKEND.models import Rol  # Importa aquí para evitar importaciones circulares
+
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+
+        # Asignar un rol automáticamente si no se proporcionó
+        if 'rol' not in extra_fields or extra_fields['rol'] is None:
+            try:
+                rol_admin = Rol.objects.get(nombre='administrador')  # Asegúrate de que exista este rol
+            except Rol.DoesNotExist:
+                # Crea el rol si no existe (opcional)
+                rol_admin = Rol.objects.create(nombre='administrador')
+            extra_fields['rol'] = rol_admin
+
         return self.create_user(correo, nombre, apellido, password, **extra_fields)
 
+
 class Usuario(AbstractBaseUser, PermissionsMixin):
+
+    @property
+    def rol_nombre(self):
+        return self.rol.nombre if self.rol else None
+
     idUsuario = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45)
     apellido = models.CharField(max_length=45)
@@ -37,30 +64,34 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     telefono = models.CharField(max_length=15)
     direccion = models.CharField(max_length=255, blank=True, null=True) 
     estado = models.BooleanField(default=True)
-    rol = models.ForeignKey(Rol, on_delete=models.DO_NOTHING)
-    is_staff = models.BooleanField(default=False)  # Para admin
+
+    # Se recomienda `on_delete=models.PROTECT` para no perder relaciones si un rol es eliminado
+    rol = models.ForeignKey(Rol, on_delete=models.PROTECT)
+
+    is_staff = models.BooleanField(default=False)  # Necesario para acceder al admin
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
 
+    # Grupos y permisos específicos para usuarios personalizados
     groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='usuarios_set',
+        Group,
+        related_name='usuarios_set',  # Evita conflictos con modelos personalizados
         blank=True,
         help_text='Los grupos a los que pertenece este usuario.',
         verbose_name='grupos'
     )
     user_permissions = models.ManyToManyField(
-        'auth.Permission',
+        Permission,
         related_name='usuarios_set_perm',
         blank=True,
         help_text='Permisos específicos para este usuario.',
         verbose_name='permisos de usuario'
     )
 
-    USERNAME_FIELD = 'correo'
-    REQUIRED_FIELDS = ['nombre', 'apellido']
+    USERNAME_FIELD = 'correo'  # Autenticación por correo
+    REQUIRED_FIELDS = ['nombre', 'apellido']  # Campos requeridos al crear superusuario
 
-    objects = UsuarioManager()
+    objects = UsuarioManager()  # Tu manager personalizado
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
@@ -390,3 +421,4 @@ class Talla(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.grupo.nombre})"
+

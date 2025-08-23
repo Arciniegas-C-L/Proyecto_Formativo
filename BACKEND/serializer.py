@@ -5,29 +5,100 @@ from .models import (
     EstadoCarrito, Carrito, Talla, GrupoTalla
 )
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rol
         fields = '__all__'
-        
+
 class UsuarioSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
+    
 
     class Meta:
         model = Usuario
-        fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'password', 'telefono']
+        fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'telefono', 'estado', 'rol_nombre']
+
+
+class LoginSerializer(serializers.Serializer):
+    correo = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        correo = data.get('correo')
+        password = data.get('password')
+
+        if correo and password:
+            user = authenticate(request=self.context.get('request'), username=correo, password=password)
+
+            if not user:
+                raise serializers.ValidationError("Credenciales inválidas", code='authorization')
+        else:
+            raise serializers.ValidationError("Debe incluir correo y contraseña", code='authorization')
+
+        data['user'] = user
+        return data
     
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        correo = attrs.get("correo")
+        password = attrs.get("password")
+
+        try:
+            usuario = Usuario.objects.get(correo=correo)
+        except Usuario.DoesNotExist:
+            raise serializers.ValidationError("Correo o contraseña inválidos")
+
+        if not usuario.check_password(password):
+            raise serializers.ValidationError("Correo o contraseña inválidos")
+
+        if not usuario.is_active:
+            raise serializers.ValidationError("Usuario inactivo")
+
+        # Esto obtiene los tokens
+        data = super().validate({
+            "username": usuario.correo,  
+            "password": password
+        })
+
+        # Añadimos datos extra para el frontend
+        data['usuario'] = {
+            "id": usuario.id,
+            "nombre": usuario.nombre,
+            "apellido": usuario.apellido,
+            "correo": usuario.correo,
+            "rol": usuario.rol.nombre if usuario.rol else None
+        }
+
+        return data
+
+    def to_internal_value(self, data):
+        return {
+            'correo': data.get('correo'),
+            'password': data.get('password')
+        }
+    
+class UsuarioRegistroSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=6)
+    rol = serializers.PrimaryKeyRelatedField(queryset=Rol.objects.all())  # recibe el ID del rol
+
+    class Meta:
+        model = Usuario
+        fields = ['nombre', 'apellido', 'correo', 'password', 'rol']
+
+    def validate_correo(self, value):
+        if Usuario.objects.filter(correo=value).exists():
+            raise serializers.ValidationError("El correo ya está registrado.")
+        return value
 
     def create(self, validated_data):
-        rol_cliente, _ = Rol.objects.get_or_create(nombre='Cliente')
         password = validated_data.pop('password')
         usuario = Usuario(**validated_data)
-        usuario.rol = rol_cliente
         usuario.set_password(password)
         usuario.save()
         return usuario
-
 
 
 class ProveedorSerializer(serializers.ModelSerializer):
@@ -134,7 +205,7 @@ class TallaSerializer(serializers.ModelSerializer):
         return data
 
 class ProductoSerializer(serializers.ModelSerializer):
-    subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all(), required=False, allow_null=True)
+    subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all())
     subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
     inventario_tallas = serializers.SerializerMethodField()

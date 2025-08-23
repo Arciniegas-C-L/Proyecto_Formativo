@@ -10,138 +10,143 @@ import {
 } from "../../api/Producto.api";
 
 export function ProductosForm() {
-  //Hooks de navegación y obtención del estado desde la ruta actual
-const navigate = useNavigate();
-const location = useLocation();
-const productoEditar = location.state?.producto || null;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const productoEditar = location.state?.producto || null;
 
-//Estado para manejar los datos del formulario, cargados desde productoEditar si existe
-const [formData, setFormData] = useState({
-  nombre: productoEditar?.nombre || "",
-  descripcion: productoEditar?.descripcion || "",
-  precio: productoEditar?.precio ? String(productoEditar.precio) : "",
-  stock: productoEditar?.stock ? String(productoEditar.stock) : "",
-  categoria: productoEditar?.categoria ? String(productoEditar.categoria.idCategoria) : "",
-  subcategoria: productoEditar?.subcategoria ? String(productoEditar.subcategoria.idSubcategoria) : "",
-  imagen: productoEditar?.imagen || "",
-  imagenFile: null,
-});
+  const [formData, setFormData] = useState({
+    nombre: productoEditar?.nombre || "",
+    descripcion: productoEditar?.descripcion || "",
+    precio: productoEditar?.precio ? String(productoEditar.precio) : "",
+    stock: productoEditar?.stock ? String(productoEditar.stock) : "",
+    categoria: productoEditar?.categoria ? String(productoEditar.categoria.idCategoria) : "",
+    subcategoria: productoEditar?.subcategoria ? String(productoEditar.subcategoria.idSubcategoria) : "",
+    imagen: productoEditar?.imagen || "",
+    imagenFile: null,
+  });
 
-//Estados para cargar listas y manejar validación/carga
-const [categorias, setCategorias] = useState([]);
-const [subcategorias, setSubcategorias] = useState([]);
-const [cargandoSubcategorias, setCargandoSubcategorias] = useState(false);
-const [errors, setErrors] = useState({});
-const [loading, setLoading] = useState(false);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
+  const [cargandoSubcategorias, setCargandoSubcategorias] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
-//Cargar categorías al montar el componente
-useEffect(() => {
-  loadCategorias();
-}, []);
+  useEffect(() => {
+    loadCategorias();
+  }, []);
 
-//Cargar subcategorías cuando cambia la categoría seleccionada
-useEffect(() => {
-  if (formData.categoria) {
-    loadSubcategorias(formData.categoria);
-  } else {
-    setSubcategorias([]);
-    setFormData(prev => ({ ...prev, subcategoria: "" }));
-  }
-}, [formData.categoria]);
-
-//Función para obtener categorías desde la API
-const loadCategorias = async () => {
-  try {
-    const res = await getCategorias();
-    setCategorias(res.data);
-  } catch {
-    toast.error("Error al cargar categorías");
-  }
-};
-
-//Función para obtener subcategorías desde la API por categoría
-const loadSubcategorias = async (categoriaId) => {
-  setCargandoSubcategorias(true);
-  try {
-    const res = await getSubcategoriasPorCategoria(categoriaId);
-    setSubcategorias(res.data);
-  } catch {
-    toast.error("Error al cargar subcategorías");
-  } finally {
-    setCargandoSubcategorias(false);
-  }
-};
-
-//Función para manejar cambios en los inputs del formulario
-const handleInputChange = (e) => {
-  const { name, value, type, files } = e.target;
-
-  if (type === "file") {
-    const file = files[0];
-    if (file) {
-      const localImageUrl = URL.createObjectURL(file);
-      setFormData(prev => ({
-        ...prev,
-        imagenFile: file,
-        imagen: localImageUrl,
-      }));
-    }
-  } else {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  }
-};
-
-//Función para validar los campos del formulario antes de enviar
-const validateForm = () => {
-  const errores = {};
-  if (!formData.nombre.trim()) errores.nombre = "El nombre es obligatorio";
-  if (!formData.descripcion.trim()) errores.descripcion = "La descripción es obligatoria";
-  if (!formData.precio || isNaN(formData.precio) || parseFloat(formData.precio) <= 0)
-    errores.precio = "Precio inválido";
-  if (!formData.stock || isNaN(formData.stock) || parseInt(formData.stock) < 0)
-    errores.stock = "Stock inválido";
-  if (!formData.categoria) errores.categoria = "Seleccione una categoría";
-  if (!formData.subcategoria) errores.subcategoria = "Seleccione una subcategoría";
-
-  setErrors(errores);
-  return Object.keys(errores).length === 0;
-};
-
-//Función para enviar el formulario (crear o actualizar producto)
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
-
-  setLoading(true);
-
-  const formDataToSend = new FormData();
-  formDataToSend.append("nombre", formData.nombre.trim());
-  formDataToSend.append("descripcion", formData.descripcion.trim());
-  formDataToSend.append("precio", parseFloat(formData.precio));
-  formDataToSend.append("stock", parseInt(formData.stock));
-  formDataToSend.append("subcategoria", parseInt(formData.subcategoria));
-  if (formData.imagenFile) {
-    formDataToSend.append("imagen", formData.imagenFile);
-  }
-
-  try {
-    if (productoEditar) {
-      await updateProducto(productoEditar.idProducto, formDataToSend);
-      toast.success("Producto actualizado correctamente");
-      navigate('/producto');
+  useEffect(() => {
+    if (formData.categoria) {
+      loadSubcategorias(formData.categoria);
     } else {
-      await createProducto(formDataToSend);
-      toast.success("Producto creado correctamente");
-      navigate('/producto');
+      setSubcategorias([]);
+      if (formData.subcategoria !== "") {
+        setFormData(prev => ({ ...prev, subcategoria: "" }));
+      }
     }
-  } catch (error) {
-    console.error("Error guardando producto:", error);
-    toast.error("Error al guardar el producto");
-  } finally {
-    setLoading(false);
-  }
-};
+  }, [formData.categoria]);
 
+  const loadCategorias = async () => {
+    try {
+      const res = await getCategorias();
+      setCategorias(res.data);
+    } catch {
+      toast.error("Error al cargar categorías");
+    }
+  };
+
+  const loadSubcategorias = async (categoriaId) => {
+    setCargandoSubcategorias(true);
+    try {
+      const res = await getSubcategoriasPorCategoria(categoriaId);
+      setSubcategorias(res.data);
+    } catch {
+      toast.error("Error al cargar subcategorías");
+    } finally {
+      setCargandoSubcategorias(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, files } = e.target;
+
+    if (type === "file") {
+      const file = files[0];
+      if (file) {
+        const localImageUrl = URL.createObjectURL(file);
+        setFormData(prev => ({
+          ...prev,
+          imagenFile: file,
+          imagen: localImageUrl,
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const validateForm = () => {
+    const errores = {};
+    const subId = parseInt(formData.subcategoria, 10);
+    const precioNum = Number(String(formData.precio).replace(",", "."));
+    const stockNum = Number(formData.stock);
+
+    if (!formData.nombre.trim()) errores.nombre = "El nombre es obligatorio";
+    if (!formData.descripcion.trim()) errores.descripcion = "La descripción es obligatoria";
+    if (isNaN(precioNum) || precioNum <= 0) errores.precio = "Precio inválido";
+    if (!Number.isInteger(stockNum) || stockNum < 0) errores.stock = "Stock inválido";
+    if (!formData.categoria) errores.categoria = "Seleccione una categoría";
+    if (!Number.isInteger(subId) || subId <= 0) errores.subcategoria = "Seleccione una subcategoría válida";
+
+    setErrors(errores);
+    return Object.keys(errores).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      toast.error("Corrige los errores antes de continuar");
+      return;
+    }
+
+    setLoading(true);
+
+    const subId = parseInt(formData.subcategoria, 10);
+    const precioNum = Number(String(formData.precio).replace(",", "."));
+    const stockNum = Number(formData.stock);
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("nombre", formData.nombre.trim());
+    formDataToSend.append("descripcion", formData.descripcion.trim());
+    formDataToSend.append("precio", precioNum);
+    formDataToSend.append("stock", stockNum);
+    formDataToSend.append("subcategoria", subId);
+
+    if (formData.imagenFile) {
+      formDataToSend.append("imagen", formData.imagenFile);
+    }
+
+    console.log("📦 FormData enviado:");
+    for (let pair of formDataToSend.entries()) {
+      console.log(pair[0], ":", pair[1]);
+    }
+
+    try {
+      if (productoEditar) {
+        await updateProducto(productoEditar.idProducto, formDataToSend);
+        toast.success("Producto actualizado correctamente");
+      } else {
+        await createProducto(formDataToSend);
+        toast.success("Producto creado correctamente");
+      }
+      navigate("/producto");
+    } catch (error) {
+      console.error("❌ Error guardando producto:", error);
+      toast.error("Error al guardar el producto");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="container mt-4">

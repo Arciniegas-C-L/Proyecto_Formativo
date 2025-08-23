@@ -1,115 +1,125 @@
+// src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import saludo from "../../assets/images/saludo.webp";
-import bienvenida from "../../assets/images/bienvenida.gif";
-import "../../assets/css/sesion.css";
+import saludo from '../../assets/images/saludo.webp';
+import bienvenida from '../../assets/images/bienvenida.gif';
+import '../../assets/css/sesion.css';
+import { auth } from '../../auth/authService';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
 
 export function Sesion() {
- // Hook para hacer referencia al contenedor principal (usado para cambiar clases CSS dinámicamente)
-const containerRef = useRef(null);
+  const { guardarSesion } = auth;
+  const containerRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
-// Estado para controlar si se está enviando un formulario (login o registro)
-const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
+  const handleSignUpClick = () => containerRef.current?.classList.add('toggle');
 
-// Hook de React Router para redireccionar
-const navigate = useNavigate();
+  // LOGIN
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const form = e.target.elements;
+    const correo = form.correo.value;
+    const password = form.password.value;
 
-// Muestra el formulario de inicio de sesión (quita la clase 'toggle')
-const handleSignInClick = () => {
-  containerRef.current.classList.remove('toggle');
-};
+    try {
+      const { data } = await loginUsuario({ correo, password });
 
-// Muestra el formulario de registro (agrega la clase 'toggle')
-const handleSignUpClick = () => {
-  containerRef.current.classList.add('toggle');
-};
+      const access = data?.token?.access || data?.access;
+      const refresh = data?.token?.refresh || data?.refresh;
 
-// Función que maneja el inicio de sesión
-const handleLogin = async (e) => {
-  e.preventDefault(); // Evita el comportamiento por defecto del formulario
-  setIsSubmitting(true); // Indica que se está procesando el envío
+      guardarSesion({
+        access,
+        refresh,
+        usuario: data?.usuario,
+        rol: data?.rol,
+      });
 
-  // Obtiene los valores del formulario
-  const form = e.target.elements;
-  const correo = form.email.value;
-  const password = form.password.value;
+      toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
 
-  try {
-    // Llama a la API para iniciar sesión
-    const response = await loginUsuario({ correo, password });
+      if (data?.rol === 'administrador') navigate('/admin');
+      else navigate('/catalogo');
+    } catch (error) {
+      const backend = error?.response?.data;
+      const errorMsg =
+        backend?.detail ||
+        backend?.non_field_errors?.[0] ||
+        backend?.mensaje ||
+        backend?.error ||
+        'Credenciales inválidas';
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    // Guarda el token en localStorage
-    localStorage.setItem('token', response.data.token);
+  // REGISTRO
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const form = e.target.elements;
+    const nombre = form.nombre.value;
+    const apellido = form.apellido.value;
+    const telefono = form.telefono.value;
+    const correo = form.correo.value;
+    const password = form.password.value.trim();
 
-    // Notifica éxito y redirige a la página principal
-    toast.success("Inicio de sesión exitoso");
-    navigate('/');
-  } catch (error) {
-    // Muestra error si las credenciales son inválidas u otro fallo
-    const errorMsg = error.response?.data?.error || "Credenciales inválidas";
-    toast.error("Error: " + errorMsg);
-  }
+    if (password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres.');
+      setIsSubmitting(false);
+      return;
+    }
 
-  setIsSubmitting(false); // Finaliza el estado de envío
-};
+    try {
+      await registerUsuario({ nombre, apellido, correo, password, telefono });
+      toast.success('Registro exitoso. Ahora inicia sesión.');
+      containerRef.current?.classList.remove('toggle');
+    } catch (error) {
+      console.error("Error completo:", error);
 
-// Función que maneja el registro de usuario
-const handleRegister = async (e) => {
-  e.preventDefault(); // Previene el comportamiento por defecto del formulario
-  setIsSubmitting(true); // Inicia el estado de envío
+      const backend = error?.response?.data;
+      const status = error?.response?.status;
 
-  // Obtiene los valores del formulario de registro
-  const form = e.target.elements;
-  const nombre = form.nombre.value;
-  const apellido = form.apellido.value;
-  const telefono = form.telefono.value;
-  const correo = form.correo.value;
-  const password = form.password.value;
+      const errorMsg =
+        backend?.mensaje ||
+        backend?.error ||
+        (status === 400 && "Datos inválidos") ||
+        (status === 401 && "No autorizado") ||
+        (status === 500 && "Error interno del servidor") ||
+        error.message ||
+        "No se pudo registrar el usuario";
 
-  try {
-    // Llama a la API para registrar un nuevo usuario
-    await registerUsuario({
-      nombre,
-      apellido,
-      correo,
-      password,
-      telefono,
-    });
-
-    // Notifica éxito y cambia al formulario de login
-    toast.success("Registro exitoso. Ahora inicia sesión.");
-    containerRef.current.classList.remove('toggle');
-  } catch (error) {
-    // Muestra mensaje de error
-    toast.error("Error: " + JSON.stringify(error.response?.data || {}));
-  }
-
-  setIsSubmitting(false); // Finaliza el estado de envío
-};
-
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="container-sesion">
       <div className="container" ref={containerRef}>
+        {/* LOGIN */}
         <div className="container-form">
           <form className="sign-in" onSubmit={handleLogin}>
             <h2>Iniciar Sesión</h2>
             <span>Use su correo y contraseña</span>
             <div className="container-input">
-              <input type="email" name="email" placeholder="Correo" required />
+              <input type="email" name="correo" placeholder="Correo" required />
             </div>
             <div className="container-input">
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
-            <Link to="recuperar_contrasena/" className="forgot-password">¿Olvidaste tu contraseña?</Link>
+            <Link to="/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? "Procesando..." : "INICIAR SESIÓN"}
+              {isSubmitting ? 'Procesando...' : 'INICIAR SESIÓN'}
             </button>
           </form>
         </div>
 
+        {/* REGISTRO */}
         <div className="container-form">
           <form className="sign-up" onSubmit={handleRegister}>
             <h2>Registrarse</h2>
@@ -130,11 +140,12 @@ const handleRegister = async (e) => {
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? "Procesando..." : "REGISTRARSE"}
+              {isSubmitting ? 'Procesando...' : 'REGISTRARSE'}
             </button>
           </form>
         </div>
 
+        {/* BIENVENIDA */}
         <div className="container-welcome">
           <div className="welcome-sign-up welcome">
             <h3>¡Bienvenido!</h3>

@@ -13,12 +13,12 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework import viewsets
 from .serializer import (
-    RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
+    CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
     ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
     PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
     CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
-    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer, 
-    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer
+    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer,
+    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer,
 )
 from .models import (
     Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
@@ -30,145 +30,244 @@ from rest_framework.permissions import IsAdminUser
 from .serializer import UserSerializer
 from django.db import models
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
+from BACKEND.permissions import IsAdmin,IsCliente,IsAdminWriteClienteRead
+import random
+import string
 
 # Create your views here.
 
 class Rolview(viewsets.ModelViewSet):
+
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
+    permission_classes = [AllowAny]
     
-class Usuarioview(viewsets.ModelViewSet):
-    serializer_class = UsuarioSerializer
+    # --- REGISTRO ---    
+class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
+    permission_classes = [AllowAny]
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def registro(self, request):
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='register')
+    def register(self, request):
         data = request.data.copy()
-        password = data.get('password')
-        if not password:
-            return Response({"error": "La contraseña es requerida"}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data=data)
+        # Si no envían rol, asignamos el rol "cliente" por defecto
+        if not data.get('rol'):
+            try:
+                rol_cliente = Rol.objects.get(nombre='cliente')
+                data['rol'] = rol_cliente.pk
+            except Rol.DoesNotExist:
+                return Response(
+                    {"error": "Rol por defecto no encontrado"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        serializer = UsuarioRegistroSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"mensaje": "Usuario registrado correctamente."}, status=status.HTTP_201_CREATED)
+            usuario = serializer.save()
+            return Response({
+                "mensaje": "Usuario registrado correctamente",
+                "usuario": UsuarioSerializer(usuario).data
+            }, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    # --- LOGIN ---
+    @action(detail=False, methods=['get', 'post'], permission_classes=[AllowAny])
     def login(self, request):
-        correo = request.data.get('correo')
-        password = request.data.get('password')
+        if request.method == 'GET':
+            serializer = LoginSerializer()
+            return Response(serializer.data)
+
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        correo = serializer.validated_data['correo']
+        password = serializer.validated_data['password']
         try:
-            usuario = Usuario.objects.get(correo=correo)
-            if usuario.check_password(password):
-                return Response({
-                    "mensaje": "Login exitoso",
-                    "usuario": {
-                        "id": usuario.idUsuario,
-                        "nombre": usuario.nombre,
-                        "rol": usuario.rol.nombre
-                    }
-                }, status=status.HTTP_200_OK)
-            else:
+            usuario = Usuario.objects.select_related('rol').get(correo=correo)
+
+            if not usuario.is_active:
+                return Response({"error": "Usuario inactivo"}, status=status.HTTP_403_FORBIDDEN)
+
+            if not usuario.check_password(password):
                 return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+
+            refresh = RefreshToken.for_user(usuario)
+            token = {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+
+            usuario_serializado = UsuarioSerializer(usuario).data
+
+            return Response({
+                "mensaje": "Login exitoso",
+                "usuario": usuario_serializado,
+                "rol": usuario.rol.nombre if usuario.rol else None,
+                "token": token
+            }, status=status.HTTP_200_OK)
+
         except Usuario.DoesNotExist:
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
+    # --- ENVIAR CÓDIGO RECUPERACIÓN ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def recuperar_contrasena(self, request):
+    def recuperar_password(self, request):
         correo = request.data.get('correo')
-        if not correo:
-            return Response({"error": "Debe proporcionar un correo electrónico."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             usuario = Usuario.objects.get(correo=correo)
-            codigo = "{:06d}".format(random.randint(0, 999999))
 
+            # Verificar si ya hay un código activo en los últimos 10 minutos
+            codigo_activo = CodigoRecuperacion.objects.filter(
+                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=10)
+            ).exists()
+
+            if codigo_activo:
+                return Response({"error": "Ya se envió un código recientemente. Espere antes de solicitar otro."},
+                                status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+            # Generar código
+            codigo = ''.join(random.choices(string.digits, k=6))
             CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo)
 
-            asunto = "Código de recuperación"
-            mensaje = f"Tu código de recuperación es: {codigo}\nEste código expirará en 10 minutos."
-            email_desde = settings.DEFAULT_FROM_EMAIL
-            send_mail(asunto, mensaje, email_desde, [correo])
+            # Aquí deberías enviar el correo real
+            print(f"Enviar este código a {correo}: {codigo}")
 
-            return Response({"mensaje": "Código enviado al correo."})
+            return Response({"mensaje": "Código enviado al correo."}, status=status.HTTP_200_OK)
+
         except Usuario.DoesNotExist:
-            return Response({"error": "No existe un usuario con ese correo."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
+    # --- VERIFICAR CÓDIGO ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def verificar_codigo(self, request):
         correo = request.data.get('correo')
         codigo = request.data.get('codigo')
 
-        if not correo or not codigo:
-            return Response({"error": "Correo y código son requeridos."}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             usuario = Usuario.objects.get(correo=correo)
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
 
-        try:
-            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario, codigo=codigo).latest('creado')
-        except CodigoRecuperacion.DoesNotExist:
-            return Response({"error": "Código inválido."}, status=status.HTTP_400_BAD_REQUEST)
+            if codigo_obj.intentos >= 3:
+                return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
 
-        if codigo_obj.intentos >= 3:
-            return Response({"error": "Has superado el número máximo de intentos."}, status=status.HTTP_403_FORBIDDEN)
+            if codigo_obj.codigo != codigo:
+                codigo_obj.intentos += 1
+                codigo_obj.save()
+                return Response({"error": "Código incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if codigo_obj.esta_expirado():
-            return Response({"error": "El código ha expirado."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"mensaje": "Código válido"}, status=status.HTTP_200_OK)
 
-        return Response({"mensaje": "Código verificado correctamente."}, status=status.HTTP_200_OK)
+        except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
+            return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
 
+    # --- RESET PASSWORD ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def reset_password(self, request):
         correo = request.data.get('correo')
         codigo = request.data.get('codigo')
-        nueva_contrasena = request.data.get('contrasena')
-
-        if not all([correo, codigo, nueva_contrasena]):
-            return Response({"error": "Faltan datos para restablecer la contraseña."}, status=status.HTTP_400_BAD_REQUEST)
+        nueva_contrasena = request.data.get('nueva_contrasena')
 
         try:
             usuario = Usuario.objects.get(correo=correo)
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
+
+            if codigo_obj.intentos >= 3:
+                return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
+
+            if codigo_obj.codigo != codigo:
+                codigo_obj.intentos += 1
+                codigo_obj.save()
+                return Response({"error": "Código incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
+
+            usuario.set_password(nueva_contrasena)
+            usuario.save()
+            codigo_obj.delete()
+
+            return Response({"mensaje": "Contraseña restablecida correctamente"}, status=status.HTTP_200_OK)
+
+        except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
+            return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
+
+from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework import serializers
+from .models import Usuario
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    correo = serializers.EmailField()
+    permission_classes = [AllowAny]
+
+    def validate(self, attrs):
+        correo = attrs.get("correo")
+        password = attrs.get("password")
 
         try:
-            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
-        except CodigoRecuperacion.DoesNotExist:
-            return Response({"error": "Código inválido."}, status=status.HTTP_400_BAD_REQUEST)
+            user = Usuario.objects.get(correo=correo)
+        except Usuario.DoesNotExist:
+            raise AuthenticationFailed("Usuario no encontrado.")
 
-        if codigo_obj.intentos >= 3:
-            return Response({"error": "Has superado el número máximo de intentos. Solicita un nuevo código."}, status=status.HTTP_403_FORBIDDEN)
+        if not user.check_password(password):
+            raise AuthenticationFailed("Contraseña incorrecta.")
 
-        if codigo_obj.esta_expirado():
-            return Response({"error": "El código ha expirado."}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_active:
+            raise AuthenticationFailed("Cuenta inactiva.")
 
-        if codigo_obj.codigo != codigo:
-            codigo_obj.intentos += 1
-            codigo_obj.save()
-            return Response({"error": f"Código incorrecto. Intentos restantes: {3 - codigo_obj.intentos}"}, status=status.HTTP_400_BAD_REQUEST)
+        refresh = RefreshToken.for_user(user)
 
-        usuario.set_password(nueva_contrasena)
-        usuario.save()
-        CodigoRecuperacion.objects.filter(usuario=usuario).delete()
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'usuario': {
+                'id': user.idUsuario,
+                'nombre': user.nombre,
+                'rol': user.rol.nombre,
+            }
+        }
 
-        return Response({"mensaje": "Contraseña restablecida correctamente."}, status=status.HTTP_200_OK)
-    
+#Preparacion para actualizar perfil con token de cliente
+class MiPerfilView(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated, IsCliente, IsAdmin, IsAdminWriteClienteRead]
+
+    def list(self, request):
+        serializer = UsuarioSerializer(request.user)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        serializer = UsuarioSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class ProveedorView(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer
     queryset = Proveedor.objects.all()
-    
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     queryset = Producto.objects.all()
     parser_classes = (MultiPartParser, FormParser)  # Soportar archivos en request
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def update(self, request, pk=None):
         print("Datos recibidos en update:", request.data)  # Log de datos recibidos
@@ -198,7 +297,7 @@ class ProductoView(viewsets.ModelViewSet):
 class GrupoTallaViewSet(viewsets.ModelViewSet):
     serializer_class = GrupoTallaSerializer
     queryset = GrupoTalla.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -234,7 +333,7 @@ class GrupoTallaViewSet(viewsets.ModelViewSet):
 class TallaViewSet(viewsets.ModelViewSet):
     serializer_class = TallaSerializer
     queryset = Talla.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -277,7 +376,7 @@ class InventarioView(viewsets.ModelViewSet):
         'producto__nombre',
         'talla__nombre'
     )
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_serializer_class(self):
         if self.action == 'inventario_agrupado':
@@ -902,26 +1001,31 @@ class InventarioView(viewsets.ModelViewSet):
 class MovimientoView(viewsets.ModelViewSet):
     serializer_class = MovimientoSerializer
     queryset = Movimiento.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class PedidoView(viewsets.ModelViewSet):
     serializer_class = PedidoSerializer
     queryset = Pedido.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class PedidoProductoView(viewsets.ModelViewSet):
     serializer_class = PedidoProductoSerializer
     queryset = PedidoProducto.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class PagoView(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
     queryset = Pago.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class TipoPagoView(viewsets.ModelViewSet):
     serializer_class = TipoPagoSerializer
     queryset = TipoPago.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
     
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [AllowAny]  # Permitimos acceso sin autenticación
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente]  # Por definir
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1076,7 +1180,7 @@ class CarritoView(viewsets.ModelViewSet):
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
-    permission_classes = [AllowAny]  # Permitimos acceso sin autenticación
+    permission_classes = [IsAuthenticated, IsAdmin, IsCliente]  # Por definir
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1087,7 +1191,7 @@ class CarritoItemView(viewsets.ModelViewSet):
 
 class EstadoCarritoView(viewsets.ModelViewSet):
     serializer_class = EstadoCarritoSerializer
-    permission_classes = [AllowAny]  # Permitimos acceso sin autenticación
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente]  # Por definir
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1100,6 +1204,7 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Por definir
 
     def perform_create(self, serializer):
         try:
