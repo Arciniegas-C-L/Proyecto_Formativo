@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,7 +15,7 @@ import { RolFormPage } from "./pages/RolFormPage.jsx";
 import { InventarioPage } from "./pages/InventarioPage.jsx";
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
 import {ProveedoresRegistradosPage} from "./pages/ProvedoresRegistradosPage.jsx";
-import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js"
+import { deleteProveedor } from "./api/Proveedor.api.js"
 import { CategoriasPage } from './pages/Categoriaspage'
 import { ListaProductosPage } from './pages/ListaproductosPage.jsx'
 import { ProductosFormPage } from './pages/ProductosFormPage.jsx'
@@ -162,7 +162,7 @@ function AppContent() {
         <Route
           path="/categorias"
           element={
-            <RutaPrivada role={["cliente", "administrador"]}>
+            <RutaPrivada role={[ "administrador"]}>
               <CategoriasPage />
             </RutaPrivada>
           }

@@ -213,7 +213,6 @@ export function Catalogo() {
                           <strong>{tallaSeleccionada[producto.id].stock}</strong>
                         </div>
                       )}
-
                       <button className="btn btn-dark mt-auto">Agregar al carrito</button>
                     </div>
                   </div>

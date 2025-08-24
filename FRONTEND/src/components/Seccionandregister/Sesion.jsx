@@ -1,6 +1,6 @@
 // src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import saludo from '../../assets/images/saludo.webp';
 import bienvenida from '../../assets/images/bienvenida.gif';
 import '../../assets/css/sesion.css';
@@ -12,7 +12,6 @@ export function Sesion() {
   const { guardarSesion } = auth;
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
 
   const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
   const handleSignUpClick = () => containerRef.current?.classList.add('toggle');
@@ -40,8 +39,8 @@ export function Sesion() {
 
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
 
-      if (data?.rol === 'administrador') navigate('/admin');
-      else navigate('/catalogo');
+      // ✅ Redirige a Home y recarga todo el DOM para aplicar cambios en el Header
+      window.location.replace('/');
     } catch (error) {
       const backend = error?.response?.data;
       const errorMsg =
@@ -112,7 +111,7 @@ export function Sesion() {
             <div className="container-input">
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
-            <Link to="/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
+            <Link to="/sesion/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? 'Procesando...' : 'INICIAR SESIÓN'}
             </button>
