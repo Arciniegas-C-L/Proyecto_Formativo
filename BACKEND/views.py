@@ -1165,39 +1165,53 @@ class CarritoView(viewsets.ModelViewSet):
             talla_id = request.data.get('talla')
             cantidad = int(request.data.get('cantidad', 1))
 
+            from .models import Inventario, CarritoItem
             # Buscar inventario correspondiente
-            from .models import Inventario
             inventario = None
             if talla_id:
                 inventario = Inventario.objects.filter(producto_id=producto_id, talla_id=talla_id).first()
             else:
                 inventario = Inventario.objects.filter(producto_id=producto_id).first()
 
+            # Buscar si ya existe el item en el carrito
+            filtro_item = {'carrito': carrito, 'producto_id': producto_id}
+            if talla_id:
+                filtro_item['talla_id'] = talla_id
+            item_existente = CarritoItem.objects.filter(**filtro_item).first()
+
+            cantidad_total = cantidad
+            if item_existente:
+                cantidad_total = item_existente.cantidad + cantidad
+
             if inventario:
                 stock_disponible = inventario.stock_talla if hasattr(inventario, 'stock_talla') else inventario.cantidad
-                if cantidad > stock_disponible:
+                if cantidad_total > stock_disponible:
                     return Response(
-                        {"error": f"No hay suficiente stock disponible. Stock actual: {stock_disponible}, Cantidad solicitada: {cantidad}"},
+                        {"error": f"No hay suficiente stock disponible. Stock actual: {stock_disponible}, Cantidad solicitada: {cantidad_total}"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                # Descontar stock
+                # Descontar solo la cantidad nueva
                 inventario.stock_talla = stock_disponible - cantidad
                 inventario.save()
 
-            # Crear el serializer con los datos
-            serializer = CarritoItemCreateSerializer(data={
-                'carrito': carrito.idCarrito,
-                'producto': producto_id,
-                'cantidad': cantidad,
-                'talla': talla_id
-            })
+            # Crear o actualizar el item en el carrito
+            if item_existente:
+                item_existente.cantidad += cantidad
+                item_existente.save()
+            else:
+                serializer = CarritoItemCreateSerializer(data={
+                    'carrito': carrito.idCarrito,
+                    'producto': producto_id,
+                    'cantidad': cantidad,
+                    'talla': talla_id
+                })
+                if serializer.is_valid():
+                    serializer.save()
+                else:
+                    print("Errores de validación:", serializer.errors)  # Log para debug
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            if serializer.is_valid():
-                serializer.save()
-                return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
-
-            print("Errores de validación:", serializer.errors)  # Log para debug
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
 
         except Exception as e:
             print("Error al agregar producto:", str(e))  # Log para debug
