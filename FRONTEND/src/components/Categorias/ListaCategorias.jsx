@@ -52,7 +52,7 @@ const guardarCategoria = async (cat) => {
   try {
     await updateCategoria(cat.idCategoria, {
       nombre: cat.nombre,
-      estado: cat.estado,
+      estado: Boolean(cat.estado),
     });
     alert("Categoría actualizada correctamente");
     setModoEdicionCat((prev) => ({ ...prev, [cat.idCategoria]: false }));
@@ -68,8 +68,9 @@ const guardarSubcategoria = async (catId, sub) => {
   try {
     await updateSubcategoria(sub.idSubcategoria, {
       nombre: sub.nombre,
-      estado: sub.estado,
-      categoria: catId,
+      estado: Boolean(sub.estado),
+      stockMinimo: parseInt(sub.stockMinimo) || 0,
+      categoria: parseInt(catId),
     });
     alert("Subcategoría actualizada correctamente");
     setModoEdicionSub((prev) => ({ ...prev, [sub.idSubcategoria]: false }));
@@ -85,40 +86,39 @@ const handleSubPageChange = (catId, newPage) => {
   setSubPages((prev) => ({ ...prev, [catId]: newPage }));
 };
 
-
   return (
     <div className="contenedor-categorias">
       <h3 className="titulo-categorias">Listado de Categorías y Subcategorías</h3>
 
-      {categoriasEditadas.length === 0 ? (
+      {categoriasEdit.length === 0 ? (
         <p className="mensaje-vacio">No hay categorías registradas</p>
       ) : (
         <div className="contenedor-tarjetas">
-          {categoriasEditadas.map(cat => (
+          {categoriasEdit.map(cat => (
             <div key={cat.idCategoria} className="tarjeta-categoria">
               <div className="header-tarjeta">
                 <input
                   type="text"
                   className="input-categoria"
                   value={cat.nombre}
-                  disabled={!editarCategoria[cat.idCategoria]}
-                  onChange={e => cambiarCategoria(cat.idCategoria, "nombre", e.target.value)}
+                  disabled={!modoEdicionCat[cat.idCategoria]}
+                  onChange={e => handleCategoriaChange(cat.idCategoria, "nombre", e.target.value)}
                 />
                 <label className="label-check">
                   <input
                     type="checkbox"
                     className="checkbox"
                     checked={cat.estado}
-                    disabled={!editarCategoria[cat.idCategoria]}
-                    onChange={e => cambiarCategoria(cat.idCategoria, "estado", e.target.checked)}
+                    disabled={!modoEdicionCat[cat.idCategoria]}
+                    onChange={e => handleCategoriaChange(cat.idCategoria, "estado", e.target.checked)}
                   />
                   Activo
                 </label>
                 <div className="grupo-botones">
-                  {!editarCategoria[cat.idCategoria] ? (
+                  {!modoEdicionCat[cat.idCategoria] ? (
                     <button
                       className="btn-editar"
-                      onClick={() => setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: true }))}
+                      onClick={() => setModoEdicionCat(prev => ({ ...prev, [cat.idCategoria]: true }))}
                     >
                       Editar
                     </button>
@@ -126,7 +126,7 @@ const handleSubPageChange = (catId, newPage) => {
                     <>
                       <button
                         className="btn-cancelar"
-                        onClick={() => setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: false }))}
+                        onClick={() => setModoEdicionCat(prev => ({ ...prev, [cat.idCategoria]: false }))}
                       >
                         Cancelar
                       </button>
@@ -140,14 +140,14 @@ const handleSubPageChange = (catId, newPage) => {
                   )}
                   <button
                     className="btn-subcategorias"
-                    onClick={() => setMostrarSub(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))}
+                    onClick={() => setMostrarSubcategorias(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))}
                   >
-                    {mostrarSub[cat.idCategoria] ? "Ocultar Subcategorías" : "Mostrar Subcategorías"}
+                    {mostrarSubcategorias[cat.idCategoria] ? "Ocultar Subcategorías" : "Mostrar Subcategorías"}
                   </button>
                 </div>
               </div>
 
-              {mostrarSub[cat.idCategoria] && (
+              {mostrarSubcategorias[cat.idCategoria] && (
                 <div className="subcategorias">
                   {cat.subcategorias.length > 0 ? (
                     cat.subcategorias.map(sub => (
@@ -156,24 +156,24 @@ const handleSubPageChange = (catId, newPage) => {
                           type="text"
                           className="input-subcategoria"
                           value={sub.nombre}
-                          disabled={!editarSubcategoria[sub.idSubcategoria]}
-                          onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "nombre", e.target.value)}
+                          disabled={!modoEdicionSub[sub.idSubcategoria]}
+                          onChange={e => handleSubcategoriaChange(cat.idCategoria, sub.idSubcategoria, "nombre", e.target.value)}
                         />
                         <label className="label-check">
                           <input
                             type="checkbox"
                             className="checkbox"
                             checked={sub.estado}
-                            disabled={!editarSubcategoria[sub.idSubcategoria]}
-                            onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "estado", e.target.checked)}
+                            disabled={!modoEdicionSub[sub.idSubcategoria]}
+                            onChange={e => handleSubcategoriaChange(cat.idCategoria, sub.idSubcategoria, "estado", e.target.checked)}
                           />
                           Activo
                         </label>
                         <div className="grupo-botones">
-                          {!editarSubcategoria[sub.idSubcategoria] ? (
+                          {!modoEdicionSub[sub.idSubcategoria] ? (
                             <button
                               className="btn-editar"
-                              onClick={() => setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: true }))}
+                              onClick={() => setModoEdicionSub(prev => ({ ...prev, [sub.idSubcategoria]: true }))}
                             >
                               Editar
                             </button>
@@ -181,7 +181,7 @@ const handleSubPageChange = (catId, newPage) => {
                             <>
                               <button
                                 className="btn-cancelar"
-                                onClick={() => setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: false }))}
+                                onClick={() => setModoEdicionSub(prev => ({ ...prev, [sub.idSubcategoria]: false }))}
                               >
                                 Cancelar
                               </button>

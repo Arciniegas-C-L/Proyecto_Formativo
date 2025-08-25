@@ -12,6 +12,7 @@ export const agregarProducto = (id, data) => {
   const requestData = {
     producto: parseInt(data.producto),
     cantidad: parseInt(data.cantidad),
+    talla: data.talla ? parseInt(data.talla) : undefined,
   };
   return api.post(`carrito/${id}/agregar_producto/`, requestData);
 };

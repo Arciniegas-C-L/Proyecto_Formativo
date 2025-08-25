@@ -7,6 +7,7 @@ import {
   updateTalla,
   deleteTalla,
   cambiarEstadoTalla,
+  agregarTallaAProductosExistentes,
 } from "../../api/Talla.api.js";
 import { getAllGruposTalla } from "../../api/GrupoTalla.api.js";
 
@@ -14,7 +15,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import "../../assets/css/Tallas/Tallas.css";
-import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaBoxes } from "react-icons/fa";
 
 export const Tallas = () => {
   const navigate = useNavigate();
@@ -32,6 +33,11 @@ export const Tallas = () => {
   // ---- estados para eliminar ----
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [tallaToDelete, setTallaToDelete] = useState(null);
+
+  // ---- estados para agregar talla a productos existentes ----
+  const [openAgregarDialog, setOpenAgregarDialog] = useState(false);
+  const [tallaToAdd, setTallaToAdd] = useState(null);
+  const [loadingAgregar, setLoadingAgregar] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -177,6 +183,52 @@ export const Tallas = () => {
     }
   };
 
+  // --------------- Agregar talla a productos existentes ---------------
+  const handleAgregarAProductosClick = (talla) => {
+    setTallaToAdd(talla);
+    setOpenAgregarDialog(true);
+  };
+
+  const confirmAgregarAProductos = async () => {
+    if (!tallaToAdd) return;
+    
+    try {
+      setLoadingAgregar(true);
+      const id = tallaToAdd.id ?? tallaToAdd.idTalla ?? tallaToAdd.id_talla;
+      const response = await agregarTallaAProductosExistentes(id);
+      
+      // Mostrar mensaje detallado del resultado
+      const { mensaje, estadisticas, inventarios_creados, inventarios_existentes } = response;
+      
+      if (estadisticas.inventarios_creados > 0) {
+        toast.success(
+          `${mensaje}. Se crearon ${estadisticas.inventarios_creados} nuevos registros de inventario para ${estadisticas.productos_procesados} productos.`,
+          { autoClose: 5000 }
+        );
+      } else if (estadisticas.inventarios_existentes > 0) {
+        toast.info(
+          `${mensaje}. Todos los productos ya tenían esta talla asignada (${estadisticas.inventarios_existentes} registros existentes).`,
+          { autoClose: 5000 }
+        );
+      } else {
+        toast.warning(
+          `${mensaje}. No se encontraron productos que usen el grupo de tallas de esta talla.`,
+          { autoClose: 5000 }
+        );
+      }
+      
+      setOpenAgregarDialog(false);
+      setTallaToAdd(null);
+      
+    } catch (err) {
+      const errorMessage = err?.response?.data?.error || 'Error al agregar la talla a productos existentes';
+      toast.error(errorMessage);
+      console.error('Error:', err);
+    } finally {
+      setLoadingAgregar(false);
+    }
+  };
+
   // --------------- Render ----------------
   return (
     <div className="lista-tallas-container">
@@ -227,6 +279,15 @@ export const Tallas = () => {
                       <button className="btn-eliminar" onClick={() => handleDeleteClick(talla)}>
                         <FaTrash />
                       </button>
+                      {talla.estado && (
+                        <button 
+                          className="btn-agregar-productos" 
+                          onClick={() => handleAgregarAProductosClick(talla)}
+                          title="Agregar a productos existentes"
+                        >
+                          <FaBoxes />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

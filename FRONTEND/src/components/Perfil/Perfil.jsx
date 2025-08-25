@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../assets/css/Perfil.css';
 import { fetchUsuario, updateUsuario } from "../../api/Usuario.api";
 
 export function Perfil() {
+    const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('datos'); // Ahora muestra Datos Personales primero
     const [avatarSeed, setAvatarSeed] = useState('');
     const [avatarOptions, setAvatarOptions] = useState({});
@@ -114,7 +116,7 @@ export function Perfil() {
             mouth: toArrayParam([validOptions.mouth]),
             facialHair: toArrayParam([validOptions.facialHair]),
             facialHairColor: toArrayParam([validOptions.facialHairColor]),
-            facialHairProbability: 28,
+            facialHairProbability: 0,
             skinColor: toArrayParam([validOptions.skinColor]),
             size: 200
         });
@@ -213,7 +215,7 @@ export function Perfil() {
                         <button onClick={() => setActiveSection('datos')}>Datos Personales</button>
                         <button onClick={() => setActiveSection('pedidos')}>Pedidos</button>
                         <button onClick={() => setActiveSection('config')}>Configuraciones</button>
-                        <button>Salir</button>
+                        <button onClick={() => navigate('/')}>Salir</button>
                     </div>
                 </div>
                 <div className="mostrar-opciones">
@@ -241,8 +243,6 @@ export function Perfil() {
                                 <button onClick={() => { setActiveCategory('eyes'); }}>👀 Ojos</button>
                                 <button onClick={() => { setActiveCategory('eyebrows'); }}>👁️ Cejas</button>
                                 <button onClick={() => { setActiveCategory('mouth'); }}>👄 Boca</button>
-                                <button onClick={() => { setActiveCategory('facialHair'); }}>🧔 Barba</button>
-                                <button onClick={() => { setActiveCategory('facialHairColor'); }}>🎨 Color Barba</button>
                                 <button onClick={() => { setActiveCategory('skinColor'); }}>🖐️ Piel</button>
                             </div>
 
@@ -322,6 +322,24 @@ export function Perfil() {
                         <div className="config-section">
                             <div className="titulo-opciones">
                                 <h3>Configuraciones</h3>
+                            </div>
+                            <div className="config-list">
+                                <div className="config-item">
+                                    <h4>Cambiar contraseña</h4>
+                                    <button onClick={() => alert('Funcionalidad de cambio de contraseña próximamente')}>Cambiar contraseña</button>
+                                </div>
+                                <div className="config-item">
+                                    <h4>Gestión de direcciones</h4>
+                                    <button onClick={() => alert('Gestión de direcciones próximamente')}>Administrar direcciones</button>
+                                </div>
+                                <div className="config-item">
+                                    <h4>Métodos de pago</h4>
+                                    <button onClick={() => alert('Gestión de métodos de pago próximamente')}>Administrar métodos de pago</button>
+                                </div>
+                                <div className="config-item">
+                                    <h4>Eliminar cuenta</h4>
+                                    <button style={{color: 'red'}} onClick={() => alert('Funcionalidad para eliminar cuenta próximamente')}>Eliminar cuenta</button>
+                                </div>
                             </div>
                         </div>
                     )}

@@ -1,0 +1,67 @@
+.producto-recomendado-card {
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(157, 78, 221, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1.5px solid #e0e0e0;
+  position: relative;
+}
+
+.producto-recomendado-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 12px 32px rgba(157, 78, 221, 0.15);
+  border-color: #9d4edd;
+}
+
+.producto-recomendado-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: linear-gradient(45deg, #f8f9ff, #ffffff);
+}
+
+.producto-recomendado-body {
+  padding: 1rem 1.2rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.producto-recomendado-nombre {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #9d4edd;
+  margin-bottom: 0.5rem;
+}
+
+.producto-recomendado-precio {
+  font-size: 1.1rem;
+  color: #222;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.producto-recomendado-descripcion {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 0.7rem;
+}
+
+.producto-recomendado-btn {
+  background: linear-gradient(45deg, #F26BE2, #00D4FF);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-weight: 600;
+  margin-top: auto;
+  transition: background 0.2s;
+}
+
+.producto-recomendado-btn:hover {
+  background: linear-gradient(45deg, #9D4EDD, #00D4FF);
+}

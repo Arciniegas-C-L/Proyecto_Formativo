@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import React from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { Header } from "./components/Singlepage/Header.jsx";
+import AdminDashboard from "./components/Admin/AdminDashboard.jsx";
 import { Footer } from "./components/Singlepage/Footer.jsx";
 import { Home } from "./components/Singlepage/Home.jsx";
 import { SesionPage } from "./pages/SesionPage.jsx";
@@ -15,91 +16,53 @@ import { RolFormPage } from "./pages/RolFormPage.jsx";
 import { InventarioPage } from "./pages/InventarioPage.jsx";
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
 import {ProveedoresRegistradosPage} from "./pages/ProvedoresRegistradosPage.jsx";
-import { fetchProveedores, deleteProveedor } from "./api/Proveedor.api.js"
 import { CategoriasPage } from './pages/Categoriaspage'
 import { ListaProductosPage } from './pages/ListaproductosPage.jsx'
 import { ProductosFormPage } from './pages/ProductosFormPage.jsx'
 import { CatalogoPage } from './pages/Catalogopage'
-//import { Carrito } from './pages/Carrito'
+import { CarritoPage } from './pages/Carritopage'
 import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
-import { Perfil } from "./components/Perfil/Perfil.jsx";
+import { PerfilPage } from "./pages/PerfilPage.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
-import { AuthProvider, useAuth } from "./context/AuthContext.jsx"; // 👈 importamos useAuth
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx"; 
 
 function AppContent() {
-  const { token } = useAuth(); // 👈 accedemos al estado de sesión
-  const [proveedores, setProveedores] = useState([]);
+  const location = useLocation();
+  const { autenticado, rol } = useAuth();
 
-  // useEffect(() => {
-//   const cargarProveedores = async () => {
-//     if (!token) return;
-
-//     try {
-//       const response = await fetchProveedores(token);
-//       setProveedores(response.data);
-//     } catch (error) {
-//       console.error("Error al cargar proveedores:", error);
-//     }
-//   };
-
-//   cargarProveedores();
-// }, [token]);
-
-
-  const handleEliminar = async (id) => {
-    try {
-      await deleteProveedor(id);
-      setProveedores(proveedores.filter((prov) => prov.id !== id));
-    } catch (error) {
-      console.error("Error al eliminar proveedor:", error);
-    }
-  };
-
-  const handleEditar = (proveedor) => {
-    console.log("Editar proveedor", proveedor);
-  };
+  const esAdminAutenticado = autenticado && rol === "administrador";
+  
+  // No mostrar en la página de sesión o de recuperación
+  const noEsPaginaDeSesion =
+    location.pathname !== "/sesion" &&
+    location.pathname !== "/sesion/recuperar_contrasena";
 
   return (
     <>
       <Header />
-
+      
+      {/* Renderiza el dashboard si el usuario es admin y no está en la página de sesión */}
+      {esAdminAutenticado && noEsPaginaDeSesion && <AdminDashboard />}
+      
       <Routes>
         {/* Públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/sesion" element={<SesionPage />} />
         <Route path="/sesion/recuperar_contrasena" element={<SesionRecuperacionPage />} />
+        <Route path="/catalogo" element={<CatalogoPage />} />
         <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
+        <Route path="/carrito" element={<CarritoPage />} />
 
         {/* Protegidas por rol */}
-        <Route
-          path="/catalogo"
-          element={
-            <RutaPrivada role="cliente">
-              <CatalogoPage />
-            </RutaPrivada>
-          }
-        />
         <Route
           path="/proveedores"
           element={
             <RutaPrivada role="administrador">
               <AdminProvedoresPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/administrador"
-          element={
-            <RutaPrivada role="administrador">
-              <ProveedoresRegistradosPage
-                proveedores={proveedores}
-                onEliminar={handleEliminar}
-                onEditar={handleEditar}
-              />
             </RutaPrivada>
           }
         />
@@ -188,6 +151,14 @@ function AppContent() {
           element={
             <RutaPrivada role={["cliente", "administrador"]}>
               <PerfilPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/carrito"
+          element={
+            <RutaPrivada role={["cliente", "administrador"]}>
+              <CarritoPage />
             </RutaPrivada>
           }
         />

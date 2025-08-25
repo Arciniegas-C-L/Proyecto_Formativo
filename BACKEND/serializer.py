@@ -138,6 +138,9 @@ class SubcategoriaSerializer(serializers.ModelSerializer):
             'grupo_talla_nombre',
             'tallas_disponibles'
         ]
+        extra_kwargs = {
+            'stockMinimo': {'required': False, 'default': 0}
+        }
 
     def get_tallas_disponibles(self, obj):
         if obj.grupoTalla:
@@ -145,8 +148,15 @@ class SubcategoriaSerializer(serializers.ModelSerializer):
         return []
 
     def validate_stockMinimo(self, value):
+        if value is None:
+            return 0
         if value < 0:
             raise serializers.ValidationError("El stock mínimo no puede ser negativo")
+        return value
+
+    def validate_categoria(self, value):
+        if not value:
+            raise serializers.ValidationError("La categoría es requerida")
         return value
 
 class GrupoTallaSerializer(serializers.ModelSerializer):
@@ -228,6 +238,7 @@ class ProductoSerializer(serializers.ModelSerializer):
     def get_inventario_tallas(self, obj):
         inventarios = Inventario.objects.filter(producto=obj).select_related('talla')
         return [{
+            'idTalla': inventario.talla.id,
             'talla': inventario.talla.nombre,
             'stock': inventario.stock_talla
         } for inventario in inventarios]
@@ -386,12 +397,14 @@ class Meta:
     fields = ['idtipoPago', 'nombre', 'monto', 'pago']
 
 class CarritoItemSerializer(serializers.ModelSerializer):
+
     producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
     producto_id = serializers.PrimaryKeyRelatedField(
         queryset=Producto.objects.all(),
         source='producto',
         write_only=True
     )
+    talla = TallaSerializer(read_only=True)
 
     class Meta:
         model = CarritoItem
@@ -400,6 +413,7 @@ class CarritoItemSerializer(serializers.ModelSerializer):
             'producto',
             'producto_id',
             'cantidad',
+            'talla',
             'precio_unitario',
             'subtotal',
             'fechaAgregado'
@@ -462,7 +476,7 @@ class CarritoCreateSerializer(serializers.ModelSerializer):
 class CarritoItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarritoItem
-        fields = ['carrito', 'producto', 'cantidad']
+        fields = ['carrito', 'producto', 'cantidad', 'talla']
 
     def validate(self, data):
         # Validar que la cantidad sea positiva
@@ -471,26 +485,41 @@ class CarritoItemCreateSerializer(serializers.ModelSerializer):
         
         # Validar que haya suficiente stock
         producto = data['producto']
-        inventario = Inventario.objects.filter(producto=producto).first()
+        talla = data.get('talla')
+        
+        # Buscar inventario por producto y talla
+        if talla:
+            inventario = Inventario.objects.filter(producto=producto, talla=talla).first()
+        else:
+            inventario = Inventario.objects.filter(producto=producto).first()
         
         # Si no hay registro de inventario, asumimos que hay stock disponible
         if not inventario:
             return data
             
         # Si hay registro de inventario, validamos el stock
-        # Verificar si ya existe el producto en el carrito
-        carrito_item_existente = CarritoItem.objects.filter(
-            carrito=data['carrito'],
-            producto=producto
-        ).first()
+        # Verificar si ya existe el producto en el carrito (con la misma talla si se especifica)
+        filtro_existente = {
+            'carrito': data['carrito'],
+            'producto': producto
+        }
+        
+        # Si se especifica talla, incluirla en el filtro
+        if talla:
+            filtro_existente['talla'] = talla
+        
+        carrito_item_existente = CarritoItem.objects.filter(**filtro_existente).first()
         
         cantidad_total = data['cantidad']
         if carrito_item_existente:
             cantidad_total += carrito_item_existente.cantidad
             
-        if cantidad_total > inventario.cantidad:
+        # Usar stock_talla en lugar de cantidad
+        stock_disponible = inventario.stock_talla if hasattr(inventario, 'stock_talla') else inventario.cantidad
+        
+        if cantidad_total > stock_disponible:
             raise serializers.ValidationError(
-                f"No hay suficiente stock disponible. Stock actual: {inventario.cantidad}, " +
+                f"No hay suficiente stock disponible. Stock actual: {stock_disponible}, " +
                 f"Cantidad en carrito: {carrito_item_existente.cantidad if carrito_item_existente else 0}, " +
                 f"Cantidad solicitada: {data['cantidad']}"
             )
@@ -499,11 +528,17 @@ class CarritoItemCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            # Intentar obtener el item existente
-            carrito_item = CarritoItem.objects.filter(
-                carrito=validated_data['carrito'],
-                producto=validated_data['producto']
-            ).first()
+            # Intentar obtener el item existente (con la misma talla si se especifica)
+            filtro_existente = {
+                'carrito': validated_data['carrito'],
+                'producto': validated_data['producto']
+            }
+            
+            # Si se especifica talla, incluirla en el filtro
+            if validated_data.get('talla'):
+                filtro_existente['talla'] = validated_data['talla']
+            
+            carrito_item = CarritoItem.objects.filter(**filtro_existente).first()
             
             if carrito_item:
                 # Si existe, actualizar la cantidad

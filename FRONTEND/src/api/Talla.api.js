@@ -31,3 +31,16 @@ export const getTallasByGrupo = (grupoId) => api.get(`talla/?grupo=${grupoId}`);
 
 // Obtener solo las tallas que están activas
 export const getTallasActivas = () => api.get('talla/?estado=true');
+
+// Agregar una talla nueva a todos los productos existentes que usen el mismo grupo de tallas
+export const agregarTallaAProductosExistentes = async (tallaId) => {
+  try {
+    const res = await api.post('talla/agregar_talla_a_productos_existentes/', {
+      talla_id: tallaId
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error al agregar talla a productos existentes:", error);
+    throw error;
+  }
+};

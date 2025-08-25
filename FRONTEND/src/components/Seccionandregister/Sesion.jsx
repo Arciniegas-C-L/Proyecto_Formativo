@@ -4,12 +4,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import saludo from '../../assets/images/saludo.webp';
 import bienvenida from '../../assets/images/bienvenida.gif';
 import '../../assets/css/sesion.css';
-import { auth } from '../../auth/authService';
+import { useAuth } from '../../context/AuthContext';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
 
 export function Sesion() {
-  const { guardarSesion } = auth;
+  const { login } = useAuth();
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export function Sesion() {
       const access = data?.token?.access || data?.access;
       const refresh = data?.token?.refresh || data?.refresh;
 
-      guardarSesion({
+      login({
         access,
         refresh,
         usuario: data?.usuario,
@@ -40,7 +40,7 @@ export function Sesion() {
 
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
 
-      if (data?.rol === 'administrador') navigate('/admin');
+      if (data?.rol === 'administrador') navigate('/administrador');
       else navigate('/catalogo');
     } catch (error) {
       const backend = error?.response?.data;

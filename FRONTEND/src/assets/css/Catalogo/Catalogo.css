@@ -1,0 +1,268 @@
+/* Contenedor principal */
+.catalogo-container {
+  background: linear-gradient(135deg, #fbd0f4 0%, #c3f1ff 100%);
+  padding: 20px;
+}
+
+/* Título */
+.catalogo-titulo {
+  font-size: 3.2rem;
+  background: linear-gradient(45deg, #F26BE2, #00D4FF, #9D4EDD);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+/* Filtros */
+.catalogo-container .col-md-3 {
+  min-height: 100%;
+}
+
+.filtros-container {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.filtros-container h5 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #444;
+}
+
+.filtros-container button {
+  width: 100%;
+}
+
+/* Productos */
+.catalogo-container .col-md-9 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.productos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* Tarjeta de producto */
+.producto-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.producto-card:hover {
+  transform: translateY(-3px);
+}
+
+.producto-imagen {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.producto-info {
+  padding: 15px;
+  flex: 1;
+}
+
+.producto-nombre {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+/* Botones + y - */
+.cantidad-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cantidad-display {
+  font-weight: bold;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Buscador */
+.catalogo-buscador input {
+  width: 100%;
+  max-width: 250px;
+  padding: 8px 12px;
+  border: 2px solid #f26be2;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.25s ease-in-out;
+  margin-top: 10px;
+  margin-right: 15px;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.catalogo-buscador input:focus {
+  border-color: #bf87ed;
+  box-shadow: 0 4px 12px rgba(191, 135, 237, 0.3);
+}
+
+/* Chips de filtros */
+.catalogo-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Chips de subcategoría */
+.chip-subcategoria {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f9f9f9; 
+  color: #444; 
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.chip-subcategoria:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+/* Chip activo de subcategoría */
+.chip-subcategoria.activo {
+  background-color: #bf87ed;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Chips de categoría */
+.chip-categoria {
+  display: inline-flex;
+  align-items: center;
+  background-color: #a0c4ff; 
+  color: #1a1a1a; 
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.chip-categoria:hover {
+  background-color: #88b5ff;
+  transform: translateY(-2px);
+}
+
+/* Chip activo de categoría */
+.chip-categoria.activo {
+  background-color: #6495ed; 
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Nombre del chip */
+.chip-nombre {
+  margin-right: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Botón de cerrar */
+.chip-cerrar {
+  cursor: pointer;
+  font-weight: bold;
+  padding-left: 4px;
+  color: #888;
+  transition: color 0.2s ease-in-out;
+}
+
+.chip-cerrar:hover {
+  color: #bf3fed;
+}
+
+/* Responsive base */
+@media (max-width: 768px) {
+  .catalogo-container .row {
+    flex-direction: column;
+  }
+
+  .catalogo-container .col-md-2,
+  .catalogo-container .col-md-10 {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  .catalogo-titulo {
+    font-size: 2rem;
+    text-align: center;
+  }
+
+  .catalogo-buscador input {
+    width: 100%;
+    max-width: 100%;
+    margin-right: 0;
+    margin-top: 10px;
+  }
+
+  .catalogo-chips-container {
+    gap: 8px;
+    justify-content: center;
+  }
+}
+
+/* Ajustes responsive extra para tablets */
+@media (max-width: 992px) {
+  .catalogo-titulo {
+    font-size: 2.5rem;
+  }
+
+  .chip-subcategoria,
+  .chip-categoria {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+
+  .chip-cerrar {
+    font-size: 13px;
+    padding-left: 3px;
+  }
+}
+
+/* Ajustes responsive extra para móviles muy pequeños */
+@media (max-width: 480px) {
+  .producto-card {
+    font-size: 0.9rem;
+  }
+
+  .producto-imagen {
+    height: 160px;
+  }
+
+  .chip-subcategoria,
+  .chip-categoria {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .chip-cerrar {
+    font-size: 12px;
+  }
+}

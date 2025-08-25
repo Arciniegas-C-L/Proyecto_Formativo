@@ -46,27 +46,20 @@ import {
   getTablaProductos,
   actualizarStockTallas
 } from "../../api/InventarioApi";
-import {updateTalla,createTalla} from "../../api/Talla.api";
 import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
-import { getAllGruposTalla, getTallasActivasByGrupo } from "../../api/GrupoTalla.api";
+import { getAllGruposTalla } from "../../api/GrupoTalla.api";
 
 // Constante para la URL base del backend
 const BACKEND_URL = "http://127.0.0.1:8000";
 
 const InventarioTabla = () => {
-  const [categorias, setCategorias] = useState([]);
-  const [subcategorias, setSubcategorias] = useState([]);
-  const [productos, setProductos] = useState([]);
   const [selectedCategoria, setSelectedCategoria] = useState(null);
   const [selectedSubcategoria, setSelectedSubcategoria] = useState(null);
   const [gruposTalla, setGruposTalla] = useState([]);
-  const [tallasActivas, setTallasActivas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState("categorias"); // categorias, subcategorias, productos
   const [currentData, setCurrentData] = useState(null);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [subcategoriaEnEdicion, setSubcategoriaEnEdicion] = useState(null);
-  const [openGrupoTallaDialog, setOpenGrupoTallaDialog] = useState(false);
   const [openStockDialog, setOpenStockDialog] = useState(false);
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [stockForm, setStockForm] = useState({});
@@ -159,7 +152,7 @@ const InventarioTabla = () => {
       const data = await getTablaCategorias();
       
       // Verificar si no hay categorías
-      if (!data.datos || data.datos.length === 0) {
+      if (!data || !data.datos || data.datos.length === 0) {
         setOpenNoCategoriasDialog(true);
         return;
       }
@@ -261,20 +254,6 @@ const InventarioTabla = () => {
     }
   };
 
-  const handleOpenGrupoTallaDialog = async (subcategoria) => {
-    setSubcategoriaEnEdicion(subcategoria);
-    setOpenGrupoTallaDialog(true);
-    if (subcategoria.grupoTalla) {
-      try {
-        const response = await getTallasActivasByGrupo(subcategoria.grupoTalla.idGrupoTalla);
-        setTallasActivas(response.data);
-      } catch (error) {
-        console.error('Error al cargar tallas activas:', error);
-        showSnackbar('Error al cargar tallas activas', 'error');
-      }
-    }
-  };
-
   const handleOpenStockDialog = (producto) => {
     setSelectedProducto(producto);
     const stockInicial = {};
@@ -286,12 +265,6 @@ const InventarioTabla = () => {
     setStockForm(stockInicial);
     setStockMinimoForm(stockMinimoInicial);
     setOpenStockDialog(true);
-  };
-
-  const handleCloseGrupoTallaDialog = () => {
-    setOpenGrupoTallaDialog(false);
-    setSubcategoriaEnEdicion(null);
-    setTallasActivas([]);
   };
 
   const handleCloseStockDialog = () => {
@@ -332,7 +305,7 @@ const InventarioTabla = () => {
       try {
         await updateGrupoTalla(subcategoria.id, nuevoGrupoId);
         showSnackbar('Grupo de talla actualizado correctamente', 'success');
-        await cargarDatos(); // Recargar datos
+        await cargarSubcategorias(selectedCategoria.id, selectedCategoria.nombre); // Recargar datos
       } catch (error) {
         // Si el error es porque ya tiene asignado ese grupo, mostrarlo como info
         if (error.message.includes('ya tiene asignado este grupo de talla')) {
@@ -369,13 +342,6 @@ const InventarioTabla = () => {
       [talla]: newValue
     }));
     setError(null);
-  };
-
-  const handleStockMinimoChange = (talla, value) => {
-    setStockMinimoForm(prev => ({
-      ...prev,
-      [talla]: parseInt(value) || 0
-    }));
   };
 
   const handleSaveStock = async () => {
@@ -681,7 +647,7 @@ const InventarioTabla = () => {
             </Typography>
           </Box>
           <Stack spacing={2}>
-            {Object.entries(selectedProducto?.stock_por_talla || {}).map(([talla, info]) => {
+            {Object.entries(selectedProducto?.stock_por_talla || {}).map(([talla]) => {
               const stockActualSinTalla = stockDistribuido - (parseInt(stockForm[talla]) || 0);
               const stockDisponible = stockTotal - stockActualSinTalla;
 
@@ -722,14 +688,6 @@ const InventarioTabla = () => {
     );
   };
 
-  const renderGrupoTallaValue = (grupoTalla) => {
-    if (!grupoTalla || typeof grupoTalla !== 'object') {
-      return 'Seleccionar grupo de tallas';
-    }
-    return grupoTalla.nombre || 'Grupo sin título';
-  };
-
-  
   const renderGrupoTallaSelect = (subcategoria) => {
     if (!subcategoria.grupoTalla) {
       return (
@@ -966,4 +924,4 @@ const InventarioTabla = () => {
   );
 };
 
-export default InventarioTabla; 
+export default InventarioTabla;
