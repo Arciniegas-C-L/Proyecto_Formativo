@@ -20,11 +20,11 @@ import { CategoriasPage } from './pages/Categoriaspage'
 import { ListaProductosPage } from './pages/ListaproductosPage.jsx'
 import { ProductosFormPage } from './pages/ProductosFormPage.jsx'
 import { CatalogoPage } from './pages/Catalogopage'
-//import { Carrito } from './pages/Carrito'
 import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import { PerfilPage } from "./pages/PerfilPage.jsx";
+import {Carritopage} from "./pages/Carritopage"
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -88,6 +88,14 @@ function AppContent() {
           element={
             <RutaPrivada role="administrador">
               <AdminProvedoresPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/carrito"
+          element={
+            <RutaPrivada role="cliente">
+              <Carritopage />
             </RutaPrivada>
           }
         />

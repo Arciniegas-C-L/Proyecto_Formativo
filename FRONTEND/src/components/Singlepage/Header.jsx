@@ -22,6 +22,7 @@ export function Header() {
         { path: "/", label: "Inicio", icon: "bi-house-door-fill" },
         { path: "/catalogo", label: "Catálogo", icon: "bi-bag-fill" },
         { path: "/perfil", label: "Perfil", icon: "bi-person-badge-fill" },
+        { path: "/carrito", label: "Carrito", icon: "bi-cart-fill" },
       ]);
     } else {
       setMenu([]); // admin se pinta abajo con dropdowns
