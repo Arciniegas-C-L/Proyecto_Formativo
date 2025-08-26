@@ -1,7 +1,9 @@
 // src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import saludo from "../../assets/images/saludo.webp";
+// Si realmente tienes otra imagen, podrías hacer:
+// import bienvenida from "../../assets/images/bienvenida.webp";
 import "../../assets/css/Seccionandregistrer/sesion.css";
 import { auth } from '../../auth/authService';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
@@ -37,8 +39,6 @@ export function Sesion() {
       });
 
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
-
-      // ✅ Redirige a Home y recarga todo el DOM para aplicar cambios en el Header
       window.location.replace('/');
     } catch (error) {
       const backend = error?.response?.data;
@@ -77,10 +77,8 @@ export function Sesion() {
       containerRef.current?.classList.remove('toggle');
     } catch (error) {
       console.error("Error completo:", error);
-
       const backend = error?.response?.data;
       const status = error?.response?.status;
-
       const errorMsg =
         backend?.mensaje ||
         backend?.error ||
@@ -89,7 +87,6 @@ export function Sesion() {
         (status === 500 && "Error interno del servidor") ||
         error.message ||
         "No se pudo registrar el usuario";
-
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -147,7 +144,8 @@ export function Sesion() {
         <div className="container-welcome">
           <div className="welcome-sign-up welcome">
             <h3>¡Bienvenido!</h3>
-            <img className="saludo-welcome" src={bienvenida} alt="Bienvenida" />
+            {/* Antes: src={bienvenida} (no existe) */}
+            <img className="saludo-welcome" src={saludo} alt="Bienvenida" />
             <p>Es un placer tenerte de regreso. Tu tienda favorita te estaba esperando. Ingresa y continúa donde lo dejaste.</p>
             <button className="button" onClick={handleSignUpClick}>Registrarse</button>
           </div>
