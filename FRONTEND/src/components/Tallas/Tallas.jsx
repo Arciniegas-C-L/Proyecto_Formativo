@@ -13,7 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/Tallas.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 
-const Tallas = () => {
+export function Tallas() {
   const location = useLocation();
   const navigate = useNavigate(); // opcional: úsalo para redirigir tras crear/editar/borrar
 
@@ -296,4 +296,3 @@ const Tallas = () => {
   );
 };
 
-export default Tallas;

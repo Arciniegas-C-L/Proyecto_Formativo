@@ -8,7 +8,7 @@ import {
   deleteProveedor,
 } from "../../api/Proveedor.api";
 import { useAuth } from "../../context/AuthContext";
-import "../../assets/css/ProveedorRegistro.css";
+import "../../assets/css/Proveedores/ProveedorRegistro.css";
 
 // Importación de íconos que se utilizan en los botones
 import {

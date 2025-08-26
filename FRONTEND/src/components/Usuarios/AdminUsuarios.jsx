@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
-  fetchUsuario,      // <- si tu API realmente es fetchUsuarios(), cámbialo aquí y abajo
-  createUsuario,     // <- asegúrate que exista en ../../api/Usuario.api.js
+  fetchUsuario,      
   updateUsuario,
 } from "../../api/Usuario.api.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -17,8 +16,8 @@ export function AdminUsuarios() {
     correo: "",
     password: "",
     telefono: "",
-    rol: "",          // usaremos "1" | "2" (string numérica) para el <select>
-    estado: "true",   // "true" | "false" como string para el <select>
+    rol: "",
+    estado: "true",
   });
   const [editingId, setEditingId] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState("todos");
@@ -27,7 +26,7 @@ export function AdminUsuarios() {
 
   const cargarUsuarios = async () => {
     try {
-      const res = await fetchUsuario(); // si tu función real es fetchUsuarios(), ajusta
+      const res = await fetchUsuario();
       const data = res?.data ?? res ?? [];
       setUsuarios(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -53,10 +52,10 @@ export function AdminUsuarios() {
     nombre: fd.nombre.trim(),
     apellido: fd.apellido.trim(),
     correo: fd.correo.trim(),
-    password: fd.password, // si es edición puedes omitirlo del payload si va vacío
+    password: fd.password,
     telefono: fd.telefono.trim(),
-    rol: parseInt(fd.rol, 10),           // backend espera idRol numérico (1, 2, ...)
-    estado: fd.estado === "true",        // string -> boolean
+    rol: parseInt(fd.rol, 10),
+    estado: fd.estado === "true",
   });
 
   const resetForm = () => {
@@ -83,19 +82,15 @@ export function AdminUsuarios() {
       }
 
       if (editingId) {
-        // Si no quieres cambiar password en edición cuando está vacío, puedes eliminarlo:
-        if (!payload.password) delete payload.password;
+        if (!payload.password) delete payload.password; // no forzar password vacío
         await updateUsuario(editingId, payload);
         alert("Usuario actualizado con éxito");
-      } else {
-        await createUsuario(payload);
-        alert("Usuario registrado con éxito");
       }
 
       resetForm();
       cargarUsuarios();
     } catch (error) {
-      console.error("Error al registrar/actualizar usuario:", error?.response?.data || error?.message);
+      console.error("Error al actualizar usuario:", error?.response?.data || error?.message);
       alert("Ocurrió un error al guardar.");
     }
   };
@@ -107,14 +102,14 @@ export function AdminUsuarios() {
       nombre: usuario?.nombre ?? "",
       apellido: usuario?.apellido ?? "",
       correo: usuario?.correo ?? "",
-      password: "", // no rellenamos password por seguridad
+      password: "",
       telefono: usuario?.telefono ?? "",
-      rol: String(usuario?.rolId ?? usuario?.rol ?? ""), // ajusta según lo que devuelva tu API
+      rol: String(usuario?.rolId ?? usuario?.rol ?? ""),
       estado: usuario?.estado ? "true" : "false",
     });
   };
 
-  // Cambiar estado activo/inactivo (toggle)
+  // Cambiar estado activo/inactivo
   const handleToggleEstado = async (usuario) => {
     try {
       const payload = {
@@ -144,7 +139,7 @@ export function AdminUsuarios() {
 
   if (!token || rol !== "administrador") {
     return <p className="text-center text-danger mt-5">Acceso no autorizado</p>;
-    }
+  }
 
   // ===================== RENDER ===================== //
   return (
@@ -171,109 +166,113 @@ export function AdminUsuarios() {
       </div>
 
       <div className="container mt-4">
-        <h3>{editingId ? "Editar Usuario" : "Registrar Usuario"}</h3>
-        <form onSubmit={handleSubmit}>
-          {/* Nombre */}
-          <div className="mb-3">
-            <label className="form-label">Nombre</label>
-            <input
-              type="text"
-              className="form-control"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <h3>{editingId ? "Editar Usuario" : "Selecciona un usuario"}</h3>
+        {editingId && (
+          <form onSubmit={handleSubmit}>
+            {/* Nombre */}
+            <div className="mb-3">
+              <label className="form-label">Nombre</label>
+              <input
+                type="text"
+                className="form-control"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          {/* Apellido */}
-          <div className="mb-3">
-            <label className="form-label">Apellido</label>
-            <input
-              type="text"
-              className="form-control"
-              name="apellido"
-              value={formData.apellido}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            {/* Apellido */}
+            <div className="mb-3">
+              <label className="form-label">Apellido</label>
+              <input
+                type="text"
+                className="form-control"
+                name="apellido"
+                value={formData.apellido}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          {/* Correo */}
-          <div className="mb-3">
-            <label className="form-label">Correo</label>
-            <input
-              type="email"
-              className="form-control"
-              name="correo"
-              value={formData.correo}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            {/* Correo */}
+            <div className="mb-3">
+              <label className="form-label">Correo</label>
+              <input
+                type="email"
+                className="form-control"
+                name="correo"
+                value={formData.correo}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          {/* Password */}
-          <div className="mb-3">
-            <label className="form-label">Contraseña {editingId ? "(deja vacío si no cambia)" : ""}</label>
-            <input
-              type="password"
-              className="form-control"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required={!editingId}
-            />
-          </div>
+            {/* Password */}
+            <div className="mb-3">
+              <label className="form-label">Contraseña (deja vacío si no cambia)</label>
+              <input
+                type="password"
+                className="form-control"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+              />
+            </div>
 
-          {/* Teléfono */}
-          <div className="mb-3">
-            <label className="form-label">Teléfono</label>
-            <input
-              type="text"
-              className="form-control"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            {/* Teléfono */}
+            <div className="mb-3">
+              <label className="form-label">Teléfono</label>
+              <input
+                type="text"
+                className="form-control"
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          {/* Rol */}
-          <div className="mb-3">
-            <label className="form-label">Rol</label>
-            <select
-              className="form-select"
-              name="rol"
-              value={formData.rol}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione un rol</option>
-              <option value="1">Administrador</option>
-              <option value="2">Usuario</option>
-            </select>
-          </div>
+            {/* Rol */}
+            <div className="mb-3">
+              <label className="form-label">Rol</label>
+              <select
+                className="form-select"
+                name="rol"
+                value={formData.rol}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Seleccione un rol</option>
+                <option value="1">Administrador</option>
+                <option value="2">Usuario</option>
+              </select>
+            </div>
 
-          {/* Estado */}
-          <div className="mb-3">
-            <label className="form-label">Estado</label>
-            <select
-              className="form-select"
-              name="estado"
-              value={formData.estado}
-              onChange={handleChange}
-              required
-            >
-              <option value="true">Activo</option>
-              <option value="false">Inactivo</option>
-            </select>
-          </div>
+            {/* Estado */}
+            <div className="mb-3">
+              <label className="form-label">Estado</label>
+              <select
+                className="form-select"
+                name="estado"
+                value={formData.estado}
+                onChange={handleChange}
+                required
+              >
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
 
-          {/* Botones */}
-          <button type="submit" className="btn btn-primary me-2">
-            {editingId ? "Actualizar" : "Registrar"}
-          </button>
-        </form>
+            {/* Botones */}
+            <button type="submit" className="btn btn-primary me-2">
+              Actualizar
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={resetForm}>
+              Cancelar
+            </button>
+          </form>
+        )}
 
         {/* Tabla de usuarios */}
         <div className="table-responsive mt-4">

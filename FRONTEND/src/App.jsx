@@ -19,12 +19,12 @@ import { deleteProveedor } from "./api/Proveedor.api.js"
 import { CategoriasPage } from './pages/Categoriaspage'
 import { ListaProductosPage } from './pages/ListaproductosPage.jsx'
 import { ProductosFormPage } from './pages/ProductosFormPage.jsx'
-import { CatalogoPage } from './pages/Catalogopage'
 import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import { PerfilPage } from "./pages/PerfilPage.jsx";
 import {Carritopage} from "./pages/Carritopage"
+import { Catalogopage } from "./pages/Catalogopage.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "../src/assets/css/Layout/Layout.css";
 
@@ -83,7 +83,7 @@ return (
           path="/catalogo"
           element={
             <RutaPrivada role="cliente">
-              <CatalogoPage />
+              <Catalogopage />
             </RutaPrivada>
           }
         />

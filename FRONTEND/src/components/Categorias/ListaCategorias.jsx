@@ -1,11 +1,9 @@
-// Catalogo.jsx
 import React, { useEffect, useState } from "react";
 import { getALLProductos } from "../../api/Producto.api"; // ⚠️ confirma nombre exacto
 import { getAllCategorias } from "../../api/Categoria.api";
 import { auth } from "../../auth/authService";
-import "../../assets/css/Catalogo/Catalogo.css"; // usa uno solo
-import FiltrosCatalogo from "./FiltrosCatalogo";
-import ProductoCard from "./ProductoCard";
+import "../../assets/css/Catalogo/Catalogo.css";
+import FiltrosCatalogo from "../Catalogo/FiltrosCatalogo";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Catalogo() {
@@ -143,11 +141,12 @@ export default function Catalogo() {
       <div className="row">
         {/* Filtros lateral */}
         <div className="col-md-2 mb-4">
+          {/* subcategoriaSeleccionada debe ser string */}
           <FiltrosCatalogo
             categorias={categorias}
             categoriaSeleccionada={categoriaSeleccionada}
             subcategoriasPorCategoria={subcategoriasPorCategoria}
-            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""} {/* <-- string */}
+            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""}
             capitalizar={capitalizar}
             seleccionarCategoria={seleccionarCategoria}
             seleccionarSubcategoria={seleccionarSubcategoria}

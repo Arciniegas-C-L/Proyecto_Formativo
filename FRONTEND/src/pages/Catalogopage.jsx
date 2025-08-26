@@ -3,7 +3,7 @@
 
 import { Catalogo } from "../components/Catalogo/Catalogo";
 
-const Catalogopage = () => {
+export function Catalogopage() {
   return (
     <div className="catalogo-page">
       <Catalogo />
@@ -11,4 +11,4 @@ const Catalogopage = () => {
   );
 };
 
-export default Catalogopage;
+

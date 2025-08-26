@@ -2,12 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import saludo from "../../assets/images/saludo.webp";
-import bienvenida from "../../assets/images/bienvenida.gif";
 import "../../assets/css/Seccionandregistrer/sesion.css";
-import { Link } from 'react-router-dom';
-import saludo from '../../assets/images/saludo.webp';
-import bienvenida from '../../assets/images/bienvenida.gif';
-import '../../assets/css/sesion.css';
 import { auth } from '../../auth/authService';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';

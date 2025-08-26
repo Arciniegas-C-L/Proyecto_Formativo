@@ -1,83 +1,77 @@
+// Catalogo.jsx
 import React, { useEffect, useState } from "react";
-import { getALLProductos } from "../../api/Producto.api";
+import { getALLProductos } from "../../api/Producto.api"; // ⚠️ verifica nombre real
 import { getAllCategorias } from "../../api/Categoria.api";
-import {auth} from "../../auth/authService";
-import "../../assets/css/Catalogo.css";
+import { auth } from "../../auth/authService";
 import FiltrosCatalogo from "./FiltrosCatalogo";
 import ProductoCard from "./ProductoCard";
-import "../../assets/css/Catalogo/Catalogo.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "../../assets/css/Catalogo/Catalogo.css"; 
 
-// Cambié export function por export default function
 export function Catalogo() {
-
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
   const [subcategoriasSeleccionadas, setSubcategoriasSeleccionadas] = useState([]);
-  const [chipsActivos, setChipsActivos] = useState([]); // chips acumulativos
+  const [chipsActivos, setChipsActivos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroTemporal, setFiltroTemporal] = useState(null); // filtro temporal al tocar chip
-  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState("");
-  const [tallaSeleccionada, setTallaSeleccionada] = useState({});
+  const [filtroTemporal, setFiltroTemporal] = useState(null);
   const [errorProductos, setErrorProductos] = useState("");
 
-  const capitalizar = (texto) =>
-    texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+  const capitalizar = (texto = "") =>
+    texto ? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase() : "";
 
-  // Cargar productos desde API
+  // Cargar productos
   const cargarProductos = async () => {
-    const token = auth.obtenerToken(); // ✅ usás la función centralizada
+    const token = auth?.obtenerToken?.();
     if (!token) {
       setErrorProductos("Debes iniciar sesión para ver los productos.");
-      console.warn("Token no encontrado en localStorage.");
       return;
     }
-
     try {
-      const res = await getALLProductos();
-      const productosData = res.data || [];
+      // Si tu cliente no añade token por interceptor, pásalo aquí.
+      const res = await getALLProductos(/* token */);
+      const productosData = res?.data ?? res ?? [];
 
       const productosValidos = productosData.filter(
         (p) =>
-          p.categoria_nombre &&
-          p.subcategoria_nombre &&
-          Array.isArray(p.inventario_tallas)
+          p?.categoria_nombre &&
+          p?.subcategoria_nombre &&
+          Array.isArray(p?.inventario_tallas)
       );
       setProductos(productosValidos);
-      setErrorProductos(""); // Limpia error si todo sale bien
+      setErrorProductos("");
 
       const subMap = {};
-      productosValidos.forEach((p) => {
+      for (const p of productosValidos) {
         const cat = p.categoria_nombre;
         const sub = p.subcategoria_nombre;
         if (!subMap[cat]) subMap[cat] = new Set();
         subMap[cat].add(sub);
-      });
-
+      }
       const subFinal = {};
       Object.keys(subMap).forEach((cat) => {
-        subFinal[cat] = Array.from(subMap[cat]);
+        subFinal[cat] = Array.from(subMap[cat]).sort();
       });
       setSubcategoriasPorCategoria(subFinal);
     } catch (error) {
-      if (error.response?.status === 401) {
-        setErrorProductos("Tu sesión ha expirado. Vuelve a iniciar sesión.");
-        console.error("Error 401: no autorizado");
-      } else {
-        setErrorProductos("Error al cargar productos.");
-        console.error("Error al cargar productos:", error);
-      }
+      setErrorProductos(
+        error?.response?.status === 401
+          ? "Tu sesión ha expirado. Vuelve a iniciar sesión."
+          : "Error al cargar productos."
+      );
+      console.error("Error al cargar productos:", error);
     }
   };
 
-  // Cargar categorías desde API
+  // Cargar categorías
   const cargarCategorias = async () => {
     try {
-      const data = await getAllCategorias();
-      const nombres = data.map((cat) => cat.nombre);
-      setCategorias(nombres);
+      const res = await getAllCategorias();
+      const data = res?.data ?? res ?? [];
+      const nombres = data.map((cat) => cat?.nombre).filter(Boolean);
+      setCategorias(nombres.sort());
     } catch (error) {
       console.error("Error al cargar categorías:", error);
     }
@@ -86,29 +80,28 @@ export function Catalogo() {
   useEffect(() => {
     cargarCategorias();
     cargarProductos();
+
+    // refresco opcional (menos agresivo)
     const interval = setInterval(() => {
       cargarCategorias();
       cargarProductos();
-    }, 5000);
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Selección de categoría
   const seleccionarCategoria = (cat) => {
     setCategoriaSeleccionada(cat);
-    setSubcategoriasSeleccionadas([]); // resetea subcategorías
-    setFiltroTemporal(null); // quita filtro temporal
-    if (!chipsActivos.includes(cat)) setChipsActivos((prev) => [...prev, cat]);
+    setSubcategoriasSeleccionadas([]);
+    setFiltroTemporal(null);
+    setChipsActivos((prev) => (prev.includes(cat) ? prev : [...prev, cat]));
   };
 
-  // Selección de subcategoría
   const seleccionarSubcategoria = (sub) => {
-    setSubcategoriasSeleccionadas([sub]); // solo un filtro activo de subcategoría
-    setFiltroTemporal(sub); // filtro visual temporal
-    if (!chipsActivos.includes(sub)) setChipsActivos((prev) => [...prev, sub]);
+    setSubcategoriasSeleccionadas([sub]);
+    setFiltroTemporal(sub);
+    setChipsActivos((prev) => (prev.includes(sub) ? prev : [...prev, sub]));
   };
 
-  // Limpiar todos los filtros
   const limpiarFiltros = () => {
     setCategoriaSeleccionada("");
     setSubcategoriasSeleccionadas([]);
@@ -117,8 +110,9 @@ export function Catalogo() {
     setChipsActivos([]);
   };
 
-  // Filtrado de productos
   const productosFiltrados = productos.filter((producto) => {
+    const nombre = (producto?.nombre ?? "").toLowerCase();
+
     if (filtroTemporal) {
       if (categorias.includes(filtroTemporal)) {
         if (producto.categoria_nombre !== filtroTemporal) return false;
@@ -126,16 +120,20 @@ export function Catalogo() {
         if (producto.subcategoria_nombre !== filtroTemporal) return false;
       }
     } else {
-      if (categoriaSeleccionada && producto.categoria_nombre !== categoriaSeleccionada)
+      if (
+        categoriaSeleccionada &&
+        producto.categoria_nombre !== categoriaSeleccionada
+      )
         return false;
 
-      if (subcategoriasSeleccionadas.length > 0 &&
-          producto.subcategoria_nombre !== subcategoriasSeleccionadas[0])
+      if (
+        subcategoriasSeleccionadas.length > 0 &&
+        producto.subcategoria_nombre !== subcategoriasSeleccionadas[0]
+      )
         return false;
     }
 
-    if (busqueda && !producto.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-      return false;
+    if (busqueda && !nombre.includes(busqueda.toLowerCase())) return false;
 
     return true;
   });
@@ -149,7 +147,7 @@ export function Catalogo() {
             categorias={categorias}
             categoriaSeleccionada={categoriaSeleccionada}
             subcategoriasPorCategoria={subcategoriasPorCategoria}
-            subcategoriaSeleccionada={subcategoriasSeleccionadas}
+            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""} 
             capitalizar={capitalizar}
             seleccionarCategoria={seleccionarCategoria}
             seleccionarSubcategoria={seleccionarSubcategoria}
@@ -160,9 +158,7 @@ export function Catalogo() {
         {/* Buscador y productos */}
         <div className="col-md-10">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
-            <h2 className="catalogo-titulo mb-2 mb-md-0">
-              Catálogo de Productos
-            </h2>
+            <h2 className="catalogo-titulo mb-2 mb-md-0">Catálogo de Productos</h2>
             <div className="catalogo-buscador">
               <input
                 type="text"
@@ -177,13 +173,12 @@ export function Catalogo() {
           {chipsActivos.length > 0 && (
             <div className="catalogo-chips-container">
               {chipsActivos.map((chip) => {
-                const esCategoria = categorias.includes(chip); // distingue categoría o subcategoría
+                const esCategoria = categorias.includes(chip);
+                const activo = filtroTemporal === chip;
                 return (
                   <span
                     key={chip}
-                    className={`${esCategoria ? "chip-categoria" : "chip-subcategoria"} ${
-                      filtroTemporal === chip ? "activo" : ""
-                    }`}
+                    className={`${esCategoria ? "chip-categoria" : "chip-subcategoria"} ${activo ? "activo" : ""}`}
                   >
                     <span
                       className="chip-nombre"
@@ -203,7 +198,7 @@ export function Catalogo() {
                           setSubcategoriasSeleccionadas([]);
                       }}
                     >
-                      X
+                      ×
                     </span>
                   </span>
                 );
@@ -211,11 +206,16 @@ export function Catalogo() {
             </div>
           )}
 
+          {/* Mensaje de error */}
+          {errorProductos && (
+            <div className="alert alert-warning">{errorProductos}</div>
+          )}
+
           {/* Productos */}
           <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
             {productosFiltrados.length === 0 ? (
               <div className="col text-center">
-                <div className="alert alert-warning w-100">
+                <div className="alert alert-info w-100">
                   No hay productos para mostrar.
                 </div>
               </div>

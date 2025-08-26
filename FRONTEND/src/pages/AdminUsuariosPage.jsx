@@ -1,7 +1,7 @@
 //Este componente es la página de Admin usuarios
 //Aqui podemos unir todos los componentes o subcomponentes para exportar a la app.jsx
 
-import {AdminUsuarios} from "../components/Usuarios/AdminUsuarios.jsx";
+import {AdminUsuarios} from "../components/Usuarios/AdminUsuarios";
 
 export const AdminUsuariosPage = () => {
   return (

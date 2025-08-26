@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/GrupoTalla.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 
-const GrupoTalla = () => {
+export function GrupoTalla() {
   const navigate = useNavigate();
 
   const [gruposTalla, setGruposTalla] = useState([]);
@@ -270,4 +270,3 @@ const GrupoTalla = () => {
   );
 };
 
-export default GrupoTalla;
