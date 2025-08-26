@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   getAllTallas,
   createTalla,
@@ -9,15 +8,14 @@ import {
   cambiarEstadoTalla,
 } from "../../api/Talla.api.js";
 import { getAllGruposTalla } from "../../api/GrupoTalla.api.js";
-
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 import "../../assets/css/Tallas/Tallas.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 
-export const Tallas = () => {
-  const navigate = useNavigate();
+const Tallas = () => {
+  const location = useLocation();
+  const navigate = useNavigate(); // opcional: úsalo para redirigir tras crear/editar/borrar
 
   const [tallas, setTallas] = useState([]);
   const [gruposTalla, setGruposTalla] = useState([]);
@@ -25,88 +23,61 @@ export const Tallas = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingTalla, setEditingTalla] = useState(null);
 
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadingGrupos, setLoadingGrupos] = useState(true);
-
-  // ---- estados para eliminar ----
+  // ---- estados para eliminar (una sola vez) ----
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [tallaToDelete, setTallaToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
-    nombre: '',
-    grupo_id: '',
+    nombre: "",
+    grupo_id: "",
     estado: true,
   });
-
-  // ---------------- Helpers ----------------
-  const handleError = (error) => {
-    const errorMessage = error?.response?.data?.detail || 'Error al realizar la operación';
-    setError(errorMessage);
-    toast.error(errorMessage);
-  };
-
-  const validateForm = () => {
-    if (!formData.nombre.trim()) {
-      setError('El nombre es requerido');
-      return false;
-    }
-    if (formData.nombre.length > 10) {
-      setError('El nombre no puede tener más de 10 caracteres');
-      return false;
-    }
-    if (!formData.grupo_id) {
-      setError('Debe seleccionar un grupo de talla');
-      return false;
-    }
-    return true;
-  };
-
-  // --------------- Cargas -------------------
-  const cargarTallas = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllTallas();
-      setTallas(response.data || []);
-    } catch (err) {
-      handleError(err);
-      setTallas([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cargarGruposTalla = async () => {
-    try {
-      setLoadingGrupos(true);
-      const response = await getAllGruposTalla();
-      setGruposTalla(response.data || []);
-    } catch (err) {
-      handleError(err);
-      setGruposTalla([]);
-    } finally {
-      setLoadingGrupos(false);
-    }
-  };
+  const [error, setError] = useState("");
 
   useEffect(() => {
     cargarTallas();
     cargarGruposTalla();
   }, []);
 
-  // --------------- Dialog Crear/Editar ---------------
+  const cargarTallas = async () => {
+    try {
+      const res = await getAllTallas();
+      setTallas(res?.data || []);
+    } catch {
+      toast.error("Error al cargar tallas");
+      setTallas([]);
+    }
+  };
+
+  const cargarGruposTalla = async () => {
+    try {
+      const res = await getAllGruposTalla();
+      setGruposTalla(res?.data || []);
+    } catch {
+      toast.error("Error al cargar grupos de talla");
+      setGruposTalla([]);
+    }
+  };
+
   const handleOpenDialog = (talla = null) => {
-    setError('');
+    setError("");
     if (talla) {
+      // EDITAR
       setEditingTalla(talla);
       setFormData({
-        nombre: talla.nombre ?? '',
-        grupo_id: talla.grupo?.idGrupoTalla ?? talla.grupo?.id ?? '',
-        estado: !!talla.estado,
+        nombre: talla?.nombre ?? "",
+        grupo_id: talla?.grupo?.id ?? talla?.grupo_id ?? "",
+        estado: Boolean(talla?.estado),
       });
     } else {
+      // NUEVA
       setEditingTalla(null);
-      setFormData({ nombre: '', grupo_id: '', estado: true });
+      const grupoIdDesdeNavegacion = location.state?.grupoId || "";
+      setFormData({
+        nombre: "",
+        grupo_id: grupoIdDesdeNavegacion,
+        estado: true,
+      });
     }
     setOpenDialog(true);
   };
@@ -114,8 +85,8 @@ export const Tallas = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingTalla(null);
-    setError('');
-    setFormData({ nombre: '', grupo_id: '', estado: true });
+    setFormData({ nombre: "", grupo_id: "", estado: true });
+    setError("");
   };
 
   const handleInputChange = (e) => {
@@ -129,62 +100,63 @@ export const Tallas = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
+    if (!formData.nombre.trim() || !formData.grupo_id) {
+      setError("Todos los campos son obligatorios");
+      return;
+    }
     try {
       if (editingTalla) {
-        await updateTalla(editingTalla.id ?? editingTalla.idTalla ?? editingTalla.id_talla, formData);
-        toast.success('Talla actualizada exitosamente');
+        await updateTalla(editingTalla.id, formData);
+        toast.success("Talla actualizada exitosamente");
       } else {
         await createTalla(formData);
-        toast.success('Talla creada exitosamente');
+        toast.success("Talla creada exitosamente");
       }
       handleCloseDialog();
-      cargarTallas();
-    } catch (err) {
-      handleError(err);
+      await cargarTallas();
+      // opcional: navigate("/tallas");
+    } catch {
+      toast.error("Error al guardar la talla");
     }
   };
 
-  // --------------- Eliminar ---------------
   const handleDeleteClick = (talla) => {
     setTallaToDelete(talla);
     setOpenDeleteDialog(true);
   };
 
   const confirmDelete = async () => {
-    if (!tallaToDelete) return;
     try {
-      const id = tallaToDelete.id ?? tallaToDelete.idTalla ?? tallaToDelete.id_talla;
-      await deleteTalla(id);
-      toast.success('Talla eliminada exitosamente');
+      if (!tallaToDelete) return;
+      await deleteTalla(tallaToDelete.id);
+      toast.success("Talla eliminada exitosamente");
       setOpenDeleteDialog(false);
       setTallaToDelete(null);
-      cargarTallas();
-    } catch (err) {
-      handleError(err);
+      await cargarTallas();
+    } catch {
+      toast.error("Error al eliminar la talla");
     }
   };
 
-  // --------------- Estado ---------------
-  const handleEstadoChange = async (id, estado) => {
+  // Cambiar estado (arreglado para usar los parámetros)
+  const handleEstadoChange = async (id, estadoActual) => {
     try {
-      await cambiarEstadoTalla(id, !estado);
-      toast.success('Estado de la talla actualizado exitosamente');
-      cargarTallas();
-    } catch (err) {
-      handleError(err);
+      await cambiarEstadoTalla(id, !estadoActual);
+      toast.success("Estado actualizado");
+      await cargarTallas();
+    } catch {
+      toast.error("Error al cambiar estado");
     }
   };
 
-  // --------------- Render ----------------
   return (
     <div className="lista-tallas-container">
       <div className="header-acciones">
         <h2>Gestión de Tallas</h2>
         <div className="header-controls">
           <button className="btn-nueva-talla" onClick={() => handleOpenDialog()}>
-            <FaPlus /> Nueva Talla
+            <FaPlus />
+            Nueva Talla
           </button>
         </div>
       </div>
@@ -200,37 +172,43 @@ export const Tallas = () => {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan="4" className="loading">Cargando...</td></tr>
-            ) : tallas.length === 0 ? (
-              <tr><td colSpan="4" className="loading">No hay tallas registradas</td></tr>
+            {tallas.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="loading">
+                  No hay tallas registradas
+                </td>
+              </tr>
             ) : (
-              tallas.map((talla, index) => {
-                const id = talla.id ?? talla.idTalla ?? talla.id_talla ?? index;
-                return (
-                  <tr key={id}>
-                    <td>{talla.nombre}</td>
-                    <td>{talla.grupo?.nombre ?? '-'}</td>
-                    <td className="estado-talla">
-                      <button
-                        className={`chip-estado ${talla.estado ? 'on' : 'off'}`}
-                        onClick={() => handleEstadoChange(id, talla.estado)}
-                        title="Cambiar estado"
-                      >
-                        {talla.estado ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td className="celda-acciones">
-                      <button className="btn-editar" onClick={() => handleOpenDialog(talla)}>
-                        <FaEdit />
-                      </button>
-                      <button className="btn-eliminar" onClick={() => handleDeleteClick(talla)}>
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
+              tallas.map((talla, index) => (
+                <tr key={talla?.id ?? index}>
+                  <td>{talla?.nombre}</td>
+                  <td>{talla?.grupo?.nombre ?? "-"}</td>
+                  <td className="estado-talla">
+                    <button
+                      className={`badge-estado ${talla?.estado ? "on" : "off"}`}
+                      type="button"
+                      onClick={() => handleEstadoChange(talla.id, talla.estado)}
+                      title="Cambiar estado"
+                    >
+                      {talla?.estado ? "Activo" : "Inactivo"}
+                    </button>
+                  </td>
+                  <td className="celda-acciones">
+                    <button
+                      className="btn-editar"
+                      onClick={() => handleOpenDialog(talla)}
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      className="btn-eliminar"
+                      onClick={() => handleDeleteClick(talla)}
+                    >
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
@@ -250,10 +228,9 @@ export const Tallas = () => {
               value={formData.nombre}
               onChange={handleInputChange}
               maxLength={10}
-              required
             />
             <small className="text-muted mb-2 d-block">
-              {formData.nombre.length}/10 caracteres
+              {(formData.nombre || "").length}/10 caracteres
             </small>
 
             <label className="form-label">Grupo de Talla *</label>
@@ -262,18 +239,13 @@ export const Tallas = () => {
               name="grupo_id"
               value={formData.grupo_id}
               onChange={handleInputChange}
-              required
             >
               <option value="">Seleccione un grupo</option>
-              {loadingGrupos ? (
-                <option disabled>Cargando grupos...</option>
-              ) : (
-                gruposTalla.map((g, idx) => (
-                  <option key={g.id ?? g.idGrupoTalla ?? idx} value={g.id ?? g.idGrupoTalla}>
-                    {g.nombre}
-                  </option>
-                ))
-              )}
+              {gruposTalla.map((g, idx) => (
+                <option key={g?.id ?? idx} value={g?.id ?? g?.idGrupoTalla}>
+                  {g?.nombre}
+                </option>
+              ))}
             </select>
 
             <div className="form-check form-switch mb-3">
@@ -281,7 +253,7 @@ export const Tallas = () => {
                 className="form-check-input"
                 type="checkbox"
                 name="estado"
-                checked={formData.estado}
+                checked={!!formData.estado}
                 onChange={handleInputChange}
               />
               <label className="form-check-label">Activo</label>
@@ -303,9 +275,14 @@ export const Tallas = () => {
       {openDeleteDialog && (
         <div className="dialog-talla-modal">
           <div className="form-talla-modal text-center">
-            <p>¿Seguro que quieres eliminar la talla "{tallaToDelete?.nombre}"?</p>
+            <p>
+              ¿Seguro que quieres eliminar la talla "{tallaToDelete?.nombre}"?
+            </p>
             <div className="d-flex justify-content-center gap-2 mt-3">
-              <button className="btn btn-secondary" onClick={() => setOpenDeleteDialog(false)}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setOpenDeleteDialog(false)}
+              >
                 Cancelar
               </button>
               <button className="btn btn-eliminar" onClick={confirmDelete}>

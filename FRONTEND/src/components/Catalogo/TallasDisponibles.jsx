@@ -1,14 +1,19 @@
 import React from "react";
+import "../../assets/css/Catalogo/TallasDisponibles.css";
 
-function TallasDisponibles({ productoId, inventarioTallas, tallaSeleccionada, mostrarStock }) {
+export default function TallasDisponibles({
+  productoId,
+  inventarioTallas,
+  tallaSeleccionada,
+  mostrarStock,
+}) {
   return (
-    <div className="mt-2">
-      <strong>Tallas:</strong>
-      <div className="d-flex flex-wrap gap-2 mt-1">
+    <div className="tallas-container">
+      <div className="botones-tallas">
         {inventarioTallas.map((inv, i) => (
           <button
             key={i}
-            className={`talla-btn ${
+            className={`talla-button ${
               tallaSeleccionada?.talla === inv.talla ? "selected" : ""
             }`}
             onClick={() => mostrarStock(productoId, inv.talla, inv.stock)}
@@ -17,8 +22,12 @@ function TallasDisponibles({ productoId, inventarioTallas, tallaSeleccionada, mo
           </button>
         ))}
       </div>
+
+      {tallaSeleccionada && (
+        <div className="stock-disponible">
+          Productos disponibles: <strong>{tallaSeleccionada.stock}</strong>
+        </div>
+      )}
     </div>
   );
 }
-
-export default TallasDisponibles;

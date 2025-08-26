@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../../assets/css/formCambio.css";
+import "../../assets/css/Seccionandregistrer/formCambio.css";
 import { RecuperarContrasena } from "./FormRecuperacion";
 
 export function VerificarCodigo({ correo }) {
@@ -30,18 +30,17 @@ const verificarCodigo = async (e) => {
             }
         );
 
-        const data = await res.json();
-        if (res.ok) {
-            setCodigoVerificado(true);                  // Habilita el formulario de contraseña
-            setMensaje("Código verificado correctamente");
-        } else {
-            setError(data.error || "Código incorrecto o expirado");
-        }
-    } catch (err) {
-        console.error("Error al verificar código:", err);
-        setError("Error de conexión con el servidor");
+      const data = await res.json();
+      if (res.ok) {
+        setCodigoVerificado(true);
+        setMensaje("✅ Código verificado correctamente");
+      } else {
+        setError(data.error || "Código incorrecto o expirado");
+      }
+    } catch {
+      setError("Error de conexión con el servidor");
     }
-};
+  };
 
 // Cambia la contraseña una vez verificado el código
 const cambiarContrasena = async (e) => {
@@ -65,68 +64,68 @@ const cambiarContrasena = async (e) => {
             }
         );
 
-        const data = await res.json();
-        if (res.ok) {
-            setMensaje(data.mensaje);                  // Muestra éxito y redirige
-            setTimeout(() => navigate("/sesion"), 2000);
-        } else {
-            setError(data.error || "No se pudo cambiar la contraseña");
-        }
-    } catch (err) {
-        console.error("Error al cambiar contraseña:", err);
-        setError("Error de conexión con el servidor");
+      const data = await res.json();
+      if (res.ok) {
+        setMensaje("✅ " + data.mensaje);
+        setTimeout(() => navigate("/sesion"), 2000);
+      } else {
+        setError(data.error || "No se pudo cambiar la contraseña");
+      }
+    } catch {
+      setError("Error de conexión con el servidor");
     }
-};
+  };
 
-    return (
-        <div>
-            <RecuperarContrasena />
-            <div className="modal-overlay">
-                <div className="modal-verificar">
-                    {!codigoVerificado ? (
-                        <form onSubmit={verificarCodigo}>
-                            <h2>Verificar código</h2>
-                            <input
-                                type="text"
-                                placeholder="Código de 6 dígitos"
-                                value={codigo}
-                                onChange={(e) => setCodigo(e.target.value)}
-                                required
-                                maxLength={6}
-                                className="input"
-                            />
-                            <button type="submit" className="button">
-                                Verificar
-                            </button>
-                        </form>
-                    ) : (
-                        <form onSubmit={cambiarContrasena}>
-                            <h2>Nueva contraseña</h2>
-                            <input
-                                type="password"
-                                placeholder="Nueva contraseña"
-                                value={nuevaContrasena}
-                                onChange={(e) => setNuevaContrasena(e.target.value)}
-                                required
-                                className="input"
-                            />
-                            <input
-                                type="password"
-                                placeholder="Confirmar contraseña"
-                                value={confirmarContrasena}
-                                onChange={(e) => setConfirmarContrasena(e.target.value)}
-                                required
-                                className="input"
-                            />
-                            <button type="submit" className="button">
-                                Cambiar contraseña
-                            </button>
-                        </form>
-                    )}
-                        {mensaje && <p className="mensaje-ok">{mensaje}</p>}
-                        {error && <p className="mensaje-error">{error}</p>}
-                </div>
-            </div>
+  return (
+    <div>
+      <RecuperarContrasena />
+      <div className="modal-overlay">
+        <div className="verificar-modal card shadow-lg">
+          {!codigoVerificado ? (
+            <form onSubmit={verificarCodigo} className="w-100">
+              <h2 className="titulo-form">Verificar código</h2>
+              <input
+                type="text"
+                placeholder="Código de 6 dígitos"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value)}
+                required
+                maxLength={6}
+                className="verificar-input"
+              />
+              <button type="submit" className="verificar-btn">
+                Verificar
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={cambiarContrasena} className="w-100">
+              <h2 className="titulo-form">Nueva contraseña</h2>
+              <input
+                type="password"
+                placeholder="Nueva contraseña"
+                value={nuevaContrasena}
+                onChange={(e) => setNuevaContrasena(e.target.value)}
+                required
+                className="verificar-input"
+              />
+              <input
+                type="password"
+                placeholder="Confirmar contraseña"
+                value={confirmarContrasena}
+                onChange={(e) => setConfirmarContrasena(e.target.value)}
+                required
+                className="verificar-input"
+              />
+              <button type="submit" className="verificar-btn">
+                Cambiar contraseña
+              </button>
+            </form>
+          )}
+
+          {mensaje && <p className="mensaje-ok">{mensaje}</p>}
+          {error && <p className="mensaje-error">{error}</p>}
         </div>
-    );
+      </div>
+    </div>
+  );
 }

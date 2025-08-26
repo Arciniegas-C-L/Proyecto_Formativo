@@ -2,7 +2,6 @@
 header.bg-dark {
   background: linear-gradient(145deg, #1A1F2E, #2A2F3E) !important;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-  border-bottom: 2px solid #00d4ff;
 }
 
 /* Logo */

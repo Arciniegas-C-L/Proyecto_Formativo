@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getALLProductos, deleteProducto } from '../../api/Producto.api';
 import { toast } from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
-import '../../assets/css/ListaProductos.css';
+import "../../assets/css/Productos/ListaProductos.css";
 
 export function ListaProductos() {
    //Estados para manejar la lista de productos, carga, errores y filtro de búsqueda
@@ -160,98 +160,102 @@ if (error && productos.length === 0) {
     );
 }
 
-    return (
-        <div className="lista-productos-container">
-            <div className="header-acciones">
-                <h2>Lista de Productos</h2>
-                <div className="header-controls">
-                    <input
-                        type="text"
-                        placeholder="Buscar productos..."
-                        value={filtroBusqueda}
-                        onChange={(e) => setFiltroBusqueda(e.target.value)}
-                        className="busqueda-input"
-                    />
-                    <button 
-                        className="btn-crear"
-                        onClick={handleCrear}
-                    >
-                        <FaPlus />
-                        Crear Producto
-                    </button>
-                </div>
-            </div>
-
-            <div className="tabla-container">
-                <table className="tabla-productos">
-                    <thead>
-                        <tr>
-                            <th>Imagen</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Precio</th>
-                            <th>Categoría</th>
-                            <th>Stock</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan="7" className="loading">
-                                    Cargando productos...
-                                </td>
-                            </tr>
-                        ) : productosFiltrados.length === 0 ? (
-                            <tr>
-                                <td colSpan="7" className="no-resultados">
-                                    No se encontraron productos
-                                </td>
-                            </tr>
-                        ) : (
-                            productosFiltrados.map(producto => (
-                                <tr key={`producto-${producto.id}`}>
-                                    <td className="celda-imagen">
-                                        <img 
-                                            src={producto.imagen || "https://via.placeholder.com/50"} 
-                                            alt={producto.nombre}
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = "https://via.placeholder.com/50";
-                                            }}
-                                        />
-                                    </td>
-                                    <td>{producto.nombre}</td>
-                                    <td className="celda-descripcion" title={producto.descripcion}>
-                                        {producto.descripcion}
-                                    </td>
-                                    <td>${parseFloat(producto.precio).toLocaleString('es-CO')}</td>
-                                    <td>{producto.categoria_nombre}</td>
-                                    <td>{producto.stock}</td>
-                                    <td className="celda-acciones">
-                                        <button 
-                                            className="btn-editar"
-                                            onClick={() => handleEditar(producto)}
-                                            title="Editar producto"
-                                            disabled={loading}
-                                        >
-                                            <FaEdit />
-                                        </button>
-                                        <button 
-                                            className="btn-eliminar"
-                                            onClick={() => handleEliminar(producto.id)}
-                                            title="Eliminar producto"
-                                            disabled={loading}
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+  return (
+    <div className="lista-productos-container">
+      <div className="header-acciones">
+        <h2>Lista de Productos</h2>
+        <div className="header-controls">
+          <input
+            type="text"
+            placeholder="Buscar productos..."
+            value={filtroBusqueda}
+            onChange={e => setFiltroBusqueda(e.target.value)}
+            className="busqueda-input"
+          />
+          <button
+            className="btn-crear"
+            onClick={handleCrear}
+            aria-label="Crear producto"
+          >
+            <FaPlus />
+            Crear Producto
+          </button>
         </div>
-    );
+      </div>
+
+      <div className="tabla-container">
+        <table className="tabla-productos">
+          <thead>
+            <tr>
+              <th>Imagen</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Precio</th>
+              <th>Categoría</th>
+              <th>Stock</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="loading">
+                  Cargando productos...
+                </td>
+              </tr>
+            ) : productosFiltrados.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="no-resultados">
+                  No se encontraron productos
+                </td>
+              </tr>
+            ) : (
+              productosFiltrados.map(producto => (
+                <tr key={`producto-${producto.id}`}>
+                  <td className="celda-imagen">
+                    <img
+                      src={producto.imagen || 'https://via.placeholder.com/50'}
+                      alt={producto.nombre}
+                      onError={e => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/50';
+                      }}
+                      tabIndex={0}
+                    />
+                  </td>
+                  <td>{producto.nombre}</td>
+                  <td className="celda-descripcion" title={producto.descripcion}>
+                    {producto.descripcion}
+                  </td>
+                  <td>${parseFloat(producto.precio).toLocaleString('es-CO')}</td>
+                  <td>{producto.categoria_nombre}</td>
+                  <td>{producto.stock}</td>
+                  <td className="celda-acciones">
+                    <button
+                      className="btn-editar"
+                      onClick={() => handleEditar(producto)}
+                      title="Editar producto"
+                      disabled={loading}
+                      aria-label={`Editar ${producto.nombre}`}
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      className="btn-eliminar"
+                      onClick={() => handleEliminar(producto.id)}
+                      title="Eliminar producto"
+                      disabled={loading}
+                      aria-label={`Eliminar ${producto.nombre}`}
+                    >
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

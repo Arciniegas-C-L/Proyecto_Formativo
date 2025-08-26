@@ -1,0 +1,137 @@
+.lista-rol-container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Urbanist', sans-serif;
+}
+
+.lista-rol-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.lista-rol-titulo {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.boton-crear-rol {
+  background-color: #9333ea;
+  color: white;
+  padding: 0.6rem 1.4rem;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+  border: none;
+}
+
+.boton-crear-rol:hover {
+  background-color: #7e22ce;
+}
+
+.tabla-rol-container {
+  overflow-x: auto;
+}
+
+.tabla-rol {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  min-width: 600px;
+}
+
+.tabla-rol thead {
+  background-color: #f3f4f6;
+}
+
+.tabla-rol th,
+.tabla-rol td {
+  border: 1px solid #e5e7eb;
+  padding: 0.9rem 1rem;
+  text-align: center;
+}
+
+.tabla-rol th {
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+}
+
+.tabla-rol tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.boton-editar-rol {
+  background-color: #0ea5e9;
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+.boton-editar-rol:hover {
+  background-color: #0284c7;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .lista-rol-container {
+    padding: 1.2rem;
+  }
+
+  .lista-rol-titulo {
+    font-size: 1.7rem;
+  }
+
+  .tabla-rol {
+    font-size: 0.85rem;
+  }
+
+  .boton-crear-rol {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .boton-editar-rol {
+    font-size: 0.85rem;
+    padding: 0.4rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lista-rol-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lista-rol-titulo {
+    font-size: 1.5rem;
+  }
+
+  .boton-crear-rol,
+  .boton-editar-rol {
+    width: 100%;
+    text-align: center;
+    border-radius: 12px;
+  }
+
+  .tabla-rol {
+    min-width: 100%;
+    font-size: 0.8rem;
+  }
+}

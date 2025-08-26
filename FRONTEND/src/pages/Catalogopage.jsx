@@ -3,11 +3,12 @@
 
 import { Catalogo } from "../components/Catalogo/Catalogo";
 
-export function CatalogoPage() {
-    return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Catálogo de Productos</h1>
-            <Catalogo />
-        </div>
-    );
-}
+const Catalogopage = () => {
+  return (
+    <div className="catalogo-page">
+      <Catalogo />
+    </div>
+  );
+};
+
+export default Catalogopage;

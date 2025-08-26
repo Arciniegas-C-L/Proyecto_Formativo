@@ -1,6 +1,9 @@
 /* GENERAL */
 body {
-  background: linear-gradient(135deg, #0A0E1A 0%, #1A1F2E 100%);
+  background: linear-gradient(135deg, #fbd0f4 0%, #c3f1ff 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
   margin: 0;
   padding: 0;
   font-family: 'Urbanist', sans-serif;
@@ -16,7 +19,7 @@ body {
 
 /* SECCIÓN HERO */
 .hero {
-  background-image: url('../images/fonfohero.jpg');
+  background-image: url('../../images/fonfohero.jpg');
   background-size: cover;
   background-position: center;
   height: 90vh;
@@ -26,8 +29,8 @@ body {
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  border-radius: 20px;
-  margin-bottom: 40px;
+  
+  
 }
 
 .hero-overlay {
@@ -46,16 +49,15 @@ body {
 }
 
 .hero-titulo {
-  font-size: 3rem;
-  font-family: "Bebas Neue", sans-serif;
-  background: linear-gradient(45deg, #F26BE2, #00D4FF);
+font-size: 3.2rem;
+  background: linear-gradient(45deg, #F26BE2, #00D4FF, #9D4EDD);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(242, 107, 226, 0.5);
-  letter-spacing: 3px;
-  margin-bottom: 20px;
-}
+  font-weight: 900;
+  letter-spacing: 2px;}
+  
+  
 
 @keyframes glow {
   from { filter: drop-shadow(0 0 10px rgba(242, 107, 226, 0.5)); }
@@ -127,53 +129,89 @@ hr.derecha {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 40px;
-  margin: 60px 0;
+  gap: 45px;
+  margin: 70px 0;
 }
 
+/* TARJETA */
 .producto-home {
-  background: linear-gradient(145deg, #1A1F2E, #2A2F3E);
-  border-radius: 20px;
-  padding: 30px;
-  width: 300px;
-  text-align: center;
-  color: #FFFFFF;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, border 0.3s ease;
-  position: relative;
+  border-radius: var(--border-radius);
   overflow: hidden;
-  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  background: #f5f7fa;
+  transition: var(--transition);
+  padding: 0;
+  width: 290px;
+  height: 600px; 
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08)
+}
+
+/* EFECTO DE FONDO AL HACER HOVER */
+.producto-home::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: var(--transition);
+  z-index: 0;
 }
 
 .producto-home:hover {
-  transform: translateY(-5px);
-  border: 2px solid #F26BE2; 
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px var(--shadow-medium);
 }
 
+.producto-home:hover::before {
+  opacity: 0.03;
+}
+
+/* IMAGEN */
 .producto-home img {
-  max-width: 100%;
-  height: 280px;
+  height: 380px;
+  width: 100%;
   object-fit: cover;
-  border-radius: 15px;
-  margin-bottom: 25px;
+  display: block;
+  z-index: 1;
+  position: relative;
+  transition: var(--transition);
+  background: linear-gradient(45deg, #f8f9ff, #ffffff);
 }
 
+.producto-home:hover img {
+  transform: scale(1.05);
+}
+
+/* TÍTULO */
 .producto-home h2 {
-  font-size: 1.4rem;
-  background: linear-gradient(45deg, #F26BE2, #00D4FF);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--primary-purple);
+  text-align: center;
+  margin: 1rem auto 0.5rem;
+  padding: 0 1rem;
+  background: linear-gradient(45deg, #F26BE2, #00D4FF, #9D4EDD);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-weight: bold;
-  margin-bottom: 15px;
 }
 
+/* DESCRIPCIÓN */
 .producto-home p {
-  font-size: 1rem;
-  color: #C9D1D9;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  color: var(--text-light);
+  text-align: center;
+  margin: 0 1.2rem 1.2rem;
+  line-height: 1.5;
   opacity: 0.9;
+  z-index: 1;
+  position: relative;
 }
+
+
 
 /* COMENTARIOS DE CLIENTES */
 .comentarios {
@@ -185,7 +223,7 @@ hr.derecha {
 }
 
 .usuario {
-  background: linear-gradient(145deg, #1A1F2E, #2A2F3E);
+  background: #f5f7fa;
   border-radius: 25px;
   padding: 35px 25px;
   width: 320px;
@@ -196,7 +234,7 @@ hr.derecha {
 }
 
 .usuario:hover {
-  border: 2px solid #00D4FF
+  border: 2px solid #00D4FF;
 }
 
 .usuario-info {
@@ -237,7 +275,7 @@ hr.derecha {
   font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 15px;
-  color: #E8EAED;
+  color: #2f2f30;
   opacity: 0.95;
 }
 
@@ -302,7 +340,8 @@ hr.derecha {
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
 }
 
-/* RESPONSIVE */
+/* RESPONSIVE GENERAL */
+
 @media (max-width: 768px) {
   .producto-home,
   .usuario {
@@ -323,6 +362,30 @@ hr.derecha {
 
   .palabras {
     font-size: 1.1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .productos {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .comentarios {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .contenedor-Home {
+    padding: 1rem;
+  }
+
+  .hero {
+    padding: 60px 1rem;
   }
 }
 
@@ -334,7 +397,9 @@ hr.derecha {
   }
 
   .producto-home img {
-    height: 220px;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
   }
 
   .hero-titulo {
@@ -351,5 +416,22 @@ hr.derecha {
 
   .palabras {
     font-size: 1rem;
+  }
+
+  .frase {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .usuario-info {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .usuario-info img {
+    margin: 0 0 10px 0;
   }
 }

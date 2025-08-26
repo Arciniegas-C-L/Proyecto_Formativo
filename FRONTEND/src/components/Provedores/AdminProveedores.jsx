@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
-import {
-  fetchProveedores,
-  createProveedor,
-  updateProveedor,
-} from "../../api/Proveedor.api.js";
+import { createProveedor, updateProveedor } from "../../api/Proveedor.api.js";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; // 👈 Importa el contexto
-import "../../assets/css/Proveedores.css";
+import { useAuth } from "../../context/AuthContext.jsx"; // <-- .jsx si tu proyecto lo requiere
+import "../../assets/css/Proveedores/Proveedores.css";
 
+// Componente que permite registrar o editar proveedores
 export function AdminProveedores({ proveedorEditar, onEditComplete }) {
-  const { autenticado, rol } = useAuth(); // 👈 Accede a sesión y rol
+  const { autenticado, rol } = useAuth();
+
   const [form, setForm] = useState({
     nombre: "",
     correo: "",
@@ -19,25 +17,27 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
   const [editingId, setEditingId] = useState(null);
   const navigate = useNavigate();
 
+  // Carga datos si estamos en edición
   useEffect(() => {
     if (proveedorEditar) {
       setForm({
-        nombre: proveedorEditar.nombre,
-        correo: proveedorEditar.correo,
-        telefono: proveedorEditar.telefono,
-        tipo: proveedorEditar.tipo,
+        nombre: proveedorEditar?.nombre ?? "",
+        correo: proveedorEditar?.correo ?? "",
+        telefono: proveedorEditar?.telefono ?? "",
+        tipo: proveedorEditar?.tipo ?? "nacional",
       });
-      setEditingId(proveedorEditar.idProveedor);
+      // Ajusta aquí el id según lo que realmente te llega:
+      setEditingId(proveedorEditar?.idProveedor ?? proveedorEditar?.id ?? null);
     }
   }, [proveedorEditar]);
 
   const handleVerProveedores = () => {
-    navigate("/proveedores_registrados");
+    // En tus rutas, la vista de registrados está en /administrador
+    navigate("/administrador");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       if (editingId) {
         await updateProveedor(editingId, form);
@@ -45,6 +45,7 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
         await createProveedor(form);
       }
 
+      // Reset
       setEditingId(null);
       setForm({
         nombre: "",
@@ -53,16 +54,16 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
         tipo: "nacional",
       });
 
-      if (onEditComplete) onEditComplete();
+      onEditComplete?.();
     } catch (error) {
       console.error(
         "Error al registrar proveedor:",
-        error.response?.data || error.message
+        error?.response?.data || error?.message
       );
     }
   };
 
-  // 👇 Protege el componente si no hay sesión o no es administrador
+  // Protección por sesión/rol (una sola vez)
   if (!autenticado) {
     return (
       <div className="container">
@@ -83,75 +84,73 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
 
   return (
     <>
-      <div className="container">
-        <h2 className="title">Gestión de Proveedores</h2>
-        <form className="form" onSubmit={handleSubmit}>
-          <input
-            className="input"
-            type="text"
-            placeholder="Nombre"
-            value={form.nombre}
-            onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-            required
-          />
-          <input
-            className="input"
-            type="email"
-            placeholder="Correo"
-            value={form.correo}
-            onChange={(e) => setForm({ ...form, correo: e.target.value })}
-            required
-          />
-          <input
-            className="input"
-            type="tel"
-            placeholder="Teléfono"
-            value={form.telefono}
-            onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-            required
-          />
+      <h2 className="title">{editingId ? "Editar Proveedor" : "Registrar Proveedor"}</h2>
 
-          <select
-            className="input"
-            value={form.tipo}
-            onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-          >
-            <option value="nacional">Nacional</option>
-            <option value="importado">Importado</option>
-          </select>
+      <form className="form" onSubmit={handleSubmit}>
+        <input
+          className="input"
+          type="text"
+          placeholder="Nombre del proveedor"
+          value={form.nombre}
+          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+          required
+        />
 
-          <div className="button-row">
-            <button className="btn btn-save" type="submit">
-              {editingId ? "Actualizar Proveedor" : "Registrar Proveedor"}
-            </button>
-            {editingId && (
-              <button
-                className="btn btn-cancel"
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm({
-                    nombre: "",
-                    correo: "",
-                    telefono: "",
-                    tipo: "nacional",
-                  });
-                  if (onEditComplete) onEditComplete();
-                }}
-              >
-                Cancelar
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+        <input
+          className="input"
+          type="email"
+          placeholder="Correo electrónico"
+          value={form.correo}
+          onChange={(e) => setForm({ ...form, correo: e.target.value })}
+          required
+        />
 
-      <div style={{ marginTop: "20px", textAlign: "center" }}>
-        <button
-          className="btn btn-view"
-          type="button"
-          onClick={handleVerProveedores}
+        <input
+          className="input"
+          type="tel"
+          placeholder="Número de teléfono"
+          value={form.telefono}
+          onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+          required
+        />
+
+        <select
+          className="input"
+          value={form.tipo}
+          onChange={(e) => setForm({ ...form, tipo: e.target.value })}
         >
+          <option value="nacional">Nacional</option>
+          <option value="importado">Importado</option>
+        </select>
+
+        <div className="button-row">
+          <button className="btn btn-save" type="submit">
+            {editingId ? "Actualizar" : "Registrar"}
+          </button>
+
+          {editingId && (
+            <button
+              className="btn btn-cancel"
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setForm({
+                  nombre: "",
+                  correo: "",
+                  telefono: "",
+                  tipo: "nacional",
+                });
+                onEditComplete?.();
+              }}
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="button-row" style={{ marginTop: "15px" }}>
+        <button className="btn btn-view" type="button" onClick={handleVerProveedores}>
           Ver Proveedores Registrados
         </button>
       </div>

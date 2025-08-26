@@ -1,213 +1,327 @@
-import { useEffect, useState } from "react";
-import React from "react";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { fetchUsuario, updateUsuario } from "../../api/Usuario.api.js";
-import { useAuth } from "../../context/AuthContext.jsx"; // ✅ nuevo import
+import React, { useEffect, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import {
+  fetchUsuario,      // <- si tu API realmente es fetchUsuarios(), cámbialo aquí y abajo
+  createUsuario,     // <- asegúrate que exista en ../../api/Usuario.api.js
+  updateUsuario,
+} from "../../api/Usuario.api.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export function AdminUsuarios() {
-  const { token, rol } = useAuth(); // ✅ accedemos al contexto
+  const { token, rol } = useAuth();
 
   const [usuarios, setUsuarios] = useState([]);
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
     correo: "",
+    password: "",
     telefono: "",
-    rol: "usuario",
-    estado: true
+    rol: "",          // usaremos "1" | "2" (string numérica) para el <select>
+    estado: "true",   // "true" | "false" como string para el <select>
   });
   const [editingId, setEditingId] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState("todos");
 
-  // ===================== FUNCIONES ===================== //
+  // ===================== DATA ===================== //
 
   const cargarUsuarios = async () => {
     try {
-      const response = await fetchUsuario();
-      setUsuarios(response.data);
+      const res = await fetchUsuario(); // si tu función real es fetchUsuarios(), ajusta
+      const data = res?.data ?? res ?? [];
+      setUsuarios(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error al obtener usuarios:", error.response?.data || error.message);
+      console.error("Error al obtener usuarios:", error?.response?.data || error?.message);
+      setUsuarios([]);
     }
   };
 
-  // ✅ solo carga usuarios si el token existe y el rol es administrador
   useEffect(() => {
     if (token && rol === "administrador") {
       cargarUsuarios();
     }
   }, [token, rol]);
 
+  // ===================== FORM ===================== //
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toPayload = (fd) => ({
+    nombre: fd.nombre.trim(),
+    apellido: fd.apellido.trim(),
+    correo: fd.correo.trim(),
+    password: fd.password, // si es edición puedes omitirlo del payload si va vacío
+    telefono: fd.telefono.trim(),
+    rol: parseInt(fd.rol, 10),           // backend espera idRol numérico (1, 2, ...)
+    estado: fd.estado === "true",        // string -> boolean
+  });
+
+  const resetForm = () => {
+    setEditingId(null);
+    setFormData({
+      nombre: "",
+      apellido: "",
+      correo: "",
+      password: "",
+      telefono: "",
+      rol: "",
+      estado: "true",
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingId) {
-        await updateUsuario(editingId, form);
-      } else {
-        await fetchUsuario.createUsuario(form); // Si tienes createUsuario, usarlo aquí
+      const payload = toPayload(formData);
+
+      if (!payload.nombre || !payload.apellido || !payload.correo || !payload.telefono || !formData.rol) {
+        alert("Completa los campos obligatorios");
+        return;
       }
-      setForm({
-        nombre: "",
-        apellido: "",
-        correo: "",
-        telefono: "",
-        rol: "usuario",
-        estado: true
-      });
-      setEditingId(null);
+
+      if (editingId) {
+        // Si no quieres cambiar password en edición cuando está vacío, puedes eliminarlo:
+        if (!payload.password) delete payload.password;
+        await updateUsuario(editingId, payload);
+        alert("Usuario actualizado con éxito");
+      } else {
+        await createUsuario(payload);
+        alert("Usuario registrado con éxito");
+      }
+
+      resetForm();
       cargarUsuarios();
     } catch (error) {
-      console.error("Error al registrar usuario:", error.response?.data || error.message);
+      console.error("Error al registrar/actualizar usuario:", error?.response?.data || error?.message);
+      alert("Ocurrió un error al guardar.");
     }
   };
 
   // Cargar datos al formulario para editar
   const handleEdit = (usuario) => {
-    setForm({
-      nombre: usuario.nombre,
-      apellido: usuario.apellido,
-      correo: usuario.correo,
-      telefono: usuario.telefono,
-      rol: usuario.rol,
-      estado: usuario.estado
-    });
     setEditingId(usuario.idUsuario);
+    setFormData({
+      nombre: usuario?.nombre ?? "",
+      apellido: usuario?.apellido ?? "",
+      correo: usuario?.correo ?? "",
+      password: "", // no rellenamos password por seguridad
+      telefono: usuario?.telefono ?? "",
+      rol: String(usuario?.rolId ?? usuario?.rol ?? ""), // ajusta según lo que devuelva tu API
+      estado: usuario?.estado ? "true" : "false",
+    });
   };
 
-  // Cambiar estado activo/inactivo
+  // Cambiar estado activo/inactivo (toggle)
   const handleToggleEstado = async (usuario) => {
     try {
-      const usuarioActualizado = { ...usuario, estado: !usuario.estado };
-      await updateUsuario(usuario.idUsuario, usuarioActualizado);
+      const payload = {
+        ...usuario,
+        estado: !usuario.estado,
+      };
+      await updateUsuario(usuario.idUsuario, payload);
       cargarUsuarios();
     } catch (error) {
-      console.error("Error al cambiar el estado:", error.response?.data || error.message);
+      console.error("Error al cambiar el estado:", error?.response?.data || error?.message);
     }
   };
 
-  // Filtrar usuarios
-  const usuariosFiltrados = usuarios.filter(u => {
+  // ===================== FILTRO ===================== //
+
+  const usuariosFiltrados = usuarios.filter((u) => {
     if (filtroEstado === "activos") return u.estado === true;
     if (filtroEstado === "inactivos") return u.estado === false;
     return true;
   });
 
   const total = usuarios.length;
-  const activos = usuarios.filter(u => u.estado).length;
+  const activos = usuarios.filter((u) => u.estado).length;
   const inactivos = total - activos;
 
-  // ✅ protección visual si no tiene acceso
+  // ===================== GUARD ===================== //
+
   if (!token || rol !== "administrador") {
     return <p className="text-center text-danger mt-5">Acceso no autorizado</p>;
-  }
+    }
 
   // ===================== RENDER ===================== //
   return (
     <>
       <h2>Gestión de Usuarios</h2>
 
-    {/* Filtros */}
-    <div>
-      <button onClick={() => setFiltroEstado("todos")}>Todos</button>
-      <button onClick={() => setFiltroEstado("activos")}>Activos</button>
-      <button onClick={() => setFiltroEstado("inactivos")}>Inactivos</button>
-    </div>
-
-    <div>
-      <span>Total: {total}</span> | 
-      <span>Activos: {activos}</span> | 
-      <span>Inactivos: {inactivos}</span>
-    </div>  {/* ✅ cierre que faltaba */}
-    <div className="container mt-4">
-      <h2 className="text-center fw-bold text-primary">Gestión de Usuarios</h2>
-
-      {/* Filtros y contadores */}
-      <div className="d-flex justify-content-between align-items-center my-3">
-        <div>
-          <button className="btn btn-outline-secondary me-2" onClick={() => setFiltroEstado("todos")}>Todos</button>
-          <button className="btn btn-outline-success me-2" onClick={() => setFiltroEstado("activos")}>Activos</button>
-          <button className="btn btn-outline-danger" onClick={() => setFiltroEstado("inactivos")}>Inactivos</button>
-        </div>
-        <div>
-          <span className="me-3">Total: <strong>{total}</strong></span>
-          <span className="me-3">activos: <strong className="text-success">{activos}</strong></span>
-          <span>inactivos: <strong className="text-danger">{inactivos}</strong></span>
-        </div>
+      {/* Filtros */}
+      <div className="mb-2">
+        <button className="btn btn-outline-secondary me-2" onClick={() => setFiltroEstado("todos")}>
+          Todos
+        </button>
+        <button className="btn btn-outline-success me-2" onClick={() => setFiltroEstado("activos")}>
+          Activos
+        </button>
+        <button className="btn btn-outline-danger" onClick={() => setFiltroEstado("inactivos")}>
+          Inactivos
+        </button>
       </div>
 
-      {/* Formulario */}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={form.nombre}
-          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Apellido"
-          value={form.apellido}
-          onChange={(e) => setForm({ ...form, apellido: e.target.value })}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Correo"
-          value={form.correo}
-          onChange={(e) => setForm({ ...form, correo: e.target.value })}
-          required
-        />
-        <input
-          type="tel"
-          placeholder="Teléfono"
-          value={form.telefono}
-          onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-          required
-        />
-        <select value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
-          <option value="usuario">Usuario</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <select value={form.estado.toString()} onChange={(e) => setForm({ ...form, estado: e.target.value === "true" })}>
-          <option value="true">Activo</option>
-          <option value="false">Inactivo</option>
-        </select>
-        <button type="submit">{editingId ? "Actualizar Usuario" : "Registrar Usuario"}</button>
-      </form>
+      <div className="mb-3">
+        <span className="me-3">Total: {total}</span>
+        <span className="me-3">Activos: {activos}</span>
+        <span>Inactivos: {inactivos}</span>
+      </div>
 
-      {/* Tabla de usuarios */}
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usuariosFiltrados.map((u) => (
-            <tr key={u.idUsuario}>
-              <td>{u.nombre}</td>
-              <td>{u.apellido}</td>
-              <td>{u.correo}</td>
-              <td>{u.telefono}</td>
-              <td>{u.rol}</td>
-              <td>{u.estado ? "activo" : "inactivo"}</td>
-              <td>
-                <button onClick={() => handleEdit(u)}>Editar</button>
-                <button onClick={() => handleToggleEstado(u)}>
-                  {u.estado ? "Inactivar" : "Activar"}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <div className="container mt-4">
+        <h3>{editingId ? "Editar Usuario" : "Registrar Usuario"}</h3>
+        <form onSubmit={handleSubmit}>
+          {/* Nombre */}
+          <div className="mb-3">
+            <label className="form-label">Nombre</label>
+            <input
+              type="text"
+              className="form-control"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Apellido */}
+          <div className="mb-3">
+            <label className="form-label">Apellido</label>
+            <input
+              type="text"
+              className="form-control"
+              name="apellido"
+              value={formData.apellido}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Correo */}
+          <div className="mb-3">
+            <label className="form-label">Correo</label>
+            <input
+              type="email"
+              className="form-control"
+              name="correo"
+              value={formData.correo}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Password */}
+          <div className="mb-3">
+            <label className="form-label">Contraseña {editingId ? "(deja vacío si no cambia)" : ""}</label>
+            <input
+              type="password"
+              className="form-control"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required={!editingId}
+            />
+          </div>
+
+          {/* Teléfono */}
+          <div className="mb-3">
+            <label className="form-label">Teléfono</label>
+            <input
+              type="text"
+              className="form-control"
+              name="telefono"
+              value={formData.telefono}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Rol */}
+          <div className="mb-3">
+            <label className="form-label">Rol</label>
+            <select
+              className="form-select"
+              name="rol"
+              value={formData.rol}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Seleccione un rol</option>
+              <option value="1">Administrador</option>
+              <option value="2">Usuario</option>
+            </select>
+          </div>
+
+          {/* Estado */}
+          <div className="mb-3">
+            <label className="form-label">Estado</label>
+            <select
+              className="form-select"
+              name="estado"
+              value={formData.estado}
+              onChange={handleChange}
+              required
+            >
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+
+          {/* Botones */}
+          <button type="submit" className="btn btn-primary me-2">
+            {editingId ? "Actualizar" : "Registrar"}
+          </button>
+        </form>
+
+        {/* Tabla de usuarios */}
+        <div className="table-responsive mt-4">
+          <table className="table table-striped align-middle">
+            <thead className="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th style={{ width: 180 }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuariosFiltrados.map((u) => (
+                <tr key={u.idUsuario}>
+                  <td>{u.nombre}</td>
+                  <td>{u.apellido}</td>
+                  <td>{u.correo}</td>
+                  <td>{u.telefono}</td>
+                  <td>{u.rolNombre ?? u.rol ?? "-"}</td>
+                  <td>{u.estado ? "Activo" : "Inactivo"}</td>
+                  <td>
+                    <button className="btn btn-sm btn-warning me-2" onClick={() => handleEdit(u)}>
+                      Editar
+                    </button>
+                    <button
+                      className={`btn btn-sm ${u.estado ? "btn-danger" : "btn-success"}`}
+                      onClick={() => handleToggleEstado(u)}
+                    >
+                      {u.estado ? "Inactivar" : "Activar"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {usuariosFiltrados.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center text-muted py-3">
+                    No hay usuarios para mostrar.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </>
   );
 }

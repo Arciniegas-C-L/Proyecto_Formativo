@@ -26,6 +26,9 @@ import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import { PerfilPage } from "./pages/PerfilPage.jsx";
 import {Carritopage} from "./pages/Carritopage"
 import 'bootstrap/dist/css/bootstrap.min.css';
+import "../src/assets/css/Layout/Layout.css";
+
+
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx"; // 👈 importamos useAuth
@@ -63,10 +66,11 @@ function AppContent() {
     console.log("Editar proveedor", proveedor);
   };
 
-  return (
-    <>
-      <Header />
+return (
+  <div className="app-container">
+    <Header />
 
+    <main className="main-content">
       <Routes>
         {/* Públicas */}
         <Route path="/" element={<Home />} />
@@ -202,9 +206,10 @@ function AppContent() {
       </Routes>
 
       <Toaster />
-      <Footer />
-    </>
-  );
+    </main>
+    <Footer />
+  </div>
+);
 }
 
 // 👇 Envolvemos AppContent con AuthProvider

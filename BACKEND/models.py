@@ -155,7 +155,7 @@ class Subcategoria(models.Model):
 class Producto(models.Model):
     nombre = models.CharField(max_length=45)
     descripcion = models.TextField(max_length=200)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    precio = models.PositiveIntegerField()
     stock = models.PositiveIntegerField(default=0)
     subcategoria = models.ForeignKey(Subcategoria, on_delete=models.CASCADE, related_name='productos')
     imagen = models.ImageField(upload_to='productos/', blank=True, null=True)

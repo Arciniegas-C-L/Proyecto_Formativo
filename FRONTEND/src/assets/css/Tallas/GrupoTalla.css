@@ -1,0 +1,255 @@
+/* Contenedor principal */
+.grupo-talla-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Urbanist', sans-serif;
+}
+
+/* Header */
+.grupo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.grupo-header h2 {
+  color: #00b0e0;
+  font-weight: 800;
+  font-size: 2rem;
+  text-shadow: 1px 1px 2px rgba(0,0,0,.12);
+}
+.btn-grupo-nuevo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #8b3581;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+.btn-grupo-nuevo:hover {
+  background-color: #6e2768;
+}
+
+/* Tabla principal  */
+.grupo-tabla-container {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  padding: 0px;
+}
+.grupo-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  border-radius: 7px;
+  overflow: hidden;
+
+}
+.grupo-tabla thead {
+  background-color: #1A1F2E;
+  color: #00b0e0;
+  font-weight: bold;
+  display: table-header-group;
+}
+.grupo-tabla thead th {
+  padding: 18px 17px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.grupo-tabla tbody td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.grupo-tabla tbody tr:hover {
+  background-color: #f3f9ff;
+}
+.chip-talla {
+  display: inline-block;
+  background-color: #00b0e0;
+  color: #fff;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  margin: 2px;
+  font-size: 0.8rem;
+}
+
+/* Acciones de fila */
+.acciones-grupo button {
+  margin: 0 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: background-color 0.25s;
+}
+.btn-grupo-editar { background-color: #00b0e0; }
+.btn-grupo-editar:hover { background-color: #0090bb; }
+.btn-grupo-asignar { background-color: #F26BE2; }
+.btn-grupo-asignar:hover { background-color: #F26BE2; }
+.btn-grupo-eliminar { background-color: #6b2b62; }
+.btn-grupo-eliminar:hover { background-color: #6b2b62; }
+
+/* Loading y mensajes */
+.loading {
+  padding: 20px;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Modal Crear/Editar */
+.grupo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+.grupo-modal-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+}
+.grupo-modal-content h3 {
+  margin-top: 0;
+  color: #8b3581;
+}
+.text-error {
+  color: #dc3545;
+  margin-bottom: 10px;
+}
+.grupo-modal-content label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}
+.grupo-modal-content input,
+.grupo-modal-content textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.grupo-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+.btn-cancelar {
+  background-color: #6c757d;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+.btn-cancelar:hover {
+  background-color: #5a6268;
+}
+.btn-guardar {
+  background-color: #8b3581;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+.btn-guardar:hover {
+  background-color: #6e2768;
+}
+
+/* Modal Eliminar */
+.grupo-modal-eliminar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+.grupo-modal-eliminar-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  box-shadow: 0 9px 28px rgba(0,0,0,.15);
+  text-align: center;
+}
+.grupo-modal-eliminar-content p {
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+.grupo-modal-eliminar-content button {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.grupo-modal-eliminar-buttons {
+  display: flex;
+  justify-content: center; 
+  gap: 10px; 
+  margin-top: 15px; 
+}
+
+.grupo-modal-eliminar-content .btn-eliminar {
+  background-color: #6b2b62;
+  color: #fff;
+}
+.grupo-modal-eliminar-content .btn-eliminar:hover {
+  background-color: #6b2b62;
+}
+.grupo-modal-eliminar-content .btn-cancelar {
+  background-color: #6c757d;
+  color: #fff;
+}
+.grupo-modal-eliminar-content .btn-cancelar:hover {
+  background-color: #5a6268;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .grupo-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-grupo-nuevo {
+    width: 100%;
+    justify-content: center;
+  }
+  .grupo-tabla th, .grupo-tabla td {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+  .acciones-grupo button {
+    margin: 2px 2px;
+    padding: 4px 6px;
+  }
+}

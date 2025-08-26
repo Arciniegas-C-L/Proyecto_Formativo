@@ -1,13 +1,13 @@
-import React from "react";
-import "../../assets/css/Home.css";
-import gorra from "../../assets/images/home/gorra.jpg";
-import pareja from "../../assets/images/home/pareja.jpg";
-import calzado from "../../assets/images/home/calzado.jpg";
-import colcha from "../../assets/images/home/colcha.jpg";
-import joven from "../../assets/images/home/joven.jpg";
-import anciano from "../../assets/images/home/anciano.jpg";
-import mujer from "../../assets/images/home/mujer.jpg";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import '../../assets/css/SinglePage/Home.css';
+import gorra from '../../assets/images/home/gorra.jpg';
+import pareja from '../../assets/images/home/pareja.jpg';
+import calzado from '../../assets/images/home/calzado.jpg';
+import colcha from '../../assets/images/home/colcha.jpg';
+import joven from '../../assets/images/home/joven.jpg';
+import anciano from '../../assets/images/home/anciano.jpg';
+import mujer from '../../assets/images/home/mujer.jpg';
 
 export const Home = () => {
   return (
@@ -22,7 +22,7 @@ export const Home = () => {
             eligen destacar.
           </p>
           <Link to="/catalogo" className="hero-boton btn btn-warning btn-lg">
-            Ver Catalogo
+            <strong> Ver catalogo </strong>
           </Link>
         </div>
       </section>
