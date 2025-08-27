@@ -1,235 +1,262 @@
 import React, { useEffect, useState } from "react";
-import { getALLProductos } from "../../api/Producto.api"; // ⚠️ confirma nombre exacto
-import { getAllCategorias } from "../../api/Categoria.api";
-import { auth } from "../../auth/authService";
-import "../../assets/css/Catalogo/Catalogo.css";
-import FiltrosCatalogo from "../Catalogo/FiltrosCatalogo";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { updateCategoria, deleteCategoria } from "../../api/Categoria.api";
+import { updateSubcategoria, deleteSubcategoria } from "../../api/Subcategoria.api";
+import "../../assets/css/Categoria/ListaCategoria.css";
 
-export default function Catalogo() {
-  const [productos, setProductos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
-  const [subcategoriasSeleccionadas, setSubcategoriasSeleccionadas] = useState([]);
-  const [chipsActivos, setChipsActivos] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
-  const [filtroTemporal, setFiltroTemporal] = useState(null);
-  const [errorProductos, setErrorProductos] = useState("");
+export function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} }) {
+  // === Estados con los NOMBRES que usa tu JSX ===
+  const [categoriasEditadas, setCategoriasEditadas] = useState(categorias); // lista editable
+  const [editarCategoria, setEditarCategoria] = useState({});              // { [idCategoria]: bool }
+  const [editarSubcategoria, setEditarSubcategoria] = useState({});        // { [idSubcategoria]: bool }
+  const [mostrarSub, setMostrarSub] = useState({});                        // { [idCategoria]: bool }
 
-  const capitalizar = (texto = "") =>
-    texto ? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase() : "";
-
-  const cargarProductos = async () => {
-    const token = auth?.obtenerToken?.();
-    if (!token) {
-      setErrorProductos("Debes iniciar sesión para ver los productos.");
-      return;
-    }
-
-    try {
-      // Si tu cliente no agrega el token automáticamente, pásalo aquí.
-      const res = await getALLProductos(/* token */);
-      const productosData = res?.data ?? res ?? [];
-
-      const productosValidos = productosData.filter(
-        (p) =>
-          p?.categoria_nombre &&
-          p?.subcategoria_nombre &&
-          Array.isArray(p?.inventario_tallas)
-      );
-      setProductos(productosValidos);
-      setErrorProductos("");
-
-      // Mapa de subcategorías por categoría
-      const subMap = {};
-      for (const p of productosValidos) {
-        const cat = p.categoria_nombre;
-        const sub = p.subcategoria_nombre;
-        if (!subMap[cat]) subMap[cat] = new Set();
-        subMap[cat].add(sub);
-      }
-      const subFinal = {};
-      Object.keys(subMap).forEach((cat) => {
-        subFinal[cat] = Array.from(subMap[cat]).sort();
-      });
-      setSubcategoriasPorCategoria(subFinal);
-    } catch (error) {
-      if (error?.response?.status === 401) {
-        setErrorProductos("Tu sesión ha expirado. Vuelve a iniciar sesión.");
-      } else {
-        setErrorProductos("Error al cargar productos.");
-      }
-      console.error("Error al cargar productos:", error);
-    }
-  };
-
-  const cargarCategorias = async () => {
-    try {
-      const res = await getAllCategorias();
-      const data = res?.data ?? res ?? [];
-      const nombres = data.map((cat) => cat?.nombre).filter(Boolean);
-      setCategorias(nombres.sort());
-    } catch (error) {
-      console.error("Error al cargar categorías:", error);
-    }
-  };
-
+  // Sincroniza cuando cambien las categorías del padre
   useEffect(() => {
-    cargarCategorias();
-    cargarProductos();
+    setCategoriasEditadas(Array.isArray(categorias) ? categorias : []);
+  }, [categorias]);
 
-    // Si necesitas auto-refresh, súbelo a 60s o manual:
-    const interval = setInterval(() => {
-      cargarCategorias();
-      cargarProductos();
-    }, 60000);
-    return () => clearInterval(interval);
-  }, []); // si quieres refrescar cuando cambia el token: [auth?.obtenerToken?.()]
-
-  const seleccionarCategoria = (cat) => {
-    setCategoriaSeleccionada(cat);
-    setSubcategoriasSeleccionadas([]);
-    setFiltroTemporal(null);
-    setChipsActivos((prev) => (prev.includes(cat) ? prev : [...prev, cat]));
+  // ======= Handlers para editar en memoria =======
+  const cambiarCategoria = (id, field, value) => {
+    setCategoriasEditadas(prev =>
+      prev.map(cat => (cat.idCategoria === id ? { ...cat, [field]: value } : cat))
+    );
   };
 
-  const seleccionarSubcategoria = (sub) => {
-    setSubcategoriasSeleccionadas([sub]);
-    setFiltroTemporal(sub);
-    setChipsActivos((prev) => (prev.includes(sub) ? prev : [...prev, sub]));
+  const cambiarSubcategoria = (catId, subId, field, value) => {
+    setCategoriasEditadas(prev =>
+      prev.map(cat => {
+        if (cat.idCategoria !== catId) return cat;
+        const subcategorias = (cat.subcategorias || []).map(sub =>
+          sub.idSubcategoria === subId ? { ...sub, [field]: value } : sub
+        );
+        return { ...cat, subcategorias };
+      })
+    );
   };
 
-  const limpiarFiltros = () => {
-    setCategoriaSeleccionada("");
-    setSubcategoriasSeleccionadas([]);
-    setBusqueda("");
-    setFiltroTemporal(null);
-    setChipsActivos([]);
-  };
-
-  const productosFiltrados = productos.filter((producto) => {
-    const nombre = (producto?.nombre ?? "").toLowerCase();
-
-    if (filtroTemporal) {
-      if (categorias.includes(filtroTemporal)) {
-        if (producto.categoria_nombre !== filtroTemporal) return false;
-      } else {
-        if (producto.subcategoria_nombre !== filtroTemporal) return false;
-      }
-    } else {
-      if (
-        categoriaSeleccionada &&
-        producto.categoria_nombre !== categoriaSeleccionada
-      )
-        return false;
-
-      if (
-        subcategoriasSeleccionadas.length > 0 &&
-        producto.subcategoria_nombre !== subcategoriasSeleccionadas[0]
-      )
-        return false;
+  // ======= Guardar en API =======
+  const guardarCategoria = async (cat) => {
+    try {
+      await updateCategoria(cat.idCategoria, {
+        nombre: cat.nombre,
+        estado: Boolean(cat.estado),
+      });
+      alert("Categoría actualizada correctamente");
+      setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: false }));
+      onCategoriasActualizadas();
+    } catch (e) {
+      console.error("Error actualizando categoría", e);
+      alert("Error al actualizar categoría");
     }
+  };
 
-    if (busqueda && !nombre.includes(busqueda.toLowerCase())) return false;
+  const guardarSubcategoria = async (catId, sub) => {
+    try {
+      await updateSubcategoria(sub.idSubcategoria, {
+        nombre: sub.nombre,
+        estado: Boolean(sub.estado),
+        categoria: Number(catId),
+      });
+      alert("Subcategoría actualizada correctamente");
+      setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: false }));
+      onCategoriasActualizadas();
+    } catch (e) {
+      console.error("Error actualizando subcategoría", e);
+      alert("Error al actualizar subcategoría");
+    }
+  };
 
-    return true;
-  });
+  // ======= Eliminar =======
+  const eliminarSub = async (sub) => {
+    if (!window.confirm(`¿Eliminar la subcategoría "${sub.nombre}"?`)) return;
+    try {
+      await deleteSubcategoria(sub.idSubcategoria);
+      alert("Subcategoría eliminada");
+      onCategoriasActualizadas();
+    } catch (e) {
+      console.error("Error eliminando subcategoría", e);
+      alert("No se pudo eliminar la subcategoría");
+    }
+  };
 
+  const eliminarCategoria = async (cat) => {
+    if (!window.confirm(`¿Eliminar la categoría "${cat.nombre}" y TODAS sus subcategorías?`)) return;
+
+    // 1) Intenta borrado directo (si tu backend tiene CASCADE)
+    try {
+      await deleteCategoria(cat.idCategoria);
+      alert("Categoría eliminada");
+      onCategoriasActualizadas();
+      return;
+    } catch {
+      // 2) Si falla, borra subcategorías manualmente y reintenta
+      try {
+        for (const sub of cat.subcategorias || []) {
+          await deleteSubcategoria(sub.idSubcategoria).catch(() => {});
+        }
+        await deleteCategoria(cat.idCategoria);
+        alert("Categoría y subcategorías eliminadas");
+        onCategoriasActualizadas();
+      } catch (e2) {
+        console.error("Error eliminando categoría y subcategorías", e2);
+        alert("No se pudo eliminar la categoría");
+      }
+    }
+  };
+
+  // ======= Render =======
   return (
-    <div className="catalogo-container container-fluid py-4">
-      <div className="row">
-        {/* Filtros lateral */}
-        <div className="col-md-2 mb-4">
-          {/* subcategoriaSeleccionada debe ser string */}
-          <FiltrosCatalogo
-            categorias={categorias}
-            categoriaSeleccionada={categoriaSeleccionada}
-            subcategoriasPorCategoria={subcategoriasPorCategoria}
-            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""}
-            capitalizar={capitalizar}
-            seleccionarCategoria={seleccionarCategoria}
-            seleccionarSubcategoria={seleccionarSubcategoria}
-            limpiarFiltros={limpiarFiltros}
-          />
-        </div>
+    <div className="contenedor-categorias">
+      <h3 className="titulo-categorias">Listado de Categorías y Subcategorías</h3>
 
-        {/* Buscador y productos */}
-        <div className="col-md-10">
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
-            <h2 className="catalogo-titulo mb-2 mb-md-0">Catálogo de Productos</h2>
-            <div className="catalogo-buscador">
-              <input
-                type="text"
-                placeholder="Buscar producto..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-          </div>
+      {categoriasEditadas.length === 0 ? (
+        <p className="mensaje-vacio">No hay categorías registradas</p>
+      ) : (
+        <div className="contenedor-tarjetas">
+          {categoriasEditadas.map(cat => (
+            <div key={cat.idCategoria} className="tarjeta-categoria">
+              <div className="header-tarjeta">
+                <input
+                  type="text"
+                  className="input-categoria"
+                  value={cat.nombre || ""}
+                  disabled={!editarCategoria[cat.idCategoria]}
+                  onChange={e => cambiarCategoria(cat.idCategoria, "nombre", e.target.value)}
+                />
 
-          {/* Chips acumulativos */}
-          {chipsActivos.length > 0 && (
-            <div className="catalogo-chips-container">
-              {chipsActivos.map((chip) => {
-                const esCategoria = categorias.includes(chip);
-                const activo = filtroTemporal === chip;
-                return (
-                  <span
-                    key={chip}
-                    className={`${esCategoria ? "chip-categoria" : "chip-subcategoria"} ${activo ? "activo" : ""}`}
+                <label className="label-check">
+                  <input
+                    type="checkbox"
+                    className="checkbox"
+                    checked={!!cat.estado}
+                    disabled={!editarCategoria[cat.idCategoria]}
+                    onChange={e => cambiarCategoria(cat.idCategoria, "estado", e.target.checked)}
+                  />
+                  Activo
+                </label>
+
+                <div className="grupo-botones">
+                  {!editarCategoria[cat.idCategoria] ? (
+                    <button
+                      className="btn-editar"
+                      onClick={() =>
+                        setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: true }))
+                      }
+                    >
+                      Editar
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="btn-cancelar"
+                        onClick={() =>
+                          setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: false }))
+                        }
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        className="btn-guardar"
+                        onClick={() => guardarCategoria(cat)}
+                      >
+                        Guardar
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    className="btn-subcategorias"
+                    onClick={() =>
+                      setMostrarSub(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))
+                    }
                   >
-                    <span
-                      className="chip-nombre"
-                      style={{ cursor: "pointer", marginRight: "6px" }}
-                      onClick={() => setFiltroTemporal(chip)}
-                    >
-                      {capitalizar(chip)}
-                    </span>
-                    <span
-                      className="chip-cerrar"
-                      style={{ cursor: "pointer", fontWeight: "bold" }}
-                      onClick={() => {
-                        setChipsActivos((prev) => prev.filter((c) => c !== chip));
-                        if (filtroTemporal === chip) setFiltroTemporal(null);
-                        if (categoriaSeleccionada === chip) setCategoriaSeleccionada("");
-                        if (subcategoriasSeleccionadas.includes(chip))
-                          setSubcategoriasSeleccionadas([]);
-                      }}
-                    >
-                      ×
-                    </span>
-                  </span>
-                );
-              })}
-            </div>
-          )}
+                    {mostrarSub[cat.idCategoria] ? "Ocultar Subcategorías" : "Mostrar Subcategorías"}
+                  </button>
 
-          {/* Errores */}
-          {errorProductos && (
-            <div className="alert alert-warning">{errorProductos}</div>
-          )}
-
-          {/* Productos */}
-          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-            {productosFiltrados.length === 0 ? (
-              <div className="col text-center">
-                <div className="alert alert-info w-100">
-                  No hay productos para mostrar.
+                  <button
+                    className="btn-eliminar"
+                    onClick={() => eliminarCategoria(cat)}
+                  >
+                    Eliminar categoría
+                  </button>
                 </div>
               </div>
-            ) : (
-              productosFiltrados.map((producto) => (
-                <ProductoCard
-                  key={producto.id}
-                  producto={producto}
-                  capitalizar={capitalizar}
-                />
-              ))
-            )}
-          </div>
+
+              {mostrarSub[cat.idCategoria] && (
+                <div className="subcategorias">
+                  {cat.subcategorias?.length > 0 ? (
+                    cat.subcategorias.map(sub => (
+                      <div key={sub.idSubcategoria} className="fila-subcategoria">
+                        <input
+                          type="text"
+                          className="input-subcategoria"
+                          value={sub.nombre || ""}
+                          disabled={!editarSubcategoria[sub.idSubcategoria]}
+                          onChange={e =>
+                            cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "nombre", e.target.value)
+                          }
+                        />
+
+                        <label className="label-check">
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={!!sub.estado}
+                            disabled={!editarSubcategoria[sub.idSubcategoria]}
+                            onChange={e =>
+                              cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "estado", e.target.checked)
+                            }
+                          />
+                          Activo
+                        </label>
+
+                        <div className="grupo-botones">
+                          {!editarSubcategoria[sub.idSubcategoria] ? (
+                            <button
+                              className="btn-editar"
+                              onClick={() =>
+                                setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: true }))
+                              }
+                            >
+                              Editar
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                className="btn-cancelar"
+                                onClick={() =>
+                                  setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: false }))
+                                }
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                className="btn-guardar"
+                                onClick={() => guardarSubcategoria(cat.idCategoria, sub)}
+                              >
+                                Guardar
+                              </button>
+                            </>
+                          )}
+
+                          <button
+                            className="btn-eliminar-sub"
+                            onClick={() => eliminarSub(sub)}
+                          >
+                            Eliminar subcategoría
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <em className="mensaje-vacio-sub">No hay subcategorías</em>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

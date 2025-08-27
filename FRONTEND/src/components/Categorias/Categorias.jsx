@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createCategoria, getAllCategorias } from "../../api/Categoria.api";
 import { createSubcategoria, getAllSubcategorias } from "../../api/Subcategoria.api";
-import ListaCategorias from "./ListaCategorias";
+import {ListaCategorias} from "./ListaCategorias";
 import "../../assets/css/Categoria/Categorias.css";
 
 function SubcategoriaForm({ subcategoria, onChange }) {
@@ -37,7 +37,7 @@ function SubcategoriaForm({ subcategoria, onChange }) {
           type="checkbox"
           className="input-check"
           name="estado"
-          checked={subcategoria.estado}
+          checked={!!subcategoria.estado}
           onChange={onChange}
           id="estadoSubcategoria"
         />
@@ -63,9 +63,9 @@ export function CategoriaForm() {
   });
 
   const [categorias, setCategorias] = useState([]);
-  const [modoCategoria, setModoCategoria] = useState("nueva"); 
+  const [modoCategoria, setModoCategoria] = useState("nueva"); // "nueva" | "existente"
   const [categoriaExistenteId, setCategoriaExistenteId] = useState("");
-  const [modoVista, setModoVista] = useState("formulario"); 
+  const [modoVista, setModoVista] = useState("formulario"); // "formulario" | "lista"
 
   useEffect(() => {
     cargarDatos();
@@ -76,11 +76,12 @@ export function CategoriaForm() {
       const categoriasData = await getAllCategorias();
       const subcategoriasData = await getAllSubcategorias();
 
-      const categoriasConSubcategorias = categoriasData.map((cat) => ({
+      const cats = Array.isArray(categoriasData) ? categoriasData : (categoriasData?.data ?? []);
+      const subs = Array.isArray(subcategoriasData) ? subcategoriasData : (subcategoriasData?.data ?? []);
+
+      const categoriasConSubcategorias = cats.map((cat) => ({
         ...cat,
-        subcategorias: subcategoriasData.filter(
-          (sub) => sub.categoria === cat.idCategoria
-        ),
+        subcategorias: subs.filter((sub) => sub.categoria === cat.idCategoria),
       }));
 
       setCategorias(categoriasConSubcategorias);
@@ -114,9 +115,11 @@ export function CategoriaForm() {
       if (modoCategoria === "nueva") {
         const nuevaCategoria = await createCategoria({
           nombre: categoria.nombre,
-          estado: categoria.estado,
+          estado: Boolean(categoria.estado),
         });
-        idCategoria = nuevaCategoria.idCategoria;
+        // soporta respuesta como objeto plano o {data: {...}}
+        const payload = nuevaCategoria?.data ?? nuevaCategoria;
+        idCategoria = payload?.idCategoria;
       } else {
         if (!categoriaExistenteId) {
           alert("Debes seleccionar una categoría existente");
@@ -125,29 +128,31 @@ export function CategoriaForm() {
         idCategoria = categoriaExistenteId;
       }
 
+      if (!idCategoria) {
+        alert("No se pudo obtener el ID de la categoría.");
+        return;
+      }
+
       if (categoria.usarSubcategorias) {
-        console.log("Creando subcategoría con datos:", {
-          nombre: subcategoria.nombre,
-          estado: subcategoria.estado,
-          stockMinimo: subcategoria.stockMinimo,
-          categoria: idCategoria,
-        });
-        
         await createSubcategoria({
           nombre: subcategoria.nombre,
           estado: Boolean(subcategoria.estado),
-          stockMinimo: parseInt(subcategoria.stockMinimo) || 0,
-          categoria: parseInt(idCategoria),
+          stockMinimo: Number(subcategoria.stockMinimo) || 0,
+          categoria: Number(idCategoria),
         });
       }
 
+      // Reset del formulario
       setCategoria({ nombre: "", estado: true, usarSubcategorias: false });
       setSubcategoria({ nombre: "", estado: true, stockMinimo: 0 });
       setModoCategoria("nueva");
       setCategoriaExistenteId("");
 
-      alert("Guardado correctamente");
+      // Refresca y pasa a la vista de lista para poder eliminar/interactuar
       await cargarDatos();
+      setModoVista("lista");
+
+      alert("Guardado correctamente");
     } catch (error) {
       console.error("Error al crear categoría o subcategoría", error);
       alert("Error al crear categoría o subcategoría. Revisa la consola.");
@@ -211,7 +216,7 @@ export function CategoriaForm() {
                   type="checkbox"
                   className="input-check"
                   name="estado"
-                  checked={categoria.estado}
+                  checked={!!categoria.estado}
                   onChange={handleCategoriaChange}
                   id="estadoCategoria"
                 />
@@ -245,7 +250,7 @@ export function CategoriaForm() {
               type="checkbox"
               className="input-check"
               name="usarSubcategorias"
-              checked={categoria.usarSubcategorias}
+              checked={!!categoria.usarSubcategorias}
               onChange={handleCategoriaChange}
               id="usarSubcategorias"
             />
@@ -269,7 +274,13 @@ export function CategoriaForm() {
           </button>
         </form>
       ) : (
-        <ListaCategorias categorias={categorias} />
+        // Vista de LISTA (aquí podrás eliminar/editar)
+        <ListaCategorias
+          categorias={categorias}
+          // Si tu ListaCategorias expone callbacks (onDelete/onUpdate), puedes pasarlos y luego llamar a cargarDatos()
+          // onDeleted={cargarDatos}
+          // onUpdated={cargarDatos}
+        />
       )}
     </div>
   );
