@@ -32,8 +32,8 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
   }, [proveedorEditar]);
 
   const handleVerProveedores = () => {
-    // En tus rutas, la vista de registrados está en /administrador
-    navigate("/administrador");
+    // En tus rutas, la vista de registrados está en /proveedores-registrados
+    navigate("/proveedores-registrados");
   };
 
   const handleSubmit = async (e) => {

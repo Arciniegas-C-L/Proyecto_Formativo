@@ -67,6 +67,14 @@ function AppContent() {
           }
         />
         <Route
+          path="/proveedores-registrados"
+          element={
+            <RutaPrivada role="administrador">
+              <ProveedoresRegistradosPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
           path="/inventario"
           element={
             <RutaPrivada role="administrador">

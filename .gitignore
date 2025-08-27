@@ -18,7 +18,6 @@ FRONTEND/node_modules/
 # Otros
 *.env
 *.bak
-db.sqlite3
 
 # Python bytecode
 *.pyc

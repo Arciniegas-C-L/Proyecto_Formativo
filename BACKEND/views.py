@@ -1126,7 +1126,7 @@ class TipoPagoView(viewsets.ModelViewSet):
     
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
