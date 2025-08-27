@@ -34,10 +34,16 @@ export const getSubcategoriasByCategoria = async (categoriaId) => {
 // Crear una nueva subcategoría
 export const createSubcategoria = async (subcategoria) => {
   try {
+    console.log("Datos a enviar para crear subcategoría:", subcategoria);
     const res = await api.post('subcategoria/', subcategoria);
+    console.log("Respuesta exitosa:", res.data);
     return res.data;
   } catch (error) {
     console.error("Error al crear subcategoría:", error);
+    if (error.response) {
+      console.error("Respuesta del servidor:", error.response.data);
+      console.error("Status del servidor:", error.response.status);
+    }
     throw error;
   }
 };

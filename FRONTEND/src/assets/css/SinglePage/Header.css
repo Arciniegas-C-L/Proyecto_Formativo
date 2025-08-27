@@ -81,8 +81,42 @@ header.bg-dark {
     justify-content: flex-start;
     padding: 10px;
   }
-<<<<<<< HEAD
 }
-=======
+
+/* Estilos para el indicador del carrito */
+.badge {
+  font-size: 0.75rem;
+  font-weight: bold;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
 }
->>>>>>> 1eccbb9159913eb1a825ea92689f920929a3ce6e
+
+@keyframes pulse {
+  0% {
+    transform: scale(1) translate(-50%, -50%);
+  }
+  50% {
+    transform: scale(1.1) translate(-50%, -50%);
+  }
+  100% {
+    transform: scale(1) translate(-50%, -50%);
+  }
+}
+
+/* Posicionamiento del badge */
+.position-relative .badge {
+  top: 0;
+  left: 100%;
+  transform: translate(-50%, -50%);
+}
+
+/* Hover en el enlace del carrito */
+.enlace-boton:hover .badge {
+  background-color: #dc3545 !important;
+  transform: translate(-50%, -50%) scale(1.1);
+  transition: all 0.3s ease;
+}

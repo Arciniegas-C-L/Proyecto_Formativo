@@ -7,6 +7,15 @@ export default function TallasDisponibles({
   tallaSeleccionada,
   mostrarStock,
 }) {
+  // Validar que los datos estén completos
+  if (!inventarioTallas || !Array.isArray(inventarioTallas) || inventarioTallas.length === 0) {
+    return (
+      <div className="tallas-container">
+        <small className="text-muted">No hay tallas disponibles</small>
+      </div>
+    );
+  }
+
   return (
     <div className="tallas-container">
       <div className="botones-tallas">
@@ -14,18 +23,18 @@ export default function TallasDisponibles({
           <button
             key={i}
             className={`talla-button ${
-              tallaSeleccionada?.talla === inv.talla ? "selected" : ""
+              tallaSeleccionada?.idTalla === inv.idTalla ? "selected" : ""
             }`}
-            onClick={() => mostrarStock(productoId, inv.talla, inv.stock)}
+            onClick={() => mostrarStock(productoId, inv.idTalla, inv.stock || 0, inv)}
           >
-            {inv.talla}
+            {inv.talla || "Sin talla"}
           </button>
         ))}
       </div>
 
       {tallaSeleccionada && (
         <div className="stock-disponible">
-          Productos disponibles: <strong>{tallaSeleccionada.stock}</strong>
+          Productos disponibles: <strong>{tallaSeleccionada.stock || 0}</strong>
         </div>
       )}
     </div>

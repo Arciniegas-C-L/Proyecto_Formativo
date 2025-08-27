@@ -1,18 +1,18 @@
 // src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import saludo from "../../assets/images/saludo.webp";
-// Si realmente tienes otra imagen, podrías hacer:
-// import bienvenida from "../../assets/images/bienvenida.webp";
-import "../../assets/css/Seccionandregistrer/sesion.css";
-import { auth } from '../../auth/authService';
+import { useNavigate, Link } from 'react-router-dom';
+import saludo from '../../assets/images/saludo.webp';
+import bienvenida from '../../assets/images/bienvenida.gif';
+import '../../assets/css/Seccionandregistrer/sesion.css';
+import { useAuth } from '../../context/AuthContext';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
 
 export function Sesion() {
-  const { guardarSesion } = auth;
+  const { login } = useAuth();
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
   const handleSignUpClick = () => containerRef.current?.classList.add('toggle');
@@ -31,7 +31,7 @@ export function Sesion() {
       const access = data?.token?.access || data?.access;
       const refresh = data?.token?.refresh || data?.refresh;
 
-      guardarSesion({
+      login({
         access,
         refresh,
         usuario: data?.usuario,
@@ -39,7 +39,9 @@ export function Sesion() {
       });
 
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
-      window.location.replace('/');
+
+      if (data?.rol === 'administrador') navigate('/');
+      else navigate('/catalogo');
     } catch (error) {
       const backend = error?.response?.data;
       const errorMsg =
@@ -77,8 +79,10 @@ export function Sesion() {
       containerRef.current?.classList.remove('toggle');
     } catch (error) {
       console.error("Error completo:", error);
+
       const backend = error?.response?.data;
       const status = error?.response?.status;
+
       const errorMsg =
         backend?.mensaje ||
         backend?.error ||
@@ -87,6 +91,7 @@ export function Sesion() {
         (status === 500 && "Error interno del servidor") ||
         error.message ||
         "No se pudo registrar el usuario";
+
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -107,7 +112,7 @@ export function Sesion() {
             <div className="container-input">
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
-            <Link to="/sesion/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
+            <Link to="/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? 'Procesando...' : 'INICIAR SESIÓN'}
             </button>
@@ -144,8 +149,7 @@ export function Sesion() {
         <div className="container-welcome">
           <div className="welcome-sign-up welcome">
             <h3>¡Bienvenido!</h3>
-            {/* Antes: src={bienvenida} (no existe) */}
-            <img className="saludo-welcome" src={saludo} alt="Bienvenida" />
+            <img className="saludo-welcome" src={bienvenida} alt="Bienvenida" />
             <p>Es un placer tenerte de regreso. Tu tienda favorita te estaba esperando. Ingresa y continúa donde lo dejaste.</p>
             <button className="button" onClick={handleSignUpClick}>Registrarse</button>
           </div>

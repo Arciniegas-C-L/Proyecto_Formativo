@@ -267,7 +267,14 @@ class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     queryset = Producto.objects.all()
     parser_classes = (MultiPartParser, FormParser)  # Soportar archivos en request
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+    def get_permissions(self):
+        # Permitir acceso público a métodos de solo lectura (GET, HEAD, OPTIONS)
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            from rest_framework.permissions import AllowAny
+            return [AllowAny()]
+        # Solo administradores pueden modificar
+        from BACKEND.permissions import IsAdminWriteClienteRead
+        return [IsAdminWriteClienteRead()]
 
     def update(self, request, pk=None):
         print("Datos recibidos en update:", request.data)  # Log de datos recibidos
@@ -362,6 +369,100 @@ class TallaViewSet(viewsets.ModelViewSet):
         talla.estado = nuevo_estado
         talla.save()
         return Response(self.get_serializer(talla).data)
+
+    @action(detail=False, methods=['post'])
+    def agregar_talla_a_productos_existentes(self, request):
+        """
+        Agrega una nueva talla a todos los productos existentes que pertenecen 
+        al mismo grupo de tallas de la talla especificada.
+        """
+        try:
+            talla_id = request.data.get('talla_id')
+            
+            if not talla_id:
+                return Response(
+                    {"error": "Se requiere el ID de la talla"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Obtener la talla
+            try:
+                talla = Talla.objects.get(id=talla_id, estado=True)
+            except Talla.DoesNotExist:
+                return Response(
+                    {"error": "Talla no encontrada o inactiva"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Obtener todas las subcategorías que usan el mismo grupo de tallas
+            subcategorias = Subcategoria.objects.filter(
+                grupoTalla=talla.grupo,
+                estado=True
+            )
+            
+            if not subcategorias.exists():
+                return Response(
+                    {"error": "No hay subcategorías que usen este grupo de tallas"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Obtener todos los productos de estas subcategorías
+            productos = Producto.objects.filter(
+                subcategoria__in=subcategorias
+            )
+            
+            inventarios_creados = []
+            inventarios_existentes = []
+            
+            for producto in productos:
+                # Verificar si ya existe inventario para este producto y talla
+                inventario_existente = Inventario.objects.filter(
+                    producto=producto,
+                    talla=talla
+                ).first()
+                
+                if inventario_existente:
+                    inventarios_existentes.append({
+                        'producto': producto.nombre,
+                        'talla': talla.nombre,
+                        'inventario_id': inventario_existente.idInventario
+                    })
+                else:
+                    # Crear nuevo inventario
+                    nuevo_inventario = Inventario.objects.create(
+                        producto=producto,
+                        talla=talla,
+                        cantidad=0,
+                        stockMinimo=producto.subcategoria.stockMinimo,
+                        stock_talla=0
+                    )
+                    inventarios_creados.append({
+                        'producto': producto.nombre,
+                        'talla': talla.nombre,
+                        'inventario_id': nuevo_inventario.idInventario
+                    })
+            
+            return Response({
+                "mensaje": f"Proceso completado para la talla '{talla.nombre}'",
+                "talla": {
+                    "id": talla.id,
+                    "nombre": talla.nombre,
+                    "grupo": talla.grupo.nombre
+                },
+                "estadisticas": {
+                    "productos_procesados": productos.count(),
+                    "inventarios_creados": len(inventarios_creados),
+                    "inventarios_existentes": len(inventarios_existentes)
+                },
+                "inventarios_creados": inventarios_creados,
+                "inventarios_existentes": inventarios_existentes
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Error al procesar la solicitud: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class InventarioView(viewsets.ModelViewSet):
     serializer_class = InventarioSerializer
@@ -1025,7 +1126,7 @@ class TipoPagoView(viewsets.ModelViewSet):
     
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1046,14 +1147,14 @@ class CarritoView(viewsets.ModelViewSet):
         try:
             carrito = self.get_object()
             print("Datos recibidos:", request.data)  # Log para debug
-            
+
             # Validar que los datos requeridos estén presentes
             if 'producto' not in request.data:
                 return Response(
                     {"error": "El campo 'producto' es requerido"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             if 'cantidad' not in request.data:
                 return Response(
                     {"error": "El campo 'cantidad' es requerido"},
@@ -1162,6 +1263,16 @@ class CarritoView(viewsets.ModelViewSet):
 
         try:
             item = CarritoItem.objects.get(idCarritoItem=item_id, carrito=carrito)
+            # Devolver stock al inventario correspondiente
+            from .models import Inventario
+            inventario = None
+            if item.talla:
+                inventario = Inventario.objects.filter(producto=item.producto, talla=item.talla).first()
+            else:
+                inventario = Inventario.objects.filter(producto=item.producto).first()
+            if inventario:
+                inventario.stock_talla += item.cantidad
+                inventario.save()
             item.delete()
             return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
         except CarritoItem.DoesNotExist:
@@ -1218,7 +1329,7 @@ class CarritoView(viewsets.ModelViewSet):
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
-    permission_classes = [IsAuthenticated, IsAdmin, IsCliente]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1229,7 +1340,7 @@ class CarritoItemView(viewsets.ModelViewSet):
 
 class EstadoCarritoView(viewsets.ModelViewSet):
     serializer_class = EstadoCarritoSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1248,12 +1359,16 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
         try:
             # Obtener el primer grupo de tallas activo como grupo por defecto
             grupo_talla_default = GrupoTalla.objects.filter(estado=True).first()
-            if not grupo_talla_default:
-                raise Exception("No hay grupos de talla disponibles para asignar por defecto")
             
-            # Guardar la subcategoría con el grupo de tallas por defecto
-            serializer.save(grupoTalla=grupo_talla_default)
+            # Si no hay grupos de tallas disponibles, crear la subcategoría sin grupo
+            if not grupo_talla_default:
+                print("Advertencia: No hay grupos de talla disponibles, creando subcategoría sin grupo")
+                serializer.save()
+            else:
+                # Guardar la subcategoría con el grupo de tallas por defecto
+                serializer.save(grupoTalla=grupo_talla_default)
         except Exception as e:
+            print(f"Error en perform_create: {str(e)}")
             raise serializers.ValidationError(f"Error al crear la subcategoría: {str(e)}")
 
     @action(detail=False, methods=['post'])

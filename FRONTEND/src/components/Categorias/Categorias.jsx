@@ -19,6 +19,19 @@ function SubcategoriaForm({ subcategoria, onChange }) {
         />
       </div>
 
+      <div className="mb-3">
+        <label className="form-label">Stock Mínimo</label>
+        <input
+          type="number"
+          className="input-text"
+          name="stockMinimo"
+          value={subcategoria.stockMinimo}
+          onChange={onChange}
+          min="0"
+          required
+        />
+      </div>
+
       <div className="form-check mb-3">
         <input
           type="checkbox"
@@ -46,6 +59,7 @@ export function CategoriaForm() {
   const [subcategoria, setSubcategoria] = useState({
     nombre: "",
     estado: true,
+    stockMinimo: 0,
   });
 
   const [categorias, setCategorias] = useState([]);
@@ -112,15 +126,23 @@ export function CategoriaForm() {
       }
 
       if (categoria.usarSubcategorias) {
-        await createSubcategoria({
+        console.log("Creando subcategoría con datos:", {
           nombre: subcategoria.nombre,
           estado: subcategoria.estado,
+          stockMinimo: subcategoria.stockMinimo,
           categoria: idCategoria,
+        });
+        
+        await createSubcategoria({
+          nombre: subcategoria.nombre,
+          estado: Boolean(subcategoria.estado),
+          stockMinimo: parseInt(subcategoria.stockMinimo) || 0,
+          categoria: parseInt(idCategoria),
         });
       }
 
       setCategoria({ nombre: "", estado: true, usarSubcategorias: false });
-      setSubcategoria({ nombre: "", estado: true });
+      setSubcategoria({ nombre: "", estado: true, stockMinimo: 0 });
       setModoCategoria("nueva");
       setCategoriaExistenteId("");
 

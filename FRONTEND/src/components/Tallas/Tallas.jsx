@@ -6,12 +6,13 @@ import {
   updateTalla,
   deleteTalla,
   cambiarEstadoTalla,
+  agregarTallaAProductosExistentes,
 } from "../../api/Talla.api.js";
 import { getAllGruposTalla } from "../../api/GrupoTalla.api.js";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/Tallas.css";
-import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaBoxes } from "react-icons/fa";
 
 export function Tallas() {
   const location = useLocation();
@@ -26,6 +27,11 @@ export function Tallas() {
   // ---- estados para eliminar (una sola vez) ----
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [tallaToDelete, setTallaToDelete] = useState(null);
+
+  // ---- estados para agregar talla a productos existentes ----
+  const [openAgregarDialog, setOpenAgregarDialog] = useState(false);
+  const [tallaToAdd, setTallaToAdd] = useState(null);
+  const [loadingAgregar, setLoadingAgregar] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -132,20 +138,66 @@ export function Tallas() {
       toast.success("Talla eliminada exitosamente");
       setOpenDeleteDialog(false);
       setTallaToDelete(null);
-      await cargarTallas();
-    } catch {
-      toast.error("Error al eliminar la talla");
+      cargarTallas();
+    } catch (err) {
+      handleError(err);
     }
   };
 
-  // Cambiar estado (arreglado para usar los parámetros)
-  const handleEstadoChange = async (id, estadoActual) => {
+  // --------------- Estado ---------------
+  const handleEstadoChange = async (id, estado) => {
     try {
-      await cambiarEstadoTalla(id, !estadoActual);
-      toast.success("Estado actualizado");
-      await cargarTallas();
-    } catch {
-      toast.error("Error al cambiar estado");
+      await cambiarEstadoTalla(id, !estado);
+      toast.success('Estado de la talla actualizado exitosamente');
+      cargarTallas();
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  // --------------- Agregar talla a productos existentes ---------------
+  const handleAgregarAProductosClick = (talla) => {
+    setTallaToAdd(talla);
+    setOpenAgregarDialog(true);
+  };
+
+  const confirmAgregarAProductos = async () => {
+    if (!tallaToAdd) return;
+    
+    try {
+      setLoadingAgregar(true);
+      const id = tallaToAdd.id ?? tallaToAdd.idTalla ?? tallaToAdd.id_talla;
+      const response = await agregarTallaAProductosExistentes(id);
+      
+      // Mostrar mensaje detallado del resultado
+      const { mensaje, estadisticas, inventarios_creados, inventarios_existentes } = response;
+      
+      if (estadisticas.inventarios_creados > 0) {
+        toast.success(
+          `${mensaje}. Se crearon ${estadisticas.inventarios_creados} nuevos registros de inventario para ${estadisticas.productos_procesados} productos.`,
+          { autoClose: 5000 }
+        );
+      } else if (estadisticas.inventarios_existentes > 0) {
+        toast.info(
+          `${mensaje}. Todos los productos ya tenían esta talla asignada (${estadisticas.inventarios_existentes} registros existentes).`,
+          { autoClose: 5000 }
+        );
+      } else {
+        toast.warning(
+          `${mensaje}. No se encontraron productos que usen el grupo de tallas de esta talla.`,
+          { autoClose: 5000 }
+        );
+      }
+      
+      setOpenAgregarDialog(false);
+      setTallaToAdd(null);
+      
+    } catch (err) {
+      const errorMessage = err?.response?.data?.error || 'Error al agregar la talla a productos existentes';
+      toast.error(errorMessage);
+      console.error('Error:', err);
+    } finally {
+      setLoadingAgregar(false);
     }
   };
 
@@ -179,36 +231,41 @@ export function Tallas() {
                 </td>
               </tr>
             ) : (
-              tallas.map((talla, index) => (
-                <tr key={talla?.id ?? index}>
-                  <td>{talla?.nombre}</td>
-                  <td>{talla?.grupo?.nombre ?? "-"}</td>
-                  <td className="estado-talla">
-                    <button
-                      className={`badge-estado ${talla?.estado ? "on" : "off"}`}
-                      type="button"
-                      onClick={() => handleEstadoChange(talla.id, talla.estado)}
-                      title="Cambiar estado"
-                    >
-                      {talla?.estado ? "Activo" : "Inactivo"}
-                    </button>
-                  </td>
-                  <td className="celda-acciones">
-                    <button
-                      className="btn-editar"
-                      onClick={() => handleOpenDialog(talla)}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="btn-eliminar"
-                      onClick={() => handleDeleteClick(talla)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
-                </tr>
-              ))
+              tallas.map((talla, index) => {
+                const id = talla.id ?? talla.idTalla ?? talla.id_talla ?? index;
+                return (
+                  <tr key={id}>
+                    <td>{talla.nombre}</td>
+                    <td>{talla.grupo?.nombre ?? '-'}</td>
+                    <td className="estado-talla">
+                      <button
+                        className={`chip-estado ${talla.estado ? 'on' : 'off'}`}
+                        onClick={() => handleEstadoChange(id, talla.estado)}
+                        title="Cambiar estado"
+                      >
+                        {talla.estado ? "Activo" : "Inactivo"}
+                      </button>
+                    </td>
+                    <td className="celda-acciones">
+                      <button className="btn-editar" onClick={() => handleOpenDialog(talla)}>
+                        <FaEdit />
+                      </button>
+                      <button className="btn-eliminar" onClick={() => handleDeleteClick(talla)}>
+                        <FaTrash />
+                      </button>
+                      {talla.estado && (
+                        <button 
+                          className="btn-agregar-productos" 
+                          onClick={() => handleAgregarAProductosClick(talla)}
+                          title="Agregar a productos existentes"
+                        >
+                          <FaBoxes />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

@@ -89,6 +89,7 @@ export function Catalogo() {
     return () => clearInterval(interval);
   }, []);
 
+  // Selección de categoría
   const seleccionarCategoria = (cat) => {
     setCategoriaSeleccionada(cat);
     setSubcategoriasSeleccionadas([]);
@@ -96,12 +97,14 @@ export function Catalogo() {
     setChipsActivos((prev) => (prev.includes(cat) ? prev : [...prev, cat]));
   };
 
+  // Selección de subcategoría
   const seleccionarSubcategoria = (sub) => {
     setSubcategoriasSeleccionadas([sub]);
     setFiltroTemporal(sub);
     setChipsActivos((prev) => (prev.includes(sub) ? prev : [...prev, sub]));
   };
 
+  // Limpiar todos los filtros
   const limpiarFiltros = () => {
     setCategoriaSeleccionada("");
     setSubcategoriasSeleccionadas([]);

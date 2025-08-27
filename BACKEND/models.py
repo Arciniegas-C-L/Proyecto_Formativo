@@ -1,12 +1,14 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, AbstractUser, Group, Permission
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
+# ----------------------------
 # Roles
+# ----------------------------
 class Rol(models.Model):
     idROL = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45)
@@ -14,7 +16,10 @@ class Rol(models.Model):
     def __str__(self):
         return self.nombre
 
+
+# ----------------------------
 # Usuarios y Manager
+# ----------------------------
 class UsuarioManager(BaseUserManager):
 
     def create_user(self, correo, nombre, apellido, password=None, **extra_fields):
@@ -32,7 +37,6 @@ class UsuarioManager(BaseUserManager):
         usuario.save(using=self._db)
         return usuario
 
-
     def create_superuser(self, correo, nombre, apellido, password, **extra_fields):
         from BACKEND.models import Rol  # Importa aquí para evitar importaciones circulares
 
@@ -42,9 +46,8 @@ class UsuarioManager(BaseUserManager):
         # Asignar un rol automáticamente si no se proporcionó
         if 'rol' not in extra_fields or extra_fields['rol'] is None:
             try:
-                rol_admin = Rol.objects.get(nombre='administrador')  # Asegúrate de que exista este rol
+                rol_admin = Rol.objects.get(nombre='administrador')
             except Rol.DoesNotExist:
-                # Crea el rol si no existe (opcional)
                 rol_admin = Rol.objects.create(nombre='administrador')
             extra_fields['rol'] = rol_admin
 
@@ -62,20 +65,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     apellido = models.CharField(max_length=45)
     correo = models.EmailField(max_length=45, unique=True)
     telefono = models.CharField(max_length=15)
-    direccion = models.CharField(max_length=255, blank=True, null=True) 
+    direccion = models.CharField(max_length=255, blank=True, null=True)
     estado = models.BooleanField(default=True)
 
-    # Se recomienda `on_delete=models.PROTECT` para no perder relaciones si un rol es eliminado
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT)
 
-    is_staff = models.BooleanField(default=False)  # Necesario para acceder al admin
+    is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
 
-    # Grupos y permisos específicos para usuarios personalizados
     groups = models.ManyToManyField(
         Group,
-        related_name='usuarios_set',  # Evita conflictos con modelos personalizados
+        related_name='usuarios_set',
         blank=True,
         help_text='Los grupos a los que pertenece este usuario.',
         verbose_name='grupos'
@@ -88,15 +89,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         verbose_name='permisos de usuario'
     )
 
-    USERNAME_FIELD = 'correo'  # Autenticación por correo
-    REQUIRED_FIELDS = ['nombre', 'apellido']  # Campos requeridos al crear superusuario
+    USERNAME_FIELD = 'correo'
+    REQUIRED_FIELDS = ['nombre', 'apellido']
 
-    objects = UsuarioManager()  # Tu manager personalizado
+    objects = UsuarioManager()
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
 
-# Código de recuperación para usuarios
+
+# ----------------------------
+# Código de recuperación
+# ----------------------------
 class CodigoRecuperacion(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
     codigo = models.CharField(max_length=6)
@@ -109,7 +113,10 @@ class CodigoRecuperacion(models.Model):
     def __str__(self):
         return f"Código para {self.usuario.correo} - {self.codigo}"
 
+
+# ----------------------------
 # Proveedor
+# ----------------------------
 class Proveedor(models.Model):
     TIPO_PROVEEDOR_CHOICES = [
         ('nacional', 'Nacional'),
@@ -126,7 +133,10 @@ class Proveedor(models.Model):
     def __str__(self):
         return self.nombre
 
+
+# ----------------------------
 # Categoría y Subcategoría
+# ----------------------------
 class Categoria(models.Model):
     idCategoria = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45, unique=True)
@@ -134,6 +144,21 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class GrupoTalla(models.Model):
+    idGrupoTalla = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=45, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+    estado = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Grupo de Tallas"
+        verbose_name_plural = "Grupos de Tallas"
+
 
 class Subcategoria(models.Model):
     idSubcategoria = models.AutoField(primary_key=True)
@@ -151,7 +176,7 @@ class Subcategoria(models.Model):
     def __str__(self):
         return f"{self.nombre} (de {self.categoria.nombre})"
 
-# Producto
+
 class Producto(models.Model):
     nombre = models.CharField(max_length=45)
     descripcion = models.TextField(max_length=200)
@@ -163,7 +188,24 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
 
+
+class Talla(models.Model):
+    nombre = models.CharField(max_length=10)
+    grupo = models.ForeignKey(GrupoTalla, on_delete=models.CASCADE, related_name='tallas')
+    estado = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('nombre', 'grupo')
+        verbose_name = "Talla"
+        verbose_name_plural = "Tallas"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.grupo.nombre})"
+
+
+# ----------------------------
 # Inventario y movimiento
+# ----------------------------
 class Inventario(models.Model):
     idInventario = models.AutoField(primary_key=True)
     cantidad = models.IntegerField(default=0)
@@ -190,10 +232,6 @@ class Inventario(models.Model):
 
     @classmethod
     def crear_inventario_para_producto(cls, producto, tallas=None):
-        """
-        Crea registros de inventario para un producto con todas sus tallas disponibles.
-        Si no se proporcionan tallas, usa las tallas del grupo de tallas de la subcategoría.
-        """
         if not tallas:
             if producto.subcategoria.grupoTalla:
                 tallas = producto.subcategoria.grupoTalla.tallas.filter(estado=True)
@@ -213,14 +251,10 @@ class Inventario(models.Model):
             )
             if created:
                 inventarios_creados.append(inventario)
-
         return inventarios_creados
 
     @classmethod
     def crear_inventario_para_subcategoria(cls, subcategoria):
-        """
-        Crea registros de inventario para todos los productos de una subcategoría.
-        """
         productos = subcategoria.productos.all()
         tallas = subcategoria.grupoTalla.tallas.filter(estado=True) if subcategoria.grupoTalla else []
 
@@ -228,59 +262,17 @@ class Inventario(models.Model):
         for producto in productos:
             inventarios = cls.crear_inventario_para_producto(producto, tallas)
             inventarios_creados.extend(inventarios)
-
         return inventarios_creados
 
     @classmethod
     def crear_inventario_para_categoria(cls, categoria):
-        """
-        Crea registros de inventario para todos los productos de una categoría.
-        """
         subcategorias = categoria.subcategorias.all()
         inventarios_creados = []
-
         for subcategoria in subcategorias:
             inventarios = cls.crear_inventario_para_subcategoria(subcategoria)
             inventarios_creados.extend(inventarios)
-
         return inventarios_creados
 
-# Agregar señales para crear inventario automáticamente
-@receiver(post_save, sender=Producto)
-def crear_inventario_producto(sender, instance, created, **kwargs):
-    """
-    Cuando se crea un nuevo producto, crear automáticamente sus registros de inventario.
-    """
-    if created:
-        Inventario.crear_inventario_para_producto(instance)
-
-@receiver(post_save, sender=Subcategoria)
-def actualizar_inventario_subcategoria(sender, instance, created, **kwargs):
-    """
-    Cuando se crea una nueva subcategoría o se actualiza su grupo de tallas,
-    actualizar el inventario de sus productos.
-    """
-    if created:
-        # Si es una nueva subcategoría, simplemente crear el inventario
-        Inventario.crear_inventario_para_subcategoria(instance)
-    elif 'grupoTalla' in kwargs.get('update_fields', []):
-        try:
-            # Obtener los productos de la subcategoría
-            productos = instance.productos.all()
-            
-            # Para cada producto
-            for producto in productos:
-                # Eliminar los registros de inventario existentes
-                Inventario.objects.filter(producto=producto).delete()
-                
-                # Crear nuevos registros de inventario con las nuevas tallas
-                if instance.grupoTalla:
-                    tallas = instance.grupoTalla.tallas.filter(estado=True)
-                    Inventario.crear_inventario_para_producto(producto, tallas)
-        except Exception as e:
-            print(f"Error al actualizar inventario para subcategoría {instance.idSubcategoria}: {str(e)}")
-            # No propagamos la excepción para evitar que falle la actualización del grupo de tallas
-            pass
 
 class Movimiento(models.Model):
     idmovimiento = models.AutoField(primary_key=True)
@@ -292,7 +284,10 @@ class Movimiento(models.Model):
     def __str__(self):
         return f"Movimiento {self.idmovimiento} ({self.tipo})"
 
+
+# ----------------------------
 # Pedidos y pagos
+# ----------------------------
 class Pedido(models.Model):
     idPedido = models.AutoField(primary_key=True)
     total = models.DecimalField(max_digits=30, decimal_places=2)
@@ -301,6 +296,7 @@ class Pedido(models.Model):
 
     def __str__(self):
         return f"Pedido {self.idPedido}"
+
 
 class PedidoProducto(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.DO_NOTHING)
@@ -312,6 +308,7 @@ class PedidoProducto(models.Model):
     def __str__(self):
         return f"Producto {self.producto.nombre} en Pedido {self.pedido.idPedido}"
 
+
 class Pago(models.Model):
     idPago = models.AutoField(primary_key=True)
     total = models.DecimalField(max_digits=30, decimal_places=2)
@@ -320,6 +317,7 @@ class Pago(models.Model):
 
     def __str__(self):
         return f"Pago {self.idPago}"
+
 
 class TipoPago(models.Model):
     idtipoPago = models.AutoField(primary_key=True)
@@ -330,13 +328,16 @@ class TipoPago(models.Model):
     def __str__(self):
         return self.nombre
 
-# Carrito de compras y items
+
+# ----------------------------
+# Carrito y Items
+# ----------------------------
 class Carrito(models.Model):
     idCarrito = models.AutoField(primary_key=True)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True)  # Opcional
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True)
     fechaCreacion = models.DateTimeField(auto_now_add=True)
     fechaActualizacion = models.DateTimeField(auto_now=True)
-    estado = models.BooleanField(default=True)  # True = activo, False = convertido en pedido
+    estado = models.BooleanField(default=True)
 
     def __str__(self):
         if self.usuario:
@@ -350,27 +351,6 @@ class Carrito(models.Model):
         verbose_name = "Carrito"
         verbose_name_plural = "Carritos"
 
-class CarritoItem(models.Model):
-    idCarritoItem = models.AutoField(primary_key=True)
-    carrito = models.ForeignKey(Carrito, related_name='items', on_delete=models.CASCADE)
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad = models.PositiveIntegerField(default=1)
-    precio_unitario = models.DecimalField(max_digits=30, decimal_places=2)
-    subtotal = models.DecimalField(max_digits=30, decimal_places=2)
-    fechaAgregado = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.cantidad} x {self.producto.nombre} en carrito {self.carrito.idCarrito}"
-
-    def save(self, *args, **kwargs):
-        self.precio_unitario = self.producto.precio
-        self.subtotal = self.precio_unitario * self.cantidad
-        super().save(*args, **kwargs)
-
-    class Meta:
-        verbose_name = "Item del Carrito"
-        verbose_name_plural = "Items del Carrito"
-        unique_together = ('carrito', 'producto')
 
 class EstadoCarrito(models.Model):
     ESTADO_CHOICES = [
@@ -396,29 +376,73 @@ class EstadoCarrito(models.Model):
         verbose_name_plural = "Estados del Carrito"
         ordering = ['-fechaCambio']
 
-class GrupoTalla(models.Model):
-    idGrupoTalla = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=45, unique=True)  # Ej: 'Calzado', 'Ropa', 'Accesorios'
-    descripcion = models.TextField(blank=True, null=True)
-    estado = models.BooleanField(default=True)
+
+class CarritoItem(models.Model):
+    idCarritoItem = models.AutoField(primary_key=True)
+    carrito = models.ForeignKey(Carrito, related_name='items', on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+    talla = models.ForeignKey(Talla, on_delete=models.CASCADE, null=True, blank=True)
+    precio_unitario = models.DecimalField(max_digits=30, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=30, decimal_places=2)
+    fechaAgregado = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.nombre
+        return f"{self.cantidad} x {self.producto.nombre} en carrito {self.carrito.idCarrito}"
+
+    def save(self, *args, **kwargs):
+        self.precio_unitario = self.producto.precio
+        self.subtotal = self.precio_unitario * self.cantidad
+        super().save(*args, **kwargs)
 
     class Meta:
-        verbose_name = "Grupo de Tallas"
-        verbose_name_plural = "Grupos de Tallas"
+        verbose_name = "Item del Carrito"
+        verbose_name_plural = "Items del Carrito"
+        unique_together = ('carrito', 'producto', 'talla')
 
-class Talla(models.Model):
-    nombre = models.CharField(max_length=10)  # Ej: 'S', 'M', 'L', '38', etc.
-    grupo = models.ForeignKey(GrupoTalla, on_delete=models.CASCADE, related_name='tallas')
-    estado = models.BooleanField(default=True)
 
-    class Meta:
-        unique_together = ('nombre', 'grupo')
-        verbose_name = "Talla"
-        verbose_name_plural = "Tallas"
+# ----------------------------
+# Señales (Signals)
+# ----------------------------
+@receiver(post_save, sender=Producto)
+def crear_inventario_producto(sender, instance, created, **kwargs):
+    if created:
+        Inventario.crear_inventario_para_producto(instance)
 
-    def __str__(self):
-        return f"{self.nombre} ({self.grupo.nombre})"
 
+@receiver(post_save, sender=Subcategoria)
+def actualizar_inventario_subcategoria(sender, instance, created, **kwargs):
+    if created:
+        Inventario.crear_inventario_para_subcategoria(instance)
+    elif 'grupoTalla' in kwargs.get('update_fields', []):
+        try:
+            productos = instance.productos.all()
+            for producto in productos:
+                Inventario.objects.filter(producto=producto).delete()
+                if instance.grupoTalla:
+                    tallas = instance.grupoTalla.tallas.filter(estado=True)
+                    Inventario.crear_inventario_para_producto(producto, tallas)
+        except Exception as e:
+            print(f"Error al actualizar inventario para subcategoría {instance.idSubcategoria}: {str(e)}")
+            pass
+
+
+@receiver(post_save, sender=Talla)
+def crear_inventario_para_nueva_talla(sender, instance, created, **kwargs):
+    if created:
+        nueva_talla = instance
+        grupo_talla = nueva_talla.grupo
+
+        subcategorias = Subcategoria.objects.filter(grupoTalla=grupo_talla)
+        for subcategoria in subcategorias:
+            productos = Producto.objects.filter(subcategoria=subcategoria)
+            for producto in productos:
+                Inventario.objects.get_or_create(
+                    producto=producto,
+                    talla=nueva_talla,
+                    defaults={
+                        'cantidad': 0,
+                        'stockMinimo': producto.subcategoria.stockMinimo,
+                        'stock_talla': 0
+                    }
+                )

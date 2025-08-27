@@ -1,10 +1,21 @@
 import React, { useState } from "react";
+import { toast } from "react-hot-toast";
+import { agregarProducto, fetchCarritos, createCarrito } from "../../api/CarritoApi";
+import { useAuth } from "../../context/AuthContext";
 import "../../assets/css/Catalogo/ProductoCard.css";
 import TallasDisponibles from "./TallasDisponibles";
 
-export default function ProductoCard({ producto, capitalizar }) {
+export default function ProductoCard({ producto, capitalizar, onProductoAgregado }) {
   const [cantidad, setCantidad] = useState(0);
   const [tallaSeleccionada, setTallaSeleccionada] = useState(null);
+  const [agregando, setAgregando] = useState(false);
+  const { usuario } = useAuth();
+
+  // Validar que el producto tenga todos los datos necesarios
+  if (!producto || !producto.nombre || !producto.imagen) {
+    console.warn("Producto con datos incompletos:", producto);
+    return null; // No renderizar si faltan datos esenciales
+  }
 
   const aumentarCantidad = () => {
     if (tallaSeleccionada) {
@@ -19,10 +30,101 @@ export default function ProductoCard({ producto, capitalizar }) {
     if (cantidad > 0) setCantidad((prev) => prev - 1);
   };
 
-  const mostrarStock = (productoId, talla, stock) => {
-    const inv = producto.inventario_tallas.find((t) => t.talla === talla);
-    setTallaSeleccionada(inv);
+  const mostrarStock = (productoId, idTalla, stock, inventarioCompleto) => {
+    setTallaSeleccionada(inventarioCompleto);
     setCantidad(0);
+  };
+
+  const agregarAlCarrito = async () => {
+    if (!usuario) {
+      toast.error("Debes iniciar sesión para agregar productos al carrito");
+      return;
+    }
+
+    if (!tallaSeleccionada) {
+      toast.error("Debes seleccionar una talla");
+      return;
+    }
+
+    if (cantidad <= 0) {
+      toast.error("Debes seleccionar al menos una unidad");
+      return;
+    }
+
+    if (cantidad > tallaSeleccionada.stock) {
+      toast.error("La cantidad excede el stock disponible");
+      return;
+    }
+
+    try {
+      setAgregando(true);
+      
+      // Obtener o crear carrito
+      let carrito = null;
+      try {
+        const carritosResponse = await fetchCarritos();
+        const carritosActivos = carritosResponse.data.filter(c => c.estado === true);
+        
+        if (carritosActivos.length > 0) {
+          carrito = carritosActivos[0];
+        } else {
+          // Crear nuevo carrito si no existe uno activo
+          const nuevoCarritoResponse = await createCarrito({
+            usuario: usuario.idUsuario,
+            estado: true
+          });
+          carrito = nuevoCarritoResponse.data;
+        }
+      } catch (error) {
+        console.error("Error al obtener/crear carrito:", error);
+        toast.error("Error al acceder al carrito");
+        return;
+      }
+
+      // Agregar producto al carrito
+      const response = await agregarProducto(carrito.idCarrito, {
+        producto: producto.id,
+        cantidad: cantidad,
+        talla: tallaSeleccionada.idTalla
+      });
+
+      if (response.data) {
+        toast.success(`${cantidad} ${producto.nombre} agregado al carrito`);
+        setCantidad(0);
+        setTallaSeleccionada(null);
+        
+        // Disparar evento personalizado para actualizar el header
+        window.dispatchEvent(new CustomEvent('carritoActualizado'));
+        
+        // Notificar al componente padre que se agregó un producto
+        if (onProductoAgregado) {
+          onProductoAgregado();
+        }
+      }
+    } catch (error) {
+      console.error("Error al agregar al carrito:", error);
+      let mensajeError = "Error al agregar al carrito";
+      
+      if (error.response) {
+        switch (error.response.status) {
+          case 400:
+            mensajeError = error.response.data.error || 'Datos inválidos';
+            break;
+          case 404:
+            mensajeError = 'Producto o carrito no encontrado';
+            break;
+          case 409:
+            mensajeError = 'El producto ya está en el carrito';
+            break;
+          default:
+            mensajeError = 'Error al agregar al carrito';
+        }
+      }
+      
+      toast.error(mensajeError);
+    } finally {
+      setAgregando(false);
+    }
   };
 
   return (
@@ -30,26 +132,30 @@ export default function ProductoCard({ producto, capitalizar }) {
       <div className="card shadow producto-card w-100">
         <div className="img-container">
           <img
-            src={producto.imagen}
-            alt={producto.nombre}
+            src={producto.imagen || "https://via.placeholder.com/300x200?text=Imagen+no+disponible"}
+            alt={producto.nombre || "Producto"}
             className="card-img-top"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://via.placeholder.com/300x200?text=Imagen+no+disponible";
+            }}
           />
         </div>
         <div className="card-body d-flex flex-column">
-          <h5 className="card-title">{capitalizar(producto.nombre)}</h5>
-          <p className="card-text descripcion">{producto.descripcion}</p>
+          <h5 className="card-title">{capitalizar(producto.nombre || "Sin nombre")}</h5>
+          <p className="card-text descripcion">{producto.descripcion || "Sin descripción"}</p>
           <p className="card-text">
             <strong>Precio:</strong> $
-            {new Intl.NumberFormat("es-CO").format(producto.precio)}
+            {parseFloat(producto.precio || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 })}
           </p>
 
           <p className="card-text">
             <strong>Subcategoría:</strong>{" "}
-            {capitalizar(producto.subcategoria_nombre)}
+            {capitalizar(producto.subcategoria_nombre || "Sin categoría")}
           </p>
 
           {/* Tallas */}
-          {producto.inventario_tallas.length > 0 && (
+          {producto.inventario_tallas && producto.inventario_tallas.length > 0 && (
             <TallasDisponibles
               productoId={producto.id}
               inventarioTallas={producto.inventario_tallas}
@@ -58,29 +164,33 @@ export default function ProductoCard({ producto, capitalizar }) {
             />
           )}
 
-          <div className="cantidad-container my-2">
-            <button onClick={disminuirCantidad} className="btn-cantidad">
-              -
-            </button>
-            <span className="cantidad">{cantidad}</span>
-            <button onClick={aumentarCantidad} className="btn-cantidad">
-              +
-            </button>
-          </div>
+          {/* Cantidad solo se muestra si hay talla seleccionada */}
+          {tallaSeleccionada && (
+            <>
+              <div className="cantidad-container my-2">
+                <button onClick={disminuirCantidad} className="btn-cantidad">
+                  -
+                </button>
+                <span className="cantidad">{cantidad}</span>
+                <button onClick={aumentarCantidad} className="btn-cantidad">
+                  +
+                </button>
+              </div>
+              
+              <div className="stock-info mb-2">
+                <small className="text-muted">
+                  Stock disponible: {tallaSeleccionada.stock || 0}
+                </small>
+              </div>
+            </>
+          )}
 
           <button
-            className="btn btn-dark mt-auto"
-            onClick={() => {
-              if (cantidad > 0) {
-                console.log(
-                  `Agregando ${cantidad} de ${producto.nombre} al carrito`
-                );
-              } else {
-                console.log("Selecciona al menos una unidad");
-              }
-            }}
+            className={`btn ${tallaSeleccionada && cantidad > 0 ? 'btn-success' : 'btn-secondary'} mt-auto`}
+            onClick={agregarAlCarrito}
+            disabled={!tallaSeleccionada || cantidad <= 0 || agregando}
           >
-            Agregar al carrito
+            {agregando ? "Agregando..." : "Agregar al carrito"}
           </button>
         </div>
       </div>

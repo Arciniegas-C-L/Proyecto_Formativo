@@ -1,0 +1,114 @@
+/* Estilos para los filtros del catálogo */
+.filtros {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  position: sticky;
+  top: 20px;
+}
+
+.filtros h5 {
+  color: #495057;
+  font-weight: 600;
+  border-bottom: 2px solid #F26BE2;
+  padding-bottom: 8px;
+}
+
+.filtros h6 {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Botones de categoría */
+.btn-categoria {
+  width: 100%;
+  text-align: left;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #495057;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.btn-categoria:hover {
+  background-color: #F26BE2;
+  color: white;
+  border-color: #F26BE2;
+  transform: translateX(5px);
+}
+
+.btn-categoria.active {
+  background-color: #F26BE2;
+  color: white;
+  border-color: #F26BE2;
+  box-shadow: 0 2px 8px rgba(242, 107, 226, 0.3);
+}
+
+/* Botones de subcategoría */
+.btn-subcategoria {
+  width: 100%;
+  text-align: left;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  margin-bottom: 3px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.btn-subcategoria:hover {
+  background-color: #ffc107;
+  color: #212529;
+  border-color: #ffc107;
+  transform: translateX(3px);
+}
+
+.btn-subcategoria.btn-warning {
+  background-color: #ffc107;
+  color: #212529;
+  border-color: #ffc107;
+  box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3);
+}
+
+/* Botón limpiar filtros */
+.btn-limpiar {
+  width: 100%;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.btn-limpiar:hover {
+  background-color: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+/* Separador */
+.filtros hr {
+  border-color: #dee2e6;
+  margin: 15px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filtros {
+    position: static;
+    margin-bottom: 20px;
+  }
+  
+  .btn-categoria,
+  .btn-subcategoría {
+    font-size: 0.95rem;
+    padding: 10px 12px;
+  }
+}

@@ -1,10 +1,12 @@
-import {Carrito} from "../components/Carrito/Carrito"
+//Este componente es la página de Carrito
+//Aqui podemos unir todos los componentes o subcomponentes para exportar a la app.jsx
+
+import { Carrito } from "../components/Carrito/Carrito.jsx";
 
 export function Carritopage() {
-  return (
-    <div>
-      <h1>Carrito de Compras</h1>
-      <Carrito />
-    </div>
-  )
+    return (
+        <div>
+            <Carrito />
+        </div>
+    );
 }

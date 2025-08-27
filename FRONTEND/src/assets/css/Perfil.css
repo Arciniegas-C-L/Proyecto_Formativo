@@ -1,3 +1,67 @@
+/* ======== CONFIGURACIONES PERFIL ======== */
+.config-section {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.config-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: 100%;
+    max-width: 500px;
+    margin-top: 1.5rem;
+}
+
+.config-item {
+    background: linear-gradient(90deg, #1A1F2E 60%, #141926 100%);
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0, 212, 255, 0.10);
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    border: 1.5px solid #00D4FF22;
+    transition: box-shadow 0.2s;
+}
+
+.config-item h4 {
+    margin: 0 0 0.7rem 0;
+    font-size: 1.2rem;
+    color: #00D4FF;
+    font-weight: 600;
+}
+
+.config-item button {
+    background: linear-gradient(90deg, #F26BE2, #00D4FF);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 0.3rem;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.config-item button:hover {
+    background: linear-gradient(90deg, #00D4FF, #F26BE2);
+    color: #1A1F2E;
+    transform: scale(1.04);
+}
+
+.config-item button[style*="red"] {
+    background: linear-gradient(90deg, #ff5c5c, #ffb1b1);
+    color: #fff;
+    border: none;
+}
+.config-item button[style*="red"]:hover {
+    background: linear-gradient(90deg, #ffb1b1, #ff5c5c);
+    color: #1A1F2E;
+}
 /* ======== ESTILO GENERAL ======== */
 .perfil-container {
     width: 100%;
