@@ -41,10 +41,10 @@ export function VerificarCodigo({ correo }) {
     }
 
     const { data, error } = await resetearContrasena({
-      correo,
-      codigo,
-      contrasena: nuevaContrasena,
-    });
+    correo,
+    codigo,
+    nueva_contrasena: nuevaContrasena // ✅ ahora coincide con el backend
+  });
 
     if (error) {
       setError(error.response?.data?.error || "No se pudo cambiar la contraseña");
