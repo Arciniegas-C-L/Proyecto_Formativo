@@ -1,4 +1,4 @@
-// src/api/Proveedor.api.js
+
 import { api } from './roles';
 
 // Usuarios (si aplica en este módulo)

@@ -1,4 +1,3 @@
-// src/api/Usuario.api.js
 import { api } from './roles';
 
 // Función para obtener todas las categorías

@@ -1,6 +1,6 @@
-// Catalogo.jsx
+
 import React, { useEffect, useState } from "react";
-import { getALLProductos } from "../../api/Producto.api"; // ⚠️ verifica nombre real
+import { getALLProductos } from "../../api/Producto.api"; 
 import { getAllCategorias } from "../../api/Categoria.api";
 import { auth } from "../../auth/authService";
 import FiltrosCatalogo from "./FiltrosCatalogo";

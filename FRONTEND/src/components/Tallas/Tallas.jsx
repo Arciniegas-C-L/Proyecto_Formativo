@@ -16,7 +16,7 @@ import { FaEdit, FaTrash, FaPlus, FaBoxes } from "react-icons/fa";
 
 export function Tallas() {
   const location = useLocation();
-  const navigate = useNavigate(); // opcional: úsalo para redirigir tras crear/editar/borrar
+  const navigate = useNavigate(); // opcional: para redirigir tras crear/editar/borrar
 
   const [tallas, setTallas] = useState([]);
   const [gruposTalla, setGruposTalla] = useState([]);
@@ -206,7 +206,10 @@ export function Tallas() {
       <div className="header-acciones">
         <h2>Gestión de Tallas</h2>
         <div className="header-controls">
-          <button className="btn-nueva-talla" onClick={() => handleOpenDialog()}>
+          <button 
+            className="btn-nueva-talla" 
+            onClick={() => handleOpenDialog()}
+          >
             <FaPlus />
             Nueva Talla
           </button>

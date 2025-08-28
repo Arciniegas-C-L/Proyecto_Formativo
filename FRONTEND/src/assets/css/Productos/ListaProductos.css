@@ -5,7 +5,7 @@
   font-family: 'Urbanist', sans-serif;
 }
 
-/* Título principal */
+/* Header */
 .lista-productos-container .header-acciones {
   display: flex;
   justify-content: space-between;
@@ -16,12 +16,9 @@
 }
 
 .lista-productos-container .header-acciones h2 {
-  text-align: center;
-  font-size: 2.5rem;
-  color: #00b0e0; 
-  margin-bottom: 2rem;
+  font-size: 2rem;
+  color: #00b0e0;
   font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .lista-productos-container .header-controls {
@@ -34,24 +31,17 @@
 /* Input búsqueda */
 .lista-productos-container .busqueda-input {
   padding: 8px 12px;
-  border: 2px solid #8b3581; 
+  border: 2px solid #8b3581;
   border-radius: 8px;
   min-width: 250px;
   font-size: 14px;
-  color: #0c0c0c; 
   background-color: #fff;
-  box-shadow: inset 0 1px 6px rgba(138, 124, 200, 0.18);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.3s ease;
 }
 
 .lista-productos-container .busqueda-input:focus {
   outline: none;
-  border-color: #8b3581; 
-}
-
-.lista-productos-container .busqueda-input::placeholder {
-  color: #b4aee6;
-  font-style: italic;
+  border-color: #8b3581;
 }
 
 /* Botón crear */
@@ -66,12 +56,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background 0.4s ease, transform 0.2s ease, box-shadow 0.3s ease;
-  user-select: none;
+  transition: transform 0.2s ease;
 }
 
 .lista-productos-container .btn-crear:hover {
-  box-shadow: 0 0 10px #8b3581;
   transform: translateY(-2px);
 }
 
@@ -79,51 +67,33 @@
 .lista-productos-container .tabla-container {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow-x: auto;
-  transition: all 0.3s ease;
 }
 
 /* Tabla */
 .lista-productos-container .tabla-productos {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
-  border-radius: 12px;
-  overflow: hidden;
   font-size: 1rem;
-  color: #0f0f10; 
   min-width: 800px;
 }
 
-/* Bordes: */
-.lista-productos-container .tabla-productos tr {
-  border-bottom: 1px solid #ccc;
-  display: table-row;
-}
-
-/* Quitar borde inferior en celdas para no duplicar línea */
 .lista-productos-container .tabla-productos th,
 .lista-productos-container .tabla-productos td {
   padding: 1rem;
   text-align: center;
   vertical-align: middle;
-  border-bottom: none;
 }
 
-/* Encabezados */
 .lista-productos-container .tabla-productos th {
-  background-color: #1A1F2E; 
-  color: #00b0e0; 
+  background-color: #1A1F2E;
+  color: #00b0e0;
   font-weight: 600;
-  font-size: 1.1rem;
-  letter-spacing: 0.04em;
+  font-size: 1rem;
 }
 
-/* Filas hover */
 .lista-productos-container .tabla-productos tbody tr:hover td {
-  background-color: #f3f9ff; 
-  transition: background-color 0.3s ease;
+  background-color: #f3f9ff;
 }
 
 /* Imágenes en tabla */
@@ -132,13 +102,11 @@
   height: 50px;
   object-fit: cover;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(161, 110, 255, 0.3);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .lista-productos-container .celda-imagen img:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(161, 110, 255, 0.6);
 }
 
 /* Descripción */
@@ -147,19 +115,6 @@
   word-wrap: break-word;
   line-height: 1.3em;
   font-size: 0.95rem;
-  color: #0f0f10; 
-  cursor: help;
-  position: relative;
-}
-
-/* Evitar salto de línea y limitar ancho en Stock y Acciones para que bordes estén alineados */
-.lista-productos-container .tabla-productos td:nth-child(6), /* Stock */
-.lista-productos-container .tabla-productos td:nth-child(7)  /* Acciones */ {
-  white-space: nowrap;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: middle;
 }
 
 /* Botones acciones */
@@ -167,41 +122,27 @@
   display: flex;
   gap: 0.5rem;
   justify-content: center;
-  flex-wrap: wrap;
 }
 
-.lista-productos-container .btn-ver,
 .lista-productos-container .btn-editar,
 .lista-productos-container .btn-eliminar {
-  border: none !important;
-  padding: 0.4rem 0.8rem !important;
-  border-radius: 6px !important;
-  font-size: 0.9rem !important;
-  cursor: pointer !important;
-  color: white !important;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  user-select: none;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.2s ease;
 }
 
-/* Botón ver  */
-.lista-productos-container .btn-ver {
-  background-color: #00b0e0 !important;
-}
-
-.lista-productos-container .btn-ver:hover {
-  transform: scale(1.05);
-}
-
-/* Botón editar  */
 .lista-productos-container .btn-editar {
-  background-color: #00b0e0 !important;
+  background-color: #00b0e0;
 }
 
 .lista-productos-container .btn-editar:hover {
   transform: scale(1.05);
 }
 
-/* Botón eliminar  */
 .lista-productos-container .btn-eliminar {
   background-color: #8b3581 !important;
 }
@@ -214,37 +155,14 @@
 .lista-productos-container .loading {
   text-align: center;
   font-size: 1.2em;
-  color: #7a6eb0; 
   padding: 20px;
-  user-select: none;
 }
 
-/* Mensaje de error */
-.lista-productos-container .error-message {
+/* No resultados */
+.lista-productos-container .no-resultados {
   text-align: center;
   padding: 20px;
-  background-color: #fff0f6; 
-  border: 1px solid #f8a1d1;
-  border-radius: 12px;
-  color: #940b65; 
-  user-select: none;
-}
-
-/* Botón reintentar */
-.lista-productos-container .btn-reintentar {
-  margin-top: 10px;
-  padding: 8px 16px;
-  background: linear-gradient(45deg, #a16eff, #6b48ff);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-  user-select: none;
-}
-
-.lista-productos-container .btn-reintentar:hover {
-  background: linear-gradient(45deg, #7c4dff, #5a3ccc);
+  font-style: italic;
 }
 
 /* Responsive */
@@ -277,5 +195,57 @@
 
   .lista-productos-container .celda-acciones {
     flex-wrap: wrap;
+  }
+
+  .lista-productos-container .tabla-productos th,
+  .lista-productos-container .tabla-productos td {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+  }
+
+  .lista-productos-container .header-acciones h2 {
+    font-size: 1.6rem;
+  }
+
+  .lista-productos-container .celda-imagen img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lista-productos-container .celda-descripcion {
+    max-width: 200px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lista-productos-container .tabla-productos th,
+  .lista-productos-container .tabla-productos td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .lista-productos-container .header-acciones h2 {
+    font-size: 1.3rem;
+  }
+
+  .lista-productos-container .btn-editar,
+  .lista-productos-container .btn-eliminar {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .lista-productos-container .celda-imagen img {
+    width: 35px;
+    height: 35px;
+  }
+
+  .lista-productos-container .celda-descripcion {
+    max-width: 150px;
+    font-size: 0.85rem;
+  }
+
+  .lista-productos-container .busqueda-input {
+    font-size: 16px;
   }
 }

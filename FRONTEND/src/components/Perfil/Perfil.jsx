@@ -5,7 +5,7 @@ import { fetchUsuario, updateUsuario } from "../../api/Usuario.api";
 
 export function Perfil() {
     const navigate = useNavigate();
-    const [activeSection, setActiveSection] = useState('datos'); // Ahora muestra Datos Personales primero
+    const [activeSection, setActiveSection] = useState('datos'); 
     const [avatarSeed, setAvatarSeed] = useState('');
     const [avatarOptions, setAvatarOptions] = useState({});
     const [activeCategory, setActiveCategory] = useState(null);

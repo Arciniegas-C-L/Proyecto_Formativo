@@ -1,5 +1,5 @@
-// src/api/AuthApi.js
-import { api } from './roles'; // 👈 reemplaza axiosInstance
+
+import { api } from './roles'; 
 
 export async function login(email, password) {
   try {

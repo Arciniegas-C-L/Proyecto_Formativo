@@ -2,7 +2,7 @@
 //Aqui podemos unir todos los componentes o subcomponentes para exportar a la app.jsx
 
 
-import {AdminProveedores} from "../components/Provedores/AdminProveedores";
+import {AdminProveedores} from "../components/Proveedores/AdminProveedores";
 
 export function AdminProvedoresPage() {
   return (

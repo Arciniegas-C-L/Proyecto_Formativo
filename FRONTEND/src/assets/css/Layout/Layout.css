@@ -1,15 +1,13 @@
-/* Layout.css */
-html, body {
+html, body, #root {
   height: 100%;
   margin: 0;
 }
 
-.app-container {
-  min-height: 100vh;
+#root {
   display: flex;
   flex-direction: column;
 }
 
 .main-content {
-  flex: 1;
+  flex: 1; 
 }

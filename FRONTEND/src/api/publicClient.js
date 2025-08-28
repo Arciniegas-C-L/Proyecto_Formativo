@@ -1,4 +1,4 @@
-// src/api/publicClient.js
+
 import axios from 'axios';
 
 export const publicApi = axios.create({

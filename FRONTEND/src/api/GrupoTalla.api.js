@@ -1,4 +1,3 @@
-// src/api/GrupoTalla.api.js
 import { api } from './roles';
 
 // Usuarios (si aplica en este módulo)

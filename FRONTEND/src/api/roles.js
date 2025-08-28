@@ -24,12 +24,12 @@ api.interceptors.request.use(
         config.headers['X-Rol'] = rol;
       }
     } catch (error) {
-      console.warn('🔒 Error en autenticación (request):', error);
+      console.warn(' Error en autenticación (request):', error);
     }
     return config;
   },
   (error) => {
-    console.error('❌ Request fallido:', error);
+    console.error(' Request fallido:', error);
     return Promise.reject(error);
   }
 );
@@ -43,7 +43,7 @@ api.interceptors.response.use(
       const rol = auth.obtenerRol?.();
 
       if (status === 403) {
-        console.warn(`⛔ Acceso prohibido para el rol: ${rol}`);
+        console.warn(` Acceso prohibido para el rol: ${rol}`);
         console.error('Detalles del error (403):', error);
         toast.error(`No tienes acceso con el rol "${rol}".`);
       }
@@ -52,7 +52,7 @@ api.interceptors.response.use(
       // if (status === 401) { ... }
 
     } catch (e) {
-      console.error('💥 Error inesperado en interceptor (response):', e);
+      console.error(' Error inesperado en interceptor (response):', e);
       toast.error('Ocurrió un error inesperado en la respuesta.');
     }
 
