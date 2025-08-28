@@ -40,6 +40,8 @@ from django.contrib.auth.hashers import make_password
 from BACKEND.permissions import IsAdmin,IsCliente,IsAdminWriteClienteRead
 import random
 import string
+from django.utils import timezone
+from datetime import timedelta
 
 # Create your views here.
 
@@ -121,7 +123,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
     # --- ENVIAR CÓDIGO RECUPERACIÓN ---
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
     def recuperar_password(self, request):
         correo = request.data.get('correo')
 
@@ -150,7 +152,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
     # --- VERIFICAR CÓDIGO ---
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
     def verificar_codigo(self, request):
         correo = request.data.get('correo')
         codigo = request.data.get('codigo')

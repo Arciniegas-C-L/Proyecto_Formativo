@@ -12,7 +12,7 @@ export const loginUsuario = (credenciales) =>
   publicApi.post('usuario/login/', credenciales);
 
 export const solicitarRecuperacion = (payload) =>
-  publicApi.post('usuario/recuperar_contrasena/', payload);
+  publicApi.post('usuario/recuperar_password/', payload);
 
 export const resetearContrasena = (payload) =>
   publicApi.post('usuario/reset_password/', payload);
