@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -16,15 +16,16 @@ import { RolFormPage } from "./pages/RolFormPage.jsx";
 import { InventarioPage } from "./pages/InventarioPage.jsx";
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
 import {ProveedoresRegistradosPage} from "./pages/ProvedoresRegistradosPage.jsx";
+import { deleteProveedor } from "./api/Proveedor.api.js"
 import { CategoriasPage } from './pages/Categoriaspage'
 import { ListaProductosPage } from './pages/ListaproductosPage.jsx'
 import { ProductosFormPage } from './pages/ProductosFormPage.jsx'
 import { CatalogoPage } from './pages/Catalogopage'
-import { CarritoPage } from './pages/Carritopage'
 import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import { PerfilPage } from "./pages/PerfilPage.jsx";
+import {Carritopage} from "./pages/Carritopage"
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -63,6 +64,26 @@ function AppContent() {
           element={
             <RutaPrivada role="administrador">
               <AdminProvedoresPage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/carrito"
+          element={
+            <RutaPrivada role="cliente">
+              <Carritopage />
+            </RutaPrivada>
+          }
+        />
+        <Route
+          path="/administrador"
+          element={
+            <RutaPrivada role="administrador">
+              <ProveedoresRegistradosPage
+                proveedores={proveedores}
+                onEliminar={handleEliminar}
+                onEditar={handleEditar}
+              />
             </RutaPrivada>
           }
         />
@@ -125,7 +146,7 @@ function AppContent() {
         <Route
           path="/categorias"
           element={
-            <RutaPrivada role={["cliente", "administrador"]}>
+            <RutaPrivada role={[ "administrador"]}>
               <CategoriasPage />
             </RutaPrivada>
           }

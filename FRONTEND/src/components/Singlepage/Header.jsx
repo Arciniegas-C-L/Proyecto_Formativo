@@ -1,71 +1,36 @@
-import { Link } from "react-router-dom";
-import React, { useState, useEffect } from "react";
-import { FaShoppingCart, FaChevronDown } from "react-icons/fa";
-import { fetchCarritos } from "../../api/CarritoApi";
-import { useAuth } from "../../context/AuthContext";
+import { useEffect, useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 import ZOE from "../../assets/images/home/ZOE.gif";
 import "../../assets/css/header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export function Header() {
-  const [cantidadCarrito, setCantidadCarrito] = useState(0);
-  const { autenticado, usuario, logout } = useAuth();
-  const [showConfirm, setShowConfirm] = useState(false);
+  const { autenticado, rol, logout } = useAuth();
+  const [menu, setMenu] = useState([]);
 
-  const handleLogout = () => {
-    setShowConfirm(true);
-  };
-
-  const confirmLogout = () => {
-    setShowConfirm(false);
-    logout();
-  };
-
-  const cancelLogout = () => {
-    setShowConfirm(false);
-  };
-
-  const cargarCantidadCarrito = async () => {
+  // cliente / público
+  useEffect(() => {
     if (!autenticado) {
-      setCantidadCarrito(0);
-      return;
+      setMenu([
+        { path: "/", label: "Inicio", icon: "bi-house-door-fill" },
+        { path: "/sesion", label: "Sesión", icon: "bi-person-circle" },
+      ]);
+    } else if (rol === "cliente") {
+      setMenu([
+        { path: "/", label: "Inicio", icon: "bi-house-door-fill" },
+        { path: "/catalogo", label: "Catálogo", icon: "bi-bag-fill" },
+        { path: "/perfil", label: "Perfil", icon: "bi-person-badge-fill" },
+        { path: "/carrito", label: "Carrito", icon: "bi-cart-fill" },
+      ]);
+    } else {
+      setMenu([]); // admin se pinta abajo con dropdowns
     }
+  }, [rol, autenticado]);
 
-    try {
-      const response = await fetchCarritos();
-      const carritosActivos = response.data.filter(c => c.estado === true);
-      
-      if (carritosActivos.length > 0) {
-        const carritoActivo = carritosActivos[0];
-        const cantidad = carritoActivo.items ? carritoActivo.items.length : 0;
-        setCantidadCarrito(cantidad);
-      } else {
-        setCantidadCarrito(0);
-      }
-    } catch (error) {
-      console.error("Error al cargar cantidad del carrito:", error);
-      setCantidadCarrito(0);
-    }
-  };
-
-  useEffect(() => {
-    cargarCantidadCarrito();
-    
-    // Actualizar cada 5 segundos
-    const interval = setInterval(cargarCantidadCarrito, 5000);
-    return () => clearInterval(interval);
-  }, [autenticado]);
-
-  // Función para escuchar cambios en el carrito desde otros componentes
-  useEffect(() => {
-    const handleCarritoActualizado = () => {
-      cargarCantidadCarrito();
-    };
-
-    window.addEventListener('carritoActualizado', handleCarritoActualizado);
-    return () => window.removeEventListener('carritoActualizado', handleCarritoActualizado);
-  }, []);
+  const linkCls = ({ isActive }) =>
+    "nav-link d-flex align-items-center gap-2 px-3 " + (isActive ? "active fw-semibold" : "");
 
   return (
     <>

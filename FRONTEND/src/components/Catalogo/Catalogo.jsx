@@ -218,6 +218,50 @@ export default function Catalogo() {
               </div>
             ) : (
               productosFiltrados.map((producto) => (
+                <div className="col d-flex" key={producto.id}>
+                  <div className="card shadow producto-card w-100">
+                    <div className="img-container">
+                      <img
+                        src={producto.imagen}
+                        alt={producto.nombre}
+                        className="card-img-top"
+                      />
+                    </div>
+                    <div className="card-body d-flex flex-column">
+                      <h5 className="card-title">{capitalizar(producto.nombre)}</h5>
+                      <p className="card-text descripcion">{producto.descripcion}</p>
+                      <p className="card-text">
+                        <strong>Precio:</strong> ${producto.precio}
+                      </p>
+                      <p className="card-text">
+                        <strong>Subcategoría:</strong> {capitalizar(producto.subcategoria_nombre)}
+                      </p>
+
+                      <div className="mt-2">
+                        <strong>Tallas:</strong>
+                        <div className="d-flex flex-wrap gap-2 mt-1">
+                          {producto.inventario_tallas.map((inv, i) => (
+                            <button
+                              key={i}
+                              className={`talla-btn ${tallaSeleccionada[producto.id]?.talla === inv.talla ? "selected" : ""}`}
+                              onClick={() => mostrarStock(producto.id, inv.talla, inv.stock)}
+                            >
+                              {inv.talla}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {tallaSeleccionada[producto.id] && (
+                        <div className="alert alert-info mt-2 p-1 text-center">
+                          Productos disponibles:{" "}
+                          <strong>{tallaSeleccionada[producto.id].stock}</strong>
+                        </div>
+                      )}
+                      <button className="btn btn-dark mt-auto">Agregar al carrito</button>
+                    </div>
+                  </div>
+                </div>
                 <ProductoCard
                   key={producto.id}
                   producto={producto}
