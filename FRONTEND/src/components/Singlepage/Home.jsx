@@ -1,13 +1,15 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import '../../assets/css/SinglePage/Home.css';
-import gorra from '../../assets/images/home/gorra.jpg';
-import pareja from '../../assets/images/home/pareja.jpg';
-import calzado from '../../assets/images/home/calzado.jpg';
-import colcha from '../../assets/images/home/colcha.jpg';
-import joven from '../../assets/images/home/joven.jpg';
-import anciano from '../../assets/images/home/anciano.jpg';
-import mujer from '../../assets/images/home/mujer.jpg';
+import React from "react";
+import { Link } from "react-router-dom";
+import "../../assets/css/SinglePage/Home.css";
+import gorra from "../../assets/images/home/gorra.jpg";
+import pareja from "../../assets/images/home/pareja.jpg";
+import calzado from "../../assets/images/home/calzado.jpg";
+import colcha from "../../assets/images/home/colcha.jpg";
+import joven from "../../assets/images/home/joven.jpg";
+import anciano from "../../assets/images/home/anciano.jpg";
+import mujer from "../../assets/images/home/mujer.jpg";
+import gafas from "../../assets/images/home/gafas.jpg";
+import guayos from "../../assets/images/home/guayos.jpg";
 
 export const Home = () => {
   return (
@@ -21,8 +23,8 @@ export const Home = () => {
             ZOE une variedad, estilo y libertad en cada prenda. Para quienes
             eligen destacar.
           </p>
-          <Link to="/catalogo" className="hero-boton btn btn-warning btn-lg">
-            <strong> Ver catalogo </strong>
+          <Link to="/catalogo" className="hero-boton btn btn-lg">
+            <strong>Ver catálogo</strong>
           </Link>
         </div>
       </section>
@@ -65,6 +67,22 @@ export const Home = () => {
               Descubre nuestra selección de productos para el hogar de alta
               calidad: decoración, muebles y accesorios que combinan estilo y
               funcionalidad.
+            </p>
+          </div>
+          <div className="producto-home">
+            <img src={gafas} alt="gafas como accesorio" />
+            <h2>Gafas de Moda</h2>
+            <p>
+              Completa tu look con nuestras gafas modernas y elegantes,
+              perfectas para cualquier ocasión y estilo.
+            </p>
+          </div>
+          <div className="producto-home">
+            <img src={guayos} alt="zapatosdeportivos" />
+            <h2>Guayos Deportivos</h2>
+            <p>
+              Encuentra guayos cómodos y resistentes para todo tipo de deportes,
+              asegurando rendimiento y estilo en cada partido.
             </p>
           </div>
         </div>

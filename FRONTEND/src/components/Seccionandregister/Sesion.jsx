@@ -1,4 +1,3 @@
-// src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import saludo from '../../assets/images/saludo.webp';
@@ -17,7 +16,6 @@ export function Sesion() {
   const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
   const handleSignUpClick = () => containerRef.current?.classList.add('toggle');
 
-  // LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -27,7 +25,6 @@ export function Sesion() {
 
     try {
       const { data } = await loginUsuario({ correo, password });
-
       const access = data?.token?.access || data?.access;
       const refresh = data?.token?.refresh || data?.refresh;
 
@@ -39,9 +36,7 @@ export function Sesion() {
       });
 
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
-
-      if (data?.rol === 'administrador') navigate('/');
-      else navigate('/catalogo');
+      navigate(data?.rol === 'administrador' ? '/' : '/catalogo');
     } catch (error) {
       const backend = error?.response?.data;
       const errorMsg =
@@ -56,7 +51,6 @@ export function Sesion() {
     }
   };
 
-  // REGISTRO
   const handleRegister = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -78,11 +72,8 @@ export function Sesion() {
       toast.success('Registro exitoso. Ahora inicia sesión.');
       containerRef.current?.classList.remove('toggle');
     } catch (error) {
-      console.error("Error completo:", error);
-
       const backend = error?.response?.data;
       const status = error?.response?.status;
-
       const errorMsg =
         backend?.mensaje ||
         backend?.error ||
@@ -91,7 +82,6 @@ export function Sesion() {
         (status === 500 && "Error interno del servidor") ||
         error.message ||
         "No se pudo registrar el usuario";
-
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -101,10 +91,9 @@ export function Sesion() {
   return (
     <div className="container-sesion">
       <div className="container" ref={containerRef}>
-        {/* LOGIN */}
         <div className="container-form">
           <form className="sign-in" onSubmit={handleLogin}>
-            <h2>Iniciar Sesión</h2>
+            <h2>Iniciar sesión</h2>
             <span>Use su correo y contraseña</span>
             <div className="container-input">
               <input type="email" name="correo" placeholder="Correo" required />
@@ -114,12 +103,11 @@ export function Sesion() {
             </div>
             <Link to="/sesion/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? 'Procesando...' : 'INICIAR SESIÓN'}
+              {isSubmitting ? 'Procesando...' : 'Iniciar sesión'}
             </button>
           </form>
         </div>
 
-        {/* REGISTRO */}
         <div className="container-form">
           <form className="sign-up" onSubmit={handleRegister}>
             <h2>Registrarse</h2>
@@ -140,12 +128,11 @@ export function Sesion() {
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? 'Procesando...' : 'REGISTRARSE'}
+              {isSubmitting ? 'Procesando...' : 'Registrarse'}
             </button>
           </form>
         </div>
 
-        {/* BIENVENIDA */}
         <div className="container-welcome">
           <div className="welcome-sign-up welcome">
             <h3>¡Bienvenido!</h3>
@@ -157,7 +144,7 @@ export function Sesion() {
             <h3>¡Hola!</h3>
             <img className="saludo-welcome" src={saludo} alt="Saludo" />
             <p>Nos alegra tenerte aquí. Crea tu cuenta y descubre todo lo que hemos preparado para ti</p>
-            <button className="button" onClick={handleSignInClick}>Iniciar Sesión</button>
+            <button className="button" onClick={handleSignInClick}>Iniciar sesión</button>
           </div>
         </div>
       </div>
