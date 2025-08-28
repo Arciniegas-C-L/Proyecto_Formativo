@@ -130,26 +130,37 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         try:
             usuario = Usuario.objects.get(correo=correo)
 
-            # Verificar si ya hay un código activo en los últimos 10 minutos
+            # Verificar si ya hay un código activo en los últimos 3 minutos
             codigo_activo = CodigoRecuperacion.objects.filter(
-                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=10)
+                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=3)
             ).exists()
 
             if codigo_activo:
-                return Response({"error": "Ya se envió un código recientemente. Espere antes de solicitar otro."},
-                                status=status.HTTP_429_TOO_MANY_REQUESTS)
+                return Response(
+                    {"error": "Ya se envió un código recientemente. Espere antes de solicitar otro."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                )
 
-            # Generar código
+            # Generar código de 6 dígitos
             codigo = ''.join(random.choices(string.digits, k=6))
             CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo)
 
-            # Aquí deberías enviar el correo real
-            print(f"Enviar este código a {correo}: {codigo}")
+            # Enviar correo real
+            send_mail(
+                subject="Código de recuperación",
+                message=f"Tu código de recuperación es: {codigo}",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[correo],
+                fail_silently=False,  # Si hay error, lanza excepción
+            )
 
             return Response({"mensaje": "Código enviado al correo."}, status=status.HTTP_200_OK)
 
         except Usuario.DoesNotExist:
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Error enviando el correo: {str(e)}"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # --- VERIFICAR CÓDIGO ---
     @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
