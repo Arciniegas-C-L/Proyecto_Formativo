@@ -68,12 +68,12 @@ const ListaUsuarios = () => {
       }
 
       await updateUsuario(formEdit.idUsuario, payload);
-      alert("Usuario actualizado ✅");
+      alert("Usuario actualizado ");
       setEditando(null);
       fetchUsuarios();
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
-      alert("Error al actualizar ❌");
+      alert("Error al actualizar ");
     }
   };
 

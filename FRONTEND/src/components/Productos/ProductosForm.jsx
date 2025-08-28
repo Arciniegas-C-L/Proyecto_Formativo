@@ -146,7 +146,7 @@ export function ProductosForm() {
       }
       navigate("/producto");
     } catch (error) {
-      console.error("❌ Error guardando producto:", error);
+      console.error(" Error guardando producto:", error);
       toast.error("Error al guardar el producto");
     } finally {
       setLoading(false);

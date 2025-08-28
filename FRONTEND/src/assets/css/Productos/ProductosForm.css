@@ -133,9 +133,44 @@
     }
 }
 
+/* Eliminar outline predeterminado en todos los elementos del formulario */
+.producto-form *:focus {
+    outline: none;
+}
+
+/* Asegurar que no aparezcan scrollbars innecesarias */
+.form-group {
+    overflow: hidden;
+}
+
+
 /* Responsive */
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Responsive adicional para móviles más pequeños */
+@media (max-width: 480px) {
+    .form-container {
+        padding: 15px;
+    }
+
+    .form-title {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+
+    .btn-guardar {
+        width: 100%;
+        padding: 12px 0;
     }
 }

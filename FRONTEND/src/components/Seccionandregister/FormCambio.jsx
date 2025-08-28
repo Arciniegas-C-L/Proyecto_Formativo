@@ -33,7 +33,7 @@ const verificarCodigo = async (e) => {
       const data = await res.json();
       if (res.ok) {
         setCodigoVerificado(true);
-        setMensaje("✅ Código verificado correctamente");
+        setMensaje(" Código verificado correctamente");
       } else {
         setError(data.error || "Código incorrecto o expirado");
       }

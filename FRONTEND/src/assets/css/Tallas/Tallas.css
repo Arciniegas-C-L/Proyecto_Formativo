@@ -86,9 +86,36 @@
   transition: background-color 0.3s ease;
 }
 
-/* Estado */
-.estado-talla {
-  font-weight: 400; 
+/* Estados activos / inactivos - igual que proveedores */
+.chip-estado {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  display: inline-block;
+  background-color: #c3c3c9;
+  text-align: center;
+  transform: none;
+  transition: none;
+  animation: none;
+  border: none;
+  cursor: pointer;
+  color: #FFFFFF;
+}
+
+.chip-estado.on {
+  background-color: #4CAF50; 
+  color: #ffffff;
+}
+
+.chip-estado.off {
+  background-color: #9AA0A6;
+  color: #FFFFFF;
+}
+
+/* Ocultar botón agregar productos */
+.btn-agregar-productos {
+  display: none !important;
 }
 
 /* Botones acciones */
@@ -117,8 +144,15 @@
   transform: scale(1.05);
 }
 
-.btn-eliminar {
-  background-color: #8b3581;
+/* Botón eliminar - máxima especificidad */
+.btn-eliminar,
+.celda-acciones .btn-eliminar,
+.tabla-tallas .btn-eliminar,
+button.btn-eliminar {
+  background-color: #8b3581 !important;
+  background: #8b3581 !important;
+  border-color: #8b3581 !important;
+  color: white !important;
 }
 
 .btn-eliminar:hover {
@@ -133,7 +167,7 @@
   padding: 20px;
 }
 
-/* Modales Crear/Editar y Eliminar */
+/* Modales Crear/Editar y Eliminar - igual que proveedores */
 .dialog-talla-modal {
   position: fixed;
   top: 0;
@@ -208,14 +242,54 @@
   background-color: #6c757d;
 }
 
-.form-talla-modal .btn-danger {
-  background-color: #6c757d;
-  color: #fff;
-  border: none;
+/* Modal eliminar - estilo igual que proveedores */
+.form-talla-modal.text-center {
+  width: 300px;
+  background-color: #fefefe;
+  font-size: 0.95rem;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-.form-talla-modal .btn-danger:hover {
-  background-color: #6c757d;
+.form-talla-modal .d-flex.justify-content-center {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.form-talla-modal .d-flex.justify-content-center button {
+  padding: 0.5rem 1.2rem !important;
+  border: none !important;
+  border-radius: 4px !important;
+  font-family: "Tahoma", sans-serif !important;
+  font-size: 0.9rem !important;
+  color: white !important;
+}
+
+/* Botón eliminar en modal - estilo proveedores */
+.form-talla-modal .btn-eliminar,
+.dialog-talla-modal .btn-eliminar,
+.form-talla-modal button.btn-eliminar,
+button[class="btn btn-eliminar"] {
+  background-color: #8b3581 !important;
+  background: #8b3581 !important;
+  border-color: #8b3581 !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.form-talla-modal .btn-eliminar:hover {
+  background-color: #6d2a63 !important;
+}
+
+/* Botón cancelar en modal eliminar */
+.form-talla-modal .btn-secondary {
+  background-color: #9AA0A6 !important;
+  color: #fff !important;
+  border: none !important;
 }
 
 /* Responsive */
@@ -243,5 +317,51 @@
 
   .celda-acciones {
     flex-wrap: wrap;
+  }
+
+  .tabla-tallas th,
+  .tabla-tallas td {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+  }
+
+  .header-acciones h2 {
+    font-size: 1.6rem;
+  }
+
+  .form-talla-modal.text-center {
+    width: 90%;
+    font-size: 0.9rem;
+  }
+
+  .form-talla-modal .d-flex.justify-content-center button {
+    font-size: 0.85rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabla-tallas th,
+  .tabla-tallas td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .header-acciones h2 {
+    font-size: 1.3rem;
+  }
+
+  .btn-editar,
+  .btn-eliminar {
+    font-size: 0.8rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+
+  .form-talla-modal.text-center {
+    padding: 0.8rem;
+  }
+
+  .chip-estado {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
   }
 }

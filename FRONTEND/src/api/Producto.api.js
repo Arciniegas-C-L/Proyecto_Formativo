@@ -1,4 +1,4 @@
-// src/api/Producto.api.js
+
 import { api } from './roles';
 
 // Usuarios (si aplica en este módulo)
@@ -26,7 +26,7 @@ export const createProducto = async (formData) => {
       }
     });
   } catch (error) {
-    console.error('🧵 Backend respondió:', error.response?.data); // 👈 log útil
+    console.error(' Backend respondió:', error.response?.data); 
     handleProductoError(error);
     throw error;
   }
@@ -66,7 +66,7 @@ export const updateProducto = async (id, producto) => {
       }
     });
   } catch (error) {
-    console.error('🔍 Backend al actualizar:', error.response?.data);
+    console.error(' Backend al actualizar:', error.response?.data);
     handleProductoError(error);
     throw error;
   }

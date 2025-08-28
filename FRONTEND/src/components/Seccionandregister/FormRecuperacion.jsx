@@ -1,4 +1,4 @@
-// FormRecuperacion.jsx
+
 import { useState } from "react";
 import { VerificarCodigo } from "./FormCambio";
 import "../../assets/css/Seccionandregistrer/formRecuperacion.css";

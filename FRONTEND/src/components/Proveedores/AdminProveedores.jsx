@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { createProveedor, updateProveedor } from "../../api/Proveedor.api.js";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext.jsx"; // <-- .jsx si tu proyecto lo requiere
+import { useAuth } from "../../context/AuthContext.jsx"; 
 import "../../assets/css/Proveedores/Proveedores.css";
+import "../../assets/css/Proveedores/ProveedorRegistro.css";
 
 // Componente que permite registrar o editar proveedores
 export function AdminProveedores({ proveedorEditar, onEditComplete }) {
@@ -26,14 +27,13 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
         telefono: proveedorEditar?.telefono ?? "",
         tipo: proveedorEditar?.tipo ?? "nacional",
       });
-      // Ajusta aquí el id según lo que realmente te llega:
       setEditingId(proveedorEditar?.idProveedor ?? proveedorEditar?.id ?? null);
     }
   }, [proveedorEditar]);
 
+  // Función para navegar a la lista de proveedores
   const handleVerProveedores = () => {
-    // En tus rutas, la vista de registrados está en /administrador
-    navigate("/administrador");
+    navigate("/proveedores/registrados"); // ruta nueva definida para la lista
   };
 
   const handleSubmit = async (e) => {
@@ -45,7 +45,7 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
         await createProveedor(form);
       }
 
-      // Reset
+      // Reset del formulario
       setEditingId(null);
       setForm({
         nombre: "",
@@ -63,7 +63,7 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
     }
   };
 
-  // Protección por sesión/rol (una sola vez)
+  // Protección por sesión/rol
   if (!autenticado) {
     return (
       <div className="container">

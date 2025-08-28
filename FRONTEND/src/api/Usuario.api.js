@@ -1,4 +1,4 @@
-// src/api/Usuario.api.js
+
 import { api } from './roles';         // Cliente con token
 import { publicApi } from './publicClient'; // Cliente sin token
 
