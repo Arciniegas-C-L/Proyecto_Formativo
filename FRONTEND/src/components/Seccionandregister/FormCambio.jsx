@@ -2,78 +2,57 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../assets/css/Seccionandregistrer/formCambio.css";
 import { RecuperarContrasena } from "./FormRecuperacion";
+import { verificarCodigoUsuario, resetearContrasena } from "../../api/Usuario.api";
 
 export function VerificarCodigo({ correo }) {
-    // Estados para manejar entradas y feedback
-const [codigo, setCodigo] = useState("");
-const [codigoVerificado, setCodigoVerificado] = useState(false);
-const [nuevaContrasena, setNuevaContrasena] = useState("");
-const [confirmarContrasena, setConfirmarContrasena] = useState("");
-const [mensaje, setMensaje] = useState("");
-const [error, setError] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [codigoVerificado, setCodigoVerificado] = useState(false);
+  const [nuevaContrasena, setNuevaContrasena] = useState("");
+  const [confirmarContrasena, setConfirmarContrasena] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
 
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
-// Verifica el código enviado al correo
-const verificarCodigo = async (e) => {
+  const verificarCodigo = async (e) => {
     e.preventDefault();
     setError("");
     setMensaje("");
 
-    try {
-        const res = await fetch(
-            "http://127.0.0.1:8000/BACKEND/api/usuario/verificar_codigo/",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ correo, codigo }),
-            }
-        );
+    const { data, error } = await verificarCodigoUsuario({ correo, codigo });
 
-      const data = await res.json();
-      if (res.ok) {
-        setCodigoVerificado(true);
-        setMensaje("✅ Código verificado correctamente");
-      } else {
-        setError(data.error || "Código incorrecto o expirado");
-      }
-    } catch {
-      setError("Error de conexión con el servidor");
+    if (error) {
+      setError(error.response?.data?.error || "Código incorrecto o expirado");
+      return;
     }
+
+    setCodigoVerificado(true);
+    setMensaje("✅ Código verificado correctamente");
   };
 
-// Cambia la contraseña una vez verificado el código
-const cambiarContrasena = async (e) => {
+  const cambiarContrasena = async (e) => {
     e.preventDefault();
     setError("");
     setMensaje("");
 
-    // Validar coincidencia de contraseñas
     if (nuevaContrasena !== confirmarContrasena) {
-        setError("Las contraseñas no coinciden");
-        return;
+      setError("Las contraseñas no coinciden");
+      return;
     }
 
-    try {
-        const res = await fetch(
-            "http://127.0.0.1:8000/BACKEND/api/usuario/reset_password/",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ correo, codigo, contrasena: nuevaContrasena }),
-            }
-        );
+    const { data, error } = await resetearContrasena({
+      correo,
+      codigo,
+      contrasena: nuevaContrasena,
+    });
 
-      const data = await res.json();
-      if (res.ok) {
-        setMensaje("✅ " + data.mensaje);
-        setTimeout(() => navigate("/sesion"), 2000);
-      } else {
-        setError(data.error || "No se pudo cambiar la contraseña");
-      }
-    } catch {
-      setError("Error de conexión con el servidor");
+    if (error) {
+      setError(error.response?.data?.error || "No se pudo cambiar la contraseña");
+      return;
     }
+
+    setMensaje("✅ " + data.mensaje);
+    setTimeout(() => navigate("/sesion"), 2000);
   };
 
   return (

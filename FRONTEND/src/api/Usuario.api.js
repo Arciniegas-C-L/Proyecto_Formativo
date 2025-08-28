@@ -2,6 +2,7 @@
 import { api } from './roles';         // Cliente con token
 import { publicApi } from './publicClient'; // Cliente sin token
 
+
 /* ---------------------- ENDPOINTS PÚBLICOS ---------------------- */
 
 export const registerUsuario = (usuario) =>
@@ -15,6 +16,10 @@ export const solicitarRecuperacion = (payload) =>
 
 export const resetearContrasena = (payload) =>
   publicApi.post('usuario/reset_password/', payload);
+
+export const verificarCodigoUsuario = (payload) =>
+  publicApi.post("usuario/verificar_codigo/", payload);
+
 
 /* ---------------------- ENDPOINTS PROTEGIDOS ---------------------- */
 
