@@ -3,22 +3,21 @@
   padding: 0;
   box-sizing: border-box;
   font-family: "Montserrat", sans-serif;
-  
 }
 
 .container-sesion {
   width: 100%;
-  height: 90vh;
+  min-height: calc(100vh - 100px);
   display: flex;
   justify-content: center;
   align-items: center;
-  
+  padding: 20px;
 }
 
 .container-sesion .container {
-  width: 800px;
-  height: 500px;
-  padding: 0;
+  width: 100%;
+  max-width: 800px;
+  min-height: 500px;
   display: flex;
   position: relative;
   border-radius: 15px;
@@ -34,32 +33,35 @@
 
 .container-sesion .container-form form {
   height: 100%;
+  min-height: 500px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  padding: 40px 20px;
 }
 
 .container-sesion .container-form h2 {
-  font-size: 30px;
+  font-size: clamp(24px, 5vw, 30px);
   margin-bottom: 20px;
   color: #ffffff;
 }
 
 .container-sesion .container-form span {
-  font-size: 15px;
-  margin-bottom: 10px;
+  font-size: clamp(12px, 3vw, 15px);
+  margin-bottom: 20px;
   color: #bbbbbb;
+  text-align: center;
+  padding: 0 10px;
 }
 
 .container-sesion .container-input {
-  width: 300px;
-  height: 40px;
-  margin-bottom: 10px;
+  width: 100%;
+  max-width: 300px;
+  height: clamp(35px, 8vw, 40px);
+  margin-bottom: 15px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 8px;
   padding: 0 15px;
   background-color: #2A2F3E;
   border-radius: 6px;
@@ -72,6 +74,7 @@
   height: 100%;
   background-color: transparent;
   color: #ffffff;
+  font-size: clamp(12px, 3vw, 14px);
 }
 
 .container-sesion .container-input input::placeholder {
@@ -80,7 +83,7 @@
 
 .container-sesion .container-form a {
   color: #A78BFA;
-  font-size: 14px;
+  font-size: clamp(12px, 3vw, 14px);
   margin-bottom: 20px;
   margin-top: 5px;
   text-decoration: none;
@@ -90,25 +93,49 @@
   text-decoration: underline;
 }
 
+/* Botón base */
 .container-sesion .button {
-  width: 170px;
-  height: 40px;
-  font-size: 15px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  margin-top: 10px;
-  background: linear-gradient(45deg, #A78BFA, #60A5FA);
-  color: black;
   font-weight: bold;
-  text-transform: none;
+  transition: all 0.3s ease;
 }
 
 .container-sesion .button:hover {
   opacity: 0.9;
 }
 
-/* animation form */
+/* Botones de formularios */
+.container-sesion .container-form .button {
+  flex: 0 0 auto;
+  width: 100%;            
+  max-width: 300px;        
+  height: 40px;           
+  padding: 0 16px;
+  font-size: 14px;
+  margin-top: 12px;
+  border-radius: 8px;
+  background: linear-gradient(45deg, #A78BFA, #60A5FA);
+  color: black;
+  font-weight: bold;
+  text-align: center;
+  
+}
+
+/* Botones de bienvenida  */
+.container-sesion .container-welcome .button {
+  width: clamp(120px, 20vw, 160px);
+  height: clamp(35px, 6vw, 40px);
+  padding: 0 clamp(15px, 4vw, 20px);
+  font-size: clamp(12px, 2.5vw, 15px);
+  margin-top: clamp(10px, 2vw, 15px);
+  border: 2px solid #A78BFA;
+  background-color: transparent;
+  color: #A78BFA;
+}
+
+/* Animaciones de formularios */
 .container-sesion .sign-up {
   transform: translateX(-100%);
 }
@@ -121,7 +148,7 @@
   transform: translateX(0);
 }
 
-/* welcome */
+/* Panel de bienvenida */
 .container-sesion .container-welcome {
   position: absolute;
   width: 50%;
@@ -147,7 +174,8 @@
   align-items: center;
   gap: 10px;
   color: white;
-  padding: 0 50px;
+  padding: 20px;
+  width: 100%;
 }
 
 .container-sesion .welcome-sign-in {
@@ -155,22 +183,16 @@
 }
 
 .container-sesion .container-welcome h3 {
-  font-size: 40px;
+  font-size: clamp(20px, 5vw, 40px);
   color: #A78BFA;
   margin-bottom: 10px;
 }
 
 .container-sesion .container-welcome p {
-  font-size: 14px;
+  font-size: clamp(12px, 3vw, 14px);
   text-align: center;
   color: #cccccc;
-}
-
-.container-sesion .container-welcome .button {
-  border: 2px solid #A78BFA;
-  background-color: transparent;
-  color: black;
-  text-transform: none;
+  line-height: 1.4;
 }
 
 .container-sesion .container.toggle .welcome-sign-in {
@@ -182,152 +204,241 @@
 }
 
 .container-sesion .welcome .saludo-welcome {
-  max-width: 150px;
+  max-width: clamp(80px, 15vw, 150px);
   height: auto;
   margin: 15px 0;
 }
 
-/* Responsive: Teléfonos */
-@media (max-width: 576px) {
+/* Responsive Design */
+
+/* Móviles pequeños (hasta 480px) */
+@media (max-width: 480px) {
   .container-sesion {
-    height: 70vh;
+    min-height: calc(100vh - 60px);
+    padding: 10px;
   }
 
   .container-sesion .container {
-    width: 378px;
-    height: 380px;
+    flex-direction: column;
+    max-width: 350px;
+    min-height: auto;
   }
 
-  .container-sesion .container-form h2 {
-    font-size: 22px;
-    margin-bottom: 3px;
-  }
-
-  .container-sesion .container-form span {
-    font-size: 12px;
-    margin: 9px 0;
-    padding: 0 7px;
-    text-align: center;
-    font-weight: bold;
+  .container-sesion .container-form form {
+    min-height: 350px;
+    padding: 25px 15px;
   }
 
   .container-sesion .container-input {
-    width: 150px;
-    height: 27px;
-    margin-bottom: 10px;
-    padding: 0 10px;
+    max-width: 280px;
+    margin-bottom: 12px;
+    padding: 0 12px;
   }
 
-  .container-sesion .container-form a {
-    font-size: 10px;
-    margin-bottom: 10px;
-    margin-top: 0.2rem;
-  }
-
-  .container-sesion .button {
-    width: 95px;
-    height: 28px;
-    font-size: 10px;
-    margin-top: 6px;
-    text-transform: none;
+  .container-sesion .container-form .button {
+    max-width: 240px;
+    height: 36px;
+    font-size: 12px; 
   }
 
   .container-sesion .container-welcome {
-    border-radius: 32% 0 0 28%;
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 250px;
+    transform: none;
+    border-radius: 0;
+    order: -1;
   }
 
   .container-sesion .container.toggle .container-welcome {
-    border-radius: 0 28% 32% 0;
+    transform: none;
+    border-radius: 0;
   }
 
-  .container-sesion .container-welcome h3 {
-    font-size: 20px;
+  .container-sesion .welcome {
+    position: static;
+    transform: none !important;
+    padding: 15px;
+    gap: 8px;
   }
 
-  .container-sesion .container-welcome p {
+  .container-sesion .container-welcome .button {
+    width: clamp(110px, 25vw, 140px);
+    height: 32px;
     font-size: 12px;
   }
 
-  .container-sesion .welcome .saludo-welcome {
-    max-width: 100px;
-    height: auto;
-    margin: 5px 0;
-  }
-
-  input::placeholder {
-    font-size: 12px;
-    color: #888;
+  .container-sesion .sign-up,
+  .container-sesion .sign-in {
+    transform: none !important;
   }
 }
 
-/* Responsive: Tablets */
-@media (min-width: 577px) and (max-width: 768px) {
+/* Móviles (481px - 576px) */
+@media (min-width: 481px) and (max-width: 576px) {
   .container-sesion {
-    height: 90vh;
+    min-height: calc(100vh - 80px);
+    padding: 15px;
   }
 
   .container-sesion .container {
-    width: 650px;
-    height: 500px;
+    max-width: 500px;
+    min-height: 450px;
   }
 
-  .container-sesion .container-form h2 {
-    font-size: 30px;
-    margin-bottom: 15px;
-  }
-
-  .container-sesion .container-form span {
-    font-size: 14px;
-    margin: 15px 0;
-    padding: 0 12px;
-    text-align: center;
+  .container-sesion .container-form form {
+    min-height: 450px;
+    padding: 30px 20px;
   }
 
   .container-sesion .container-input {
-    width: 250px;
-    height: 33px;
-    margin-bottom: 15px;
-    padding: 0 10px;
+    max-width: 280px;
+    padding: 0 12px;
   }
 
-  .container-sesion .container-form a {
-    font-size: 14px;
-    margin-bottom: 10px;
-    margin-top: 0.5rem;
-  }
-
-  .container-sesion .button {
-    width: 150px;
-    height: 40px;
+  .container-sesion .container-form .button {
+    width: clamp(130px, 22vw, 155px);
+    height: 34px;
     font-size: 13px;
-    margin-top: 10px;
-    text-transform: none;
   }
 
   .container-sesion .container-welcome {
-    border-radius: 32% 0 0 28%;
+    border-radius: 35% 0 0 30%;
   }
 
   .container-sesion .container.toggle .container-welcome {
-    border-radius: 0 28% 32% 0;
+    border-radius: 0 30% 35% 0;
   }
 
-  .container-sesion .container-welcome h3 {
-    font-size: 30px;
+  .container-sesion .welcome {
+    padding: 15px 25px;
   }
 
-  .container-sesion .container-welcome p {
+  .container-sesion .container-welcome .button {
+    width: clamp(115px, 20vw, 145px);
+    height: 34px;
+    font-size: 13px;
+  }
+}
+
+/* Tablets (577px - 768px) */
+@media (min-width: 577px) and (max-width: 768px) {
+  .container-sesion {
+    min-height: calc(100vh - 80px);
+  }
+
+  .container-sesion .container {
+    max-width: 650px;
+    min-height: 480px;
+  }
+
+  .container-sesion .container-form form {
+    min-height: 480px;
+    padding: 35px 25px;
+  }
+
+  .container-sesion .container-input {
+    max-width: 250px;
+  }
+
+  .container-sesion .container-form .button {
+    width: clamp(135px, 20vw, 160px);
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .container-sesion .container-welcome {
+    border-radius: 35% 0 0 30%;
+  }
+
+  .container-sesion .container.toggle .container-welcome {
+    border-radius: 0 30% 35% 0;
+  }
+
+  .container-sesion .welcome {
+    padding: 20px 30px;
+  }
+
+  .container-sesion .container-welcome .button {
+    width: clamp(120px, 18vw, 150px);
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+/* Desktop (769px y superior) */
+@media (min-width: 769px) {
+  .container-sesion {
+    min-height: calc(100vh - 100px);
+  }
+
+  .container-sesion .container {
+    height: 500px;
+  }
+
+  .container-sesion .container-form form {
+    height: 100%;
+    min-height: 500px;
+  }
+
+  .container-sesion .container-form .button {
+    width: 160px;
+    height: 38px;
+    font-size: 14px;
+  }
+
+  .container-sesion .welcome {
+    padding: 20px 50px;
+  }
+
+  .container-sesion .container-welcome .button {
+    width: 150px;
+    height: 40px;
     font-size: 15px;
+  }
+}
+
+/* Modo landscape para móviles */
+@media (max-width: 768px) and (orientation: landscape) {
+  .container-sesion {
+    min-height: 100vh;
+    align-items: flex-start;
+    padding-top: 15px;
+  }
+
+  .container-sesion .container {
+    min-height: auto;
+  }
+
+  .container-sesion .container-form form {
+    min-height: 280px;
+    padding: 15px;
+  }
+
+  .container-sesion .container-form .button {
+    width: clamp(120px, 25vw, 150px);
+    height: 30px;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .container-sesion .container-welcome {
+    min-height: 200px;
+  }
+
+  .container-sesion .welcome {
+    padding: 10px;
+    gap: 5px;
+  }
+
+  .container-sesion .container-welcome .button {
+    width: clamp(110px, 20vw, 140px);
+    height: 30px;
+    font-size: 12px;
   }
 
   .container-sesion .welcome .saludo-welcome {
-    max-width: 140px;
-    height: auto;
-    margin: 0;
-  }
-
-  input::placeholder {
-    font-size: 15px;
-    color: #888;
+    margin: 5px 0;
   }
 }

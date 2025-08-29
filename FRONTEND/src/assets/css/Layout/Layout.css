@@ -8,6 +8,6 @@ html, body, #root {
   flex-direction: column;
 }
 
-.main-content {
-  flex: 1; 
+.footer {
+  margin-top: auto; 
 }

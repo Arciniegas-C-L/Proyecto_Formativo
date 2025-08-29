@@ -27,6 +27,7 @@ import { GrupoTallaPage } from "./pages/GrupoTallePage.jsx";
 import { PerfilPage } from "./pages/PerfilPage.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
+
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
@@ -41,6 +42,7 @@ function AppContent() {
     location.pathname !== "/sesion" &&
     location.pathname !== "/sesion/recuperar_contrasena";
 
+    
   return (
     <>
       <Header />

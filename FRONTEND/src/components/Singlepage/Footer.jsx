@@ -3,6 +3,7 @@ import { FaBuilding, FaInfoCircle, FaHome, FaBoxOpen, FaPhone, FaEnvelope } from
 import { Link } from 'react-router-dom';
 import "../../assets/css/SinglePage/Footer.css";
 
+
 export function Footer() {
   return (
     <footer className="footer">

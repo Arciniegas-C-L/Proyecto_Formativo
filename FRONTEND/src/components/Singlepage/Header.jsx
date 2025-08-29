@@ -8,6 +8,7 @@ import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
+
 export function Header() {
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const { autenticado, usuario, logout } = useAuth();

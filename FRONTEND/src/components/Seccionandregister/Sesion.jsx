@@ -27,24 +27,23 @@ export function Sesion() {
       const { data } = await loginUsuario({ correo, password });
       const access = data?.token?.access || data?.access;
       const refresh = data?.token?.refresh || data?.refresh;
-
+      
       login({
         access,
         refresh,
         usuario: data?.usuario,
         rol: data?.rol,
       });
-
+      
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
       navigate(data?.rol === 'administrador' ? '/' : '/catalogo');
     } catch (error) {
       const backend = error?.response?.data;
-      const errorMsg =
-        backend?.detail ||
-        backend?.non_field_errors?.[0] ||
-        backend?.mensaje ||
-        backend?.error ||
-        'Credenciales inválidas';
+      const errorMsg = backend?.detail || 
+                      backend?.non_field_errors?.[0] || 
+                      backend?.mensaje || 
+                      backend?.error || 
+                      'Credenciales inválidas';
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -74,14 +73,13 @@ export function Sesion() {
     } catch (error) {
       const backend = error?.response?.data;
       const status = error?.response?.status;
-      const errorMsg =
-        backend?.mensaje ||
-        backend?.error ||
-        (status === 400 && "Datos inválidos") ||
-        (status === 401 && "No autorizado") ||
-        (status === 500 && "Error interno del servidor") ||
-        error.message ||
-        "No se pudo registrar el usuario";
+      const errorMsg = backend?.mensaje || 
+                      backend?.error || 
+                      (status === 400 && "Datos inválidos") || 
+                      (status === 401 && "No autorizado") || 
+                      (status === 500 && "Error interno del servidor") || 
+                      error.message || 
+                      "No se pudo registrar el usuario";
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -101,7 +99,9 @@ export function Sesion() {
             <div className="container-input">
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
-            <Link to="/sesion/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
+            <Link to="/sesion/recuperar_contrasena" className="forgot-password">
+              ¿Olvidaste tu contraseña?
+            </Link>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? 'Procesando...' : 'Iniciar sesión'}
             </button>

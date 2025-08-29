@@ -13,22 +13,14 @@ body {
   min-height: 100vh !important;
 }
 
-/* Hacer que todo lo que NO sea footer tome el espacio disponible */
-#root > div:not(.footer) {
-  flex: 1 !important;
-}
-
-/* También para main  */
 main {
   flex: 1 !important;
 }
 
-/* Estilos del footer */
-footer, .footer {
-  background-color: #1a1a1a !important;
-  color: #fff !important;
-  text-align: center !important;
-  padding: 20px !important;
-  font-family: 'Urbanist', sans-serif !important;
-  margin-top: auto !important;
+footer {
+  background-color: #1a1a1a;
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  font-family: 'Urbanist', sans-serif;
 }

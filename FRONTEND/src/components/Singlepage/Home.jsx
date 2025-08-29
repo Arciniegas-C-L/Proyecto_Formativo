@@ -11,6 +11,7 @@ import mujer from "../../assets/images/home/mujer.jpg";
 import gafas from "../../assets/images/home/gafas.jpg";
 import guayos from "../../assets/images/home/guayos.jpg";
 
+
 export const Home = () => {
   return (
     <>
