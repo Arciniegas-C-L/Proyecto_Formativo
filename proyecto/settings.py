@@ -9,10 +9,19 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 from datetime import timedelta
 from corsheaders.defaults import default_headers
+
+
+load_dotenv()
+
+MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN")
+MP_WEBHOOK_SECRET = os.getenv("MP_WEBHOOK_SECRET", "change-this")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -170,5 +179,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'variedadezyestiloszoe@gmail.com'     
 EMAIL_HOST_PASSWORD = 'jotr mqpe slno nrkv'  
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 
 
