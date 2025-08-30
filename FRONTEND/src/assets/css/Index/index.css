@@ -1,4 +1,6 @@
-html, body {
+/* Index.css - Estilos globales */
+html,
+body {
   height: 100%;
   margin: 0;
 }
@@ -13,6 +15,7 @@ body {
   min-height: 100vh !important;
 }
 
+/* Contenedor principal que se expande */
 main {
   flex: 1 !important;
 }
@@ -23,4 +26,6 @@ footer {
   text-align: center;
   padding: 20px;
   font-family: 'Urbanist', sans-serif;
+  margin-top: auto;
+  /* Asegura que esté al final */
 }

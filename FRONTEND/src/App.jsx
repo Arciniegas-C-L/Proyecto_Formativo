@@ -27,7 +27,6 @@ import { GrupoTallaPage } from "./pages/GrupoTallePage.jsx";
 import { PerfilPage } from "./pages/PerfilPage.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
@@ -42,141 +41,143 @@ function AppContent() {
     location.pathname !== "/sesion" &&
     location.pathname !== "/sesion/recuperar_contrasena";
 
-    
   return (
     <>
       <Header />
 
-      {/* Renderiza el dashboard si el usuario es admin y no está en la página de sesión */}
-      {esAdminAutenticado && noEsPaginaDeSesion && <AdminDashboard />}
+      {/* MAIN AGREGADO - contenido que se expande */}
+      <main>
+        {/* Renderiza el dashboard si el usuario es admin y no está en la página de sesión */}
+        {esAdminAutenticado && noEsPaginaDeSesion && <AdminDashboard />}
 
-      <Routes>
-        {/* Públicas */}
-        <Route path="/" element={<Home />} />
-        <Route path="/sesion" element={<SesionPage />} />
-        <Route
-          path="/sesion/recuperar_contrasena"
-          element={<SesionRecuperacionPage />}
-        />
-        <Route path="/catalogo" element={<Catalogopage />} />
-        <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
-        <Route path="/carrito" element={<Carritopage />} />
+        <Routes>
+          {/* Públicas */}
+          <Route path="/" element={<Home />} />
+          <Route path="/sesion" element={<SesionPage />} />
+          <Route
+            path="/sesion/recuperar_contrasena"
+            element={<SesionRecuperacionPage />}
+          />
+          <Route path="/catalogo" element={<Catalogopage />} />
+          <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
+          <Route path="/carrito" element={<Carritopage />} />
 
-        {/* Protegidas por rol */}
-        <Route
-          path="/proveedores"
-          element={
-            <RutaPrivada role="administrador">
-              <AdminProvedoresPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/proveedores/registrados"
-          element={
-            <RutaPrivada role="administrador">
-              <ProveedoresRegistradosPage />
-            </RutaPrivada>
-          }
-        />
+          {/* Protegidas por rol */}
+          <Route
+            path="/proveedores"
+            element={
+              <RutaPrivada role="administrador">
+                <AdminProvedoresPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/proveedores/registrados"
+            element={
+              <RutaPrivada role="administrador">
+                <ProveedoresRegistradosPage />
+              </RutaPrivada>
+            }
+          />
 
-        <Route
-          path="/inventario"
-          element={
-            <RutaPrivada role="administrador">
-              <InventarioPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/producto"
-          element={
-            <RutaPrivada role="administrador">
-              <ListaProductosPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/producto/crear"
-          element={
-            <RutaPrivada role="administrador">
-              <ProductosFormPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/producto/editar/:id"
-          element={
-            <RutaPrivada role="administrador">
-              <ProductosFormPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/usuario"
-          element={
-            <RutaPrivada role="administrador">
-              <AdminUsuariosPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/tallas"
-          element={
-            <RutaPrivada role="administrador">
-              <TallasPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/grupo-talla"
-          element={
-            <RutaPrivada role="administrador">
-              <GrupoTallaPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/categorias"
-          element={
-            <RutaPrivada role={["cliente", "administrador"]}>
-              <CategoriasPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/rol"
-          element={
-            <RutaPrivada role="administrador">
-              <RolListaPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/rol-create"
-          element={
-            <RutaPrivada role="administrador">
-              <RolFormPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/perfil"
-          element={
-            <RutaPrivada role={["cliente", "administrador"]}>
-              <PerfilPage />
-            </RutaPrivada>
-          }
-        />
-        <Route
-          path="/carrito"
-          element={
-            <RutaPrivada role={["cliente", "administrador"]}>
-              <Carritopage />
-            </RutaPrivada>
-          }
-        />
-      </Routes>
+          <Route
+            path="/inventario"
+            element={
+              <RutaPrivada role="administrador">
+                <InventarioPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/producto"
+            element={
+              <RutaPrivada role="administrador">
+                <ListaProductosPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/producto/crear"
+            element={
+              <RutaPrivada role="administrador">
+                <ProductosFormPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/producto/editar/:id"
+            element={
+              <RutaPrivada role="administrador">
+                <ProductosFormPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/usuario"
+            element={
+              <RutaPrivada role="administrador">
+                <AdminUsuariosPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/tallas"
+            element={
+              <RutaPrivada role="administrador">
+                <TallasPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/grupo-talla"
+            element={
+              <RutaPrivada role="administrador">
+                <GrupoTallaPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/categorias"
+            element={
+              <RutaPrivada role={["cliente", "administrador"]}>
+                <CategoriasPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/rol"
+            element={
+              <RutaPrivada role="administrador">
+                <RolListaPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/rol-create"
+            element={
+              <RutaPrivada role="administrador">
+                <RolFormPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/perfil"
+            element={
+              <RutaPrivada role={["cliente", "administrador"]}>
+                <PerfilPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/carrito"
+            element={
+              <RutaPrivada role={["cliente", "administrador"]}>
+                <Carritopage />
+              </RutaPrivada>
+            }
+          />
+        </Routes>
+      </main>
 
       <Toaster />
       <Footer />
