@@ -1,12 +1,13 @@
 // src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
 import saludo from '../../assets/images/saludo.webp';
 import bienvenida from '../../assets/images/bienvenida.gif';
-import '../../assets/css/sesion.css';
 import { useAuth } from '../../context/AuthContext';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
+import '../../assets/css/sesion.css';
 
 export function Sesion() {
   const { login } = useAuth();
@@ -40,7 +41,7 @@ export function Sesion() {
 
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
 
-      if (data?.rol === 'administrador') navigate('/administrador');
+      if (data?.rol === 'administrador') navigate('/admin');
       else navigate('/catalogo');
     } catch (error) {
       const backend = error?.response?.data;
@@ -112,7 +113,7 @@ export function Sesion() {
             <div className="container-input">
               <input type="password" name="password" placeholder="Contraseña" required />
             </div>
-            <Link to="/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
+            <Link to="/sesion/recuperar_contrasena" className="forgot-password">¿Olvidaste tu contraseña?</Link>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? 'Procesando...' : 'INICIAR SESIÓN'}
             </button>
@@ -162,5 +163,4 @@ export function Sesion() {
         </div>
       </div>
     </div>
-  );
-}
+)}

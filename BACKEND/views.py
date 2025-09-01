@@ -1,17 +1,57 @@
-from rest_framework.decorators import api_view, permission_classes, action
-from django.contrib.auth.hashers import make_password, check_password
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework import viewsets, status, serializers
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
+from .serializer import (
+    DireccionSerializer, CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
+    ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
+    PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
+    CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
+    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer,
+    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer, UserSerializer
+)
+from .models import (
+    Direccion, Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
+    Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
+    Carrito, CarritoItem, EstadoCarrito, Subcategoria, Talla, GrupoTalla
+)
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth import authenticate, get_user_model
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import models
+from BACKEND.permissions import IsAdmin, IsCliente, IsAdminWriteClienteRead
 import random
+import string
+from django.utils import timezone
+from datetime import timedelta
+ # CRUD de direcciones de usuario
+class DireccionViewSet(viewsets.ModelViewSet):
+    queryset = Direccion.objects.all()
+    serializer_class = DireccionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Solo mostrar direcciones del usuario autenticado
+        return Direccion.objects.filter(usuario=self.request.user)
+
+    def perform_create(self, serializer):
+        # Asignar el usuario autenticado a la dirección
+        serializer.save(usuario=self.request.user)
+from rest_framework.decorators import action
+from django.contrib.auth.hashers import make_password
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.core.mail import send_mail
+from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from rest_framework import viewsets
 from .serializer import (
     CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
     ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
@@ -32,14 +72,13 @@ from django.db import models
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
 from BACKEND.permissions import IsAdmin,IsCliente,IsAdminWriteClienteRead
 import random
 import string
+from django.utils import timezone
+from datetime import timedelta
 
 # Create your views here.
 
@@ -128,9 +167,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         try:
             usuario = Usuario.objects.get(correo=correo)
 
-            # Verificar si ya hay un código activo en los últimos 10 minutos
+            # Verificar si ya hay un código activo en los últimos 5 minutos
             codigo_activo = CodigoRecuperacion.objects.filter(
-                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=10)
+                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=5)
             ).exists()
 
             if codigo_activo:
@@ -141,8 +180,15 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             codigo = ''.join(random.choices(string.digits, k=6))
             CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo)
 
-            # Aquí deberías enviar el correo real
-            print(f"Enviar este código a {correo}: {codigo}")
+
+            # Enviar el código por correo real
+            send_mail(
+                subject='Código de recuperación de contraseña',
+                message=f'Tu código de recuperación es: {codigo}',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[correo],
+                fail_silently=False,
+            )
 
             return Response({"mensaje": "Código enviado al correo."}, status=status.HTTP_200_OK)
 
@@ -1225,21 +1271,38 @@ class CarritoView(viewsets.ModelViewSet):
         try:
             # Obtener el carrito con sus items y productos precargados
             carrito = Carrito.objects.prefetch_related(
-                'items__producto'
+                'items__producto', 'items__talla'
             ).get(pk=pk)
-            
+
             item_id = request.data.get('item_id')
             nueva_cantidad = request.data.get('cantidad')
 
-            # Obtener el item con su producto relacionado
-            item = carrito.items.select_related('producto').get(idCarritoItem=item_id)
-            
+            # Obtener el item con su producto y talla relacionados
+            item = carrito.items.select_related('producto', 'talla').get(idCarritoItem=item_id)
+
+            # Actualizar inventario según la talla
+            from .models import Inventario
+            inventario = None
+            if item.talla:
+                inventario = Inventario.objects.filter(producto=item.producto, talla=item.talla).first()
+            else:
+                inventario = Inventario.objects.filter(producto=item.producto).first()
+
+            if inventario:
+                diferencia = nueva_cantidad - item.cantidad
+                # Si diferencia > 0, se está aumentando la cantidad (restar del stock)
+                # Si diferencia < 0, se está disminuyendo la cantidad (sumar al stock)
+                inventario.stock_talla -= diferencia
+                if inventario.stock_talla < 0:
+                    return Response({"error": "No hay suficiente stock para la talla seleccionada."}, status=status.HTTP_400_BAD_REQUEST)
+                inventario.save()
+
             if nueva_cantidad <= 0:
                 item.delete()
             else:
                 item.cantidad = nueva_cantidad
                 item.save()
-            
+
             # Serializar el carrito con sus items actualizados
             serializer = CarritoSerializer(carrito)
             return Response(serializer.data, status=status.HTTP_200_OK)
