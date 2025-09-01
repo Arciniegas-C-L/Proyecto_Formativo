@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -25,7 +25,7 @@ import {AdminUsuariosPage} from  './pages/AdminUsuariosPage.jsx';
 import {TallasPage} from './pages/Tallaspage.jsx';
 import {GrupoTallaPage} from './pages/GrupoTallePage.jsx';
 import { PerfilPage } from "./pages/PerfilPage.jsx";
-import {Carritopage} from "./pages/Carritopage"
+import { Carritopage } from "./pages/Carritopage";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -36,7 +36,6 @@ function AppContent() {
   const { autenticado, rol } = useAuth();
 
   const esAdminAutenticado = autenticado && rol === "administrador";
-  
   // No mostrar en la página de sesión o de recuperación
   const noEsPaginaDeSesion =
     location.pathname !== "/sesion" &&
@@ -45,10 +44,8 @@ function AppContent() {
   return (
     <>
       <Header />
-      
       {/* Renderiza el dashboard si el usuario es admin y no está en la página de sesión */}
       {esAdminAutenticado && noEsPaginaDeSesion && <AdminDashboard />}
-      
       <Routes>
         {/* Públicas */}
         <Route path="/" element={<Home />} />
@@ -56,7 +53,6 @@ function AppContent() {
         <Route path="/sesion/recuperar_contrasena" element={<SesionRecuperacionPage />} />
         <Route path="/catalogo" element={<CatalogoPage />} />
         <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
-        <Route path="/carrito" element={<CarritoPage />} />
 
         {/* Protegidas por rol */}
         <Route
@@ -70,7 +66,7 @@ function AppContent() {
         <Route
           path="/carrito"
           element={
-            <RutaPrivada role="cliente">
+            <RutaPrivada role={["cliente", "administrador"]}>
               <Carritopage />
             </RutaPrivada>
           }
@@ -79,11 +75,7 @@ function AppContent() {
           path="/administrador"
           element={
             <RutaPrivada role="administrador">
-              <ProveedoresRegistradosPage
-                proveedores={proveedores}
-                onEliminar={handleEliminar}
-                onEditar={handleEditar}
-              />
+              <ProveedoresRegistradosPage />
             </RutaPrivada>
           }
         />
@@ -146,7 +138,7 @@ function AppContent() {
         <Route
           path="/categorias"
           element={
-            <RutaPrivada role={[ "administrador"]}>
+            <RutaPrivada role={["administrador"]}>
               <CategoriasPage />
             </RutaPrivada>
           }
@@ -175,23 +167,13 @@ function AppContent() {
             </RutaPrivada>
           }
         />
-        <Route
-          path="/carrito"
-          element={
-            <RutaPrivada role={["cliente", "administrador"]}>
-              <CarritoPage />
-            </RutaPrivada>
-          }
-        />
       </Routes>
-
       <Toaster />
       <Footer />
     </>
   );
 }
 
-// 👇 Envolvemos AppContent con AuthProvider
 function App() {
   return (
     <AuthProvider>

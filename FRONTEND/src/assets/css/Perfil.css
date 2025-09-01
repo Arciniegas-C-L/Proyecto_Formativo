@@ -372,3 +372,175 @@
         padding: 1rem;
     }
 }
+
+
+/* ======== ESTILOS PARA DIRECCIONES ======== */
+.direcciones {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 2rem 1.5rem;
+  margin: 1rem 0;
+  max-width: 600px;
+}
+.direcciones-titulo {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: #2a2a2a;
+}
+.direccion-personal {
+  background: #f5f7fa;
+  border-left: 4px solid #1976d2;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.direccion-label {
+  font-weight: 500;
+  color: #1976d2;
+}
+.direccion-texto {
+  color: #333;
+}
+.direccion-item {
+    background: #f9fafb;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 0.7rem;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: box-shadow 0.2s;
+}
+
+.direccion-info-texto {
+    margin-bottom: 0.7rem;
+    font-size: 1.05rem;
+    word-break: break-word;
+}
+
+.direccion-actions-horizontal {
+    display: flex;
+    flex-direction: row;
+    gap: 0.7rem;
+    width: 100%;
+    justify-content: flex-start;
+}
+.direccion-item.principal {
+  border-color: #1976d2;
+  box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+}
+.direccion-actions button {
+  margin-left: 0.5rem;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+.direccion-actions button:hover {
+  background: #125ea7;
+}
+.direccion-btn-agregar {
+  margin-top: 1rem;
+  background: #43a047;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.direccion-btn-agregar:hover {
+  background: #357a38;
+}
+.direccion-vacia {
+  color: #888;
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+.error {
+  color: #c62828;
+  background: #ffebee;
+  border-left: 4px solid #c62828;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+.success {
+  color: #388e3c;
+  background: #e8f5e9;
+  border-left: 4px solid #388e3c;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+/* ======== CAMBIAR CONTRASEÑA PERFIL ======== */
+.cambiar-password {
+    width: 100%;
+    margin-top: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.cambiar-password-form {
+    background: #181c2b;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 212, 255, 0.10);
+    padding: 2rem 2.5rem 1.5rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1.5px solid #00D4FF22;
+    min-width: 320px;
+    max-width: 400px;
+    margin-bottom: 1rem;
+}
+.cambiar-password-titulo {
+    color: #00D4FF;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.2rem;
+}
+.cambiar-password-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 7px;
+    border: 1.5px solid #00D4FF44;
+    background: #23273a;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.2s;
+}
+.cambiar-password-input:focus {
+    border: 1.5px solid #00D4FF;
+}
+.cambiar-password-btn {
+    background: linear-gradient(90deg, #F26BE2, #00D4FF);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 0.3rem;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+.cambiar-password-btn:hover {
+    background: linear-gradient(90deg, #00D4FF, #F26BE2);
+    color: #1A1F2E;
+    transform: scale(1.04);
+}

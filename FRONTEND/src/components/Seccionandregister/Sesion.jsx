@@ -1,17 +1,19 @@
 // src/components/auth/Sesion.jsx
 import React, { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
 import saludo from '../../assets/images/saludo.webp';
 import bienvenida from '../../assets/images/bienvenida.gif';
-import '../../assets/css/sesion.css';
 import { useAuth } from '../../context/AuthContext';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
+import '../../assets/css/sesion.css';
 
 export function Sesion() {
   const { login } = useAuth();
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
   const handleSignUpClick = () => containerRef.current?.classList.add('toggle');
@@ -161,5 +163,4 @@ export function Sesion() {
         </div>
       </div>
     </div>
-  );
-}
+)}

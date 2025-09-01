@@ -1,27 +1,51 @@
+
 from rest_framework import serializers
 from .models import (
     Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, 
     Pedido, PedidoProducto, Pago, TipoPago, Subcategoria, CarritoItem, 
-    EstadoCarrito, Carrito, Talla, GrupoTalla
+    EstadoCarrito, Carrito, Talla, GrupoTalla, Direccion
 )
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+# Serializer para Direccion
+class DireccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Direccion
+        fields = ['id', 'direccion']
 
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rol
         fields = '__all__'
 
+
 class UsuarioSerializer(serializers.ModelSerializer):
+    rol = serializers.PrimaryKeyRelatedField(queryset=Rol.objects.all(), required=False, allow_null=True)
     rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
-    
+    avatar_seed = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    avatar_options = serializers.JSONField(required=False, allow_null=True)
+    direccion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    telefono = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = Usuario
-        fields = ['idUsuario', 'nombre', 'apellido', 'correo', 'telefono', 'estado', 'rol_nombre']
+        fields = [
+            'idUsuario', 'nombre', 'apellido', 'correo', 'telefono', 'direccion', 'estado',
+            'rol', 'rol_nombre', 'avatar_seed', 'avatar_options'
+        ]
 
-
+    def update(self, instance, validated_data):
+        # Si avatar_seed o avatar_options llegan como string vacío, guárdalos como None
+        avatar_seed = validated_data.get('avatar_seed', None)
+        if avatar_seed == '':
+            validated_data['avatar_seed'] = None
+        avatar_options = validated_data.get('avatar_options', None)
+        if avatar_options == '' or avatar_options is None:
+            validated_data['avatar_options'] = None
+        return super().update(instance, validated_data)
+    
 class LoginSerializer(serializers.Serializer):
     correo = serializers.EmailField()
     password = serializers.CharField(write_only=True)
