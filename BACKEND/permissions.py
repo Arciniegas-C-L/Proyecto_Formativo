@@ -30,4 +30,16 @@ class IsAdminWriteClienteRead(BasePermission):
         if request.method in SAFE_METHODS:
             return rol in ['administrador', 'cliente']
         return rol == 'administrador'
+class AdminandCliente(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            getattr(request.user.rol, 'nombre', '').strip().lower() in ['administrador', 'cliente']
+        )
 
+class Invitado(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            getattr(request.user.rol, 'nombre', '').strip().lower() == 'invitado'
+        )
