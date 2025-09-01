@@ -27,7 +27,7 @@ export function VerificarCodigo({ correo }) {
     }
 
     setCodigoVerificado(true);
-    setMensaje("✅ Código verificado correctamente");
+    setMensaje(" Código verificado correctamente");
   };
 
   const cambiarContrasena = async (e) => {
@@ -43,7 +43,7 @@ export function VerificarCodigo({ correo }) {
     const { data, error } = await resetearContrasena({
     correo,
     codigo,
-    nueva_contrasena: nuevaContrasena // ✅ ahora coincide con el backend
+    nueva_contrasena: nuevaContrasena // 
   });
 
     if (error) {

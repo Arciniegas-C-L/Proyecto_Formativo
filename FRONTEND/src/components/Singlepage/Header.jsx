@@ -8,61 +8,39 @@ import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
+
 export function Header() {
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const { autenticado, usuario, logout } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleLogout = () => {
-    setShowConfirm(true);
-  };
-
-  const confirmLogout = () => {
-    setShowConfirm(false);
-    logout();
-  };
-
-  const cancelLogout = () => {
-    setShowConfirm(false);
-  };
+  const handleLogout = () => setShowConfirm(true);
+  const confirmLogout = () => { setShowConfirm(false); logout(); };
+  const cancelLogout = () => setShowConfirm(false);
 
   const cargarCantidadCarrito = async () => {
-    if (!autenticado) {
-      setCantidadCarrito(0);
-      return;
-    }
+    if (!autenticado) return setCantidadCarrito(0);
 
     try {
       const response = await fetchCarritos();
       const carritosActivos = response.data.filter(c => c.estado === true);
-      
-      if (carritosActivos.length > 0) {
-        const carritoActivo = carritosActivos[0];
-        const cantidad = carritoActivo.items ? carritoActivo.items.length : 0;
-        setCantidadCarrito(cantidad);
-      } else {
-        setCantidadCarrito(0);
-      }
-    } catch (error) {
-      console.error("Error al cargar cantidad del carrito:", error);
+      const cantidad = carritosActivos.length > 0
+        ? carritosActivos[0].items?.length || 0
+        : 0;
+      setCantidadCarrito(cantidad);
+    } catch {
       setCantidadCarrito(0);
     }
   };
 
   useEffect(() => {
     cargarCantidadCarrito();
-    
-    // Actualizar cada 5 segundos
     const interval = setInterval(cargarCantidadCarrito, 5000);
     return () => clearInterval(interval);
   }, [autenticado]);
 
-  // Función para escuchar cambios en el carrito desde otros componentes
   useEffect(() => {
-    const handleCarritoActualizado = () => {
-      cargarCantidadCarrito();
-    };
-
+    const handleCarritoActualizado = () => cargarCantidadCarrito();
     window.addEventListener('carritoActualizado', handleCarritoActualizado);
     return () => window.removeEventListener('carritoActualizado', handleCarritoActualizado);
   }, []);
@@ -94,10 +72,7 @@ export function Header() {
               <img src={ZOE} alt="Logo de la empresa" />
             </div>
             <h3 className="m-0">
-              <Link
-                to="/"
-                className="titulo-empresa text-white text-decoration-none fw-bold"
-              >
+              <Link to="/" className="titulo-empresa text-white text-decoration-none fw-bold">
                 Variedad y Estilos ZOE
               </Link>
             </h3>
@@ -105,26 +80,17 @@ export function Header() {
           <nav>
             <ul className="nav align-items-center gap-2">
               <li className="nav-item">
-                <Link
-                  to="/"
-                  className="nav-link enlace-boton px-3 d-flex align-items-center gap-2"
-                >
+                <Link to="/" className="nav-link enlace-boton d-flex align-items-center gap-2">
                   <i className="bi bi-house-door-fill"></i> Inicio
                 </Link>
               </li>
               <li className="nav-item">
-                <Link
-                  to="/catalogo"
-                  className="nav-link enlace-boton px-3 d-flex align-items-center gap-2"
-                >
+                <Link to="/catalogo" className="nav-link enlace-boton d-flex align-items-center gap-2">
                   <i className="bi bi-grid-3x3-gap-fill"></i> Catálogo
                 </Link>
               </li>
               <li className="nav-item">
-                <Link
-                  to="/carrito"
-                  className="nav-link enlace-boton px-3 d-flex align-items-center gap-2 position-relative"
-                >
+                <Link to="/carrito" className="nav-link enlace-boton d-flex align-items-center gap-2 position-relative">
                   <i className="bi bi-cart3"></i> Carrito
                   {cantidadCarrito > 0 && (
                     <span className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill">
@@ -135,36 +101,18 @@ export function Header() {
               </li>
               {autenticado ? (
                 <li className="nav-item dropdown">
-                  <a
-                    href="#"
-                    className="nav-link enlace-boton px-3 d-flex align-items-center gap-2 dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
+                  <a href="#" className="nav-link enlace-boton d-flex align-items-center gap-2 dropdown-toggle" data-bs-toggle="dropdown">
                     <i className="bi bi-person-circle"></i> {usuario.username}
                   </a>
                   <ul className="dropdown-menu dropdown-menu-dark">
-                    <li>
-                      <Link to="/perfil" className="dropdown-item">
-                        Mi Perfil
-                      </Link>
-                    </li>
-                    <li>
-                      <hr className="dropdown-divider" />
-                    </li>
-                    <li>
-                      <button className="dropdown-item" onClick={handleLogout}>
-                        Cerrar Sesión
-                      </button>
-                    </li>
+                    <li><Link to="/perfil" className="dropdown-item">Mi Perfil</Link></li>
+                    <li><hr className="dropdown-divider" /></li>
+                    <li><button className="dropdown-item" onClick={handleLogout}>Cerrar Sesión</button></li>
                   </ul>
                 </li>
               ) : (
                 <li className="nav-item">
-                  <Link
-                    to="/sesion"
-                    className="nav-link enlace-boton px-3 d-flex align-items-center gap-2"
-                  >
+                  <Link to="/sesion" className="nav-link enlace-boton d-flex align-items-center gap-2">
                     <i className="bi bi-person-circle"></i> Sesión
                   </Link>
                 </li>

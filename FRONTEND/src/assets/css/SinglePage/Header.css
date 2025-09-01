@@ -1,6 +1,6 @@
-/* Fondo del header */
+/* Fondo header */
 header.bg-dark {
-  background: linear-gradient(145deg, #1A1F2E, #2A2F3E) !important;
+  background: linear-gradient(145deg, #1A1F2E, #2A2F3E);
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
@@ -18,7 +18,6 @@ header.bg-dark {
 .titulo-empresa {
   font-family: "Bebas Neue", sans-serif;
   font-size: 26px;
-  margin-left: 1px;
   letter-spacing: 1px;
   font-weight: bold;
   background: linear-gradient(45deg, #f26be2, #00d4ff);
@@ -35,14 +34,13 @@ header.bg-dark {
   color: #ffffff !important;
   text-decoration: none;
   padding: 8px 12px;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-right: auto;
+  transition: all 0.3s ease;
 }
 
-/* Efecto hover en enlaces */
+/* Hover */
 .enlace-boton:hover {
   background-color: #f26be2 !important;
   color: #1A1F2E !important;
@@ -52,30 +50,23 @@ header.bg-dark {
   cursor: pointer;
 }
 
-/* Ícono de sesión */
+/* Íconos */
 .enlace-boton .bi {
   font-size: 20px;
   vertical-align: middle;
 }
 
-/* Ajustes de espaciado horizontal */
-.d-flex.gap-3 {
-  gap: 0.75rem;
-}
-
-/* Ajustes responsivos */
+/* Responsive */
 @media (max-width: 768px) {
   header .container-fluid {
     flex-direction: column;
     align-items: flex-start;
   }
-
   nav ul.nav {
     flex-direction: column;
     width: 100%;
     margin-top: 10px;
   }
-
   .enlace-boton {
     width: 100%;
     justify-content: flex-start;
@@ -83,7 +74,7 @@ header.bg-dark {
   }
 }
 
-/* Estilos para el indicador del carrito */
+/* Badge carrito */
 .badge {
   font-size: 0.75rem;
   font-weight: bold;
@@ -96,27 +87,13 @@ header.bg-dark {
 }
 
 @keyframes pulse {
-  0% {
-    transform: scale(1) translate(-50%, -50%);
-  }
-  50% {
-    transform: scale(1.1) translate(-50%, -50%);
-  }
-  100% {
-    transform: scale(1) translate(-50%, -50%);
-  }
+  0%, 100% { transform: scale(1) translate(-50%, -50%); }
+  50% { transform: scale(1.1) translate(-50%, -50%); }
 }
 
-/* Posicionamiento del badge */
 .position-relative .badge {
   top: 0;
   left: 100%;
   transform: translate(-50%, -50%);
 }
 
-/* Hover en el enlace del carrito */
-.enlace-boton:hover .badge {
-  background-color: #dc3545 !important;
-  transform: translate(-50%, -50%) scale(1.1);
-  transition: all 0.3s ease;
-}
