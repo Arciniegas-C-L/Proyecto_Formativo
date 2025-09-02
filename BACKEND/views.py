@@ -49,11 +49,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework import serializers
 from .models import Usuario
-from rest_framework import serializers
-from rest_framework.permissions import AllowAny
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 # Create your views here.
@@ -63,14 +58,11 @@ class Rolview(viewsets.ModelViewSet):
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
     permission_classes = [IsAdminWriteClienteRead]
-    
-    # --- REGISTRO ---    
+
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
     permission_classes = [AllowAny]
-
-    # ------------------ NUEVO: TOKEN INVITADO ------------------
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='guest')
     def guest(self, request):
         """
@@ -78,9 +70,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         - NO crea el rol (debe existir en la tabla Rol).
         - Devuelve la misma estructura que 'login' para reutilizar el frontend.
         """
-        # 1) Buscar rol 'Invitado' existente (no lo crea)
+        # 1) Buscar rol 'Invitado' existente (no lo crea) – acepta mayúsc/minúsc
         try:
-            rol_invitado = Rol.objects.get(nombre='Invitado')  # respeta el nombre exacto que tienes en BD
+            rol_invitado = Rol.objects.get(nombre__iexact='Invitado')
         except Rol.DoesNotExist:
             return Response(
                 {"error": "El rol 'Invitado' no existe. Créalo previamente en la tabla de roles."},
@@ -90,7 +82,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         # 2) Obtener o crear (una sola vez) un usuario técnico para invitados
         #    Ajusta estos campos a tu modelo real. Si 'correo' es único, úsalo.
         guest, created = Usuario.objects.get_or_create(
-            correo='guest@local',                  # <-- si tu modelo no tiene 'correo' único, usa otro identificador que tengas
+            correo='guest@local',  # si en tu modelo el único es username, usa username='guest_user'
             defaults={
                 'nombre': 'Invitado',
                 'is_active': True,
@@ -99,7 +91,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         )
 
         # Asegura que el usuario técnico tenga siempre el rol 'Invitado'
-        if guest.rol_id != rol_invitado.id:
+        # Usa .pk para no depender del nombre de la PK de Rol
+        if getattr(guest, 'rol_id', None) != rol_invitado.pk:
             guest.rol = rol_invitado
             guest.save(update_fields=['rol'])
 
@@ -124,223 +117,6 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             "token": token
         }, status=status.HTTP_200_OK)
     # ------------------ FIN INVITADO ------------------
-
-    # ------------------ REGISTRO ------------------
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='register')
-    def register(self, request):
-        data = request.data.copy()
-
-        # Si no envían rol, asignamos el rol "cliente" por defecto
-        if not data.get('rol'):
-            try:
-                rol_cliente = Rol.objects.get(nombre='cliente')
-                data['rol'] = rol_cliente.pk
-            except Rol.DoesNotExist:
-                return Response(
-                    {"error": "Rol por defecto no encontrado"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-        serializer = UsuarioRegistroSerializer(data=data)
-        if serializer.is_valid():
-            usuario = serializer.save()
-            return Response({
-                "mensaje": "Usuario registrado correctamente",
-                "usuario": UsuarioSerializer(usuario).data
-            }, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    # ------------------ LOGIN ------------------
-    @action(detail=False, methods=['get', 'post'], permission_classes=[AllowAny])
-    def login(self, request):
-        if request.method == 'GET':
-            serializer = LoginSerializer()
-            return Response(serializer.data)
-
-        serializer = LoginSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        correo = serializer.validated_data['correo']
-        password = serializer.validated_data['password']
-        try:
-            usuario = Usuario.objects.select_related('rol').get(correo=correo)
-
-            if not usuario.is_active:
-                return Response({"error": "Usuario inactivo"}, status=status.HTTP_403_FORBIDDEN)
-
-            if not usuario.check_password(password):
-                return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
-
-            refresh = RefreshToken.for_user(usuario)
-            token = {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-
-            usuario_serializado = UsuarioSerializer(usuario).data
-
-            return Response({
-                "mensaje": "Login exitoso",
-                "usuario": usuario_serializado,
-                "rol": usuario.rol.nombre if usuario.rol else None,
-                "token": token
-            }, status=status.HTTP_200_OK)
-
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
-
-    # ------------------ ENVIAR CÓDIGO RECUPERACIÓN ------------------
-    @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
-    def recuperar_password(self, request):
-        correo = request.data.get('correo')
-
-        try:
-            usuario = Usuario.objects.get(correo=correo)
-
-            # Verificar si ya hay un código activo en los últimos 3 minutos
-            codigo_activo = CodigoRecuperacion.objects.filter(
-                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=3)
-            ).exists()
-
-            if codigo_activo:
-                return Response(
-                    {"error": "Ya se envió un código recientemente. Espere antes de solicitar otro."},
-                    status=status.HTTP_429_TOO_MANY_REQUESTS
-                )
-
-            # Generar código de 6 dígitos
-            codigo = ''.join(random.choices(string.digits, k=6))
-            CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo)
-
-            # Enviar correo real
-            send_mail(
-                subject="Código de recuperación",
-                message=f"Tu código de recuperación es: {codigo}",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[correo],
-                fail_silently=False,
-            )
-
-            return Response({"mensaje": "Código enviado al correo."}, status=status.HTTP_200_OK)
-
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": f"Error enviando el correo: {str(e)}"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    # ------------------ VERIFICAR CÓDIGO ------------------
-    @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
-    def verificar_codigo(self, request):
-        correo = request.data.get('correo')
-        codigo = request.data.get('codigo')
-
-        try:
-            usuario = Usuario.objects.get(correo=correo)
-            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
-
-            if codigo_obj.intentos >= 3:
-                return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
-
-            if codigo_obj.codigo != codigo:
-                codigo_obj.intentos += 1
-                codigo_obj.save()
-                return Response({"error": "Código incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
-
-            return Response({"mensaje": "Código válido"}, status=status.HTTP_200_OK)
-
-        except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
-            return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
-
-    # ------------------ RESET PASSWORD ------------------
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def reset_password(self, request):
-        correo = request.data.get('correo')
-        codigo = request.data.get('codigo')
-        nueva_contrasena = request.data.get('nueva_contrasena')
-
-        try:
-            usuario = Usuario.objects.get(correo=correo)
-            codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
-
-            if codigo_obj.intentos >= 3:
-                return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
-
-            if codigo_obj.codigo != codigo:
-                codigo_obj.intentos += 1
-                codigo_obj.save()
-                return Response({"error": "Código incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
-
-            usuario.set_password(nueva_contrasena)
-            usuario.save()
-            codigo_obj.delete()
-
-            return Response({"mensaje": "Contraseña restablecida correctamente"}, status=status.HTTP_200_OK)
-
-        except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
-            return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
-
-
-class UsuarioViewSet(viewsets.ModelViewSet):
-    queryset = Usuario.objects.all()
-    serializer_class = UsuarioSerializer
-    permission_classes = [AllowAny]
-
-    # ---------- NUEVO: TOKEN INVITADO ----------
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='guest')
-    def guest(self, request):
-        """
-        Emite un JWT para un usuario técnico 'guest' con rol 'Invitado'.
-        - NO crea el rol; debe existir con nombre exacto 'Invitado'.
-        - Devuelve el mismo shape que 'login' para reutilizar el frontend.
-        """
-        # 1) Rol existente
-        try:
-            rol_invitado = Rol.objects.get(nombre='Invitado')
-        except Rol.DoesNotExist:
-            return Response(
-                {"error": "El rol 'Invitado' no existe. Créalo previamente."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 2) Usuario técnico invitado (no afecta a usuarios registrados)
-        guest, created = Usuario.objects.get_or_create(
-            correo='guest@local',  # si tu modelo no usa 'correo' único, usa username='guest_user'
-            defaults={
-                'nombre': 'Invitado',
-                'is_active': True,
-                'rol': rol_invitado,
-            }
-        )
-
-        # Asegura el rol correcto en el usuario técnico
-        if guest.rol_id != rol_invitado.id:
-            guest.rol = rol_invitado
-            guest.save(update_fields=['rol'])
-
-        # Evita login por contraseña en este usuario técnico
-        if created and hasattr(guest, 'set_unusable_password'):
-            guest.set_unusable_password()
-            guest.save()
-
-        # 3) Tokens (misma forma que login)
-        refresh = RefreshToken.for_user(guest)
-        token = {
-            'refresh': str(refresh),           # si no quieres refresh para invitados, puedes omitirlo
-            'access': str(refresh.access_token),
-        }
-
-        usuario_serializado = UsuarioSerializer(guest).data
-
-        return Response({
-            "mensaje": "Token de invitado generado",
-            "usuario": usuario_serializado,
-            "rol": rol_invitado.nombre,
-            "token": token
-        }, status=status.HTTP_200_OK)
-    # ---------- FIN INVITADO ----------
 
     # --- REGISTRO ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='register')

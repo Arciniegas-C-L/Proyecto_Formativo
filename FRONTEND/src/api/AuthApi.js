@@ -1,7 +1,6 @@
 // src/api/AuthApis.js
 import api from "./axios";
 import { auth } from "../auth/authService";
-import {publicApi} from "./publicClient";
 
 // LOGIN normal
 export async function login(email, password) {
@@ -29,7 +28,7 @@ export async function login(email, password) {
 
 // NUEVO: token invitado
 export async function guest() {
-  const { data } = await publicApi.post("usuario/guest/"); // ruta de tu @action guest
+  const { data } = await api.post("usuario/guest/"); // ruta de tu @action guest
   auth.guardarSesion({
     access: data?.token?.access,
     refresh: data?.token?.refresh, // si no envías refresh en invitados, omítelo
