@@ -49,6 +49,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework import serializers
 from .models import Usuario
+from rest_framework import serializers
+from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 # Create your views here.
 
@@ -492,13 +498,6 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
             return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
-
-
-from rest_framework import serializers
-from rest_framework.permissions import AllowAny
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """

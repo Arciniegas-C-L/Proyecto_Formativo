@@ -28,7 +28,8 @@ router.register(r'grupo-talla', views.GrupoTallaViewSet, 'grupo-talla')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('', include(router.urls)),
-    path('api/usuario/login/', views.UsuarioViewSet.as_view({'get': 'login', 'post': 'login'}), name='usuario_login'),
+    path('api/usuario/registro/', views.UsuarioViewSet.as_view({'post': 'register'}), name='usuario_register'),
+    path('BACKEND/usuario/guest/', views.UsuarioViewSet.as_view({'post': 'guest'}), name='usuario_guest'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Login
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Refrescar token
 ]
