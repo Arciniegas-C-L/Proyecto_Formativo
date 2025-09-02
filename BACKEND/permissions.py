@@ -37,9 +37,15 @@ class AdminandCliente(BasePermission):
             getattr(request.user.rol, 'nombre', '').strip().lower() in ['administrador', 'cliente']
         )
 
-class Invitado(BasePermission):
+class AllowGuestReadOnly(BasePermission):
+    """
+    Permite GET/HEAD/OPTIONS a cualquiera que llegue con token (usuario real o invitado).
+    Para métodos de escritura, requiere usuario autenticado con rol != 'Invitado'.
+    """
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            getattr(request.user.rol, 'nombre', '').strip().lower() == 'invitado'
-        )
+        if request.method in SAFE_METHODS:
+            return True
+
+        user = getattr(request, 'user', None)
+        role_name = getattr(getattr(user, 'rol', None), 'nombre', None)
+        return bool(user and user.is_authenticated and str(role_name).lower() != 'invitado')
