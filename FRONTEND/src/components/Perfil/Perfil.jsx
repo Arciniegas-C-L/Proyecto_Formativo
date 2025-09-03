@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import '../../assets/css/Perfil.css';
 import { fetchUsuario, updateUsuario } from "../../api/Usuario.api";
+import Direcciones from './Direcciones';
+import * as direccionApi from '../../api/direccion.api';
+import CambiarPassword from './CambiarPassword';
 
 export function Perfil() {
+    const { updateUsuarioContext } = useAuth();
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('datos'); 
     const [avatarSeed, setAvatarSeed] = useState('');
@@ -11,6 +16,8 @@ export function Perfil() {
     const [activeCategory, setActiveCategory] = useState(null);
     const [availableOptions, setAvailableOptions] = useState({});
     const [avatarError, setAvatarError] = useState(false);
+    const [mostrarDirecciones, setMostrarDirecciones] = useState(false);
+    const [mostrarPassword, setMostrarPassword] = useState(false);
 
     // Estado para datos personales
     const [usuario, setUsuario] = useState({
@@ -27,56 +34,55 @@ export function Perfil() {
         async function cargarUsuario() {
             try {
                 const res = await fetchUsuario();
-                // Ajustar según respuesta real de tu API
                 const usuarioActual = res.data[0];
                 setUsuario(usuarioActual);
+
+                // Avatar: si el usuario ya tiene avatar_seed y avatar_options, usarlos
+                if (usuarioActual.avatar_seed && usuarioActual.avatar_options) {
+                    setAvatarSeed(usuarioActual.avatar_seed);
+                    setAvatarOptions(usuarioActual.avatar_options);
+                } else {
+                    // Si no tiene, generar uno nuevo y dejarlo en memoria (no guardar hasta que el usuario lo guarde)
+                    const newSeed = Math.random().toString(36).substring(2, 10);
+                    setAvatarSeed(newSeed);
+                    const accesoriosDisponibles = ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"];
+                    const defaultOptions = {
+                        seed: newSeed,
+                        backgroundColor: "65c9ff",
+                        accessories: accesoriosDisponibles[Math.floor(Math.random() * accesoriosDisponibles.length)],
+                        clothing: "blazerAndShirt",
+                        clothingColor: "262e33",
+                        top: "bigHair",
+                        hairColor: "2c1b18",
+                        eyes: "default",
+                        eyebrows: "default",
+                        mouth: "smile",
+                        facialHair: "beardLight",
+                        facialHairColor: "a55728",
+                        skinColor: "ffdbb4"
+                    };
+                    setAvatarOptions(defaultOptions);
+                }
+
+                setAvailableOptions({
+                    backgroundColor: { enum: ["65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffdeb5","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
+                    accessories: { enum: ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"] },
+                    top: { enum: ["hat","hijab","turban","winterHat1","winterHat02","winterHat03","winterHat04","bob","bun","curly","curvy","dreads","frida","fro","froBand","longButNotTooLong","miaWallace","shavedSides","straight02","straight01","straightAndStrand","dreads01","dreads02","frizzle","shaggy","shaggyMullet","shortCurly","shortFlat","shortRound","shortWaved","sides","theCaesar","theCaesarAndSidePart","bigHair"] },
+                    hairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
+                    clothing: { enum: ["blazerAndShirt","blazerAndSweater","collarAndSweater","graphicShirt","hoodie","overall","shirtCrewNeck","shirtScoopNeck","shirtVNeck"] },
+                    clothingColor: { enum: ["262e33","65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
+                    eyes: { enum: ["closed","cry","default","eyeRoll","happy","hearts","side","squint","surprised","winkWacky","wink","xDizzy"] },
+                    eyebrows: { enum: ["angryNatural","defaultNatural","flatNatural","frownNatural","raisedExcitedNatural","sadConcernedNatural","unibrowNatural","upDownNatural","angry","default","raisedExcited","sadConcerned","upDown"] },
+                    mouth: { enum: ["concerned","default","disbelief","eating","grimace","sad","screamOpen","serious","smile","tongue","twinkle","vomit"] },
+                    facialHair: { enum: ["beardLight","beardMajestic","beardMedium","moustacheFancy","moustacheMagnum"] },
+                    facialHairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
+                    skinColor: { enum: ["614335","d08b5b","ae5d29","edb98a","ffdbb4","fd9841","f8d25c"] }
+                });
             } catch (error) {
                 console.error("Error al cargar usuario:", error);
             }
         }
         cargarUsuario();
-
-        // -- Mantengo toda la lógica del avatar intacta --
-        localStorage.removeItem('avatarSeed');
-        localStorage.removeItem('avatarOptions');
-
-        const newSeed = Math.random().toString(36).substring(2, 10);
-        setAvatarSeed(newSeed);
-
-        const accesoriosDisponibles = ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"];
-
-        const defaultOptions = {
-            seed: newSeed,
-            backgroundColor: "65c9ff",
-            accessories: accesoriosDisponibles[Math.floor(Math.random() * accesoriosDisponibles.length)],
-            clothing: "blazerAndShirt",
-            clothingColor: "262e33",
-            top: "bigHair",
-            hairColor: "2c1b18",
-            eyes: "default",
-            eyebrows: "default",
-            mouth: "smile",
-            facialHair: "beardLight",
-            facialHairColor: "a55728",
-            skinColor: "ffdbb4"
-        };
-
-        setAvatarOptions(defaultOptions);
-
-        setAvailableOptions({
-            backgroundColor: { enum: ["65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffdeb5","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
-            accessories: { enum: accesoriosDisponibles },
-            top: { enum: ["hat","hijab","turban","winterHat1","winterHat02","winterHat03","winterHat04","bob","bun","curly","curvy","dreads","frida","fro","froBand","longButNotTooLong","miaWallace","shavedSides","straight02","straight01","straightAndStrand","dreads01","dreads02","frizzle","shaggy","shaggyMullet","shortCurly","shortFlat","shortRound","shortWaved","sides","theCaesar","theCaesarAndSidePart","bigHair"] },
-            hairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
-            clothing: { enum: ["blazerAndShirt","blazerAndSweater","collarAndSweater","graphicShirt","hoodie","overall","shirtCrewNeck","shirtScoopNeck","shirtVNeck"] },
-            clothingColor: { enum: ["262e33","65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
-            eyes: { enum: ["closed","cry","default","eyeRoll","happy","hearts","side","squint","surprised","winkWacky","wink","xDizzy"] },
-            eyebrows: { enum: ["angryNatural","defaultNatural","flatNatural","frownNatural","raisedExcitedNatural","sadConcernedNatural","unibrowNatural","upDownNatural","angry","default","raisedExcited","sadConcerned","upDown"] },
-            mouth: { enum: ["concerned","default","disbelief","eating","grimace","sad","screamOpen","serious","smile","tongue","twinkle","vomit"] },
-            facialHair: { enum: ["beardLight","beardMajestic","beardMedium","moustacheFancy","moustacheMagnum"] },
-            facialHairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
-            skinColor: { enum: ["614335","d08b5b","ae5d29","edb98a","ffdbb4","fd9841","f8d25c"] }
-        });
     }, []);
 
     const toArrayParam = (value) => Array.isArray(value) ? value.join(",") : value;
@@ -141,11 +147,31 @@ export function Perfil() {
         localStorage.setItem('avatarOptions', JSON.stringify(newOptions));
     };
 
-    const handleSaveAvatar = () => {
-        localStorage.setItem('avatarSeed', avatarSeed);
-        localStorage.setItem('avatarOptions', JSON.stringify(avatarOptions));
-        alert('Avatar guardado exitosamente!');
-        setActiveSection('datos');
+    const handleSaveAvatar = async () => {
+        try {
+            // Enviar todos los datos requeridos junto con el avatar
+            await updateUsuario(usuario.idUsuario, {
+                nombre: usuario.nombre,
+                apellido: usuario.apellido,
+                correo: usuario.correo,
+                telefono: usuario.telefono,
+                direccion: usuario.direccion,
+                estado: usuario.estado,
+                rol: usuario.rol,
+                avatar_seed: avatarSeed,
+                avatar_options: avatarOptions
+            });
+            // Actualizar el usuario en el contexto global para refrescar el header
+            updateUsuarioContext({
+                ...usuario,
+                avatar_seed: avatarSeed,
+                avatar_options: avatarOptions
+            });
+            alert('Avatar guardado exitosamente!');
+            setActiveSection('datos');
+        } catch {
+            alert('Error al guardar el avatar');
+        }
     };
 
     // Manejar cambios inputs datos personales
@@ -187,6 +213,15 @@ export function Perfil() {
             </div>
         );
     };
+
+        // API real para direcciones
+        const apiDirecciones = {
+            getDirecciones: direccionApi.getDirecciones,
+            createDireccion: direccionApi.createDireccion,
+            updateDireccion: direccionApi.updateDireccion,
+            deleteDireccion: direccionApi.deleteDireccion,
+            setPrincipalDireccion: direccionApi.setPrincipalDireccion,
+        };
 
     return (
         <div className="perfil-container">
@@ -326,11 +361,26 @@ export function Perfil() {
                             <div className="config-list">
                                 <div className="config-item">
                                     <h4>Cambiar contraseña</h4>
-                                    <button onClick={() => alert('Funcionalidad de cambio de contraseña próximamente')}>Cambiar contraseña</button>
+                                    <button onClick={() => setMostrarPassword(v => !v)}>
+                                        {mostrarPassword ? 'Ocultar' : 'Cambiar contraseña'}
+                                    </button>
+                                    {mostrarPassword && (
+                                        <CambiarPassword
+                                            onSolicitarCodigo={() => {}}
+                                            onCambiarPassword={() => {}}
+                                            loading={false}
+                                            error={''}
+                                        />
+                                    )}
                                 </div>
                                 <div className="config-item">
                                     <h4>Gestión de direcciones</h4>
-                                    <button onClick={() => alert('Gestión de direcciones próximamente')}>Administrar direcciones</button>
+                                    <button onClick={() => setMostrarDirecciones(v => !v)}>
+                                        {mostrarDirecciones ? 'Ocultar' : 'Administrar direcciones'}
+                                    </button>
+                                    {mostrarDirecciones && (
+                                        <Direcciones api={apiDirecciones} direccionPersonal={usuario.direccion} />
+                                    )}
                                 </div>
                                 <div className="config-item">
                                     <h4>Métodos de pago</h4>
