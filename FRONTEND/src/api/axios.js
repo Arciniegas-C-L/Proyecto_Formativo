@@ -10,6 +10,20 @@ export const api = axios.create({
   },
 });
 
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const status = error?.response?.status;
+
+    // Si aún así llega un 403 de carrito, devuelve un OK vacío
+    if (status === 403 && error?.config?.url?.includes("carrito")) {
+      return Promise.resolve({ data: { results: [], count: 0 } });
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // ---------- Interceptor de REQUEST: token + rol ----------
 api.interceptors.request.use(
   (config) => {

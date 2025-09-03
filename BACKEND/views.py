@@ -37,7 +37,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from BACKEND.permissions import IsAdmin,IsCliente,IsAdminWriteClienteRead, AdminandCliente, AllowGuestReadOnly
+from BACKEND.permissions import IsAdminWriteClienteRead, AdminandCliente, AllowGuestReadOnly, NotGuest
 import random
 import string
 from django.utils import timezone
@@ -57,7 +57,7 @@ class Rolview(viewsets.ModelViewSet):
 
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
-    permission_classes = [IsAdminWriteClienteRead]
+    permission_classes = [IsAdminWriteClienteRead, AllowGuestReadOnly]
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -328,8 +328,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 #Preparacion para actualizar perfil con token de cliente
 class MiPerfilView(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, AdminandCliente
-    ]
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def list(self, request):
         serializer = UsuarioSerializer(request.user)
@@ -1190,31 +1189,39 @@ class InventarioView(viewsets.ModelViewSet):
 class MovimientoView(viewsets.ModelViewSet):
     serializer_class = MovimientoSerializer
     queryset = Movimiento.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
 class PedidoView(viewsets.ModelViewSet):
     serializer_class = PedidoSerializer
     queryset = Pedido.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
 class PedidoProductoView(viewsets.ModelViewSet):
     serializer_class = PedidoProductoSerializer
     queryset = PedidoProducto.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
 class PagoView(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
     queryset = Pago.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
 class TipoPagoView(viewsets.ModelViewSet):
     serializer_class = TipoPagoSerializer
     queryset = TipoPago.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, AllowGuestReadOnly]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
+
+    def list(self, request, *args, **kwargs):
+        rol = getattr(getattr(request.user, 'rol', None), 'nombre', '').lower()
+        if rol == 'invitado':
+            # devolvemos vacío en lugar de 403
+            return Response({"results": [], "count": 0}, status=status.HTTP_200_OK)
+
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1417,7 +1424,7 @@ class CarritoView(viewsets.ModelViewSet):
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1428,7 +1435,7 @@ class CarritoItemView(viewsets.ModelViewSet):
 
 class EstadoCarritoView(viewsets.ModelViewSet):
     serializer_class = EstadoCarritoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:

@@ -49,3 +49,14 @@ class AllowGuestReadOnly(BasePermission):
         user = getattr(request, 'user', None)
         role_name = getattr(getattr(user, 'rol', None), 'nombre', None)
         return bool(user and user.is_authenticated and str(role_name).lower() != 'invitado')
+    
+
+# permissions.py
+from rest_framework.permissions import BasePermission
+
+class NotGuest(BasePermission):
+    """Permite solo a usuarios autenticados cuyo rol != 'Invitado'."""
+    def has_permission(self, request, view):
+        user = getattr(request, 'user', None)
+        role = getattr(getattr(user, 'rol', None), 'nombre', '') or ''
+        return bool(user and user.is_authenticated and role.lower() != 'invitado')
