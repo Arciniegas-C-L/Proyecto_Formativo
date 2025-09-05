@@ -368,6 +368,16 @@ class Carrito(models.Model):
     fechaActualizacion = models.DateTimeField(auto_now=True)
     estado = models.BooleanField(default=True)
 
+    # 🔽 integración con MP
+    external_reference = models.CharField(max_length=100, unique=True, blank=True, null=True)
+    payment_id = models.CharField(max_length=50, blank=True, null=True)
+    mp_status = models.CharField(
+        max_length=20,
+        choices=[("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")],
+        blank=True,
+        null=True
+    )
+
     def __str__(self):
         if self.usuario:
             return f"Carrito de {self.usuario.nombre} {self.usuario.apellido}"
@@ -376,9 +386,6 @@ class Carrito(models.Model):
     def calcular_total(self):
         return sum(item.subtotal for item in self.items.all())
 
-    class Meta:
-        verbose_name = "Carrito"
-        verbose_name_plural = "Carritos"
 
 
 class EstadoCarrito(models.Model):
