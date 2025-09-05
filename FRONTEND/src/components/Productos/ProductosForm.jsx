@@ -131,7 +131,7 @@ export function ProductosForm() {
       formDataToSend.append("imagen", formData.imagenFile);
     }
 
-    console.log("📦 FormData enviado:");
+    console.log(" FormData enviado:");
     for (let pair of formDataToSend.entries()) {
       console.log(pair[0], ":", pair[1]);
     }

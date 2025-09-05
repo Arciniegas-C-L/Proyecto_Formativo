@@ -11,6 +11,14 @@ import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/GrupoTalla.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 
+// Rutas internas del admin
+const ADMIN_ROUTES = {
+  GRUPOS_TALLA: '/admin/tallas/grupo',
+  EDITAR_GRUPO_TALLA: (id) => `/admin/tallas/grupo/editar/${id}`,
+  CREAR_GRUPO_TALLA: '/admin/tallas/grupo/crear',
+  ASIGNAR_TALLAS: (id) => `/admin/tallas?grupoId=${id}`,
+};
+
 export function GrupoTalla() {
   const navigate = useNavigate();
 
@@ -27,7 +35,6 @@ export function GrupoTalla() {
     cargarGruposTalla();
   }, []);
 
-  // Maneja errores y muestra mensaje en pantalla
   const handleError = (error) => {
     const errorMessage =
       error.response?.data?.detail || "Error al realizar la operación";
@@ -35,7 +42,6 @@ export function GrupoTalla() {
     toast.error(errorMessage);
   };
 
-  // Trae todos los grupos de talla desde la API
   const cargarGruposTalla = async () => {
     try {
       setLoading(true);
@@ -43,7 +49,7 @@ export function GrupoTalla() {
       setGruposTalla(response?.data || []);
     } catch (err) {
       handleError(err);
-      console.error('Error:', err);
+      console.error("Error:", err);
       setGruposTalla([]);
     } finally {
       setLoading(false);
@@ -55,12 +61,12 @@ export function GrupoTalla() {
     if (grupo) {
       setEditingGrupo(grupo);
       setFormData({
-        nombre: grupo.nombre ?? '',
-        descripcion: grupo.descripcion ?? '',
+        nombre: grupo.nombre ?? "",
+        descripcion: grupo.descripcion ?? "",
       });
     } else {
       setEditingGrupo(null);
-      setFormData({ nombre: '', descripcion: '' });
+      setFormData({ nombre: "", descripcion: "" });
     }
     setOpenDialog(true);
   };
@@ -75,12 +81,9 @@ export function GrupoTalla() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError('');
-    setFormData({ ...formData, [name]: value });
     setError("");
   };
 
-  // Valida los datos del formulario antes de enviar
   const validateForm = () => {
     if (!formData.nombre.trim()) {
       setError("El nombre es requerido");
@@ -93,7 +96,6 @@ export function GrupoTalla() {
     return true;
   };
 
-  // Envía el formulario para crear o actualizar un grupo
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -135,22 +137,28 @@ export function GrupoTalla() {
     }
   };
 
+  //  Cambio importante: ahora usa rutas internas del admin
   const handleAsignarTallas = (grupo) => {
-    // Pasamos el id del grupo al estado de navegación
-    navigate("/tallas", { state: { grupoId: grupo.idGrupoTalla } });
+    navigate(ADMIN_ROUTES.ASIGNAR_TALLAS(grupo.idGrupoTalla));
+  };
+
+  const handleEditar = (grupo) => {
+    navigate(ADMIN_ROUTES.EDITAR_GRUPO_TALLA(grupo.idGrupoTalla), { state: { grupo } });
+  };
+
+  const handleCrear = () => {
+    navigate(ADMIN_ROUTES.CREAR_GRUPO_TALLA);
   };
 
   return (
     <div className="grupo-talla-container">
-      {/* HEADER */}
       <div className="grupo-header">
         <h2>Gestión de Grupos de Talla</h2>
-        <button className="btn-grupo-nuevo" onClick={() => handleOpenDialog()}>
+        <button className="btn-grupo-nuevo" onClick={handleCrear}>
           <FaPlus /> Nuevo Grupo
         </button>
       </div>
 
-      {/* TABLA PRINCIPAL */}
       <div className="grupo-tabla-container">
         {loading ? (
           <div className="loading">Cargando...</div>
@@ -181,12 +189,11 @@ export function GrupoTalla() {
                   <td className="acciones-grupo">
                     <button
                       className="btn-grupo-editar"
-                      onClick={() => handleOpenDialog(grupo)}
+                      onClick={() => handleEditar(grupo)}
                     >
                       <FaEdit />
                     </button>
 
-                    {/* BOTÓN PARA ASIGNAR TALLAS */}
                     <button
                       className="btn-grupo-asignar"
                       onClick={() => handleAsignarTallas(grupo)}
@@ -268,5 +275,4 @@ export function GrupoTalla() {
       )}
     </div>
   );
-};
-
+}

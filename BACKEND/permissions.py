@@ -27,8 +27,10 @@ class IsAdminWriteClienteRead(BasePermission):
 
         rol = getattr(request.user.rol, 'nombre', '').strip().lower()
 
-        if request.method in SAFE_METHODS:
+        # Permitir GET, HEAD, OPTIONS y POST para administrador y cliente
+        if request.method in SAFE_METHODS or request.method == 'POST':
             return rol in ['administrador', 'cliente']
+        # Otros métodos (PUT, PATCH, DELETE) solo para administrador
         return rol == 'administrador'
 class AdminandCliente(BasePermission):
     def has_permission(self, request, view):

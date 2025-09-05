@@ -1,162 +1,201 @@
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { fetchCarritos } from "../../api/CarritoApi";
+import { useAuth } from "../../context/AuthContext";
 import ZOE from "../../assets/images/home/ZOE.gif";
-import { useAuth } from "../../context/AuthContext.jsx";
-
-
-// Opciones válidas para el avatar (igual que en Perfil.jsx)
-const availableOptions = {
-  backgroundColor: ["65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffdeb5","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"],
-  accessories: ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"],
-  top: ["hat","hijab","turban","winterHat1","winterHat02","winterHat03","winterHat04","bob","bun","curly","curvy","dreads","frida","fro","froBand","longButNotTooLong","miaWallace","shavedSides","straight02","straight01","straightAndStrand","dreads01","dreads02","frizzle","shaggy","shaggyMullet","shortCurly","shortFlat","shortRound","shortWaved","sides","theCaesar","theCaesarAndSidePart","bigHair"],
-  hairColor: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"],
-  clothing: ["blazerAndShirt","blazerAndSweater","collarAndSweater","graphicShirt","hoodie","overall","shirtCrewNeck","shirtScoopNeck","shirtVNeck"],
-  clothingColor: ["262e33","65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"],
-  eyes: ["closed","cry","default","eyeRoll","happy","hearts","side","squint","surprised","winkWacky","wink","xDizzy"],
-  eyebrows: ["angryNatural","defaultNatural","flatNatural","frownNatural","raisedExcitedNatural","sadConcernedNatural","unibrowNatural","upDownNatural","angry","default","raisedExcited","sadConcerned","upDown"],
-  mouth: ["concerned","default","disbelief","eating","grimace","sad","screamOpen","serious","smile","tongue","twinkle","vomit"],
-  facialHair: ["beardLight","beardMajestic","beardMedium","moustacheFancy","moustacheMagnum"],
-  facialHairColor: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"],
-  skinColor: ["614335","d08b5b","ae5d29","edb98a","ffdbb4","fd9841","f8d25c"]
-};
-
-function getValidValue(category, value, fallback) {
-  const validValues = availableOptions[category] || [];
-  return validValues.includes(value) ? value : fallback;
-}
-
-function generateAvatarUrl(usuario) {
-  if (!usuario?.avatar_seed || !usuario?.avatar_options) return null;
-  const options = usuario.avatar_options;
-  const params = new URLSearchParams({
-    seed: usuario.avatar_seed,
-    backgroundColor: getValidValue('backgroundColor', options.backgroundColor, '65c9ff'),
-    accessories: getValidValue('accessories', options.accessories, 'kurt'),
-    accessoriesProbability: 100,
-    top: getValidValue('top', options.top, 'bigHair'),
-    hairColor: getValidValue('hairColor', options.hairColor, '2c1b18'),
-    clothing: getValidValue('clothing', options.clothing, 'blazerAndShirt'),
-    clothesColor: getValidValue('clothingColor', options.clothingColor, '262e33'),
-    eyes: getValidValue('eyes', options.eyes, 'default'),
-    eyebrows: getValidValue('eyebrows', options.eyebrows, 'default'),
-    mouth: getValidValue('mouth', options.mouth, 'smile'),
-    facialHair: getValidValue('facialHair', options.facialHair, 'beardLight'),
-    facialHairColor: getValidValue('facialHairColor', options.facialHairColor, 'a55728'),
-    facialHairProbability: 0,
-    skinColor: getValidValue('skinColor', options.skinColor, 'ffdbb4'),
-    size: 200
-  });
-  return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
-}
+import "../../assets/css/SinglePage/Header.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 export function Header() {
-  const { autenticado, rol, logout, usuario } = useAuth();
+  const { autenticado, /* rol, */ logout, usuario } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Simulación: puedes reemplazar esto por la lógica real de cantidad de carrito
-  useEffect(() => {
-    // Aquí deberías traer la cantidad real del carrito del contexto o API
-    setCantidadCarrito(0); // Por defecto 0
-  }, []);
+  const handleLogout = () => {
+    setShowConfirm(true);
+    setShowDropdown(false);
+  };
 
   const confirmLogout = () => {
     setShowConfirm(false);
-    logout();
+    try {
+      logout();
+      // redirige al home tras cerrar sesión
+      navigate("/", { replace: true });
+    } catch {
+      navigate("/", { replace: true });
+    }
   };
+
   const cancelLogout = () => setShowConfirm(false);
 
+  const toggleDropdown = () => setShowDropdown((prev) => !prev);
 
+  // Cerrar dropdown si clic fuera del contenedor
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  // const linkCls = ... // Eliminado porque no se usa
+  // Cargar cantidad del carrito
+  const cargarCantidadCarrito = async () => {
+    if (!autenticado) {
+      setCantidadCarrito(0);
+      return;
+    }
+    try {
+      const response = await fetchCarritos();
+      const lista = Array.isArray(response?.data) ? response.data : [];
+      const carritosActivos = lista.filter((c) => c?.estado === true);
+      if (carritosActivos.length > 0) {
+        const items = Array.isArray(carritosActivos[0]?.items) ? carritosActivos[0].items : [];
+        setCantidadCarrito(items.length);
+      } else {
+        setCantidadCarrito(0);
+      }
+    } catch (error) {
+      console.error("Error al cargar cantidad del carrito:", error);
+      setCantidadCarrito(0);
+    }
+  };
+
+  useEffect(() => {
+    cargarCantidadCarrito();
+    const interval = setInterval(cargarCantidadCarrito, 5000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autenticado]);
+
+  useEffect(() => {
+    const handleCarritoActualizado = () => cargarCantidadCarrito();
+    window.addEventListener("carritoActualizado", handleCarritoActualizado);
+    return () => window.removeEventListener("carritoActualizado", handleCarritoActualizado);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
-  {showConfirm && (
-        <div className="modal fade show" style={{display: 'block', background: 'rgba(0,0,0,0.5)'}} tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirmar cierre de sesión</h5>
-              </div>
-              <div className="modal-body">
-                <p>¿Estás seguro de que deseas cerrar sesión?</p>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={cancelLogout}>Cancelar</button>
-                <button className="btn btn-danger" onClick={confirmLogout}>Cerrar sesión</button>
-              </div>
+      {showConfirm && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+        >
+          <div className="modal-content-custom">
+            <div className="modal-header-custom">
+              <h5 className="modal-title-custom">Confirmar cierre de sesión</h5>
+            </div>
+            <div className="modal-body-custom">
+              <p>¿Estás seguro de que deseas cerrar sesión?</p>
+            </div>
+            <div className="modal-footer-custom">
+              <button className="btn-modal-cancel" onClick={cancelLogout}>
+                Cancelar
+              </button>
+              <button className="btn-modal-confirm" onClick={confirmLogout}>
+                Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
       )}
-      <header className="bg-dark text-white shadow-sm">
-        <div className="container-fluid d-flex align-items-center justify-content-between py-2 px-4">
-          <div className="d-flex align-items-center">
-            <img src={ZOE} alt="Logo de la empresa" style={{ height: 48, marginRight: 16 }} />
-            <h3 className="m-0">
-              <Link to="/" className="titulo-empresa text-white text-decoration-none fw-bold">
+
+      <header className="header-custom">
+        <div className="header-container">
+          <div className="header-brand">
+            <div className="logo-container">
+              <img src={ZOE} alt="Logo ZOE" className="logo-img" />
+            </div>
+            <h3 className="brand-title">
+              <Link to="/" className="brand-link">
                 Variedad y Estilos ZOE
               </Link>
             </h3>
           </div>
-          <nav>
-            <ul className="nav align-items-center">
-              <li className="nav-item">
-                <Link to="/" className="nav-link text-white">
-                  <i className="bi bi-house-door-fill"></i> Inicio
+
+          <nav className="header-nav">
+            <ul className="nav-list">
+              <li className="nav-item-custom">
+                <Link to="/" className="nav-link-custom">
+                  <i className="bi bi-house-door-fill nav-icon"></i>
+                  <span className="nav-text">Inicio</span>
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/catalogo" className="nav-link text-white">
-                  <i className="bi bi-grid-3x3-gap-fill"></i> Catálogo
+
+              <li className="nav-item-custom">
+                <Link to="/catalogo" className="nav-link-custom">
+                  <i className="bi bi-grid-3x3-gap-fill nav-icon"></i>
+                  <span className="nav-text">Catálogo</span>
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/carrito" className="nav-link text-white position-relative">
-                  <i className="bi bi-cart3"></i> Carrito
-                  {cantidadCarrito > 0 && (
-                    <span className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill">
-                      {cantidadCarrito}
-                    </span>
+
+              <li className="nav-item-custom">
+                <Link to="/carrito" className="nav-link-custom cart-link">
+                  <i className="bi bi-cart3 nav-icon"></i>
+                  <span className="nav-text">Carrito</span>
+                  {autenticado && cantidadCarrito > 0 && (
+                    <span className="cart-badge">{cantidadCarrito}</span>
                   )}
                 </Link>
               </li>
+
               {autenticado ? (
-                <li className="nav-item dropdown">
-                  <a
-                    href="#"
-                    className="nav-link text-white dropdown-toggle d-flex align-items-center"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    {generateAvatarUrl(usuario) ? (
-                      <img src={generateAvatarUrl(usuario)} alt="avatar" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', marginRight: 8, background: '#fff', border: '2px solid #1976d2' }} />
-                    ) : (
-                      <i className="bi bi-person-circle"></i>
-                    )}
-                    {usuario?.nombre || usuario?.username || 'Usuario'}
-                  </a>
-                  <ul className="dropdown-menu dropdown-menu-dark">
-                    <li>
-                      <Link to="/perfil" className="dropdown-item">
-                        Mi Perfil
-                      </Link>
-                    </li>
-                    <li>
-                      <hr className="dropdown-divider" />
-                    </li>
-                    <li>
-                      <button className="dropdown-item" onClick={() => setShowConfirm(true)}>
-                        Cerrar Sesión
-                      </button>
-                    </li>
-                  </ul>
+                <li className="nav-item-custom dropdown-custom" ref={dropdownRef}>
+                  <button className="nav-link-custom dropdown-btn" onClick={toggleDropdown}>
+                    <div className="user-info">
+                      <i className="bi bi-person-circle nav-icon user-icon"></i>
+                      <span className="user-name">
+                        {usuario?.nombre || usuario?.username || "Usuario"}
+                      </span>
+                      <i className="bi bi-chevron-down dropdown-arrow"></i>
+                    </div>
+                  </button>
+                  {showDropdown && (
+                    <ul className="dropdown-menu-custom">
+                      <li>
+                        <Link
+                          to="/perfil"
+                          className="dropdown-item-custom"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <i className="bi bi-person-gear"></i> Mi Perfil
+                        </Link>
+                      </li>
+                      <li>
+                        <hr className="dropdown-divider-custom" />
+                      </li>
+                      <li>
+                        <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
+                          <i className="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </button>
+                      </li>
+                    </ul>
+                  )}
                 </li>
               ) : (
-                <li className="nav-item">
-                  <Link to="/sesion" className="nav-link text-white">
-                    <i className="bi bi-person-circle"></i> Sesión
+                <li className="nav-item-custom">
+                  <Link to="/sesion" className="nav-link-custom">
+                    <i className="bi bi-person-circle nav-icon"></i>
+                    <span className="nav-text">Sesión</span>
                   </Link>
                 </li>
               )}

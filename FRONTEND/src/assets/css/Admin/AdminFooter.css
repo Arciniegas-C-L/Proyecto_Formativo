@@ -1,0 +1,38 @@
+/* Footer Admin */
+.contenedor-footer-admin {
+  background: rgba(26, 31, 46, 0.98);
+  padding: 1rem 2rem;
+  color: var(--texto-primario);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pie-footer-admin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.copyright-admin span,
+.info-sesion-admin span {
+  font-size: 0.85rem;
+  color: var(--texto-primario);
+}
+
+.info-sesion-admin strong {
+  color: var(--color-primario);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .pie-footer-admin {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  .contenedor-footer-admin {
+    padding: 1.5rem 1rem;
+  }
+}
