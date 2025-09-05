@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import { FaShoppingCart, FaChevronDown } from "react-icons/fa";
 import { fetchCarritos } from "../../api/CarritoApi";
 import { useAuth } from "../../context/AuthContext";
 import ZOE from "../../assets/images/home/ZOE.gif";
@@ -8,27 +7,56 @@ import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-
 export function Header() {
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
-  const { autenticado, usuario, logout } = useAuth();
+  const { autenticado, usuario, rol, logout } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  const handleLogout = () => setShowConfirm(true);
-  const confirmLogout = () => { setShowConfirm(false); logout(); };
+  const handleLogout = () => {
+    setShowConfirm(true);
+    setShowDropdown(false);
+  };
+
+  const confirmLogout = () => {
+    setShowConfirm(false);
+    try {
+      logout();
+      setTimeout(() => window.location.replace("/"), 100);
+    } catch {
+      window.location.replace("/");
+    }
+  };
+
   const cancelLogout = () => setShowConfirm(false);
+  const toggleDropdown = () => setShowDropdown(!showDropdown);
 
+  // Cerrar dropdown si clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".dropdown-custom")) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Cargar cantidad del carrito
   const cargarCantidadCarrito = async () => {
     if (!autenticado) return setCantidadCarrito(0);
 
     try {
       const response = await fetchCarritos();
       const carritosActivos = response.data.filter(c => c.estado === true);
-      const cantidad = carritosActivos.length > 0
-        ? carritosActivos[0].items?.length || 0
-        : 0;
-      setCantidadCarrito(cantidad);
-    } catch {
+      if (carritosActivos.length > 0) {
+        const carritoActivo = carritosActivos[0];
+        setCantidadCarrito(carritoActivo.items ? carritoActivo.items.length : 0);
+      } else {
+        setCantidadCarrito(0);
+      }
+    } catch (error) {
+      console.error("Error al cargar cantidad del carrito:", error);
       setCantidadCarrito(0);
     }
   };
@@ -41,79 +69,101 @@ export function Header() {
 
   useEffect(() => {
     const handleCarritoActualizado = () => cargarCantidadCarrito();
-    window.addEventListener('carritoActualizado', handleCarritoActualizado);
-    return () => window.removeEventListener('carritoActualizado', handleCarritoActualizado);
+    window.addEventListener("carritoActualizado", handleCarritoActualizado);
+    return () => window.removeEventListener("carritoActualizado", handleCarritoActualizado);
   }, []);
 
   return (
     <>
       {showConfirm && (
-        <div className="modal fade show" style={{display: 'block', background: 'rgba(0,0,0,0.5)'}} tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirmar cierre de sesión</h5>
-              </div>
-              <div className="modal-body">
-                <p>¿Estás seguro de que deseas cerrar sesión?</p>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={cancelLogout}>Cancelar</button>
-                <button className="btn btn-danger" onClick={confirmLogout}>Cerrar sesión</button>
-              </div>
+        <div className="modal-overlay" style={{
+          position: 'fixed', top: 0, left: 0,
+          width: '100%', height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
+        }}>
+          <div className="modal-content-custom">
+            <div className="modal-header-custom">
+              <h5 className="modal-title-custom">Confirmar cierre de sesión</h5>
+            </div>
+            <div className="modal-body-custom">
+              <p>¿Estás seguro de que deseas cerrar sesión?</p>
+            </div>
+            <div className="modal-footer-custom">
+              <button className="btn-modal-cancel" onClick={cancelLogout}>Cancelar</button>
+              <button className="btn-modal-confirm" onClick={confirmLogout}>Cerrar sesión</button>
             </div>
           </div>
         </div>
       )}
-      <header className="bg-dark text-white shadow-sm">
-        <div className="container-fluid d-flex align-items-center justify-content-between py-2 px-4">
-          <div className="d-flex align-items-center gap-3">
-            <div className="contenido-imagen">
-              <img src={ZOE} alt="Logo de la empresa" />
+
+      <header className="header-custom">
+        <div className="header-container">
+          <div className="header-brand">
+            <div className="logo-container">
+              <img src={ZOE} alt="Logo ZOE" className="logo-img" />
             </div>
-            <h3 className="m-0">
-              <Link to="/" className="titulo-empresa text-white text-decoration-none fw-bold">
-                Variedad y Estilos ZOE
-              </Link>
+            <h3 className="brand-title">
+              <Link to="/" className="brand-link">Variedad y Estilos ZOE</Link>
             </h3>
           </div>
-          <nav>
-            <ul className="nav align-items-center gap-2">
-              <li className="nav-item">
-                <Link to="/" className="nav-link enlace-boton d-flex align-items-center gap-2">
-                  <i className="bi bi-house-door-fill"></i> Inicio
+
+          <nav className="header-nav">
+            <ul className="nav-list">
+              <li className="nav-item-custom">
+                <Link to="/" className="nav-link-custom">
+                  <i className="bi bi-house-door-fill nav-icon"></i>
+                  <span className="nav-text">Inicio</span>
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/catalogo" className="nav-link enlace-boton d-flex align-items-center gap-2">
-                  <i className="bi bi-grid-3x3-gap-fill"></i> Catálogo
+
+              <li className="nav-item-custom">
+                <Link to="/catalogo" className="nav-link-custom">
+                  <i className="bi bi-grid-3x3-gap-fill nav-icon"></i>
+                  <span className="nav-text">Catálogo</span>
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/carrito" className="nav-link enlace-boton d-flex align-items-center gap-2 position-relative">
-                  <i className="bi bi-cart3"></i> Carrito
-                  {cantidadCarrito > 0 && (
-                    <span className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill">
-                      {cantidadCarrito}
-                    </span>
+
+              <li className="nav-item-custom">
+                <Link to="/carrito" className="nav-link-custom cart-link">
+                  <i className="bi bi-cart3 nav-icon"></i>
+                  <span className="nav-text">Carrito</span>
+                  {autenticado && cantidadCarrito > 0 && (
+                    <span className="cart-badge">{cantidadCarrito}</span>
                   )}
                 </Link>
               </li>
+
               {autenticado ? (
-                <li className="nav-item dropdown">
-                  <a href="#" className="nav-link enlace-boton d-flex align-items-center gap-2 dropdown-toggle" data-bs-toggle="dropdown">
-                    <i className="bi bi-person-circle"></i> {usuario.username}
-                  </a>
-                  <ul className="dropdown-menu dropdown-menu-dark">
-                    <li><Link to="/perfil" className="dropdown-item">Mi Perfil</Link></li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li><button className="dropdown-item" onClick={handleLogout}>Cerrar Sesión</button></li>
-                  </ul>
+                <li className="nav-item-custom dropdown-custom">
+                  <button className="nav-link-custom dropdown-btn" onClick={toggleDropdown}>
+                    <div className="user-info">
+                      <i className="bi bi-person-circle nav-icon user-icon"></i>
+                      <span className="user-name">{usuario?.nombre || usuario?.username}</span>
+                      <i className="bi bi-chevron-down dropdown-arrow"></i>
+                    </div>
+                  </button>
+                  {showDropdown && (
+                    <ul className="dropdown-menu-custom">
+                      <li>
+                        <Link to="/perfil" className="dropdown-item-custom" onClick={() => setShowDropdown(false)}>
+                          <i className="bi bi-person-gear"></i> Mi Perfil
+                        </Link>
+                      </li>
+                      <li><hr className="dropdown-divider-custom" /></li>
+                      <li>
+                        <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
+                          <i className="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </button>
+                      </li>
+                    </ul>
+                  )}
                 </li>
               ) : (
-                <li className="nav-item">
-                  <Link to="/sesion" className="nav-link enlace-boton d-flex align-items-center gap-2">
-                    <i className="bi bi-person-circle"></i> Sesión
+                <li className="nav-item-custom">
+                  <Link to="/sesion" className="nav-link-custom">
+                    <i className="bi bi-person-circle nav-icon"></i>
+                    <span className="nav-text">Sesión</span>
                   </Link>
                 </li>
               )}

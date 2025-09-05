@@ -3,136 +3,69 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import "bootstrap/dist/css/bootstrap.min.css";
 
+// Layout público
 import { Header } from "./components/Singlepage/Header.jsx";
-import AdminDashboard from "./components/Admin/AdminDashboard.jsx";
 import { Footer } from "./components/Singlepage/Footer.jsx";
+
+// Páginas públicas
 import { Home } from "./components/Singlepage/Home.jsx";
 import { SesionPage } from "./pages/SesionPage.jsx";
 import { SesionRecuperacionPage } from "./pages/SesionRecuperacion.jsx";
+import { RecuperarContrasenapage } from "./pages/Recuperarcontrasenapage.jsx";
 import { NoAutorizadoPage } from "./pages/NoAutorizadoPage.jsx";
+import { PerfilPage } from "./pages/PerfilPage.jsx";
+import { Catalogopage } from "./pages/Catalogopage.jsx";
+import { Carritopage } from "./pages/Carritopage.jsx";
+import { CategoriasPage } from "./pages/CategoriasPage.jsx";
 
-import { RolListaPage } from "./pages/RolListaPage.jsx";
-import { RolFormPage } from "./pages/RolFormPage.jsx";
-import { InventarioPage } from "./pages/InventarioPage.jsx";
+// Páginas Admin
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
 import { ProveedoresRegistradosPage } from "./pages/ProveedoresRegistradosPage.jsx";
-import { CategoriasPage } from "./pages/Categoriaspage";
-import { ListaProductosPage } from "./pages/ListaproductosPage.jsx";
-import { ProductosFormPage } from "./pages/ProductosFormPage.jsx";
-import { Catalogopage } from "./pages/Catalogopage";
-import { Carritopage } from "./pages/Carritopage";
 import { AdminUsuariosPage } from "./pages/AdminUsuariosPage.jsx";
-import { TallasPage } from "./pages/Tallaspage.jsx";
+import { InventarioPage } from "./pages/InventarioPage.jsx";
+import { ProductosFormPage } from "./pages/ProductosFormPage.jsx";
+import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
+import { RolFormPage } from "./pages/RolFormPage.jsx";
+import { RolListaPage } from "./pages/RolListaPage.jsx";
 import { GrupoTallaPage } from "./pages/GrupoTallePage.jsx";
-import { PerfilPage } from "./pages/PerfilPage.jsx";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { TallasPage } from "./pages/TallasPage.jsx";
 
-import { RutaPrivada } from "./routes/RutaPrivada.jsx";
+// Layout y contexto Admin
+import AdminLayout from "./components/Admin/AdminLayout.jsx";
+
+// Contexto y rutas privadas
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 
 function AppContent() {
   const location = useLocation();
-  const { autenticado, rol } = useAuth();
-
-  const esAdminAutenticado = autenticado && rol === "administrador";
-
-  // No mostrar en la página de sesión o de recuperación
-  const noEsPaginaDeSesion =
-    location.pathname !== "/sesion" &&
-    location.pathname !== "/sesion/recuperar_contrasena";
+  const { rol } = useAuth();
+  const mainKey = rol || "guest";
 
   return (
     <>
-      <Header />
+      {!location.pathname.startsWith("/admin") && <Header />}
 
-      {/* MAIN AGREGADO - contenido que se expande */}
-      <main>
-        {/* Renderiza el dashboard si el usuario es admin y no está en la página de sesión */}
-        {esAdminAutenticado && noEsPaginaDeSesion && <AdminDashboard />}
-
+      <main key={mainKey}>
         <Routes>
-          {/* Públicas */}
+          {/* Rutas públicas */}
           <Route path="/" element={<Home />} />
+          <Route path="/catalogo" element={<Catalogopage />} />
+          <Route path="/carrito" element={<Carritopage />} />
+          <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
           <Route path="/sesion" element={<SesionPage />} />
           <Route
             path="/sesion/recuperar_contrasena"
             element={<SesionRecuperacionPage />}
           />
-          <Route path="/catalogo" element={<Catalogopage />} />
-          <Route path="/no-autorizado" element={<NoAutorizadoPage />} />
-          <Route path="/carrito" element={<Carritopage />} />
+          <Route path="/recuperar" element={<RecuperarContrasenapage />} />
 
-          {/* Protegidas por rol */}
+          {/* Rutas privadas cliente/administrador */}
           <Route
-            path="/proveedores"
+            path="/perfil"
             element={
-              <RutaPrivada role="administrador">
-                <AdminProvedoresPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/proveedores/registrados"
-            element={
-              <RutaPrivada role="administrador">
-                <ProveedoresRegistradosPage />
-              </RutaPrivada>
-            }
-          />
-
-          <Route
-            path="/inventario"
-            element={
-              <RutaPrivada role="administrador">
-                <InventarioPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/producto"
-            element={
-              <RutaPrivada role="administrador">
-                <ListaProductosPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/producto/crear"
-            element={
-              <RutaPrivada role="administrador">
-                <ProductosFormPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/producto/editar/:id"
-            element={
-              <RutaPrivada role="administrador">
-                <ProductosFormPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/usuario"
-            element={
-              <RutaPrivada role="administrador">
-                <AdminUsuariosPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/tallas"
-            element={
-              <RutaPrivada role="administrador">
-                <TallasPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/grupo-talla"
-            element={
-              <RutaPrivada role="administrador">
-                <GrupoTallaPage />
+              <RutaPrivada role={["cliente", "administrador"]}>
+                <PerfilPage />
               </RutaPrivada>
             }
           />
@@ -144,54 +77,58 @@ function AppContent() {
               </RutaPrivada>
             }
           />
+
+          {/* Admin con layout */}
           <Route
-            path="/rol"
+            path="/admin/*"
             element={
-              <RutaPrivada role="administrador">
-                <RolListaPage />
+              <RutaPrivada role={["administrador"]}>
+                <AdminLayout />
               </RutaPrivada>
             }
-          />
-          <Route
-            path="/rol-create"
-            element={
-              <RutaPrivada role="administrador">
-                <RolFormPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/perfil"
-            element={
-              <RutaPrivada role={["cliente", "administrador"]}>
-                <PerfilPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/carrito"
-            element={
-              <RutaPrivada role={["cliente", "administrador"]}>
-                <Carritopage />
-              </RutaPrivada>
-            }
-          />
+          >
+            <Route path="dashboard" element={<AdminProvedoresPage />} />
+            <Route path="proveedores" element={<AdminProvedoresPage />} />
+            <Route
+              path="proveedores/registrados"
+              element={<ProveedoresRegistradosPage />}
+            />
+            <Route path="usuarios" element={<AdminUsuariosPage />} />
+            <Route path="inventario" element={<InventarioPage />} />
+            <Route path="productos" element={<ListaProductosPage />} />
+            <Route path="productos/crear" element={<ProductosFormPage />} />
+            <Route
+              path="productos/editar/:id"
+              element={<ProductosFormPage />}
+            />
+            <Route path="roles" element={<RolFormPage />} />
+            <Route path="roles/lista" element={<RolListaPage />} />
+            <Route path="tallas/grupo" element={<GrupoTallaPage />} />
+            <Route path="tallas/grupo/crear" element={<GrupoTallaPage />} />
+            <Route
+              path="tallas/grupo/editar/:id"
+              element={<GrupoTallaPage />}
+            />
+            <Route path="tallas" element={<TallasPage />} />
+            <Route path="categorias" element={<CategoriasPage />} />
+          </Route>
+
+          {/* Redirección por defecto */}
+          <Route path="*" element={<Home />} />
         </Routes>
       </main>
 
+      {!location.pathname.startsWith("/admin") && <Footer />}
+
       <Toaster />
-      <Footer />
     </>
   );
 }
 
-//  Envolvemos AppContent con AuthProvider
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
 }
-
-export default App;

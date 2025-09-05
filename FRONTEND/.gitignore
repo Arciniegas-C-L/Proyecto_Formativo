@@ -32,5 +32,14 @@ dist-ssr
 # Archivos de entorno
 .env
 .env.*
-
 env
+
+# Migraciones de Django
+*/migrations/*.py
+*/migrations/*.pyc
+!*/migrations/__init__.py
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+*.pyo

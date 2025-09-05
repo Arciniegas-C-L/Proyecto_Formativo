@@ -1,0 +1,45 @@
+/* Layout general */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Contenedor principal: contenido + footer */
+.admin-contenido {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 260px; /* ancho sidebar */
+  min-height: 100vh;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Ajuste cuando sidebar colapsado */
+.barra-lateral-admin.colapsada ~ .admin-contenido {
+  margin-left: 0;
+}
+
+/* Contenido principal */
+.contenido-principal {
+  flex: 1; /* ocupa el espacio disponible */
+  padding: 20px;
+  overflow-x: auto;
+  background: #f8f9fa; 
+  box-sizing: border-box;
+}
+
+/* Footer siempre al final */
+.contenedor-footer-admin {
+  margin-top: auto; /* empuja al fondo */
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Responsivo */
+@media (max-width: 991px) {
+  .admin-contenido {
+    margin-left: 0; /* sidebar oculto en móviles */
+  }
+}

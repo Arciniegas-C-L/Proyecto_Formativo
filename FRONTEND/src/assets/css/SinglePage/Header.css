@@ -1,99 +1,415 @@
-/* Fondo header */
-header.bg-dark {
-  background: linear-gradient(145deg, #1A1F2E, #2A2F3E);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+/*  HEADER PRINCIPAL  */
+.header-custom {
+  background: rgba(26, 31, 46, 0.98);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-/* Logo */
-.contenido-imagen img {
-  width: 70px;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 4px solid #f26be2;
-  box-shadow: 0 0 12px rgba(242, 107, 226, 0.5);
-}
-
-/* Título de empresa */
-.titulo-empresa {
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 26px;
-  letter-spacing: 1px;
-  font-weight: bold;
-  background: linear-gradient(45deg, #f26be2, #00d4ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Enlaces del navbar */
-.enlace-boton {
-  font-size: 18px;
-  font-family: "Bebas Neue", sans-serif;
-  font-weight: bold;
-  color: #ffffff !important;
-  text-decoration: none;
-  padding: 8px 12px;
+.header-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  padding: 15px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/*  LOGO Y MARCA  */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-container {
+  position: relative;
+}
+
+.logo-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
-/* Hover */
-.enlace-boton:hover {
-  background-color: #f26be2 !important;
-  color: #1A1F2E !important;
+.logo-img:hover {
+  transform: scale(1.05);
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 0;
+}
+
+.brand-link {
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.brand-link:hover {
+  color: #f26be2;
+}
+
+/*  NAVEGACIÓN  */
+.header-nav {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.nav-list {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-item-custom {
+  position: relative;
+}
+
+.nav-link-custom {
+  font-size: 15px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-weight: 500;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(236, 13, 225, 0.5);
-  transform: translateY(-2px);
-  cursor: pointer;
+  position: relative;
 }
 
-/* Íconos */
-.enlace-boton .bi {
-  font-size: 20px;
-  vertical-align: middle;
+.nav-link-custom:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f26be2;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  header .container-fluid {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  nav ul.nav {
-    flex-direction: column;
-    width: 100%;
-    margin-top: 10px;
-  }
-  .enlace-boton {
-    width: 100%;
-    justify-content: flex-start;
-    padding: 10px;
-  }
+.nav-icon {
+  font-size: 18px;
 }
 
-/* Badge carrito */
-.badge {
-  font-size: 0.75rem;
-  font-weight: bold;
-  min-width: 20px;
-  height: 20px;
+.nav-text {
+  font-size: 15px;
+}
+
+/*  CARRITO  */
+.cart-link {
+  position: relative;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+  background: #f26be2;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: pulse 2s infinite;
+  border: 2px solid #ffffff;
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1) translate(-50%, -50%); }
-  50% { transform: scale(1.1) translate(-50%, -50%); }
+/*  DROPDOWN USUARIO  */
+.dropdown-custom {
+  position: relative;
 }
 
-.position-relative .badge {
+.dropdown-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-icon {
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.user-name {
+  font-size: 15px;
+  color: #ffffff;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: #ffffff;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-custom:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu-custom {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  padding: 8px 0;
+  margin-top: 5px;
+  z-index: 1001;
+}
+
+.dropdown-item-custom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  color: #374151;
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dropdown-item-custom:hover {
+  background: #f3f4f6;
+  color: #f26be2;
+}
+
+.dropdown-item-custom i {
+  font-size: 16px;
+}
+
+.dropdown-divider-custom {
+  height: 1px;
+  background: #e5e7eb;
+  border: none;
+  margin: 5px 0;
+}
+
+/*  MODAL PERSONALIZADO  */
+.modal-overlay {
+  position: fixed;
   top: 0;
-  left: 100%;
-  transform: translate(-50%, -50%);
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(3px);
 }
 
+.modal-content-custom {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal-header-custom {
+  padding: 20px 24px 0;
+}
+
+.modal-title-custom {
+  color: #111827;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+.modal-body-custom {
+  padding: 16px 24px;
+  text-align: center;
+}
+
+.modal-body-custom p {
+  color: #6b7280;
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.modal-footer-custom {
+  padding: 0 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-modal-cancel,
+.btn-modal-confirm {
+  padding: 10px 24px;
+  border: 1px solid;
+  border-radius: 6px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+}
+
+.btn-modal-cancel {
+  background: #ffffff;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.btn-modal-cancel:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-modal-confirm {
+  background: #f26be2;
+  color: #ffffff;
+  border-color: #f26be2;
+}
+
+.btn-modal-confirm:hover {
+  background: #e85dd6;
+  border-color: #e85dd6;
+}
+
+/*  RESPONSIVO  */
+@media (max-width: 992px) {
+  .header-container {
+    padding: 12px 16px;
+  }
+  
+  .brand-link {
+    font-size: 20px;
+  }
+  
+  .nav-text {
+    display: none;
+  }
+  
+  .nav-link-custom {
+    padding: 10px 12px;
+  }
+  
+  .user-name {
+    max-width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .header-brand {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .brand-link {
+    font-size: 18px;
+  }
+  
+  .logo-img {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .nav-list {
+    width: 100%;
+    justify-content: space-around;
+  }
+  
+  .nav-text {
+    display: block;
+    font-size: 13px;
+  }
+  
+  .nav-link-custom {
+    flex-direction: column;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .nav-icon {
+    font-size: 16px;
+  }
+  
+  .dropdown-menu-custom {
+    right: auto;
+    left: 0;
+    min-width: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 12px;
+  }
+  
+  .brand-link {
+    font-size: 16px;
+  }
+  
+  .logo-img {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .nav-link-custom {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  
+  .nav-text {
+    font-size: 11px;
+  }
+  
+  .nav-icon {
+    font-size: 14px;
+  }
+  
+  .modal-content-custom {
+    margin: 20px;
+  }
+  
+  .modal-header-custom,
+  .modal-body-custom,
+  .modal-footer-custom {
+    padding: 16px 20px;
+  }
+}

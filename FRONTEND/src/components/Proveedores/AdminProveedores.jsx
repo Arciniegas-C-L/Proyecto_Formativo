@@ -33,7 +33,7 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
 
   // Función para navegar a la lista de proveedores
   const handleVerProveedores = () => {
-    navigate("/proveedores/registrados"); // ruta nueva definida para la lista
+    navigate("/admin/proveedores/registrados"); // ruta nueva definida para la lista
   };
 
   const handleSubmit = async (e) => {

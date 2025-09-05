@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../assets/css/Perfil.css';
+import "../../assets/css/Perfil/Perfil.css";
 import { fetchUsuario, updateUsuario } from "../../api/Usuario.api";
 
 export function Perfil() {
@@ -27,7 +27,6 @@ export function Perfil() {
         async function cargarUsuario() {
             try {
                 const res = await fetchUsuario();
-                // Ajustar según respuesta real de tu API
                 const usuarioActual = res.data[0];
                 setUsuario(usuarioActual);
             } catch (error) {
@@ -36,7 +35,7 @@ export function Perfil() {
         }
         cargarUsuario();
 
-        // -- Mantengo toda la lógica del avatar intacta --
+        // Configuración del avatar
         localStorage.removeItem('avatarSeed');
         localStorage.removeItem('avatarOptions');
 
@@ -148,13 +147,11 @@ export function Perfil() {
         setActiveSection('datos');
     };
 
-    // Manejar cambios inputs datos personales
     const handleChange = (e) => {
         const { name, value } = e.target;
         setUsuario(prev => ({ ...prev, [name]: value }));
     };
 
-    // Guardar datos personales
     const handleGuardarDatos = async () => {
         try {
             await updateUsuario(usuario.idUsuario, usuario);
@@ -218,6 +215,7 @@ export function Perfil() {
                         <button onClick={() => navigate('/')}>Salir</button>
                     </div>
                 </div>
+
                 <div className="mostrar-opciones">
                     {activeSection === 'avatar' && (
                         <div className="avatar-editor">
@@ -233,7 +231,7 @@ export function Perfil() {
                                 />
                             </div>
 
-                            <div className="avatar-buttons">
+                            <div className="avatar-controls">
                                 <button onClick={() => { setActiveCategory('backgroundColor'); }}>🎨 Fondo</button>
                                 <button onClick={() => { setActiveCategory('accessories'); }}>🕶️ Accesorios</button>
                                 <button onClick={() => { setActiveCategory('top'); }}>💇 Cabello</button>
@@ -261,52 +259,61 @@ export function Perfil() {
                             </div>
                             <div className="datos-section1">
                                 <form className="form-datos">
-                                <label>Nombre:</label>
-                                <input
-                                    type="text"
-                                    name="nombre"
-                                    value={usuario.nombre}
-                                    onChange={handleChange}
-                                />
+                                    <div className="form-group">
+                                        <label>Nombre:</label>
+                                        <input
+                                            type="text"
+                                            name="nombre"
+                                            value={usuario.nombre}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
 
-                                <label>Apellido:</label>
-                                <input
-                                    type="text"
-                                    name="apellido"
-                                    value={usuario.apellido}
-                                    onChange={handleChange}
-                                />
+                                    <div className="form-group">
+                                        <label>Apellido:</label>
+                                        <input
+                                            type="text"
+                                            name="apellido"
+                                            value={usuario.apellido}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
 
-                                <label>Correo:</label>
-                                <input
-                                    type="email"
-                                    name="correo"
-                                    value={usuario.correo}
-                                    disabled
-                                />
+                                    <div className="form-group">
+                                        <label>Correo:</label>
+                                        <input
+                                            type="email"
+                                            name="correo"
+                                            value={usuario.correo}
+                                            disabled
+                                        />
+                                    </div>
 
-                                <label>Teléfono:</label>
-                                <input
-                                    type="text"
-                                    name="telefono"
-                                    value={usuario.telefono}
-                                    onChange={handleChange}
-                                />
+                                    <div className="form-group">
+                                        <label>Teléfono:</label>
+                                        <input
+                                            type="text"
+                                            name="telefono"
+                                            value={usuario.telefono}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
 
-                                <label>Dirección:</label>
-                                <input
-                                    type="text"
-                                    name="direccion"
-                                    value={usuario.direccion || ''}
-                                    onChange={handleChange}
-                                />
+                                    <div className="form-group">
+                                        <label>Dirección:</label>
+                                        <input
+                                            type="text"
+                                            name="direccion"
+                                            value={usuario.direccion || ''}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
 
-                                <button type="button" onClick={handleGuardarDatos}>
-                                    Guardar cambios
-                                </button>
-                            </form>
+                                    <button type="button" className="btn-guardar" onClick={handleGuardarDatos}>
+                                        Guardar cambios
+                                    </button>
+                                </form>
                             </div>
-                            
                         </div>
                     )}
 
@@ -314,6 +321,9 @@ export function Perfil() {
                         <div className="pedidos-section">
                             <div className="titulo-opciones">
                                 <h3>Pedidos</h3>
+                            </div>
+                            <div className="pedidos-content">
+                                <p>Sección de pedidos en desarrollo...</p>
                             </div>
                         </div>
                     )}
@@ -323,22 +333,30 @@ export function Perfil() {
                             <div className="titulo-opciones">
                                 <h3>Configuraciones</h3>
                             </div>
-                            <div className="config-list">
-                                <div className="config-item">
-                                    <h4>Cambiar contraseña</h4>
-                                    <button onClick={() => alert('Funcionalidad de cambio de contraseña próximamente')}>Cambiar contraseña</button>
+                            <div className="config-grid">
+                                <div className="config-card">
+                                    <h4> Cambiar contraseña</h4>
+                                    <button onClick={() => alert('Funcionalidad de cambio de contraseña próximamente')}>
+                                        Cambiar contraseña
+                                    </button>
                                 </div>
-                                <div className="config-item">
-                                    <h4>Gestión de direcciones</h4>
-                                    <button onClick={() => alert('Gestión de direcciones próximamente')}>Administrar direcciones</button>
+                                <div className="config-card">
+                                    <h4> Gestión de direcciones</h4>
+                                    <button onClick={() => alert('Gestión de direcciones próximamente')}>
+                                        Administrar direcciones
+                                    </button>
                                 </div>
-                                <div className="config-item">
-                                    <h4>Métodos de pago</h4>
-                                    <button onClick={() => alert('Gestión de métodos de pago próximamente')}>Administrar métodos de pago</button>
+                                <div className="config-card">
+                                    <h4> Métodos de pago</h4>
+                                    <button onClick={() => alert('Gestión de métodos de pago próximamente')}>
+                                        Administrar métodos de pago
+                                    </button>
                                 </div>
-                                <div className="config-item">
-                                    <h4>Eliminar cuenta</h4>
-                                    <button style={{color: 'red'}} onClick={() => alert('Funcionalidad para eliminar cuenta próximamente')}>Eliminar cuenta</button>
+                                <div className="config-card">
+                                    <h4> Eliminar cuenta</h4>
+                                    <button className="danger" onClick={() => alert('Funcionalidad para eliminar cuenta próximamente')}>
+                                        Eliminar cuenta
+                                    </button>
                                 </div>
                             </div>
                         </div>
