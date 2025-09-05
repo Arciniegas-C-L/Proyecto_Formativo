@@ -1484,35 +1484,36 @@ class CarritoView(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def crear_preferencia_pago(self, request, pk=None):
-        """
-        Genera una preferencia de Mercado Pago a partir de este carrito.
-        """
         try:
             carrito = self.get_object()
 
             if carrito.items.count() == 0:
-                return Response(
-                    {"error": "El carrito está vacío"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 👉 Reusar preferencia si ya existe
+            if carrito.external_reference and carrito.mp_status == "pending":
+                return Response({
+                    "id": carrito.external_reference,
+                    "init_point": carrito.mp_init_point  # si lo guardas
+                }, status=status.HTTP_200_OK)
 
             # Armar items para Mercado Pago
-            items_mp = []
-            for item in carrito.items.all():
-                items_mp.append({
+            items_mp = [
+                {
                     "id": str(item.producto.id),
                     "title": item.producto.nombre,
                     "quantity": int(item.cantidad),
                     "unit_price": float(item.precio_unitario),
                     "currency_id": "COP",
-                })
+                }
+                for item in carrito.items.all()
+            ]
 
-            # external_reference único
             external_ref = f"ORDER-{carrito.idCarrito}-{int(time.time())}"
             carrito.external_reference = external_ref
+            carrito.mp_status = "pending"  # nuevo campo en Carrito
             carrito.save()
 
-            # Crear preferencia
             preference_data = {
                 "items": items_mp,
                 "payer": {"email": request.data.get("email", "test_user@example.com")},
@@ -1529,7 +1530,10 @@ class CarritoView(viewsets.ModelViewSet):
             result = sdk.preference().create(preference_data)
             pref = result["response"]
 
-            # Guardar estado del carrito como pendiente de pago
+            # 🔒 Guardar init_point para reusarlo
+            carrito.mp_init_point = pref.get("init_point")
+            carrito.save()
+
             EstadoCarrito.objects.create(
                 carrito=carrito,
                 estado="pendiente",
@@ -1546,6 +1550,7 @@ class CarritoView(viewsets.ModelViewSet):
                 {"error": f"Error al crear preferencia: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
 
 
 class CarritoItemView(viewsets.ModelViewSet):
@@ -1559,17 +1564,96 @@ class CarritoItemView(viewsets.ModelViewSet):
         # Si no está autenticado, mostrar items de carritos sin usuario
         return CarritoItem.objects.filter(carrito__usuario__isnull=True)
 
+
 class EstadoCarritoView(viewsets.ModelViewSet):
     serializer_class = EstadoCarritoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
-            # Si el usuario está autenticado, mostrar estados de sus carritos
             return EstadoCarrito.objects.filter(carrito__usuario=self.request.user)
-        # Si no está autenticado, mostrar estados de carritos sin usuario
         return EstadoCarrito.objects.filter(carrito__usuario__isnull=True)
 
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def webhook(self, request):
+        """
+        Webhook de Mercado Pago para notificaciones de pago
+        """
+        try:
+            body = request.data if isinstance(request.data, dict) else json.loads(request.body)
+            event_type = body.get("type")
+            data = body.get("data", {})
+            payment_id = str(data.get("id", ""))
+
+            if event_type != "payment" or not payment_id:
+                return Response({"ok": True})  # ignoramos otros eventos
+
+            # Consultar pago en Mercado Pago
+            url = f"https://api.mercadopago.com/v1/payments/{payment_id}"
+            resp = requests.get(
+                url,
+                headers={"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"},
+                timeout=15
+            )
+            if resp.status_code != 200:
+                return Response({"error": "No se pudo consultar el pago"}, status=502)
+
+            pago = resp.json()
+            external_ref = pago.get("external_reference")
+            status_pago = pago.get("status")  # approved, pending, rejected
+
+            try:
+                carrito = Carrito.objects.get(external_reference=external_ref)
+            except Carrito.DoesNotExist:
+                return Response({"error": "Carrito no encontrado"}, status=404)
+
+            # Actualizar carrito
+            carrito.payment_id = payment_id
+            carrito.mp_status = status_pago
+            carrito.save()
+
+            # Crear estado
+            EstadoCarrito.objects.create(
+                carrito=carrito,
+                estado="pagado" if status_pago == "approved" else "pendiente",
+                observacion=f"Webhook recibido. Estado: {status_pago}"
+            )
+
+            return Response({"ok": True})
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    @action(detail=False, methods=['get'])
+    def consultar_estado(self, request):
+        """
+        Consulta el estado actual de un carrito según external_reference o payment_id.
+        Ejemplo:
+        GET /api/estado-carrito/consultar_estado/?external_reference=ORDER-12345
+        GET /api/estado-carrito/consultar_estado/?payment_id=987654321
+        """
+        external_ref = request.query_params.get("external_reference")
+        payment_id = request.query_params.get("payment_id")
+
+        if not external_ref and not payment_id:
+            return Response({"error": "Debes enviar external_reference o payment_id"}, status=400)
+
+        try:
+            if external_ref:
+                carrito = Carrito.objects.get(external_reference=external_ref)
+            else:
+                carrito = Carrito.objects.get(payment_id=payment_id)
+
+            ultimo_estado = carrito.estadocarrito_set.first()  # por ordering en Meta
+            return Response({
+                "carrito_id": carrito.idCarrito,
+                "external_reference": carrito.external_reference,
+                "payment_id": carrito.payment_id,
+                "status": carrito.mp_status,
+                "estado": ultimo_estado.estado if ultimo_estado else None,
+                "observacion": ultimo_estado.observacion if ultimo_estado else None,
+            })
+        except Carrito.DoesNotExist:
+            return Response({"error": "Carrito no encontrado"}, status=404)
 
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
