@@ -30,7 +30,11 @@ import random
 import string
 from django.utils import timezone
 from datetime import timedelta
- # CRUD de direcciones de usuario
+import time, mercadopago 
+
+sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
+
+# CRUD de direcciones de usuario
 class DireccionViewSet(viewsets.ModelViewSet):
     queryset = Direccion.objects.all()
     serializer_class = DireccionSerializer
@@ -1476,6 +1480,73 @@ class CarritoView(viewsets.ModelViewSet):
             "mensaje": "Compra finalizada exitosamente",
             "pedido_id": pedido.idPedido
         }, status=status.HTTP_200_OK)
+    
+    
+    @action(detail=True, methods=['post'])
+    def crear_preferencia_pago(self, request, pk=None):
+        """
+        Genera una preferencia de Mercado Pago a partir de este carrito.
+        """
+        try:
+            carrito = self.get_object()
+
+            if carrito.items.count() == 0:
+                return Response(
+                    {"error": "El carrito está vacío"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Armar items para Mercado Pago
+            items_mp = []
+            for item in carrito.items.all():
+                items_mp.append({
+                    "id": str(item.producto.id),
+                    "title": item.producto.nombre,
+                    "quantity": int(item.cantidad),
+                    "unit_price": float(item.precio_unitario),
+                    "currency_id": "COP",
+                })
+
+            # external_reference único
+            external_ref = f"ORDER-{carrito.idCarrito}-{int(time.time())}"
+            carrito.external_reference = external_ref
+            carrito.save()
+
+            # Crear preferencia
+            preference_data = {
+                "items": items_mp,
+                "payer": {"email": request.data.get("email", "test_user@example.com")},
+                "external_reference": external_ref,
+                "back_urls": {
+                    "success": f"{settings.FRONTEND_URL}/checkout/result?status=success",
+                    "failure": f"{settings.FRONTEND_URL}/checkout/result?status=failure",
+                    "pending": f"{settings.FRONTEND_URL}/checkout/result?status=pending",
+                },
+                "auto_return": "approved",
+                "notification_url": f"{settings.BACKEND_URL}/api/mp/webhook/",
+            }
+
+            result = sdk.preference().create(preference_data)
+            pref = result["response"]
+
+            # Guardar estado del carrito como pendiente de pago
+            EstadoCarrito.objects.create(
+                carrito=carrito,
+                estado="pendiente",
+                observacion="Preferencia creada en Mercado Pago"
+            )
+
+            return Response({
+                "id": pref.get("id"),
+                "init_point": pref.get("init_point"),
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response(
+                {"error": f"Error al crear preferencia: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
