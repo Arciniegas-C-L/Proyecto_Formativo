@@ -336,7 +336,17 @@ class PedidoProducto(models.Model):
 
     def __str__(self):
         return f"Producto {self.producto.nombre} en Pedido {self.pedido.idPedido}"
+    
+class PedidoItem(models.Model):
+    pedido   = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='items')
+    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
+    talla    = models.ForeignKey(Talla, on_delete=models.PROTECT, null=True, blank=True)
+    cantidad = models.PositiveIntegerField(default=1)
+    precio   = models.DecimalField(max_digits=12, decimal_places=2)  # precio unitario al cerrar el pedido
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
 
+    class Meta:
+        unique_together = ('pedido', 'producto', 'talla')
 
 class Pago(models.Model):
     pedido   = models.ForeignKey('Pedido', null=True, blank=True, on_delete=models.SET_NULL)
