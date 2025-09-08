@@ -481,3 +481,51 @@ def crear_inventario_para_nueva_talla(sender, instance, created, **kwargs):
                         'stock_talla': 0
                     }
                 )
+class Pago(models.Model):
+    pedido   = models.ForeignKey('Pedido', null=True, blank=True, on_delete=models.SET_NULL)
+    carrito  = models.ForeignKey('Carrito', null=True, blank=True, on_delete=models.SET_NULL)
+
+    mp_payment_id      = models.CharField(max_length=64, unique=True)
+    external_reference = models.CharField(max_length=128, db_index=True)
+    status             = models.CharField(max_length=32)        # approved | pending | rejected...
+    status_detail      = models.CharField(max_length=64, blank=True, default='')
+    amount             = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    currency           = models.CharField(max_length=8, default='COP')
+
+    raw        = models.JSONField(default=dict)                  # respuesta completa de MP
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class WebhookEvent(models.Model):
+    mp_topic   = models.CharField(max_length=32)   # e.g. "payment"
+    mp_id      = models.CharField(max_length=64)   # data.id
+    raw        = models.JSONField(default=dict)
+    processed  = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    class Meta:
+        unique_together = ('mp_topic', 'mp_id')
+
+# BACKEND/models.py
+class Factura(models.Model):
+    numero       = models.CharField(max_length=32, unique=True)         # consecutivo propio
+    pedido       = models.OneToOneField('Pedido', on_delete=models.PROTECT)
+    usuario      = models.ForeignKey('Usuario', on_delete=models.PROTECT)
+
+    subtotal     = models.DecimalField(max_digits=12, decimal_places=2)
+    impuestos    = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total        = models.DecimalField(max_digits=12, decimal_places=2)
+    moneda       = models.CharField(max_length=8, default='COP')
+
+    metodo_pago  = models.CharField(max_length=32, default='mercadopago')
+    mp_payment_id= models.CharField(max_length=64, blank=True, default='')
+
+    emitida_en   = models.DateTimeField(default=timezone.now)
+    estado       = models.CharField(max_length=16, default='emitida')   # emitida, anulada, etc.
+
+class FacturaItem(models.Model):
+    factura    = models.ForeignKey(Factura, related_name='items', on_delete=models.CASCADE)
+    producto   = models.ForeignKey('Producto', on_delete=models.PROTECT)
+    descripcion= models.CharField(max_length=255)
+    cantidad   = models.PositiveIntegerField()
+    precio     = models.DecimalField(max_digits=12, decimal_places=2)   # unitario
+    subtotal   = models.DecimalField(max_digits=12, decimal_places=2)
