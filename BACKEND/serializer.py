@@ -1,10 +1,6 @@
 
 from rest_framework import serializers
-from .models import (
-    Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento, 
-    Pedido, PedidoProducto, Pago, TipoPago, Subcategoria, CarritoItem, 
-    EstadoCarrito, Carrito, Talla, GrupoTalla, Direccion
-)
+from .models import *
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer

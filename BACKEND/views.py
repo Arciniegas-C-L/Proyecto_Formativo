@@ -6,14 +6,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-from .serializer import (
-    DireccionSerializer, CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
-    ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
-    PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
-    CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
-    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer,
-    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer, UserSerializer
-)
+from .serializer import *
 from .models import (
     Direccion, Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
     Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,

@@ -339,15 +339,19 @@ class PedidoProducto(models.Model):
 
 
 class Pago(models.Model):
-    idPago = models.AutoField(primary_key=True)
-    total = models.DecimalField(max_digits=30, decimal_places=2)
-    fechaPago = models.DateField()
-    pedido = models.ForeignKey(Pedido, on_delete=models.DO_NOTHING)
+    pedido   = models.ForeignKey('Pedido', null=True, blank=True, on_delete=models.SET_NULL)
+    carrito  = models.ForeignKey('Carrito', null=True, blank=True, on_delete=models.SET_NULL)
 
-    def __str__(self):
-        return f"Pago {self.idPago}"
+    mp_payment_id      = models.CharField(max_length=64, unique=True)
+    external_reference = models.CharField(max_length=255, null=True, blank=True)
+    status             = models.CharField(max_length=32)        # approved | pending | rejected...
+    status_detail      = models.CharField(max_length=64, blank=True, default='')
+    amount             = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    currency           = models.CharField(max_length=8, default='COP')
 
-
+    raw        = models.JSONField(default=dict)                  # respuesta completa de MP
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 class TipoPago(models.Model):
     idtipoPago = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45)
@@ -481,20 +485,6 @@ def crear_inventario_para_nueva_talla(sender, instance, created, **kwargs):
                         'stock_talla': 0
                     }
                 )
-class Pago(models.Model):
-    pedido   = models.ForeignKey('Pedido', null=True, blank=True, on_delete=models.SET_NULL)
-    carrito  = models.ForeignKey('Carrito', null=True, blank=True, on_delete=models.SET_NULL)
-
-    mp_payment_id      = models.CharField(max_length=64, unique=True)
-    external_reference = models.CharField(max_length=128, db_index=True)
-    status             = models.CharField(max_length=32)        # approved | pending | rejected...
-    status_detail      = models.CharField(max_length=64, blank=True, default='')
-    amount             = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    currency           = models.CharField(max_length=8, default='COP')
-
-    raw        = models.JSONField(default=dict)                  # respuesta completa de MP
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
 
 class WebhookEvent(models.Model):
     mp_topic   = models.CharField(max_length=32)   # e.g. "payment"
