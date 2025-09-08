@@ -29,6 +29,10 @@ export const eliminarProducto = (id, itemId) =>
 export const limpiarCarrito = (id) => api.post(`carrito/${id}/limpiar_carrito/`);
 export const finalizarCompra = (id) => api.post(`carrito/${id}/finalizar_compra/`);
 
+// 🔥 Nuevo: crear preferencia de pago (Mercado Pago)
+export const crearPreferenciaPago = (id, email) =>
+  api.post(`carrito/${id}/crear_preferencia_pago/`, { email });
+
 // Operaciones de items del carrito
 export const fetchCarritoItems = () => api.get('carrito-item/');
 export const getCarritoItem = (id) => api.get(`carrito-item/${id}/`);
@@ -38,6 +42,10 @@ export const deleteCarritoItem = (id) => api.delete(`carrito-item/${id}/`);
 // Operaciones de estados del carrito
 export const fetchEstadosCarrito = () => api.get('estado-carrito/');
 export const getEstadoCarrito = (id) => api.get(`estado-carrito/${id}/`);
+
+// 🔥 Nuevo: consultar estado de un carrito por external_reference o payment_id
+export const consultarEstadoCarrito = (params) =>
+  api.get('estado-carrito/consultar_estado/', { params });
 
 // Endpoints del carrito
 export const CARRITO_ENDPOINTS = {
@@ -49,6 +57,8 @@ export const CARRITO_ENDPOINTS = {
   ELIMINAR_PRODUCTO: (id) => `carrito/${id}/eliminar_producto/`,
   LIMPIAR_CARRITO: (id) => `carrito/${id}/limpiar_carrito/`,
   FINALIZAR_COMPRA: (id) => `carrito/${id}/finalizar_compra/`,
+  CREAR_PREFERENCIA_PAGO: (id) => `carrito/${id}/crear_preferencia_pago/`, // 🔥
+  CONSULTAR_ESTADO: () => `estado-carrito/consultar_estado/`, // 🔥
 };
 
 // Estados posibles del carrito
@@ -79,6 +89,8 @@ export const ACCIONES_CARRITO = {
   ELIMINAR: 'eliminar',
   LIMPIAR: 'limpiar',
   FINALIZAR: 'finalizar',
+  CREAR_PREFERENCIA: 'crear_preferencia', // 🔥
+  CONSULTAR_ESTADO: 'consultar_estado',   // 🔥
 };
 
 // Extra: usuarios (si aplica en este módulo)

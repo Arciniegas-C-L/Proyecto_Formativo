@@ -11,14 +11,14 @@ import {
   actualizarCantidad,
   eliminarProducto,
   limpiarCarrito,
-  finalizarCompra, // lo dejamos por si lo usas fuera de MP
+  finalizarCompra,     // lo dejamos por si lo usas fuera de MP
+  crearPreferenciaPago // 🔥 integración Mercado Pago
 } from '../../api/CarritoApi';
 import { getALLProductos } from '../../api/Producto.api';
-import axios from 'axios';
 import '../../assets/css/Carrito.css';
 
 const API_BASE_URL = "http://127.0.0.1:8000"; // Backend Django
-const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI"; // opcional
+const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
 
 // Hook para cargar el SDK de Mercado Pago si no está presente
 function useMercadoPagoLoader(publicKey) {
@@ -38,15 +38,11 @@ function useMercadoPagoLoader(publicKey) {
       setLoaded(false);
     };
     document.head.appendChild(script);
-    return () => {
-      // no removemos el script para evitar recargas múltiples
-    };
   }, []);
 
   useEffect(() => {
-    // No es necesario inicializar nada extra para redirección con init_point
     if (loaded && window.MercadoPago && publicKey) {
-      // Podrías crear una instancia si luego usas Bricks:
+      // Si más adelante usas Bricks:
       // const mp = new window.MercadoPago(publicKey, { locale: 'es-CO' });
     }
   }, [loaded, publicKey]);
@@ -209,17 +205,6 @@ export function Carrito() {
     }
   };
 
-  // Mapea tus items al formato esperado por Mercado Pago (para crear preferencia)
-  const mapItemsToMP = useCallback((items) => {
-    return items.map((it) => ({
-      id: String(it.producto?.id ?? it.idCarritoItem),
-      title: it.producto?.nombre ?? "Producto",
-      quantity: Number(it.cantidad ?? 1),
-      unit_price: Number(it.precio_unitario ?? it.subtotal ?? 0),
-      currency_id: "COP",
-    }));
-  }, []);
-
   // Dispara la creación de preferencia y redirige a Checkout Pro
   const handlePagar = async () => {
     try {
@@ -235,30 +220,28 @@ export function Carrito() {
 
       setCreatingPreference(true);
 
-      const payload = {
-        items: mapItemsToMP(items),
-        payer: { email: usuario?.email || "test_user@example.com" },
-        external_reference: `ORDER-${carrito.idCarrito}-${Date.now()}`
-      };
-
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/mp/create-preference/`,
-        payload
-      );
+      // 👉 Ahora usamos nuestra función centralizada
+      const { data } = await crearPreferenciaPago(carrito.idCarrito, usuario?.email);
 
       if (!data?.init_point) {
         toast.error("No se pudo crear la preferencia de pago");
         return;
       }
 
-      // Redirección simple a Checkout Pro (sandbox)
-      window.location.href = data.init_point;
+      window.location.href = data.init_point; // Redirección a Checkout Pro
     } catch (err) {
-      console.error("Error al crear preferencia:", err);
-      toast.error(err.response?.data?.error || "Error al iniciar el pago");
-    } finally {
-      setCreatingPreference(false);
-    }
+  console.error("Error al crear preferencia:", err);
+  const detalle = err?.response?.data?.detalle;
+  // MP a veces manda {message, error, cause:[{code,description}]}
+  const msg =
+    detalle?.message ||
+    detalle?.error ||
+    detalle?.cause?.[0]?.description ||
+    err?.response?.data?.error ||
+    "Error al iniciar el pago";
+  toast.error(msg);
+  }
+    
   };
 
   const handleFinalizarCompra = async () => {
@@ -270,19 +253,12 @@ export function Carrito() {
       }, 5000);
       return;
     }
-    // Para pruebas con Mercado Pago vamos directo a pagar (sin modal).
     await handlePagar();
-
-    // Si quieres usar el modal y luego pagar, comenta la línea de arriba
-    // y descomenta la de abajo:
-    // setShowConfirmarCompra(true);
   };
 
-  // Si decides mantener el modal, al confirmar llamamos a handlePagar.
   const handleConfirmarCompra = async ({ direccion, metodoPago }) => {
     try {
       if (!carrito) return;
-      // Opcional: enviar direccion/metodoPago al backend
       await handlePagar();
       setShowConfirmarCompra(false);
     } catch (error) {
@@ -366,9 +342,8 @@ export function Carrito() {
         </div>
       ) : (
         <div className="carrito-contenido">
-          {/* Contenedor principal con dos columnas */}
           <div className="carrito-layout">
-            {/* Columna izquierda - Items del carrito */}
+            {/* Columna izquierda */}
             <div className="carrito-items-section">
               <h2>Productos en tu carrito ({items.length})</h2>
               <div className="carrito-items">
@@ -391,12 +366,17 @@ export function Carrito() {
 
                       {item.talla && (
                         <p className="item-talla">
-                          <strong>Talla:</strong> {typeof item.talla === 'object' && item.talla !== null ? (item.talla.nombre || '-') : (typeof item.talla === 'string' ? item.talla : '-')}
+                          <strong>Talla:</strong>{" "}
+                          {typeof item.talla === 'object' && item.talla !== null
+                            ? (item.talla.nombre || '-')
+                            : (typeof item.talla === 'string' ? item.talla : '-')}
                         </p>
                       )}
 
                       <div className="item-precio-cantidad">
-                        <p className="item-precio">${parseFloat(item.precio_unitario).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+                        <p className="item-precio">
+                          ${parseFloat(item.precio_unitario).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                        </p>
 
                         <div className="item-cantidad">
                           <button
@@ -414,7 +394,9 @@ export function Carrito() {
                         </div>
                       </div>
 
-                      <p className="item-subtotal">Subtotal: ${parseFloat(item.subtotal).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+                      <p className="item-subtotal">
+                        Subtotal: ${parseFloat(item.subtotal).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                      </p>
                     </div>
 
                     <button
@@ -429,7 +411,7 @@ export function Carrito() {
               </div>
             </div>
 
-            {/* Columna derecha - Resumen del pedido */}
+            {/* Columna derecha */}
             <div className="carrito-resumen-section">
               <div className="carrito-resumen">
                 <h2>Resumen del Pedido</h2>
@@ -474,7 +456,6 @@ export function Carrito() {
         </div>
       )}
 
-      {/* Modal de confirmación de compra (si decides usarlo) */}
       {showConfirmarCompra && (
         <ConfirmarCompra
           onConfirmar={handleConfirmarCompra}
@@ -483,7 +464,6 @@ export function Carrito() {
         />
       )}
 
-      {/* Sección de productos recomendados */}
       <div className="productos-recomendados-section">
         <h2><FaEye /> También te puede interesar</h2>
         <div className="productos-recomendados row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">

@@ -31,6 +31,8 @@ import string
 from django.utils import timezone
 from datetime import timedelta
 import time, mercadopago 
+import requests
+import json
 
 sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
 
@@ -1255,21 +1257,17 @@ class TipoPagoView(viewsets.ModelViewSet):
 
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
 
     def list(self, request, *args, **kwargs):
         rol = getattr(getattr(request.user, 'rol', None), 'nombre', '').lower()
         if rol == 'invitado':
-            # devolvemos vacío en lugar de 403
             return Response({"results": [], "count": 0}, status=status.HTTP_200_OK)
-
         return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
-            # Si el usuario está autenticado, mostrar sus carritos
             return Carrito.objects.filter(usuario=self.request.user)
-        # Si no está autenticado, mostrar todos los carritos sin usuario
         return Carrito.objects.filter(usuario__isnull=True)
 
     def get_serializer_class(self):
@@ -1283,55 +1281,39 @@ class CarritoView(viewsets.ModelViewSet):
     def agregar_producto(self, request, pk=None):
         try:
             carrito = self.get_object()
-            print("Datos recibidos:", request.data)  # Log para debug
-
-            # Validar que los datos requeridos estén presentes
             if 'producto' not in request.data:
-                return Response(
-                    {"error": "El campo 'producto' es requerido"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
+                return Response({"error": "El campo 'producto' es requerido"}, status=400)
             if 'cantidad' not in request.data:
-                return Response(
-                    {"error": "El campo 'cantidad' es requerido"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": "El campo 'cantidad' es requerido"}, status=400)
 
             producto_id = request.data.get('producto')
             talla_id = request.data.get('talla')
             cantidad = int(request.data.get('cantidad', 1))
 
             from .models import Inventario, CarritoItem
-            # Buscar inventario correspondiente
-            inventario = None
-            if talla_id:
-                inventario = Inventario.objects.filter(producto_id=producto_id, talla_id=talla_id).first()
-            else:
-                inventario = Inventario.objects.filter(producto_id=producto_id).first()
+            inventario = (Inventario.objects
+                        .filter(producto_id=producto_id, talla_id=talla_id).first()
+                        if talla_id else
+                        Inventario.objects.filter(producto_id=producto_id).first())
 
-            # Buscar si ya existe el item en el carrito
             filtro_item = {'carrito': carrito, 'producto_id': producto_id}
             if talla_id:
                 filtro_item['talla_id'] = talla_id
             item_existente = CarritoItem.objects.filter(**filtro_item).first()
 
-            cantidad_total = cantidad
-            if item_existente:
-                cantidad_total = item_existente.cantidad + cantidad
+            cantidad_total = cantidad + (item_existente.cantidad if item_existente else 0)
 
             if inventario:
-                stock_disponible = inventario.stock_talla if hasattr(inventario, 'stock_talla') else inventario.cantidad
+                stock_disponible = getattr(inventario, 'stock_talla', inventario.cantidad)
                 if cantidad_total > stock_disponible:
                     return Response(
-                        {"error": f"No hay suficiente stock disponible. Stock actual: {stock_disponible}, Cantidad solicitada: {cantidad_total}"},
-                        status=status.HTTP_400_BAD_REQUEST
+                        {"error": f"No hay suficiente stock disponible. Stock actual: {stock_disponible}, "
+                                f"Cantidad solicitada: {cantidad_total}"},
+                        status=400
                     )
-                # Descontar solo la cantidad nueva
                 inventario.stock_talla = stock_disponible - cantidad
                 inventario.save()
 
-            # Crear o actualizar el item en el carrito
             if item_existente:
                 item_existente.cantidad += cantidad
                 item_existente.save()
@@ -1342,50 +1324,36 @@ class CarritoView(viewsets.ModelViewSet):
                     'cantidad': cantidad,
                     'talla': talla_id
                 })
-                if serializer.is_valid():
-                    serializer.save()
-                else:
-                    print("Errores de validación:", serializer.errors)  # Log para debug
-                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                if not serializer.is_valid():
+                    return Response(serializer.errors, status=400)
+                serializer.save()
 
-            return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
+            return Response(CarritoSerializer(carrito).data, status=200)
 
         except Exception as e:
-            print("Error al agregar producto:", str(e))  # Log para debug
-            return Response(
-                {"error": f"Error al agregar el producto: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            print("Error al agregar producto:", str(e))
+            return Response({"error": f"Error al agregar el producto: {str(e)}"}, status=400)
 
     @action(detail=True, methods=['post'])
     def actualizar_cantidad(self, request, pk=None):
         try:
-            # Obtener el carrito con sus items y productos precargados
-            carrito = Carrito.objects.prefetch_related(
-                'items__producto', 'items__talla'
-            ).get(pk=pk)
-
+            carrito = Carrito.objects.prefetch_related('items__producto', 'items__talla').get(pk=pk)
             item_id = request.data.get('item_id')
-            nueva_cantidad = request.data.get('cantidad')
+            nueva_cantidad = int(request.data.get('cantidad'))
 
-            # Obtener el item con su producto y talla relacionados
             item = carrito.items.select_related('producto', 'talla').get(idCarritoItem=item_id)
 
-            # Actualizar inventario según la talla
             from .models import Inventario
-            inventario = None
-            if item.talla:
-                inventario = Inventario.objects.filter(producto=item.producto, talla=item.talla).first()
-            else:
-                inventario = Inventario.objects.filter(producto=item.producto).first()
+            inventario = (Inventario.objects
+                        .filter(producto=item.producto, talla=item.talla).first()
+                        if item.talla else
+                        Inventario.objects.filter(producto=item.producto).first())
 
             if inventario:
                 diferencia = nueva_cantidad - item.cantidad
-                # Si diferencia > 0, se está aumentando la cantidad (restar del stock)
-                # Si diferencia < 0, se está disminuyendo la cantidad (sumar al stock)
                 inventario.stock_talla -= diferencia
                 if inventario.stock_talla < 0:
-                    return Response({"error": "No hay suficiente stock para la talla seleccionada."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "No hay suficiente stock para la talla seleccionada."}, status=400)
                 inventario.save()
 
             if nueva_cantidad <= 0:
@@ -1394,163 +1362,158 @@ class CarritoView(viewsets.ModelViewSet):
                 item.cantidad = nueva_cantidad
                 item.save()
 
-            # Serializar el carrito con sus items actualizados
-            serializer = CarritoSerializer(carrito)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-            
+            return Response(CarritoSerializer(carrito).data, status=200)
+
         except CarritoItem.DoesNotExist:
-            return Response(
-                {"error": "Item no encontrado en el carrito"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Item no encontrado en el carrito"}, status=404)
         except Exception as e:
-            print(f"Error al actualizar cantidad: {str(e)}")  # Log para debug
-            return Response(
-                {"error": f"Error al actualizar la cantidad: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            print("Error al actualizar cantidad:", str(e))
+            return Response({"error": f"Error al actualizar la cantidad: {str(e)}"}, status=400)
 
     @action(detail=True, methods=['post'])
     def eliminar_producto(self, request, pk=None):
         carrito = self.get_object()
         item_id = request.data.get('item_id')
-
         try:
             item = CarritoItem.objects.get(idCarritoItem=item_id, carrito=carrito)
-            # Devolver stock al inventario correspondiente
             from .models import Inventario
-            inventario = None
-            if item.talla:
-                inventario = Inventario.objects.filter(producto=item.producto, talla=item.talla).first()
-            else:
-                inventario = Inventario.objects.filter(producto=item.producto).first()
+            inventario = (Inventario.objects
+                        .filter(producto=item.producto, talla=item.talla).first()
+                        if item.talla else
+                        Inventario.objects.filter(producto=item.producto).first())
             if inventario:
                 inventario.stock_talla += item.cantidad
                 inventario.save()
             item.delete()
-            return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
+            return Response(CarritoSerializer(carrito).data, status=200)
         except CarritoItem.DoesNotExist:
-            return Response(
-                {"error": "Item no encontrado en el carrito"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Item no encontrado en el carrito"}, status=404)
 
     @action(detail=True, methods=['post'])
     def limpiar_carrito(self, request, pk=None):
         carrito = self.get_object()
         carrito.items.all().delete()
-        return Response(CarritoSerializer(carrito).data, status=status.HTTP_200_OK)
+        return Response(CarritoSerializer(carrito).data, status=200)
 
     @action(detail=True, methods=['post'])
     def finalizar_compra(self, request, pk=None):
         carrito = self.get_object()
-        
         if carrito.items.count() == 0:
-            return Response(
-                {"error": "El carrito está vacío"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "El carrito está vacío"}, status=400)
 
-        # Crear el pedido
         pedido = Pedido.objects.create(
             usuario=carrito.usuario,
             total=carrito.calcular_total(),
-            estado=True  # True = activo
+            estado=True
         )
-
-        # Crear los items del pedido
         for item in carrito.items.all():
-            PedidoProducto.objects.create(
-                pedido=pedido,
-                producto=item.producto
-            )
+            PedidoProducto.objects.create(pedido=pedido, producto=item.producto)
 
-        # Actualizar el estado del carrito
-        carrito.estado = False  # False = convertido en pedido
+        carrito.estado = False
         carrito.save()
-        
-        # Crear el estado final del carrito
+
         EstadoCarrito.objects.create(
             carrito=carrito,
             estado='entregado',
             observacion='Carrito convertido en pedido'
         )
+        return Response({"mensaje": "Compra finalizada exitosamente", "pedido_id": pedido.idPedido}, status=200)
 
-        return Response({
-            "mensaje": "Compra finalizada exitosamente",
-            "pedido_id": pedido.idPedido
-        }, status=status.HTTP_200_OK)
-    
-    
     @action(detail=True, methods=['post'])
     def crear_preferencia_pago(self, request, pk=None):
+        """
+        Crea una preferencia de pago en Mercado Pago para este carrito.
+        Espera opcionalmente: { "email": "comprador@test.com" }
+        """
+        carrito = self.get_object()
+
+        # 1) Validaciones básicas
+        if carrito.items.count() == 0:
+            return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2) Construir items para MP
+        items_mp = []
+        total = 0.0
+        for it in carrito.items.all():
+            try:
+                unit_price = float(it.precio_unitario)
+                qty = int(it.cantidad)
+            except Exception:
+                return Response({"error": "Ítems con datos inválidos (precio/cantidad)"}, status=400)
+
+            if unit_price <= 0 or qty <= 0:
+                return Response({"error": "Precio o cantidad inválidos en algún ítem"}, status=400)
+
+            items_mp.append({
+                "id": str(it.producto.id),
+                "title": it.producto.nombre,
+                "quantity": qty,
+                "unit_price": unit_price,
+                "currency_id": "COP",
+            })
+            total += unit_price * qty
+
+        if total <= 0:
+            return Response({"error": "El total del carrito debe ser mayor a 0"}, status=400)
+
+        # 3) external_reference único y persistido
+        external_ref = f"ORDER-{carrito.idCarrito}-{int(time.time())}"
+        carrito.external_reference = external_ref
+        carrito.mp_status = "pending"
+        carrito.save(update_fields=["external_reference", "mp_status"])
+
+        # 4) Payload para MP usando settings.py
+        email = request.data.get("email") or "test_user@example.com"
+
+        preference_data = {
+            "items": items_mp,
+            "payer": {"email": email},
+            "external_reference": external_ref,
+            "back_urls": {
+                "success": settings.MP_SUCCESS_URL,
+                "failure": settings.MP_FAILURE_URL,
+                "pending": settings.MP_PENDING_URL,
+            },
+            "notification_url": settings.MP_NOTIFICATION_URL,
+        }
+
+        # Solo enviamos auto_return si no estamos en localhost
+        if getattr(settings, "MP_SEND_AUTO_RETURN", False):
+            preference_data["auto_return"] = "approved"
+
+        # 5) Llamada a Mercado Pago
         try:
-            carrito = self.get_object()
-
-            if carrito.items.count() == 0:
-                return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # 👉 Reusar preferencia si ya existe
-            if carrito.external_reference and carrito.mp_status == "pending":
-                return Response({
-                    "id": carrito.external_reference,
-                    "init_point": carrito.mp_init_point  # si lo guardas
-                }, status=status.HTTP_200_OK)
-
-            # Armar items para Mercado Pago
-            items_mp = [
-                {
-                    "id": str(item.producto.id),
-                    "title": item.producto.nombre,
-                    "quantity": int(item.cantidad),
-                    "unit_price": float(item.precio_unitario),
-                    "currency_id": "COP",
-                }
-                for item in carrito.items.all()
-            ]
-
-            external_ref = f"ORDER-{carrito.idCarrito}-{int(time.time())}"
-            carrito.external_reference = external_ref
-            carrito.mp_status = "pending"  # nuevo campo en Carrito
-            carrito.save()
-
-            preference_data = {
-                "items": items_mp,
-                "payer": {"email": request.data.get("email", "test_user@example.com")},
-                "external_reference": external_ref,
-                "back_urls": {
-                    "success": f"{settings.FRONTEND_URL}/checkout/result?status=success",
-                    "failure": f"{settings.FRONTEND_URL}/checkout/result?status=failure",
-                    "pending": f"{settings.FRONTEND_URL}/checkout/result?status=pending",
+            resp = requests.post(
+                "https://api.mercadopago.com/checkout/preferences",
+                headers={
+                    "Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}",
+                    "Content-Type": "application/json",
                 },
-                "auto_return": "approved",
-                "notification_url": f"{settings.BACKEND_URL}/api/mp/webhook/",
-            }
-
-            result = sdk.preference().create(preference_data)
-            pref = result["response"]
-
-            # 🔒 Guardar init_point para reusarlo
-            carrito.mp_init_point = pref.get("init_point")
-            carrito.save()
-
-            EstadoCarrito.objects.create(
-                carrito=carrito,
-                estado="pendiente",
-                observacion="Preferencia creada en Mercado Pago"
+                json=preference_data,
+                timeout=20
             )
-
-            return Response({
-                "id": pref.get("id"),
-                "init_point": pref.get("init_point"),
-            }, status=status.HTTP_201_CREATED)
-
         except Exception as e:
+            return Response({"error": f"No se pudo contactar a Mercado Pago: {str(e)}"}, status=502)
+
+        if resp.status_code != 201:
+            # Devuelve el detalle exacto de MP (te ayuda a depurar)
+            try:
+                mp_error = resp.json()
+            except Exception:
+                mp_error = resp.text
             return Response(
-                {"error": f"Error al crear preferencia: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "Mercado Pago rechazó la preferencia", "detalle": mp_error},
+                status=resp.status_code
             )
-        
+
+        preference = resp.json()
+        carrito.mp_init_point = preference.get("init_point")
+        carrito.save(update_fields=["mp_init_point"])
+
+        return Response(
+            {"id": preference.get("id"), "init_point": preference.get("init_point")},
+            status=status.HTTP_201_CREATED
+        )
 
 
 class CarritoItemView(viewsets.ModelViewSet):

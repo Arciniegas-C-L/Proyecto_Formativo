@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/GrupoTalla.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 
-// Rutas internas del admin
+// Rutas internas (por si luego quieres navegar a pantallas separadas)
 const ADMIN_ROUTES = {
   GRUPOS_TALLA: '/admin/tallas/grupo',
   EDITAR_GRUPO_TALLA: (id) => `/admin/tallas/grupo/editar/${id}`,
@@ -35,11 +35,20 @@ export function GrupoTalla() {
     cargarGruposTalla();
   }, []);
 
-  const handleError = (error) => {
-    const errorMessage =
-      error.response?.data?.detail || "Error al realizar la operación";
-    setError(errorMessage);
-    toast.error(errorMessage);
+  const extractErrorMessage = (err) => {
+    return (
+      err?.response?.data?.detail ||
+      err?.response?.data?.error ||
+      err?.response?.data?.message ||
+      err?.message ||
+      "Error al realizar la operación"
+    );
+  };
+
+  const handleError = (err) => {
+    const msg = extractErrorMessage(err);
+    setError(msg);
+    toast.error(msg);
   };
 
   const cargarGruposTalla = async () => {
@@ -61,8 +70,8 @@ export function GrupoTalla() {
     if (grupo) {
       setEditingGrupo(grupo);
       setFormData({
-        nombre: grupo.nombre ?? "",
-        descripcion: grupo.descripcion ?? "",
+        nombre: grupo?.nombre ?? "",
+        descripcion: grupo?.descripcion ?? "",
       });
     } else {
       setEditingGrupo(null);
@@ -137,17 +146,22 @@ export function GrupoTalla() {
     }
   };
 
-  //  Cambio importante: ahora usa rutas internas del admin
   const handleAsignarTallas = (grupo) => {
     navigate(ADMIN_ROUTES.ASIGNAR_TALLAS(grupo.idGrupoTalla));
   };
 
+  // Para usar el modal al editar:
   const handleEditar = (grupo) => {
-    navigate(ADMIN_ROUTES.EDITAR_GRUPO_TALLA(grupo.idGrupoTalla), { state: { grupo } });
+    handleOpenDialog(grupo);
+    // Si prefieres pantalla separada:
+    // navigate(ADMIN_ROUTES.EDITAR_GRUPO_TALLA(grupo.idGrupoTalla), { state: { grupo } });
   };
 
+  // Para usar el modal al crear:
   const handleCrear = () => {
-    navigate(ADMIN_ROUTES.CREAR_GRUPO_TALLA);
+    handleOpenDialog();
+    // Si prefieres pantalla separada:
+    // navigate(ADMIN_ROUTES.CREAR_GRUPO_TALLA);
   };
 
   return (
@@ -180,9 +194,12 @@ export function GrupoTalla() {
                   <td>{grupo.nombre}</td>
                   <td>{grupo.descripcion || "-"}</td>
                   <td>
-                    {(grupo.Tallas || []).map((talla) => (
-                      <span key={talla.id} className="chip-talla">
-                        {talla.nombre}
+                    {(grupo.tallas || grupo.Tallas || []).map((talla, index) => (
+                      <span
+                        key={talla?.idTalla ?? talla?.id ?? index}
+                        className="chip-talla"
+                      >
+                        {talla?.nombre ?? "-"}
                       </span>
                     ))}
                   </td>
@@ -219,10 +236,9 @@ export function GrupoTalla() {
       {openDialog && (
         <div className="grupo-modal">
           <div className="grupo-modal-content">
-            <h3>
-              {editingGrupo ? "Editar Grupo de Talla" : "Nuevo Grupo de Talla"}
-            </h3>
+            <h3>{editingGrupo ? "Editar Grupo de Talla" : "Nuevo Grupo de Talla"}</h3>
             {error && <div className="text-error">{error}</div>}
+
             <form onSubmit={handleSubmit}>
               <label>Nombre *</label>
               <input
@@ -233,13 +249,15 @@ export function GrupoTalla() {
                 maxLength={45}
                 required
               />
+
               <label>Descripción</label>
               <textarea
                 name="descripcion"
                 value={formData.descripcion}
                 onChange={handleInputChange}
-                rows="3"
-              ></textarea>
+                rows={3}
+              />
+
               <div className="grupo-modal-buttons">
                 <button
                   type="button"
