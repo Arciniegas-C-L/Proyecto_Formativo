@@ -7,18 +7,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from .serializer import *
-from .models import (
-    Direccion, Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
-    Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
-    Carrito, CarritoItem, EstadoCarrito, Subcategoria, Talla, GrupoTalla
-)
+from .models import *
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, get_user_model
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db import models
-from BACKEND.permissions import IsAdmin, IsCliente, IsAdminWriteClienteRead
+from BACKEND.permissions import IsAdmin, IsCliente, IsAdminWriteClienteRead, NotGuest
 import random
 import string
 from django.utils import timezone
@@ -26,6 +22,7 @@ from datetime import timedelta
 import time, mercadopago 
 import requests
 import json
+from django.http import HttpResponse
 
 sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
 
@@ -1416,7 +1413,7 @@ class CarritoView(viewsets.ModelViewSet):
     def crear_preferencia_pago(self, request, pk=None):
         """
         Crea una preferencia de pago en Mercado Pago para este carrito.
-        Espera opcionalmente: { "email": "comprador@test.com" }
+        Request opcional: { "email": "comprador@test.com" }
         """
         carrito = self.get_object()
 
@@ -1432,10 +1429,10 @@ class CarritoView(viewsets.ModelViewSet):
                 unit_price = float(it.precio_unitario)
                 qty = int(it.cantidad)
             except Exception:
-                return Response({"error": "Ítems con datos inválidos (precio/cantidad)"}, status=400)
+                return Response({"error": "Ítems con datos inválidos (precio/cantidad)"}, status=status.HTTP_400_BAD_REQUEST)
 
             if unit_price <= 0 or qty <= 0:
-                return Response({"error": "Precio o cantidad inválidos en algún ítem"}, status=400)
+                return Response({"error": "Precio o cantidad inválidos en algún ítem"}, status=status.HTTP_400_BAD_REQUEST)
 
             items_mp.append({
                 "id": str(it.producto.id),
@@ -1447,7 +1444,7 @@ class CarritoView(viewsets.ModelViewSet):
             total += unit_price * qty
 
         if total <= 0:
-            return Response({"error": "El total del carrito debe ser mayor a 0"}, status=400)
+            return Response({"error": "El total del carrito debe ser mayor a 0"}, status=status.HTTP_400_BAD_REQUEST)
 
         # 3) external_reference único y persistido
         external_ref = f"ORDER-{carrito.idCarrito}-{int(time.time())}"
@@ -1455,22 +1452,23 @@ class CarritoView(viewsets.ModelViewSet):
         carrito.mp_status = "pending"
         carrito.save(update_fields=["external_reference", "mp_status"])
 
-        # 4) Payload para MP usando settings.py
+        # 4) Payload para MP usando settings.py  ✅ React recibe directo
         email = request.data.get("email") or "test_user@example.com"
+
+        # ⬇️ AQUI se arma la url de retorno a tu React
+        return_url = f"{settings.FRONTEND_URL}{settings.FRONTEND_RETURN_PATH}?carritoId={carrito.idCarrito}"
 
         preference_data = {
             "items": items_mp,
             "payer": {"email": email},
             "external_reference": external_ref,
             "back_urls": {
-                "success": settings.MP_SUCCESS_URL,
-                "failure": settings.MP_FAILURE_URL,
-                "pending": settings.MP_PENDING_URL,
+                "success": return_url,
+                "failure": return_url,
+                "pending": return_url,
             },
             "notification_url": settings.MP_NOTIFICATION_URL,
         }
-
-        # Solo enviamos auto_return si no estamos en localhost
         if getattr(settings, "MP_SEND_AUTO_RETURN", False):
             preference_data["auto_return"] = "approved"
 
@@ -1486,10 +1484,10 @@ class CarritoView(viewsets.ModelViewSet):
                 timeout=20
             )
         except Exception as e:
-            return Response({"error": f"No se pudo contactar a Mercado Pago: {str(e)}"}, status=502)
+            return Response({"error": f"No se pudo contactar a Mercado Pago: {str(e)}"},
+                            status=status.HTTP_502_BAD_GATEWAY)
 
         if resp.status_code != 201:
-            # Devuelve el detalle exacto de MP (te ayuda a depurar)
             try:
                 mp_error = resp.json()
             except Exception:
@@ -1507,6 +1505,27 @@ class CarritoView(viewsets.ModelViewSet):
             {"id": preference.get("id"), "init_point": preference.get("init_point")},
             status=status.HTTP_201_CREATED
         )
+    
+        print("MP preference_data:", preference_data)
+        resp = requests.post(
+            "https://api.mercadopago.com/checkout/preferences",
+            headers={
+                "Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json=preference_data,
+            timeout=20  
+            )
+        print("MP preference response:", resp.status_code, resp.text)
+
+        return_url = f"{settings.MP_RETURN_URL}?carritoId={carrito.idCarrito}"
+        preference_data["back_urls"] = {
+            "success": return_url,
+            "failure": return_url,
+            "pending": return_url,
+        }
+        if getattr(settings, "MP_SEND_AUTO_RETURN", False):
+            preference_data["auto_return"] = "approved"
 
 
 class CarritoItemView(viewsets.ModelViewSet):
@@ -1610,7 +1629,159 @@ class EstadoCarritoView(viewsets.ModelViewSet):
             })
         except Carrito.DoesNotExist:
             return Response({"error": "Carrito no encontrado"}, status=404)
+        
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def retorno(self, request):
+        # Log para verificar que MP sí llamó esta URL
+        print("RETORNO MP ->", request.GET.dict())
 
+        status_mp   = request.GET.get("status", "")
+        payment_id  = request.GET.get("payment_id", "")
+        external_ref = request.GET.get("external_reference", "")
+        carrito_id  = request.GET.get("carritoId", "")
+
+        dest = (
+            f"{settings.FRONTEND_URL}{settings.FRONTEND_RETURN_PATH}"
+            f"?status={status_mp}&payment_id={payment_id}"
+            f"&external_reference={external_ref}"
+            f"{f'&carritoId={carrito_id}' if carrito_id else ''}"
+        )
+
+        html = f"""<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Confirmando pago…</title>
+  <meta http-equiv="refresh" content="5;url={dest}">
+  <style>
+    body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 32px; }}
+    .card {{ max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Pago procesado</h2>
+    <p>Te llevaremos a tu factura en unos segundos…</p>
+    <p>Si no ocurre nada, <a href="{dest}">haz clic aquí para continuar</a>.</p>
+  </div>
+  <script>setTimeout(function(){{ location.replace("{dest}"); }}, 5000);</script>
+</body>
+</html>"""
+        return HttpResponse(html)
+
+class FacturaView(viewsets.ModelViewSet):
+    queryset = Factura.objects.all().select_related("usuario", "pedido")
+    serializer_class = FacturaSerializer
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+
+    @action(detail=False, methods=["post"])
+    @transaction.atomic
+    def crear_desde_pago(self, request):
+        """
+        Crea una factura una sola vez (idempotente) verificando el pago en MP.
+        Body:
+        {
+          "payment_id": "125178556047",            // opcional si mandas external_reference
+          "external_reference": "ORDER-2-1757556908", // recomendado
+          "carrito_id": 2                           // opcional, se infiere por external_reference
+        }
+        """
+        payment_id = str(request.data.get("payment_id") or "").strip()
+        external_ref = str(request.data.get("external_reference") or "").strip()
+        carrito_id = request.data.get("carrito_id")
+
+        if not external_ref and not carrito_id and not payment_id:
+            return Response({"error": "Debes enviar external_reference o carrito_id o payment_id"},
+                            status=400)
+
+        # 1) Resolver carrito
+        try:
+            if external_ref:
+                carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
+                    external_reference=external_ref
+                )
+            elif carrito_id:
+                carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
+                    pk=carrito_id
+                )
+                external_ref = carrito.external_reference or external_ref
+            else:
+                # último recurso: buscar carrito por payment_id ya guardado
+                carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
+                    payment_id=payment_id
+                )
+                external_ref = carrito.external_reference or external_ref
+        except Carrito.DoesNotExist:
+            return Response({"error": "Carrito no encontrado"}, status=404)
+
+        if carrito.items.count() == 0:
+            return Response({"error": "El carrito está vacío"}, status=400)
+
+        # 2) Verificar/leer estado del pago en MP (si tenemos payment_id)
+        status_mp = None
+        if payment_id:
+            url = f"https://api.mercadopago.com/v1/payments/{payment_id}"
+            resp = requests.get(url, headers={"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"}, timeout=15)
+            if resp.status_code != 200:
+                return Response({"error": "No se pudo consultar el pago en MP"}, status=502)
+            data_mp = resp.json()
+            status_mp = data_mp.get("status")  # approved | pending | rejected
+
+            # Sincronizar al carrito (útil si llegó antes que el webhook)
+            carrito.payment_id = payment_id
+            carrito.mp_status = status_mp or carrito.mp_status
+            carrito.save(update_fields=["payment_id", "mp_status"])
+
+        # 3) Idempotencia: si ya existe factura para este pago o referencia, devuélvela
+        if payment_id:
+            f_exist = Factura.objects.filter(mp_payment_id=payment_id).first()
+            if f_exist:
+                return Response(FacturaSerializer(f_exist).data, status=200)
+        if external_ref:
+            f_exist = Factura.objects.filter(numero=external_ref).first()  # si usas ref como número
+            if f_exist:
+                return Response(FacturaSerializer(f_exist).data, status=200)
+
+        # 4) Armar payload para FacturaCreateSerializer
+        #    Usa como número la external_reference (legible) o un consecutivo temporal
+        numero = external_ref or f"F-{carrito.idCarrito}-{int(time.time())}"
+        pedido = None
+        if not hasattr(carrito, "pedido") or not carrito.estado:
+            # Si no creaste pedido antes, puedes crear uno simple aquí
+            pedido = Pedido.objects.create(
+                usuario=carrito.usuario, total=carrito.calcular_total(), estado=True
+            )
+        else:
+            pedido = carrito.pedido
+
+        items = []
+        for it in carrito.items.all():
+            items.append({
+                "producto_id": it.producto_id,
+                "talla_id": getattr(it.talla, "id", None),
+                "cantidad": int(it.cantidad),
+                "precio": str(Decimal(it.precio_unitario)),  # tu serializer acepta Decimal
+            })
+
+        payload = {
+            "numero": numero,
+            "pedido_id": pedido.idPedido,
+            "usuario_id": carrito.usuario.idUsuario,
+            "moneda": "COP",
+            "metodo_pago": "mercadopago",
+            "mp_payment_id": payment_id or "",
+            "items": items
+        }
+
+        ser = FacturaCreateSerializer(data=payload)
+        ser.is_valid(raise_exception=True)
+        factura = ser.save()   # descuenta stock e inserta ítems
+
+        # 5) Marcar carrito cerrado
+        carrito.estado = False
+        carrito.save(update_fields=["estado"])
+
+        return Response(FacturaSerializer(factura).data, status=201)
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
@@ -1799,3 +1970,4 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+

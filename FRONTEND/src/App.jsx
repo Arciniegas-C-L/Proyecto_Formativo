@@ -29,6 +29,7 @@ import { RolFormPage } from "./pages/RolFormPage.jsx";
 import { RolListaPage } from "./pages/RolListaPage.jsx";
 import { GrupoTallaPage } from "./pages/GrupoTallePage.jsx";
 import { TallasPage } from "./pages/TallasPage.jsx";
+import { RetornoMPpage } from "./pages/RetornoMPpage";
 
 // Layout y contexto Admin
 import AdminLayout from "./components/Admin/AdminLayout.jsx";
@@ -73,11 +74,20 @@ function AppContent() {
           <Route
             path="/categorias"
             element={
-              <RutaPrivada role={["cliente", "administrador"]}>
+              <RutaPrivada role={["administrador"]}>
                 <CategoriasPage />
               </RutaPrivada>
             }
           />
+          <Route
+            path="/RetornoMP"
+            element={
+              <RutaPrivada role={["cliente", "administrador"]}>
+                <RetornoMPpage />
+              </RutaPrivada>
+            }
+          />
+
 
           {/* Admin con layout */}
           <Route
