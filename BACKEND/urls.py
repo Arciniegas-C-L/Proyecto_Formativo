@@ -26,6 +26,7 @@ router.register(r'subcategoria', views.SubcategoriaViewSet, 'subcategoria')
 router.register(r'talla', views.TallaViewSet, 'talla')
 router.register(r'grupo-talla', views.GrupoTallaViewSet, 'grupo-talla')
 router.register(r'facturas', views.FacturaView, 'facturas')
+router.register(r'pedidoproductos', views.PedidoProductoView, basename='pedidoproducto')
 
 urlpatterns = [
     path('api/', include(router.urls)),

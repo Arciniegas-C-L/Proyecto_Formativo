@@ -2,7 +2,7 @@ import ProductoCard from '../Catalogo/ProductoCard';
 // import ProductoRecomendado from './ProductoRecomendado';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmarCompra from './ConfirmarCompra';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaEye } from 'react-icons/fa';
@@ -11,7 +11,7 @@ import {
   actualizarCantidad,
   eliminarProducto,
   limpiarCarrito,
-  finalizarCompra,     // lo dejamos por si lo usas fuera de MP
+  finalizarCompra,     // por si lo usas fuera de MP
   crearPreferenciaPago // 🔥 integración Mercado Pago
 } from '../../api/CarritoApi';
 import { getALLProductos } from '../../api/Producto.api';
@@ -19,6 +19,9 @@ import '../../assets/css/Carrito.css';
 
 const API_BASE_URL = "http://127.0.0.1:8000"; // Backend Django
 const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
+
+// 👉 bandera para decirle al backend que NO toque stock en acciones del carrito
+const NO_STOCK_TOUCH = { skip_stock: true, reserve: false };
 
 // Hook para cargar el SDK de Mercado Pago si no está presente
 function useMercadoPagoLoader(publicKey) {
@@ -123,7 +126,12 @@ export function Carrito() {
     try {
       if (!carrito) return;
 
-      const response = await actualizarCantidad(carrito.idCarrito, itemId, nuevaCantidad);
+      const response = await actualizarCantidad(
+        carrito.idCarrito,
+        itemId,
+        nuevaCantidad,
+        NO_STOCK_TOUCH // 👈 no tocar stock desde carrito
+      );
 
       if (response.data) {
         if (response.data.items && Array.isArray(response.data.items)) {
@@ -177,7 +185,11 @@ export function Carrito() {
     try {
       if (!carrito) return;
 
-      const response = await eliminarProducto(carrito.idCarrito, itemId);
+      const response = await eliminarProducto(
+        carrito.idCarrito,
+        itemId,
+        NO_STOCK_TOUCH // 👈 no devolver stock
+      );
       if (response.data) {
         setCarrito(response.data);
         setItems(response.data.items || []);
@@ -193,7 +205,10 @@ export function Carrito() {
     try {
       if (!carrito) return;
 
-      const response = await limpiarCarrito(carrito.idCarrito);
+      const response = await limpiarCarrito(
+        carrito.idCarrito,
+        NO_STOCK_TOUCH // 👈 no tocar stock
+      );
       if (response.data) {
         setCarrito(response.data);
         setItems([]);
@@ -220,7 +235,6 @@ export function Carrito() {
 
       setCreatingPreference(true);
 
-      // 👉 Ahora usamos nuestra función centralizada
       const { data } = await crearPreferenciaPago(carrito.idCarrito, usuario?.email);
 
       if (!data?.init_point) {
@@ -230,18 +244,18 @@ export function Carrito() {
 
       window.location.href = data.init_point; // Redirección a Checkout Pro
     } catch (err) {
-  console.error("Error al crear preferencia:", err);
-  const detalle = err?.response?.data?.detalle;
-  // MP a veces manda {message, error, cause:[{code,description}]}
-  const msg =
-    detalle?.message ||
-    detalle?.error ||
-    detalle?.cause?.[0]?.description ||
-    err?.response?.data?.error ||
-    "Error al iniciar el pago";
-  toast.error(msg);
-  }
-    
+      console.error("Error al crear preferencia:", err);
+      const detalle = err?.response?.data?.detalle;
+      const msg =
+        detalle?.message ||
+        detalle?.error ||
+        detalle?.cause?.[0]?.description ||
+        err?.response?.data?.error ||
+        "Error al iniciar el pago";
+      toast.error(msg);
+    } finally {
+      setCreatingPreference(false);
+    }
   };
 
   const handleFinalizarCompra = async () => {
@@ -381,13 +395,14 @@ export function Carrito() {
                         <div className="item-cantidad">
                           <button
                             onClick={() => handleActualizarCantidad(item.idCarritoItem, item.cantidad - 1)}
-                            disabled={item.cantidad <= 1}
+                            disabled={creatingPreference || item.cantidad <= 1}  // 👈 bloquea durante pago
                           >
                             <FaMinus />
                           </button>
                           <span>{item.cantidad}</span>
                           <button
                             onClick={() => handleActualizarCantidad(item.idCarritoItem, item.cantidad + 1)}
+                            disabled={creatingPreference} // 👈 bloquea durante pago
                           >
                             <FaPlus />
                           </button>
@@ -403,6 +418,7 @@ export function Carrito() {
                       className="btn-eliminar"
                       onClick={() => handleEliminarProducto(item.idCarritoItem)}
                       title="Eliminar producto"
+                      disabled={creatingPreference} // 👈 bloquea durante pago
                     >
                       <FaTrash />
                     </button>
@@ -434,6 +450,7 @@ export function Carrito() {
                   <button
                     className="btn-limpiar"
                     onClick={handleLimpiarCarrito}
+                    disabled={creatingPreference} // 👈 bloquea durante pago
                   >
                     Limpiar Carrito
                   </button>

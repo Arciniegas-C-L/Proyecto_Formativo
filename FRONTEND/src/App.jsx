@@ -30,6 +30,7 @@ import { RolListaPage } from "./pages/RolListaPage.jsx";
 import { GrupoTallaPage } from "./pages/GrupoTallePage.jsx";
 import { TallasPage } from "./pages/TallasPage.jsx";
 import { RetornoMPpage } from "./pages/RetornoMPpage";
+import {MisPedidosPage} from "./pages/MisPedidosPage"
 
 // Layout y contexto Admin
 import AdminLayout from "./components/Admin/AdminLayout.jsx";
@@ -76,6 +77,14 @@ function AppContent() {
             element={
               <RutaPrivada role={["administrador"]}>
                 <CategoriasPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/Mispedidos"
+            element={
+              <RutaPrivada role={["administrador", "cliente"]}>
+                <MisPedidosPage />
               </RutaPrivada>
             }
           />

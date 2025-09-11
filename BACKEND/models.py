@@ -9,6 +9,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
+
 # ----------------------------
 # Roles
 # ----------------------------
@@ -510,17 +511,17 @@ class Factura(models.Model):
     numero       = models.CharField(max_length=32, unique=True)         # consecutivo propio
     pedido       = models.OneToOneField('Pedido', on_delete=models.PROTECT)
     usuario      = models.ForeignKey('Usuario', on_delete=models.PROTECT)
-
     subtotal     = models.DecimalField(max_digits=12, decimal_places=2)
     impuestos    = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total        = models.DecimalField(max_digits=12, decimal_places=2)
     moneda       = models.CharField(max_length=8, default='COP')
-
     metodo_pago  = models.CharField(max_length=32, default='mercadopago')
     mp_payment_id= models.CharField(max_length=64, blank=True, default='')
-
     emitida_en   = models.DateTimeField(default=timezone.now)
     estado       = models.CharField(max_length=16, default='emitida')   # emitida, anulada, etc.
+    class Meta:
+        db_table = "BACKEND_factura"   # <— coincide con lo que busca el ORM
+
 
 class FacturaItem(models.Model):
     factura    = models.ForeignKey(Factura, related_name='items', on_delete=models.CASCADE)
@@ -529,3 +530,5 @@ class FacturaItem(models.Model):
     cantidad   = models.PositiveIntegerField()
     precio     = models.DecimalField(max_digits=12, decimal_places=2)   # unitario
     subtotal   = models.DecimalField(max_digits=12, decimal_places=2)
+    class Meta:
+        db_table = "BACKEND_facturaitem"

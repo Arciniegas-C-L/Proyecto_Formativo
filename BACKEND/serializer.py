@@ -1,11 +1,34 @@
 from decimal import Decimal
-from rest_framework import serializers
-from .models import *
+
 from django.db import transaction
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
+from django.db.models import Q
+from django.utils import timezone
+
+from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+# Importa modelos de forma explícita (¡nada de import *!)
+from .models import (
+    # usuarios / roles / direcciones
+    Usuario, Rol, Direccion,
+
+    # catálogo / stock
+    Proveedor, Categoria, Subcategoria, GrupoTalla, Talla,
+    Producto, Inventario, Movimiento,
+
+    # pedidos / pagos
+    Pedido, PedidoProducto, Pago, TipoPago,
+
+    # carrito
+    Carrito, CarritoItem, EstadoCarrito,
+
+    # facturación
+    Factura, FacturaItem,
+)
+
+
+from django.db.models import Q   # <-- IMPORTANTE
+from django.contrib.auth import authenticate
 # Serializer para Direccion
 class DireccionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -598,52 +621,53 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role']
 
 # ---------- Items de entrada (crear factura) ----------
+
 class FacturaItemCreateSerializer(serializers.Serializer):
     producto_id = serializers.IntegerField()
-    talla_id    = serializers.IntegerField(required=False, allow_null=True)
-    cantidad    = serializers.IntegerField(min_value=1)
-    # precio unitario que se facturará (puedes omitirlo y tomar Producto.precio)
-    precio      = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    talla_id = serializers.IntegerField(required=False, allow_null=True)
+    cantidad = serializers.IntegerField(min_value=1)
+    precio = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
 
     def validate(self, data):
         # Producto
         try:
             producto = Producto.objects.get(pk=data["producto_id"])
         except Producto.DoesNotExist:
-            raise ValidationError({"producto_id": "Producto no existe."})
+            raise serializers.ValidationError({"producto_id": "Producto no existe."})
 
         # Precio por defecto: el del producto
         if "precio" not in data or data["precio"] is None:
-            # Producto.precio es entero en tu modelo; lo convertimos a Decimal
             data["precio"] = Decimal(str(producto.precio))
 
-        # Talla (puede ser opcional)
+        # Talla (opcional)
         talla = None
         talla_id = data.get("talla_id")
         if talla_id:
             try:
                 talla = Talla.objects.get(pk=talla_id)
             except Talla.DoesNotExist:
-                raise ValidationError({"talla_id": "Talla no existe."})
+                raise serializers.ValidationError({"talla_id": "Talla no existe."})
 
-        # Debe existir inventario para (producto, talla)
-        inv_qs = Inventario.objects.filter(producto=producto, talla=talla)
+        # Inventario para (producto, talla)
+        inv_qs = Inventario.objects.filter(producto=producto)
+        inv_qs = inv_qs.filter(talla__isnull=True) if talla is None else inv_qs.filter(talla=talla)
+
         if not inv_qs.exists():
-            raise ValidationError({"inventario": "No existe inventario para ese producto/talla."})
+            raise serializers.ValidationError({"inventario": "No existe inventario para ese producto/talla."})
 
+        # Guarda objetos resueltos para la fase de create()
         data["producto"] = producto
-        data["talla"]    = talla
+        data["talla"] = talla
         data["inventario_qs"] = inv_qs
         return data
 
 
-# ---------- Crear factura (con descuento de stock) ----------
 class FacturaCreateSerializer(serializers.Serializer):
     # Cabecera
-    numero      = serializers.CharField(max_length=32)
-    pedido_id   = serializers.IntegerField()
-    usuario_id  = serializers.IntegerField()
-    moneda      = serializers.CharField(max_length=8, default="COP")
+    numero = serializers.CharField(max_length=32)
+    pedido_id = serializers.IntegerField()
+    usuario_id = serializers.IntegerField()
+    moneda = serializers.CharField(max_length=8, default="COP")
     metodo_pago = serializers.CharField(max_length=32, default="mercadopago")
     mp_payment_id = serializers.CharField(max_length=64, required=False, allow_blank=True)
 
@@ -651,123 +675,186 @@ class FacturaCreateSerializer(serializers.Serializer):
     items = FacturaItemCreateSerializer(many=True)
 
     def validate(self, data):
-        if not data["items"]:
-            raise ValidationError({"items": "Debe enviar al menos un ítem."})
+        if not data.get("items"):
+            raise serializers.ValidationError({"items": "Debe enviar al menos un ítem."})
 
         # Pedido y usuario
         try:
             data["pedido"] = Pedido.objects.get(pk=data["pedido_id"])
         except Pedido.DoesNotExist:
-            raise ValidationError({"pedido_id": "Pedido no existe."})
+            raise serializers.ValidationError({"pedido_id": "Pedido no existe."})
 
         try:
             data["usuario"] = Usuario.objects.get(pk=data["usuario_id"])
         except Usuario.DoesNotExist:
-            raise ValidationError({"usuario_id": "Usuario no existe."})
+            raise serializers.ValidationError({"usuario_id": "Usuario no existe."})
 
-        # Numero de factura único
+        # Número de factura único
         if Factura.objects.filter(numero=data["numero"]).exists():
-            raise ValidationError({"numero": "Ya existe una factura con ese número."})
+            raise serializers.ValidationError({"numero": "Ya existe una factura con ese número."})
 
         return data
 
     @transaction.atomic
     def create(self, validated):
-        pedido   = validated["pedido"]
-        usuario  = validated["usuario"]
-        numero   = validated["numero"]
-        moneda   = validated.get("moneda", "COP")
-        metodo   = validated.get("metodo_pago", "mercadopago")
-        mp_id    = validated.get("mp_payment_id", "")
+        pedido = validated["pedido"]
+        usuario = validated["usuario"]
+        numero = validated["numero"]
+        moneda = validated.get("moneda", "COP")
+        metodo = validated.get("metodo_pago", "mercadopago")
+        mp_id = validated.get("mp_payment_id", "")
 
-        # --- BLOQUEO E INVENTARIO ---
-        # Reunimos todas las claves (producto, talla) a bloquear
-        claves = set()
+        # 1) Bloquear inventario de todos los (producto, talla)
+        claves = {(it["producto"].pk, (it["talla"].pk if it["talla"] else None)) for it in validated["items"]}
+        q = Q()
+        for prod_id, talla_id in claves:
+            if talla_id is None:
+                q |= Q(producto_id=prod_id, talla_id__isnull=True)
+            else:
+                q |= Q(producto_id=prod_id, talla_id=talla_id)
+        inv_bloq = Inventario.objects.select_for_update().filter(q) if q else Inventario.objects.none()
+        inv_map = {(i.producto_id, i.talla_id): i for i in inv_bloq}
+
+        # 2) Validar stock y acumular subtotal
+        subtotal = Decimal("0.00")
         for it in validated["items"]:
             prod_id = it["producto"].pk
             talla_id = it["talla"].pk if it["talla"] else None
-            claves.add((prod_id, talla_id))
-
-        # Bloquear todos los inventarios necesarios
-        inv_bloq = Inventario.objects.select_for_update().filter(
-            models.Q(*[], **{}),  # truco para permitir OR condicional
-        )
-        # Construimos un OR grande:
-        q = None
-        for prod_id, talla_id in claves:
-            cond = models.Q(producto_id=prod_id, talla_id=talla_id)
-            q = cond if q is None else (q | cond)
-        inv_bloq = Inventario.objects.select_for_update().filter(q) if q is not None else Inventario.objects.none()
-
-        inv_map = {(i.producto_id, i.talla_id): i for i in inv_bloq}
-
-        # Validar stock y descontar
-        subtotal = Decimal("0.00")
-        for it in validated["items"]:
-            prod_id   = it["producto"].pk
-            talla_id  = it["talla"].pk if it["talla"] else None
-            cantidad  = int(it["cantidad"])
-            precio    = Decimal(it["precio"])
+            cantidad = int(it["cantidad"])
+            precio = Decimal(str(it["precio"]))
 
             inv = inv_map.get((prod_id, talla_id))
             if not inv:
-                raise ValidationError({"inventario": "No existe inventario para ese producto/talla."})
+                raise serializers.ValidationError({"inventario": "No existe inventario para ese producto/talla."})
 
+            # AJUSTA 'stock_talla' al nombre real de tu campo de stock
             if inv.stock_talla < cantidad:
-                raise ValidationError({
-                    "inventario": f"Stock insuficiente para {it['producto'].nombre} "
-                                f"{' - Talla ' + it['talla'].nombre if it['talla'] else ''}. "
-                                f"Disponible: {inv.stock_talla}"
-                })
+                nombre_prod = getattr(it["producto"], "nombre", f"Producto {prod_id}")
+                nombre_talla = getattr(it["talla"], "nombre", "") if it["talla"] else ""
+                msg = f"Stock insuficiente para {nombre_prod}"
+                if nombre_talla:
+                    msg += f" - Talla {nombre_talla}"
+                msg += f". Disponible: {inv.stock_talla}"
+                raise serializers.ValidationError({"inventario": msg})
 
+            # Descontar en memoria
             inv.stock_talla -= cantidad
-            inv.cantidad = max(0, inv.stock_talla)  # si usas ambos campos
-            inv.save(update_fields=["stock_talla", "cantidad"])
-
             subtotal += (precio * Decimal(cantidad))
 
-        # Calcular totales (ajusta impuestos si usas IVA)
-        impuestos = Decimal("0.00")
-        total     = subtotal + impuestos
+        # 3) Guardar inventarios
+        for inv in inv_bloq:
+            inv.save(update_fields=["stock_talla"])  # agrega otros campos si procede
 
-        # Crear factura
+        # 4) Totales
+        impuestos = Decimal("0.00")   # ajusta si manejas IVA
+        total = subtotal + impuestos
+
+        # 5) Crear factura
         factura = Factura.objects.create(
-            numero=numero, pedido=pedido, usuario=usuario,
-            subtotal=subtotal, impuestos=impuestos, total=total,
-            moneda=moneda, metodo_pago=metodo, mp_payment_id=mp_id,
-            emitida_en=timezone.now(), estado="emitida"
+            numero=numero,
+            pedido=pedido,
+            usuario=usuario,
+            subtotal=subtotal,
+            impuestos=impuestos,
+            total=total,
+            moneda=moneda,
+            metodo_pago=metodo,
+            mp_payment_id=mp_id,
+            emitida_en=timezone.now(),
+            estado="emitida",
         )
 
-        # Crear items
+        # 6) Crear ítems
         items_bulk = []
         for it in validated["items"]:
+            precio = Decimal(str(it["precio"]))
+            cantidad = int(it["cantidad"])
+            descripcion = (it["producto"].descripcion or getattr(it["producto"], "nombre", ""))[:255]
             items_bulk.append(FacturaItem(
                 factura=factura,
                 producto=it["producto"],
-                descripcion=it["producto"].descripcion[:255] if it["producto"].descripcion else it["producto"].nombre,
-                cantidad=int(it["cantidad"]),
-                precio=Decimal(it["precio"]),
-                subtotal=Decimal(it["precio"]) * Decimal(it["cantidad"])
+                descripcion=descripcion,
+                cantidad=cantidad,
+                precio=precio,
+                subtotal=precio * Decimal(cantidad),
             ))
         FacturaItem.objects.bulk_create(items_bulk)
 
         return factura
 
-
 # ---------- Serializers de salida ----------
 class FacturaItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FacturaItem
+        model = FacturaItem            # <-- era Factura, corregido
         fields = ("id", "producto", "descripcion", "cantidad", "precio", "subtotal")
-
 
 class FacturaSerializer(serializers.ModelSerializer):
     items = FacturaItemSerializer(many=True, read_only=True)
-
     class Meta:
         model = Factura
         fields = (
             "id", "numero", "pedido", "usuario",
             "subtotal", "impuestos", "total", "moneda",
             "metodo_pago", "mp_payment_id", "emitida_en", "estado", "items"
-        )    
+        )
+
+# --- NUEVO: items dentro del pedido (ligero, para listar) ---
+class PedidoProductoItemLiteSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    producto_imagen = serializers.SerializerMethodField()
+    talla_nombre = serializers.CharField(source='talla.nombre', read_only=True, required=False)
+    precio_unitario = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PedidoProducto
+        # Ajusta campos según tu modelo real (cantidad / precio pueden llamarse diferente)
+        fields = [
+            'id',              # id del item
+            'producto',        # id del producto
+            'producto_nombre',
+            'producto_imagen',
+            'talla',           # id talla (si existe en tu modelo)
+            'talla_nombre',
+            'cantidad',        # si no tienes campo, déjalo y calculamos subtotal con 1
+            'precio_unitario',
+            'subtotal',
+        ]
+
+    def get_producto_imagen(self, obj):
+        img = getattr(getattr(obj, 'producto', None), 'imagen', None)
+        # si usas ImageField:
+        try:
+            return img.url if img else None
+        except Exception:
+            return None
+
+    def _precio_base(self, obj):
+        # Si el modelo del item tiene precio, úsalo; si no, usa el del producto
+        p = getattr(obj, 'precio', None)
+        if p is not None:
+            return p
+        return getattr(getattr(obj, 'producto', None), 'precio', 0)
+
+    def get_precio_unitario(self, obj):
+        return self._precio_base(obj)
+
+    def get_subtotal(self, obj):
+        cant = getattr(obj, 'cantidad', 1) or 1
+        return self._precio_base(obj) * cant
+
+
+# --- NUEVO: Pedido con items embebidos ---
+class PedidoConItemsSerializer(serializers.ModelSerializer):
+    # Usamos la relación reversa por defecto: pedidoproducto_set
+    items = PedidoProductoItemLiteSerializer(source='pedidoproducto_set', many=True, read_only=True)
+    estado_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Pedido
+        # Agrega/ajusta más campos si los tienes (fecha, etc.)
+        fields = ['idPedido', 'total', 'estado', 'estado_label', 'items', 'usuario']
+
+    def get_estado_label(self, obj):
+        return "Completado" if getattr(obj, 'estado', False) else "Pendiente"
+

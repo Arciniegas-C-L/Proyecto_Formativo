@@ -1,30 +1,125 @@
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
-from rest_framework import viewsets, status, serializers
-from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
-from .serializer import *
-from .models import *
-from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth import authenticate, get_user_model
-from django.core.mail import send_mail
-from django.conf import settings
-from django.db import models
-from BACKEND.permissions import IsAdmin, IsCliente, IsAdminWriteClienteRead, NotGuest
+# --- Python stdlib
+import json
 import random
 import string
-from django.utils import timezone
+import time
 from datetime import timedelta
-import time, mercadopago 
-import requests
-import json
-from django.http import HttpResponse
+from decimal import Decimal
 
+# --- Django
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.db import models, transaction
+from django.db.models import Q
+from django.http import HttpResponse
+from django.utils import timezone
+
+# --- DRF
+from rest_framework import status, viewsets, serializers
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+# --- JWT
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+# --- Terceros
+import requests
+import mercadopago
+
+# --- Permisos del proyecto
+from BACKEND.permissions import (
+    IsAdmin,
+    IsCliente,
+    IsAdminWriteClienteRead,
+    AdminandCliente,
+    AllowGuestReadOnly,
+    NotGuest,
+)
+
+# --- MODELOS del proyecto (import explícito)
+from .models import (
+    # básicos
+    Rol,
+    Usuario,
+    Direccion,
+    Proveedor,
+    Categoria,
+    Subcategoria,
+    GrupoTalla,
+    Talla,
+
+    # catálogo / stock / pedidos
+    Producto,
+    Inventario,
+    Movimiento,
+    Pedido,
+    PedidoProducto,
+
+    # pagos / carrito
+    Pago,
+    TipoPago,
+    CodigoRecuperacion,
+    Carrito,
+    CarritoItem,
+    EstadoCarrito,
+
+    # facturación
+    Factura,
+    FacturaItem,
+)
+
+# --- SERIALIZERS del proyecto (import explícito)
+from .serializer import (
+    # auth / usuario
+    LoginSerializer,
+    UsuarioSerializer,
+    UsuarioRegistroSerializer,
+    UserSerializer,
+    DireccionSerializer,
+    RolSerializer,
+
+    # catálogo / stock / pedidos
+    ProveedorSerializer,
+    CategoriaSerializer,
+    SubcategoriaSerializer,
+    GrupoTallaSerializer,
+    TallaSerializer,
+    ProductoSerializer,
+    InventarioSerializer,
+    InventarioAgrupadoSerializer,
+    MovimientoSerializer,
+    PedidoSerializer,
+    PedidoProductoSerializer,
+
+    # pagos / carrito
+    PagoSerializer,
+    TipoPagoSerializer,
+    CarritoSerializer,
+    CarritoCreateSerializer,
+    CarritoUpdateSerializer,
+    CarritoItemSerializer,
+    CarritoItemCreateSerializer,
+    EstadoCarritoSerializer,
+
+    # facturación
+    FacturaSerializer,
+    FacturaItemSerializer,
+    FacturaCreateSerializer,
+)
+
+# --- SDK Mercado Pago (usa tu token de settings)
 sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
+
 
 # CRUD de direcciones de usuario
 class DireccionViewSet(viewsets.ModelViewSet):
@@ -39,51 +134,6 @@ class DireccionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Asignar el usuario autenticado a la dirección
         serializer.save(usuario=self.request.user)
-from rest_framework.decorators import action
-from django.contrib.auth.hashers import make_password
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.core.mail import send_mail
-from django.conf import settings
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth import authenticate
-from .serializer import (
-    CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
-    ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
-    PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
-    CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
-    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer,
-    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer,
-)
-from .models import (
-    Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
-    Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
-    Carrito, CarritoItem, EstadoCarrito, Subcategoria, Talla, GrupoTalla
-)
-from django.contrib.auth.models import User
-from rest_framework.permissions import IsAdminUser
-from .serializer import UserSerializer
-from django.db import models
-from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from BACKEND.permissions import IsAdminWriteClienteRead, AdminandCliente, AllowGuestReadOnly, NotGuest
-import random
-import string
-from django.utils import timezone
-from datetime import timedelta
-from rest_framework import status
-from rest_framework_simplejwt.views import TokenObtainPairView
-
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.exceptions import AuthenticationFailed
-from rest_framework import serializers
-from .models import Usuario
-
 
 # Create your views here.
 
@@ -1230,10 +1280,60 @@ class PedidoView(viewsets.ModelViewSet):
     queryset = Pedido.objects.all()
     permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
+
 class PedidoProductoView(viewsets.ModelViewSet):
+    """
+    CRUD de ítems de pedido.
+    - Admin: ve todos los registros.
+    - Cliente: solo puede ver ítems de sus propios pedidos.
+    - Filtro por querystring: ?pedido=<id>
+    """
     serializer_class = PedidoProductoSerializer
-    queryset = PedidoProducto.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+
+    def get_queryset(self):
+        qs = (
+            PedidoProducto.objects
+            .select_related(
+                "pedido",
+                "pedido__usuario",
+                "producto",
+                "producto__subcategoria",
+                "producto__subcategoria__categoria",
+            )
+            .all()
+            .order_by("-pedido__idPedido", "producto__nombre")
+        )
+
+        # Si NO es admin, limitar a los pedidos del usuario autenticado
+        user = self.request.user
+        es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
+        if not es_admin:
+            qs = qs.filter(pedido__usuario=user)
+
+        # Filtro opcional por pedido
+        pedido_id = self.request.query_params.get("pedido")
+        if pedido_id:
+            qs = qs.filter(pedido_id=pedido_id)
+
+        return qs
+
+    # Si no quieres permitir crear/actualizar/borrar desde API pública comenta/borra estos métodos
+    # y cambia el ViewSet por ReadOnlyModelViewSet. Por ahora dejamos ModelViewSet.
+
+    @action(detail=False, methods=["get"])
+    def por_pedido(self, request):
+        """
+        GET /BACKEND/api/pedidoproductos/por_pedido/?pedido=<id>
+        Devuelve los ítems de un pedido específico (respetando visibilidad por usuario).
+        """
+        pedido_id = request.query_params.get("pedido")
+        if not pedido_id:
+            return Response({"detail": "Falta parámetro 'pedido'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        qs = self.get_queryset().filter(pedido_id=pedido_id)
+        data = self.get_serializer(qs, many=True).data
+        return Response(data, status=status.HTTP_200_OK)
 
 class PagoView(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
@@ -1269,6 +1369,10 @@ class CarritoView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def agregar_producto(self, request, pk=None):
+        """
+        Agrega un producto al carrito. Solo VALIDA stock; NO descuenta.
+        El descuento real se hace al facturar (FacturaCreateSerializer).
+        """
         try:
             carrito = self.get_object()
             if 'producto' not in request.data:
@@ -1281,10 +1385,12 @@ class CarritoView(viewsets.ModelViewSet):
             cantidad = int(request.data.get('cantidad', 1))
 
             from .models import Inventario, CarritoItem
-            inventario = (Inventario.objects
-                        .filter(producto_id=producto_id, talla_id=talla_id).first()
-                        if talla_id else
-                        Inventario.objects.filter(producto_id=producto_id).first())
+
+            inventario = (
+                Inventario.objects.filter(producto_id=producto_id, talla_id=talla_id).first()
+                if talla_id else
+                Inventario.objects.filter(producto_id=producto_id).first()
+            )
 
             filtro_item = {'carrito': carrito, 'producto_id': producto_id}
             if talla_id:
@@ -1293,16 +1399,15 @@ class CarritoView(viewsets.ModelViewSet):
 
             cantidad_total = cantidad + (item_existente.cantidad if item_existente else 0)
 
+            # Validar stock (NO modificar inventario aquí)
             if inventario:
                 stock_disponible = getattr(inventario, 'stock_talla', inventario.cantidad)
                 if cantidad_total > stock_disponible:
                     return Response(
-                        {"error": f"No hay suficiente stock disponible. Stock actual: {stock_disponible}, "
-                                f"Cantidad solicitada: {cantidad_total}"},
+                        {"error": f"No hay suficiente stock disponible. "
+                                f"Stock actual: {stock_disponible}, Cantidad solicitada: {cantidad_total}"},
                         status=400
                     )
-                inventario.stock_talla = stock_disponible - cantidad
-                inventario.save()
 
             if item_existente:
                 item_existente.cantidad += cantidad
@@ -1326,6 +1431,9 @@ class CarritoView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def actualizar_cantidad(self, request, pk=None):
+        """
+        Actualiza la cantidad de un item. Solo VALIDA stock; NO descuenta.
+        """
         try:
             carrito = Carrito.objects.prefetch_related('items__producto', 'items__talla').get(pk=pk)
             item_id = request.data.get('item_id')
@@ -1334,17 +1442,21 @@ class CarritoView(viewsets.ModelViewSet):
             item = carrito.items.select_related('producto', 'talla').get(idCarritoItem=item_id)
 
             from .models import Inventario
-            inventario = (Inventario.objects
-                        .filter(producto=item.producto, talla=item.talla).first()
-                        if item.talla else
-                        Inventario.objects.filter(producto=item.producto).first())
+            inventario = (
+                Inventario.objects.filter(producto=item.producto, talla=item.talla).first()
+                if item.talla else
+                Inventario.objects.filter(producto=item.producto).first()
+            )
 
-            if inventario:
-                diferencia = nueva_cantidad - item.cantidad
-                inventario.stock_talla -= diferencia
-                if inventario.stock_talla < 0:
-                    return Response({"error": "No hay suficiente stock para la talla seleccionada."}, status=400)
-                inventario.save()
+            # Validación de stock (NO tocar inventario)
+            if inventario and nueva_cantidad > 0:
+                stock_disponible = getattr(inventario, 'stock_talla', inventario.cantidad)
+                if nueva_cantidad > stock_disponible:
+                    return Response(
+                        {"error": f"No hay suficiente stock para la talla seleccionada. "
+                                f"Stock actual: {stock_disponible}, solicitado: {nueva_cantidad}"},
+                        status=400
+                    )
 
             if nueva_cantidad <= 0:
                 item.delete()
@@ -1362,18 +1474,14 @@ class CarritoView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def eliminar_producto(self, request, pk=None):
+        """
+        Elimina un item del carrito. NO devuelve stock aquí.
+        """
         carrito = self.get_object()
         item_id = request.data.get('item_id')
         try:
             item = CarritoItem.objects.get(idCarritoItem=item_id, carrito=carrito)
-            from .models import Inventario
-            inventario = (Inventario.objects
-                        .filter(producto=item.producto, talla=item.talla).first()
-                        if item.talla else
-                        Inventario.objects.filter(producto=item.producto).first())
-            if inventario:
-                inventario.stock_talla += item.cantidad
-                inventario.save()
+            # NO modificar inventario aquí
             item.delete()
             return Response(CarritoSerializer(carrito).data, status=200)
         except CarritoItem.DoesNotExist:
@@ -1381,12 +1489,19 @@ class CarritoView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def limpiar_carrito(self, request, pk=None):
+        """
+        Limpia el carrito. NO modifica inventario aquí.
+        """
         carrito = self.get_object()
         carrito.items.all().delete()
         return Response(CarritoSerializer(carrito).data, status=200)
 
     @action(detail=True, methods=['post'])
     def finalizar_compra(self, request, pk=None):
+        """
+        Si usas Mercado Pago + factura, normalmente NO querrás usar este endpoint.
+        Aquí no se descuenta stock tampoco (se hace al facturar).
+        """
         carrito = self.get_object()
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=400)
@@ -1421,7 +1536,7 @@ class CarritoView(viewsets.ModelViewSet):
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2) Construir items para MP
+        # 2) Construir items para MP (solo lectura)
         items_mp = []
         total = 0.0
         for it in carrito.items.all():
@@ -1452,10 +1567,8 @@ class CarritoView(viewsets.ModelViewSet):
         carrito.mp_status = "pending"
         carrito.save(update_fields=["external_reference", "mp_status"])
 
-        # 4) Payload para MP usando settings.py  ✅ React recibe directo
+        # 4) Payload para MP usando settings.py
         email = request.data.get("email") or "test_user@example.com"
-
-        # ⬇️ AQUI se arma la url de retorno a tu React
         return_url = f"{settings.FRONTEND_URL}{settings.FRONTEND_RETURN_PATH}?carritoId={carrito.idCarrito}"
 
         preference_data = {
@@ -1501,32 +1614,11 @@ class CarritoView(viewsets.ModelViewSet):
         carrito.mp_init_point = preference.get("init_point")
         carrito.save(update_fields=["mp_init_point"])
 
+        # ✅ IMPORTANTE: no hay código duplicado después de este return.
         return Response(
             {"id": preference.get("id"), "init_point": preference.get("init_point")},
             status=status.HTTP_201_CREATED
         )
-    
-        print("MP preference_data:", preference_data)
-        resp = requests.post(
-            "https://api.mercadopago.com/checkout/preferences",
-            headers={
-                "Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            json=preference_data,
-            timeout=20  
-            )
-        print("MP preference response:", resp.status_code, resp.text)
-
-        return_url = f"{settings.MP_RETURN_URL}?carritoId={carrito.idCarrito}"
-        preference_data["back_urls"] = {
-            "success": return_url,
-            "failure": return_url,
-            "pending": return_url,
-        }
-        if getattr(settings, "MP_SEND_AUTO_RETURN", False):
-            preference_data["auto_return"] = "approved"
-
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
@@ -1671,19 +1763,19 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 
 class FacturaView(viewsets.ModelViewSet):
     queryset = Factura.objects.all().select_related("usuario", "pedido")
-    serializer_class = FacturaSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+    serializer_class = FacturaSerializer  # <- para GET/response
+    permission_classes = [IsAuthenticated]  # + AdminandCliente, NotGuest si aplica
 
     @action(detail=False, methods=["post"])
     @transaction.atomic
     def crear_desde_pago(self, request):
         """
-        Crea una factura una sola vez (idempotente) verificando el pago en MP.
+        Crea una factura (idempotente) a partir de un pago de MP.
         Body:
         {
-          "payment_id": "125178556047",            // opcional si mandas external_reference
-          "external_reference": "ORDER-2-1757556908", // recomendado
-          "carrito_id": 2                           // opcional, se infiere por external_reference
+        "payment_id": "125178556047",
+        "external_reference": "ORDER-2-1757556908",
+        "carrito_id": 2
         }
         """
         payment_id = str(request.data.get("payment_id") or "").strip()
@@ -1691,8 +1783,10 @@ class FacturaView(viewsets.ModelViewSet):
         carrito_id = request.data.get("carrito_id")
 
         if not external_ref and not carrito_id and not payment_id:
-            return Response({"error": "Debes enviar external_reference o carrito_id o payment_id"},
-                            status=400)
+            return Response(
+                {"detail": "Debes enviar external_reference o carrito_id o payment_id"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # 1) Resolver carrito
         try:
@@ -1702,57 +1796,55 @@ class FacturaView(viewsets.ModelViewSet):
                 )
             elif carrito_id:
                 carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
-                    pk=carrito_id
+                    pk=carrito_id  # <-- AJUSTA si tu PK es idCarrito
                 )
                 external_ref = carrito.external_reference or external_ref
             else:
-                # último recurso: buscar carrito por payment_id ya guardado
                 carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
                     payment_id=payment_id
                 )
                 external_ref = carrito.external_reference or external_ref
         except Carrito.DoesNotExist:
-            return Response({"error": "Carrito no encontrado"}, status=404)
+            return Response({"detail": "Carrito no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
         if carrito.items.count() == 0:
-            return Response({"error": "El carrito está vacío"}, status=400)
+            return Response({"detail": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2) Verificar/leer estado del pago en MP (si tenemos payment_id)
+        # 2) Consultar estado de MP (opcional pero recomendado)
         status_mp = None
         if payment_id:
             url = f"https://api.mercadopago.com/v1/payments/{payment_id}"
             resp = requests.get(url, headers={"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"}, timeout=15)
             if resp.status_code != 200:
-                return Response({"error": "No se pudo consultar el pago en MP"}, status=502)
+                return Response({"detail": "No se pudo consultar el pago en MP"}, status=status.HTTP_502_BAD_GATEWAY)
             data_mp = resp.json()
             status_mp = data_mp.get("status")  # approved | pending | rejected
 
-            # Sincronizar al carrito (útil si llegó antes que el webhook)
             carrito.payment_id = payment_id
             carrito.mp_status = status_mp or carrito.mp_status
             carrito.save(update_fields=["payment_id", "mp_status"])
 
-        # 3) Idempotencia: si ya existe factura para este pago o referencia, devuélvela
+        # 3) Idempotencia
         if payment_id:
             f_exist = Factura.objects.filter(mp_payment_id=payment_id).first()
             if f_exist:
-                return Response(FacturaSerializer(f_exist).data, status=200)
+                return Response(FacturaSerializer(f_exist).data, status=status.HTTP_200_OK)
         if external_ref:
-            f_exist = Factura.objects.filter(numero=external_ref).first()  # si usas ref como número
+            f_exist = Factura.objects.filter(numero=external_ref).first()
             if f_exist:
-                return Response(FacturaSerializer(f_exist).data, status=200)
+                return Response(FacturaSerializer(f_exist).data, status=status.HTTP_200_OK)
 
-        # 4) Armar payload para FacturaCreateSerializer
-        #    Usa como número la external_reference (legible) o un consecutivo temporal
-        numero = external_ref or f"F-{carrito.idCarrito}-{int(time.time())}"
-        pedido = None
-        if not hasattr(carrito, "pedido") or not carrito.estado:
-            # Si no creaste pedido antes, puedes crear uno simple aquí
-            pedido = Pedido.objects.create(
-                usuario=carrito.usuario, total=carrito.calcular_total(), estado=True
+        # 4) Preparar payload de creación (items desde el carrito)
+        numero = external_ref or f"F-{getattr(carrito, 'id', carrito.pk)}-{int(time.time())}"
+
+        # Pedido: crea si no existe
+        pedido = getattr(carrito, "pedido", None)
+        if not pedido:
+            pedido = Pedido.objects.create(  # <-- AJUSTA campos
+                usuario=carrito.usuario,
+                total=carrito.calcular_total(),  # <-- AJUSTA
+                estado=True
             )
-        else:
-            pedido = carrito.pedido
 
         items = []
         for it in carrito.items.all():
@@ -1760,13 +1852,13 @@ class FacturaView(viewsets.ModelViewSet):
                 "producto_id": it.producto_id,
                 "talla_id": getattr(it.talla, "id", None),
                 "cantidad": int(it.cantidad),
-                "precio": str(Decimal(it.precio_unitario)),  # tu serializer acepta Decimal
+                "precio": str(Decimal(it.precio_unitario)),  # o toma del producto
             })
 
         payload = {
             "numero": numero,
-            "pedido_id": pedido.idPedido,
-            "usuario_id": carrito.usuario.idUsuario,
+            "pedido_id": getattr(pedido, 'id', getattr(pedido, 'pk', None)),       # <-- AJUSTA a idPedido si aplica
+            "usuario_id": getattr(carrito.usuario, 'id', getattr(carrito.usuario, 'pk', None)),  # <-- AJUSTA
             "moneda": "COP",
             "metodo_pago": "mercadopago",
             "mp_payment_id": payment_id or "",
@@ -1775,13 +1867,13 @@ class FacturaView(viewsets.ModelViewSet):
 
         ser = FacturaCreateSerializer(data=payload)
         ser.is_valid(raise_exception=True)
-        factura = ser.save()   # descuenta stock e inserta ítems
+        factura = ser.save()
 
-        # 5) Marcar carrito cerrado
-        carrito.estado = False
+        # 5) Cerrar carrito
+        carrito.estado = False  # <-- AJUSTA campo
         carrito.save(update_fields=["estado"])
 
-        return Response(FacturaSerializer(factura).data, status=201)
+        return Response(FacturaSerializer(factura).data, status=status.HTTP_201_CREATED)
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer

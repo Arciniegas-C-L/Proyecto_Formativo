@@ -80,7 +80,8 @@ CSRF_TRUSTED_ORIGINS = [
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
-    "BACKEND",
+    "BACKEND.apps.BackendConfig",  # tu app principal, donde está el modelo Usuario personalizado
+    #"BACKEND",
     "rest_framework", "rest_framework.authtoken",
     "rest_framework_simplejwt", "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
