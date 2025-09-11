@@ -23,7 +23,7 @@ export const verificarCodigoUsuario = (payload) =>
 
 /* ---------------------- ENDPOINTS PROTEGIDOS ---------------------- */
 
-export const fetchUsuario = () => api.get('usuario/');
+export const fetchUsuario = () => api.get('usuario/me/');
 
 export const updateUsuario = (id, payload) =>
   api.put(`usuario/${id}/`, payload);

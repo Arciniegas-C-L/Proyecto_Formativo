@@ -129,7 +129,7 @@ const AdminDashboard = () => {
             <span className="nombre-usuario">
               {usuario?.nombre || usuario?.username}
             </span>
-            <span className="rol-usuario">    Administradora</span>
+            <span className="rol-usuario">    Administrador</span>
           </div>
         </div>
 

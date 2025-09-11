@@ -6,9 +6,10 @@ import { fetchUsuario, updateUsuario } from "../../api/Usuario.api";
 import Direcciones from './Direcciones';
 import * as direccionApi from '../../api/direccion.api';
 import CambiarPassword from './CambiarPassword';
+import PedidosHistorial from './PedidosHistorial';
 
 export function Perfil() {
-    const { updateUsuarioContext } = useAuth();
+    const { usuario: usuarioContext, updateUsuarioContext } = useAuth();
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('datos'); 
     const [avatarSeed, setAvatarSeed] = useState('');
@@ -29,61 +30,51 @@ export function Perfil() {
         direccion: ''
     });
 
-    // Cargar datos del usuario al montar
+    // Sincroniza el usuario del contexto al estado local al montar o cambiar usuario logueado
     useEffect(() => {
-        async function cargarUsuario() {
-            try {
-                const res = await fetchUsuario();
-                const usuarioActual = res.data[0];
-                setUsuario(usuarioActual);
-
-                // Avatar: si el usuario ya tiene avatar_seed y avatar_options, usarlos
-                if (usuarioActual.avatar_seed && usuarioActual.avatar_options) {
-                    setAvatarSeed(usuarioActual.avatar_seed);
-                    setAvatarOptions(usuarioActual.avatar_options);
-                } else {
-                    // Si no tiene, generar uno nuevo y dejarlo en memoria (no guardar hasta que el usuario lo guarde)
-                    const newSeed = Math.random().toString(36).substring(2, 10);
-                    setAvatarSeed(newSeed);
-                    const accesoriosDisponibles = ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"];
-                    const defaultOptions = {
-                        seed: newSeed,
-                        backgroundColor: "65c9ff",
-                        accessories: accesoriosDisponibles[Math.floor(Math.random() * accesoriosDisponibles.length)],
-                        clothing: "blazerAndShirt",
-                        clothingColor: "262e33",
-                        top: "bigHair",
-                        hairColor: "2c1b18",
-                        eyes: "default",
-                        eyebrows: "default",
-                        mouth: "smile",
-                        facialHair: "beardLight",
-                        facialHairColor: "a55728",
-                        skinColor: "ffdbb4"
-                    };
-                    setAvatarOptions(defaultOptions);
-                }
-
-                setAvailableOptions({
-                    backgroundColor: { enum: ["65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffdeb5","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
-                    accessories: { enum: ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"] },
-                    top: { enum: ["hat","hijab","turban","winterHat1","winterHat02","winterHat03","winterHat04","bob","bun","curly","curvy","dreads","frida","fro","froBand","longButNotTooLong","miaWallace","shavedSides","straight02","straight01","straightAndStrand","dreads01","dreads02","frizzle","shaggy","shaggyMullet","shortCurly","shortFlat","shortRound","shortWaved","sides","theCaesar","theCaesarAndSidePart","bigHair"] },
-                    hairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
-                    clothing: { enum: ["blazerAndShirt","blazerAndSweater","collarAndSweater","graphicShirt","hoodie","overall","shirtCrewNeck","shirtScoopNeck","shirtVNeck"] },
-                    clothingColor: { enum: ["262e33","65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
-                    eyes: { enum: ["closed","cry","default","eyeRoll","happy","hearts","side","squint","surprised","winkWacky","wink","xDizzy"] },
-                    eyebrows: { enum: ["angryNatural","defaultNatural","flatNatural","frownNatural","raisedExcitedNatural","sadConcernedNatural","unibrowNatural","upDownNatural","angry","default","raisedExcited","sadConcerned","upDown"] },
-                    mouth: { enum: ["concerned","default","disbelief","eating","grimace","sad","screamOpen","serious","smile","tongue","twinkle","vomit"] },
-                    facialHair: { enum: ["beardLight","beardMajestic","beardMedium","moustacheFancy","moustacheMagnum"] },
-                    facialHairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
-                    skinColor: { enum: ["614335","d08b5b","ae5d29","edb98a","ffdbb4","fd9841","f8d25c"] }
-                });
-            } catch (error) {
-                console.error("Error al cargar usuario:", error);
+        if (usuarioContext) {
+            setUsuario(usuarioContext);
+            if (usuarioContext.avatar_seed && usuarioContext.avatar_options) {
+                setAvatarSeed(usuarioContext.avatar_seed);
+                setAvatarOptions(usuarioContext.avatar_options);
+            } else {
+                // Si no tiene avatar, genera uno temporal (no se guarda hasta que el usuario lo guarde)
+                const newSeed = Math.random().toString(36).substring(2, 10);
+                setAvatarSeed(newSeed);
+                const accesoriosDisponibles = ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"];
+                const defaultOptions = {
+                    seed: newSeed,
+                    backgroundColor: "65c9ff",
+                    accessories: accesoriosDisponibles[Math.floor(Math.random() * accesoriosDisponibles.length)],
+                    clothing: "blazerAndShirt",
+                    clothingColor: "262e33",
+                    top: "bigHair",
+                    hairColor: "2c1b18",
+                    eyes: "default",
+                    eyebrows: "default",
+                    mouth: "smile",
+                    facialHair: "beardLight",
+                    facialHairColor: "a55728",
+                    skinColor: "ffdbb4"
+                };
+                setAvatarOptions(defaultOptions);
             }
         }
-        cargarUsuario();
-    }, []);
+        setAvailableOptions({
+            backgroundColor: { enum: ["65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffdeb5","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
+            accessories: { enum: ["kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch"] },
+            top: { enum: ["hat","hijab","turban","winterHat1","winterHat02","winterHat03","winterHat04","bob","bun","curly","curvy","dreads","frida","fro","froBand","longButNotTooLong","miaWallace","shavedSides","straight02","straight01","straightAndStrand","dreads01","dreads02","frizzle","shaggy","shaggyMullet","shortCurly","shortFlat","shortRound","shortWaved","sides","theCaesar","theCaesarAndSidePart","bigHair"] },
+            hairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
+            clothing: { enum: ["blazerAndShirt","blazerAndSweater","collarAndSweater","graphicShirt","hoodie","overall","shirtCrewNeck","shirtScoopNeck","shirtVNeck"] },
+            clothingColor: { enum: ["262e33","65c9ff","5199e4","25557c","e6e6e6","929598","3c4f5c","b1e2ff","a7ffc4","ffafb9","ffffb1","ff488e","ff5c5c","ffffff"] },
+            eyes: { enum: ["closed","cry","default","eyeRoll","happy","hearts","side","squint","surprised","winkWacky","wink","xDizzy"] },
+            eyebrows: { enum: ["angryNatural","defaultNatural","flatNatural","frownNatural","raisedExcitedNatural","sadConcernedNatural","unibrowNatural","upDownNatural","angry","default","raisedExcited","sadConcerned","upDown"] },
+            mouth: { enum: ["concerned","default","disbelief","eating","grimace","sad","screamOpen","serious","smile","tongue","twinkle","vomit"] },
+            facialHair: { enum: ["beardLight","beardMajestic","beardMedium","moustacheFancy","moustacheMagnum"] },
+            facialHairColor: { enum: ["a55728","2c1b18","b58143","d6b370","724133","4a312c","f59797","ecdcbf","c93305","e8e1e1"] },
+            skinColor: { enum: ["614335","d08b5b","ae5d29","edb98a","ffdbb4","fd9841","f8d25c"] }
+        });
+    }, [usuarioContext]);
 
     const toArrayParam = (value) => Array.isArray(value) ? value.join(",") : value;
 
@@ -181,7 +172,11 @@ export function Perfil() {
 
     const handleGuardarDatos = async () => {
         try {
-            await updateUsuario(usuario.idUsuario, usuario);
+            await updateUsuario(usuario.idUsuario, {
+                ...usuario,
+                avatar_seed: avatarSeed,
+                avatar_options: avatarOptions
+            });
             alert('Datos personales actualizados correctamente');
         } catch (error) {
             console.error('Error al actualizar usuario:', error);
@@ -358,9 +353,7 @@ export function Perfil() {
                             <div className="titulo-opciones">
                                 <h3>Pedidos</h3>
                             </div>
-                            <div className="pedidos-content">
-                                <p>Sección de pedidos en desarrollo...</p>
-                            </div>
+                            <PedidosHistorial />
                         </div>
                     )}
 
@@ -369,39 +362,43 @@ export function Perfil() {
                             <div className="titulo-opciones">
                                 <h3>Configuraciones</h3>
                             </div>
-                            <div className="config-list">
-                                <div className="config-item">
-                                    <h4>Cambiar contraseña</h4>
-                                    <button onClick={() => setMostrarPassword(v => !v)}>
+                            <div className="config-grid">
+                                <div className="config-card cambiar-password">
+                                    <h4>🔒 Cambiar contraseña</h4>
+                                    <button className="config-btn cambiar" onClick={() => setMostrarPassword(v => !v)}>
                                         {mostrarPassword ? 'Ocultar' : 'Cambiar contraseña'}
                                     </button>
                                     {mostrarPassword && (
-                                        <CambiarPassword
-                                            onSolicitarCodigo={() => {}}
-                                            onCambiarPassword={() => {}}
-                                            loading={false}
-                                            error={''}
-                                        />
-                                    )}
-                                </div>
-                                <div className="config-item">
-                                    <h4>Gestión de direcciones</h4>
-                                    <button onClick={() => setMostrarDirecciones(v => !v)}>
-                                        {mostrarDirecciones ? 'Ocultar' : 'Administrar direcciones'}
-                                    </button>
-                                    {mostrarDirecciones && (
-                                        <Direcciones api={apiDirecciones} direccionPersonal={usuario.direccion} />
+                                        <div className="config-expand cambiar">
+                                            <CambiarPassword
+                                                onSolicitarCodigo={() => {}}
+                                                onCambiarPassword={() => {}}
+                                                loading={false}
+                                                error={''}
+                                            />
+                                        </div>
                                     )}
                                 </div>
                                 <div className="config-card">
-                                    <h4> Métodos de pago</h4>
-                                    <button onClick={() => alert('Gestión de métodos de pago próximamente')}>
+                                    <h4>🏠 Gestión de direcciones</h4>
+                                    <button className="config-btn" onClick={() => setMostrarDirecciones(v => !v)}>
+                                        {mostrarDirecciones ? 'Ocultar' : 'Administrar direcciones'}
+                                    </button>
+                                    {mostrarDirecciones && (
+                                        <div className="config-expand">
+                                            <Direcciones api={apiDirecciones} direccionPersonal={usuario.direccion} />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="config-card">
+                                    <h4>💳 Métodos de pago</h4>
+                                    <button className="config-btn" onClick={() => alert('Gestión de métodos de pago próximamente')}>
                                         Administrar métodos de pago
                                     </button>
                                 </div>
                                 <div className="config-card">
-                                    <h4> Eliminar cuenta</h4>
-                                    <button className="danger" onClick={() => alert('Funcionalidad para eliminar cuenta próximamente')}>
+                                    <h4>🗑️ Eliminar cuenta</h4>
+                                    <button className="config-btn danger" onClick={() => alert('Funcionalidad para eliminar cuenta próximamente')}>
                                         Eliminar cuenta
                                     </button>
                                 </div>
