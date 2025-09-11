@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
 import { fetchCarritos } from "../../api/CarritoApi";
 import { useAuth } from "../../context/AuthContext";
 import ZOE from "../../assets/images/home/ZOE.gif";
@@ -8,10 +8,12 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export function Header() {
-  const [cantidadCarrito, setCantidadCarrito] = useState(0);
-  const { autenticado, usuario, rol, logout } = useAuth();
+  const { autenticado, /* rol, */ logout, usuario } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -22,19 +24,21 @@ export function Header() {
     setShowConfirm(false);
     try {
       logout();
-      setTimeout(() => window.location.replace("/"), 100);
+      // redirige al home tras cerrar sesión
+      navigate("/", { replace: true });
     } catch {
-      window.location.replace("/");
+      navigate("/", { replace: true });
     }
   };
 
   const cancelLogout = () => setShowConfirm(false);
-  const toggleDropdown = () => setShowDropdown(!showDropdown);
 
-  // Cerrar dropdown si clic fuera
+  const toggleDropdown = () => setShowDropdown((prev) => !prev);
+
+  // Cerrar dropdown si clic fuera del contenedor
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest(".dropdown-custom")) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
     };
@@ -44,14 +48,17 @@ export function Header() {
 
   // Cargar cantidad del carrito
   const cargarCantidadCarrito = async () => {
-    if (!autenticado) return setCantidadCarrito(0);
-
+    if (!autenticado) {
+      setCantidadCarrito(0);
+      return;
+    }
     try {
       const response = await fetchCarritos();
-      const carritosActivos = response.data.filter(c => c.estado === true);
+      const lista = Array.isArray(response?.data) ? response.data : [];
+      const carritosActivos = lista.filter((c) => c?.estado === true);
       if (carritosActivos.length > 0) {
-        const carritoActivo = carritosActivos[0];
-        setCantidadCarrito(carritoActivo.items ? carritoActivo.items.length : 0);
+        const items = Array.isArray(carritosActivos[0]?.items) ? carritosActivos[0].items : [];
+        setCantidadCarrito(items.length);
       } else {
         setCantidadCarrito(0);
       }
@@ -65,23 +72,34 @@ export function Header() {
     cargarCantidadCarrito();
     const interval = setInterval(cargarCantidadCarrito, 5000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autenticado]);
 
   useEffect(() => {
     const handleCarritoActualizado = () => cargarCantidadCarrito();
     window.addEventListener("carritoActualizado", handleCarritoActualizado);
     return () => window.removeEventListener("carritoActualizado", handleCarritoActualizado);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
       {showConfirm && (
-        <div className="modal-overlay" style={{
-          position: 'fixed', top: 0, left: 0,
-          width: '100%', height: '100%',
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
-        }}>
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+        >
           <div className="modal-content-custom">
             <div className="modal-header-custom">
               <h5 className="modal-title-custom">Confirmar cierre de sesión</h5>
@@ -90,8 +108,12 @@ export function Header() {
               <p>¿Estás seguro de que deseas cerrar sesión?</p>
             </div>
             <div className="modal-footer-custom">
-              <button className="btn-modal-cancel" onClick={cancelLogout}>Cancelar</button>
-              <button className="btn-modal-confirm" onClick={confirmLogout}>Cerrar sesión</button>
+              <button className="btn-modal-cancel" onClick={cancelLogout}>
+                Cancelar
+              </button>
+              <button className="btn-modal-confirm" onClick={confirmLogout}>
+                Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
@@ -104,7 +126,9 @@ export function Header() {
               <img src={ZOE} alt="Logo ZOE" className="logo-img" />
             </div>
             <h3 className="brand-title">
-              <Link to="/" className="brand-link">Variedad y Estilos ZOE</Link>
+              <Link to="/" className="brand-link">
+                Variedad y Estilos ZOE
+              </Link>
             </h3>
           </div>
 
@@ -135,22 +159,30 @@ export function Header() {
               </li>
 
               {autenticado ? (
-                <li className="nav-item-custom dropdown-custom">
+                <li className="nav-item-custom dropdown-custom" ref={dropdownRef}>
                   <button className="nav-link-custom dropdown-btn" onClick={toggleDropdown}>
                     <div className="user-info">
                       <i className="bi bi-person-circle nav-icon user-icon"></i>
-                      <span className="user-name">{usuario?.nombre || usuario?.username}</span>
+                      <span className="user-name">
+                        {usuario?.nombre || usuario?.username || "Usuario"}
+                      </span>
                       <i className="bi bi-chevron-down dropdown-arrow"></i>
                     </div>
                   </button>
                   {showDropdown && (
                     <ul className="dropdown-menu-custom">
                       <li>
-                        <Link to="/perfil" className="dropdown-item-custom" onClick={() => setShowDropdown(false)}>
+                        <Link
+                          to="/perfil"
+                          className="dropdown-item-custom"
+                          onClick={() => setShowDropdown(false)}
+                        >
                           <i className="bi bi-person-gear"></i> Mi Perfil
                         </Link>
                       </li>
-                      <li><hr className="dropdown-divider-custom" /></li>
+                      <li>
+                        <hr className="dropdown-divider-custom" />
+                      </li>
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión

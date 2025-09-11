@@ -1,12 +1,14 @@
-/* Index.css - Estilos globales */
-html,
-body {
+html, body {
   height: 100%;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* evita problemas de ancho con padding/margin */
+  overflow-x: hidden;     /* evita scroll horizontal global */
+  font-family: 'Urbanist', sans-serif;
 }
 
-body {
-  font-family: 'Urbanist', sans-serif;
+*, *::before, *::after {
+  box-sizing: inherit;
 }
 
 #root {
@@ -15,7 +17,6 @@ body {
   min-height: 100vh !important;
 }
 
-/* Contenedor principal que se expande */
 main {
   flex: 1 !important;
 }
@@ -27,5 +28,4 @@ footer {
   padding: 20px;
   font-family: 'Urbanist', sans-serif;
   margin-top: auto;
-  /* Asegura que esté al final */
 }

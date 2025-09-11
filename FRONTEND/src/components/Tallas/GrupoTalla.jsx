@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/GrupoTalla.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { EliminarModal } from "../EliminarModal/EliminarModal.jsx";
 
 // Rutas internas del admin
 const ADMIN_ROUTES = {
@@ -143,11 +144,11 @@ export function GrupoTalla() {
   };
 
   const handleEditar = (grupo) => {
-    navigate(ADMIN_ROUTES.EDITAR_GRUPO_TALLA(grupo.idGrupoTalla), { state: { grupo } });
+    handleOpenDialog(grupo);
   };
 
   const handleCrear = () => {
-    navigate(ADMIN_ROUTES.CREAR_GRUPO_TALLA);
+    handleOpenDialog();
   };
 
   return (
@@ -257,22 +258,13 @@ export function GrupoTalla() {
         </div>
       )}
 
-      {/* MODAL ELIMINAR */}
-      {openDeleteModal && (
-        <div className="grupo-modal-eliminar">
-          <div className="grupo-modal-eliminar-content">
-            <p>¿Está seguro de eliminar este grupo de talla?</p>
-            <div className="grupo-modal-eliminar-buttons">
-              <button className="btn-cancelar" onClick={handleDeleteModalClose}>
-                Cancelar
-              </button>
-              <button className="btn-eliminar" onClick={handleDelete}>
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal global de eliminar */}
+      <EliminarModal
+        abierto={openDeleteModal}
+        mensaje={"¿Está seguro de eliminar este grupo de talla?"}
+        onCancelar={handleDeleteModalClose}
+        onConfirmar={handleDelete}
+      />
     </div>
   );
 }

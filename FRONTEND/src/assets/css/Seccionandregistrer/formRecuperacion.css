@@ -1,118 +1,118 @@
+/* FORMULARIO RECUPERAR  */
 .Formulario-Recuperar {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 60vh;
-  padding: 20px;
-  background-color: #f5f5f5; 
+  padding: 1rem;
+  width: 100%;
 }
 
 .Formulario-Recuperar .formulario {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 40px;
+  gap: 1rem;
+  padding: 2rem 1.25rem;
   border-radius: 12px;
-  gap: 20px;
-  background-color: #ffffff; 
-  transition: transform 0.3s ease;
-}
-
-.Formulario-Recuperar .formulario:hover {
-  transform: scale(1.01);
+  background-color: #1F1F2E; 
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 400px;
 }
 
 .Formulario-Recuperar .titulo-Recuperar {
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 0.8rem;
   text-align: center;
-  font-size: 32px;
-  font-family: "Bebas Neue", sans-serif;
-  color: #9333ea; 
-  text-transform: none;
+  font-size: clamp(1.2rem, 4vw, 1.875rem);
+  font-family: "Montserrat", sans-serif;
+  color: #A78BFA; /
 }
 
 .Formulario-Recuperar input {
   width: 100%;
-  max-width: 450px;
-  padding: 12px 16px;
-  border: 1.5px solid #e4e4e9; 
-  border-radius: 8px;
-  font-size: 16px;
-  font-family: "Urbanist", sans-serif;
-  background-color: #ffffff; 
-  transition: border 0.3s;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+  font-family: "Montserrat", sans-serif;
+  background-color: #2A2F3E;
+  color: #ffffff;
+  transition: border 0.3s, box-shadow 0.3s;
+}
+
+.Formulario-Recuperar input::placeholder {
+  color: #aaa;
 }
 
 .Formulario-Recuperar input:focus {
   outline: none;
-  border-color: #f26be2;
+  border: 1.5px solid #A78BFA;
+  box-shadow: 0 0 6px rgba(167, 139, 250, 0.4);
 }
 
 .Formulario-Recuperar button {
-  width: 100%;
-  max-width: 450px;
-  padding: 12px;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  background-color: #f26be2; 
-  color: #ffffff;
-  font-family: "Urbanist", sans-serif;
+  border-radius: 0.3125rem;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+  font-weight: bold;
+  padding: 0.75rem 1rem;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.3s ease;
+  width: 100%;
+  background: linear-gradient(45deg, #A78BFA, #60A5FA);
+  color: #000;
 }
 
 .Formulario-Recuperar button:hover {
-  background-color: #f26be2;
+  opacity: 0.9;
   transform: translateY(-2px);
 }
 
-/* Mensajes de éxito o error */
+/* Mensajes */
 .Formulario-Recuperar p {
-  font-size: 14px;
+  font-size: clamp(0.7rem, 2.5vw, 0.9rem);
   text-align: center;
-  margin-top: 5px;
+  margin-top: 0.5rem;
+  color: #bbbbbb;
 }
 
-/* Responsive: móviles */
-@media (max-width: 576px) {
-  .Formulario-Recuperar {
-    padding: 15px;
-  }
+/* RESPONSIVE  */
 
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
   .Formulario-Recuperar .formulario {
-    padding: 20px;
-    width: 100%;
-  }
-
-  .Formulario-Recuperar .titulo-Recuperar {
-    font-size: 24px;
-  }
-
-  .Formulario-Recuperar input,
-  .Formulario-Recuperar button {
-    max-width: 100%;
-    font-size: 14px;
-    padding: 10px;
+    padding: 1.8rem;
+    max-width: 360px;
   }
 }
 
-/* Responsive: tablets */
-@media (min-width: 577px) and (max-width: 768px) {
+/* Móviles grandes (481px - 767px) */
+@media (max-width: 767px) and (min-width: 481px) {
   .Formulario-Recuperar .formulario {
-    padding: 30px;
+    padding: 1.5rem;
+    max-width: 320px;
+  }
+}
+
+/* Móviles medianos (361px - 480px) */
+@media (max-width: 480px) and (min-width: 361px) {
+  .Formulario-Recuperar .formulario {
+    padding: 1.2rem;
+    max-width: 300px;
+  }
+}
+
+/* Móviles pequeños (hasta 360px) */
+@media (max-width: 360px) {
+  .Formulario-Recuperar .formulario {
+    padding: 1rem;
+    max-width: 260px;
   }
 
-  .Formulario-Recuperar .titulo-Recuperar {
-    font-size: 28px;
-  }
-
-  .Formulario-Recuperar input,
   .Formulario-Recuperar button {
-    max-width: 380px;
-    font-size: 15px;
-    padding: 12px;
+    font-size: 0.7rem;
+    padding: 0.6rem;
   }
 }

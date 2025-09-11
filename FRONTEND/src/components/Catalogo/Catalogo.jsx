@@ -2,37 +2,47 @@ import React, { useEffect, useState } from "react";
 import { getALLProductos } from "../../api/Producto.api"; 
 import FiltrosCatalogo from "./FiltrosCatalogo";
 import ProductoCard from "./ProductoCard";
-import { useAuth } from "../../context/AuthContext"; 
+import { useAuth } from "../../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../../assets/css/Catalogo/Catalogo.css"; 
 
 export function Catalogo() {
+  //  HOOKS Y ESTADO 
   const { authState } = useAuth();
+  
+  // Estados para productos y datos
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
+  
+  // Estados para filtros
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
   const [subcategoriasSeleccionadas, setSubcategoriasSeleccionadas] = useState([]);
-  const [chipsActivos, setChipsActivos] = useState([]);
+  const [tallaSeleccionada, setTallaSeleccionada] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  
+  // Estados de UI
   const [errorProductos, setErrorProductos] = useState("");
 
+  //  FUNCIÓN UTILITARIA 
   const capitalizar = (texto = "") =>
     texto ? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase() : "";
 
-  // Cargar productos
+  //  CARGAR DATOS 
   const cargarProductos = async () => {
     try {
-      const res = await getALLProductos(); // Llamada pública
+      const res = await getALLProductos();
       const productosData = res?.data ?? res ?? [];
 
+      // Filtrar solo productos válidos
       const productosValidos = productosData.filter(
         (p) => p?.categoria_nombre && p?.subcategoria_nombre && Array.isArray(p?.inventario_tallas)
       );
+      
       setProductos(productosValidos);
       setErrorProductos("");
 
-      // Crear mapa de subcategorías
+      // Organizar subcategorías por categoría
       const subMap = {};
       productosValidos.forEach((p) => {
         const cat = p.categoria_nombre;
@@ -40,13 +50,14 @@ export function Catalogo() {
         if (!subMap[cat]) subMap[cat] = new Set();
         subMap[cat].add(sub);
       });
+      
       const subFinal = {};
       Object.keys(subMap).forEach((cat) => {
         subFinal[cat] = Array.from(subMap[cat]).sort();
       });
       setSubcategoriasPorCategoria(subFinal);
 
-      // Categorías
+      // Extraer categorías únicas
       const catSet = new Set(productosValidos.map(p => p.categoria_nombre).filter(Boolean));
       setCategorias(Array.from(catSet).sort());
 
@@ -60,53 +71,100 @@ export function Catalogo() {
     cargarProductos();
   }, []);
 
-  // Selección de categoría y subcategoría
+  //  FUNCIONES DE FILTRADO 
   const seleccionarCategoria = (cat) => {
     setCategoriaSeleccionada(cat);
     setSubcategoriasSeleccionadas([]);
-    setChipsActivos((prev) => (prev.includes(cat) ? prev : [...prev, cat]));
+    setTallaSeleccionada("");
   };
+
   const seleccionarSubcategoria = (sub) => {
     setSubcategoriasSeleccionadas([sub]);
-    setChipsActivos((prev) => (prev.includes(sub) ? prev : [...prev, sub]));
+    setTallaSeleccionada("");
   };
+
+  const seleccionarTalla = (talla) => {
+    setTallaSeleccionada(talla);
+  };
+
   const limpiarFiltros = () => {
     setCategoriaSeleccionada("");
     setSubcategoriasSeleccionadas([]);
+    setTallaSeleccionada("");
     setBusqueda("");
-    setChipsActivos([]);
   };
 
-  // Filtrado de productos
+  //  FILTRADO DE PRODUCTOS 
   const productosFiltrados = productos.filter((producto) => {
     const nombre = (producto?.nombre ?? "").toLowerCase();
+    const descripcion = (producto?.descripcion ?? "").toLowerCase();
+    const categoria = (producto?.categoria_nombre ?? "").toLowerCase();
+    const subcategoria = (producto?.subcategoria_nombre ?? "").toLowerCase();
+    const busquedaLower = busqueda.toLowerCase();
 
-    if (categoriaSeleccionada && producto.categoria_nombre !== categoriaSeleccionada) return false;
-    if (subcategoriasSeleccionadas.length > 0 && producto.subcategoria_nombre !== subcategoriasSeleccionadas[0]) return false;
-    if (busqueda && !nombre.includes(busqueda.toLowerCase())) return false;
+    // Filtro de búsqueda inteligente
+    if (busqueda) {
+      // Separar la búsqueda en palabras
+      const palabrasBusqueda = busquedaLower.split(' ').filter(p => p.length > 0);
+      
+      // Buscar cada palabra por separado
+      const cumpleBusqueda = palabrasBusqueda.every(palabra => {
+        return nombre.includes(palabra) || 
+               descripcion.includes(palabra) || 
+               categoria.includes(palabra) || 
+               subcategoria.includes(palabra);
+      });
+      
+      if (!cumpleBusqueda) return false;
+    }
+
+    // Filtro de categoría
+    if (categoriaSeleccionada && producto.categoria_nombre !== categoriaSeleccionada) 
+      return false;
+    
+    // Filtro de subcategoría
+    if (subcategoriasSeleccionadas.length > 0 && producto.subcategoria_nombre !== subcategoriasSeleccionadas[0]) 
+      return false;
+    
+    // Filtro de talla
+    if (tallaSeleccionada) {
+      const tieneTalla = producto.inventario_tallas.some(inv => 
+        inv.talla === tallaSeleccionada && inv.stock > 0
+      );
+      if (!tieneTalla) return false;
+    }
 
     return true;
   });
 
+  //  OBTENER TALLAS DISPONIBLES DINÁMICAMENTE 
+  const obtenerTallasDisponibles = () => {
+    const tallasSet = new Set();
+    
+    productosFiltrados.forEach(producto => {
+      if (producto.inventario_tallas) {
+        producto.inventario_tallas.forEach(inv => {
+          if (inv.stock > 0 && inv.talla) {
+            tallasSet.add(inv.talla);
+          }
+        });
+      }
+    });
+    
+    return Array.from(tallasSet).sort();
+  };
+
+  const tallasDisponibles = obtenerTallasDisponibles();
+
   return (
     <div className="catalogo-container container-fluid py-4">
-      <div className="row">
-        <div className="col-md-2 mb-4">
-          <FiltrosCatalogo
-            categorias={categorias}
-            categoriaSeleccionada={categoriaSeleccionada}
-            subcategoriasPorCategoria={subcategoriasPorCategoria}
-            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""} 
-            capitalizar={capitalizar}
-            seleccionarCategoria={seleccionarCategoria}
-            seleccionarSubcategoria={seleccionarSubcategoria}
-            limpiarFiltros={limpiarFiltros}
-          />
-        </div>
-
-        <div className="col-md-10">
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
-            <h2 className="catalogo-titulo mb-2 mb-md-0">Catálogo de Productos</h2>
+      <div className="catalogo-main-content">
+        
+        {/*  HEADER CON TÍTULO Y BUSCADOR  */}
+        <div className="catalogo-header d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+          <h2 className="catalogo-titulo mb-3 mb-md-0">Catálogo de Productos</h2>
+          
+          <div className="catalogo-controles d-flex align-items-center">
             <div className="catalogo-buscador">
               <input
                 type="text"
@@ -116,29 +174,49 @@ export function Catalogo() {
               />
             </div>
           </div>
+        </div>
 
-          {errorProductos && (
-            <div className="alert alert-warning">{errorProductos}</div>
-          )}
+        {/*  BOTÓN FILTROS + PANEL FLOTANTE  */}
+        <div className="mb-3">
+          <FiltrosCatalogo
+            categorias={categorias}
+            categoriaSeleccionada={categoriaSeleccionada}
+            subcategoriasPorCategoria={subcategoriasPorCategoria}
+            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""} 
+            tallasDisponibles={tallasDisponibles}
+            tallaSeleccionada={tallaSeleccionada}
+            capitalizar={capitalizar}
+            seleccionarCategoria={seleccionarCategoria}
+            seleccionarSubcategoria={seleccionarSubcategoria}
+            seleccionarTalla={seleccionarTalla}
+            limpiarFiltros={limpiarFiltros}
+          />
+        </div>
 
-          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-            {productosFiltrados.length === 0 ? (
-              <div className="col text-center">
-                <div className="alert alert-info w-100">
-                  No hay productos para mostrar.
-                </div>
+        {/*  MENSAJE DE ERROR  */}
+        {errorProductos && (
+          <div className="alert alert-warning mb-4">{errorProductos}</div>
+        )}
+
+        {/*  GRID DE PRODUCTOS  */}
+        <div className="productos-grid">
+          {productosFiltrados.length === 0 ? (
+            <div className="no-productos">
+              <div className="alert alert-info">
+                No hay productos para mostrar.
               </div>
-            ) : (
-              productosFiltrados.map((producto) => (
+            </div>
+          ) : (
+            productosFiltrados.map((producto) => (
+              <div key={producto.id} className="producto-item">
                 <ProductoCard
-                  key={producto.id}
                   producto={producto}
                   capitalizar={capitalizar}
-                  mostrarAgregarCarrito={authState?.rol === "cliente"} // Solo cliente ve botón
+                  mostrarAgregarCarrito={authState?.rol === "cliente"}
                 />
-              ))
-            )}
-          </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

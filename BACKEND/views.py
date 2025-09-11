@@ -1,17 +1,57 @@
-from rest_framework.decorators import api_view, permission_classes, action
-from django.contrib.auth.hashers import make_password, check_password
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework import viewsets, status, serializers
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
+from .serializer import (
+    DireccionSerializer, CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
+    ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
+    PedidoProductoSerializer, PagoSerializer, TipoPagoSerializer,
+    CarritoSerializer, CarritoItemSerializer, CarritoCreateSerializer,
+    CarritoItemCreateSerializer, CarritoUpdateSerializer, EstadoCarritoSerializer,
+    SubcategoriaSerializer, TallaSerializer, GrupoTallaSerializer, InventarioAgrupadoSerializer, UsuarioRegistroSerializer, UserSerializer
+)
+from .models import (
+    Direccion, Rol, Usuario, Proveedor, Categoria, Producto, Inventario, Movimiento,
+    Pedido, PedidoProducto, Pago, TipoPago, CodigoRecuperacion,
+    Carrito, CarritoItem, EstadoCarrito, Subcategoria, Talla, GrupoTalla
+)
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth import authenticate, get_user_model
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import models
+from BACKEND.permissions import IsAdmin, IsCliente, IsAdminWriteClienteRead
 import random
+import string
+from django.utils import timezone
+from datetime import timedelta
+ # CRUD de direcciones de usuario
+class DireccionViewSet(viewsets.ModelViewSet):
+    queryset = Direccion.objects.all()
+    serializer_class = DireccionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Solo mostrar direcciones del usuario autenticado
+        return Direccion.objects.filter(usuario=self.request.user)
+
+    def perform_create(self, serializer):
+        # Asignar el usuario autenticado a la dirección
+        serializer.save(usuario=self.request.user)
+from rest_framework.decorators import action
+from django.contrib.auth.hashers import make_password
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.core.mail import send_mail
+from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from rest_framework import viewsets
 from .serializer import (
     CustomTokenObtainPairSerializer, LoginSerializer, RolSerializer, UsuarioSerializer, ProveedorSerializer, CategoriaSerializer,
     ProductoSerializer, InventarioSerializer, MovimientoSerializer, PedidoSerializer,
@@ -32,16 +72,22 @@ from django.db import models
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from BACKEND.permissions import IsAdmin,IsCliente,IsAdminWriteClienteRead
+from BACKEND.permissions import IsAdminWriteClienteRead, AdminandCliente, AllowGuestReadOnly, NotGuest
 import random
 import string
 from django.utils import timezone
 from datetime import timedelta
+from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework import serializers
+from .models import Usuario
+
 
 # Create your views here.
 
@@ -49,14 +95,68 @@ class Rolview(viewsets.ModelViewSet):
 
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
-    permission_classes = [AllowAny]
-    
-    # --- REGISTRO ---    
+    permission_classes = [IsAdminWriteClienteRead, AllowGuestReadOnly]
+
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
     permission_classes = [AllowAny]
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='guest')
+    def guest(self, request):
+        """
+        Emite un JWT para un usuario técnico con rol 'Invitado'.
+        - NO crea el rol (debe existir en la tabla Rol).
+        - Devuelve la misma estructura que 'login' para reutilizar el frontend.
+        """
+        # 1) Buscar rol 'Invitado' existente (no lo crea) – acepta mayúsc/minúsc
+        try:
+            rol_invitado = Rol.objects.get(nombre__iexact='Invitado')
+        except Rol.DoesNotExist:
+            return Response(
+                {"error": "El rol 'Invitado' no existe. Créalo previamente en la tabla de roles."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        # 2) Obtener o crear (una sola vez) un usuario técnico para invitados
+        #    Ajusta estos campos a tu modelo real. Si 'correo' es único, úsalo.
+        guest, created = Usuario.objects.get_or_create(
+            correo='guest@local',  # si en tu modelo el único es username, usa username='guest_user'
+            defaults={
+                'nombre': 'Invitado',
+                'is_active': True,
+                'rol': rol_invitado,
+            }
+        )
+
+        # Asegura que el usuario técnico tenga siempre el rol 'Invitado'
+        # Usa .pk para no depender del nombre de la PK de Rol
+        if getattr(guest, 'rol_id', None) != rol_invitado.pk:
+            guest.rol = rol_invitado
+            guest.save(update_fields=['rol'])
+
+        # Evita login por password en el usuario técnico (si tu modelo lo soporta)
+        if created and hasattr(guest, 'set_unusable_password'):
+            guest.set_unusable_password()
+            guest.save()
+
+        # 3) Generar tokens (igual que en login)
+        refresh = RefreshToken.for_user(guest)
+        token = {
+            'refresh': str(refresh),               # si NO quieres refresh para invitados, puedes omitirlo
+            'access': str(refresh.access_token),
+        }
+
+        usuario_serializado = UsuarioSerializer(guest).data
+
+        return Response({
+            "mensaje": "Token de invitado generado",
+            "usuario": usuario_serializado,
+            "rol": rol_invitado.nombre,
+            "token": token
+        }, status=status.HTTP_200_OK)
+    # ------------------ FIN INVITADO ------------------
+
+    # --- REGISTRO ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='register')
     def register(self, request):
         data = request.data.copy()
@@ -151,7 +251,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 message=f"Tu código de recuperación es: {codigo}",
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[correo],
-                fail_silently=False,  # Si hay error, lanza excepción
+                fail_silently=False,
             )
 
             return Response({"mensaje": "Código enviado al correo."}, status=status.HTTP_200_OK)
@@ -213,48 +313,60 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
             return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
 
-from rest_framework import status
-from rest_framework_simplejwt.views import TokenObtainPairView
-
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.exceptions import AuthenticationFailed
-from rest_framework import serializers
-from .models import Usuario
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Permite autenticación con 'correo' + 'password' y agrega 'rol' al JWT.
+    - Usa 'correo' como campo de usuario (si tu modelo tiene USERNAME_FIELD='correo', mejor).
+    - Devuelve payload alineado con tu 'login' action.
+    """
+    # Indica a SimpleJWT que el 'username' esperado es 'correo'
+    username_field = 'correo'
+    # Define el campo explícitamente para validación DRF
     correo = serializers.EmailField()
-    permission_classes = [AllowAny]
+
+    @classmethod
+    def get_token(cls, user):
+        """
+        Agrega claims al token (access/refresh).
+        """
+        token = super().get_token(user)
+        # Reclamos útiles
+        token['rol'] = getattr(getattr(user, 'rol', None), 'nombre', None)
+        token['guest'] = False
+        return token
 
     def validate(self, attrs):
-        correo = attrs.get("correo")
-        password = attrs.get("password")
-
-        try:
-            user = Usuario.objects.get(correo=correo)
-        except Usuario.DoesNotExist:
-            raise AuthenticationFailed("Usuario no encontrado.")
-
-        if not user.check_password(password):
-            raise AuthenticationFailed("Contraseña incorrecta.")
+        """
+        Delega la autenticación a la implementación base (usa username_field='correo'),
+        valida activo, y retorna el mismo shape que tu login.
+        """
+        # Esto hará la autenticación con correo/password si tu backend lo soporta
+        data = super().validate(attrs)
+        user = self.user
 
         if not user.is_active:
             raise AuthenticationFailed("Cuenta inactiva.")
 
-        refresh = RefreshToken.for_user(user)
+        # Refresca tokens ya generados por la clase base
+        refresh = self.get_token(user)
 
-        return {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'usuario': {
-                'id': user.idUsuario,
-                'nombre': user.nombre,
-                'rol': user.rol.nombre,
-            }
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
+        data['usuario'] = {
+            'id': getattr(user, 'idUsuario', getattr(user, 'id', None)),
+            'nombre': getattr(user, 'nombre', None),
+            'rol': getattr(getattr(user, 'rol', None), 'nombre', None),
         }
+        return data
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    permission_classes = [AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer
+
 
 #Preparacion para actualizar perfil con token de cliente
 class MiPerfilView(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, IsCliente, IsAdmin, IsAdminWriteClienteRead]
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def list(self, request):
         serializer = UsuarioSerializer(request.user)
@@ -269,12 +381,12 @@ class MiPerfilView(viewsets.ViewSet):
 class ProveedorView(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer
     queryset = Proveedor.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
 
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
 
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
@@ -317,7 +429,7 @@ class ProductoView(viewsets.ModelViewSet):
 class GrupoTallaViewSet(viewsets.ModelViewSet):
     serializer_class = GrupoTallaSerializer
     queryset = GrupoTalla.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -353,7 +465,7 @@ class GrupoTallaViewSet(viewsets.ModelViewSet):
 class TallaViewSet(viewsets.ModelViewSet):
     serializer_class = TallaSerializer
     queryset = Talla.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -490,7 +602,7 @@ class InventarioView(viewsets.ModelViewSet):
         'producto__nombre',
         'talla__nombre'
     )
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
 
     def get_serializer_class(self):
         if self.action == 'inventario_agrupado':
@@ -1115,31 +1227,39 @@ class InventarioView(viewsets.ModelViewSet):
 class MovimientoView(viewsets.ModelViewSet):
     serializer_class = MovimientoSerializer
     queryset = Movimiento.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
-    
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+
 class PedidoView(viewsets.ModelViewSet):
     serializer_class = PedidoSerializer
     queryset = Pedido.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
-    
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+
 class PedidoProductoView(viewsets.ModelViewSet):
     serializer_class = PedidoProductoSerializer
     queryset = PedidoProducto.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
-    
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+
 class PagoView(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
     queryset = Pago.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
-    
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+
 class TipoPagoView(viewsets.ModelViewSet):
     serializer_class = TipoPagoSerializer
     queryset = TipoPago.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, IsCliente] #Por definir
-    
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
+
+    def list(self, request, *args, **kwargs):
+        rol = getattr(getattr(request.user, 'rol', None), 'nombre', '').lower()
+        if rol == 'invitado':
+            # devolvemos vacío en lugar de 403
+            return Response({"results": [], "count": 0}, status=status.HTTP_200_OK)
+
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1238,21 +1358,38 @@ class CarritoView(viewsets.ModelViewSet):
         try:
             # Obtener el carrito con sus items y productos precargados
             carrito = Carrito.objects.prefetch_related(
-                'items__producto'
+                'items__producto', 'items__talla'
             ).get(pk=pk)
-            
+
             item_id = request.data.get('item_id')
             nueva_cantidad = request.data.get('cantidad')
 
-            # Obtener el item con su producto relacionado
-            item = carrito.items.select_related('producto').get(idCarritoItem=item_id)
-            
+            # Obtener el item con su producto y talla relacionados
+            item = carrito.items.select_related('producto', 'talla').get(idCarritoItem=item_id)
+
+            # Actualizar inventario según la talla
+            from .models import Inventario
+            inventario = None
+            if item.talla:
+                inventario = Inventario.objects.filter(producto=item.producto, talla=item.talla).first()
+            else:
+                inventario = Inventario.objects.filter(producto=item.producto).first()
+
+            if inventario:
+                diferencia = nueva_cantidad - item.cantidad
+                # Si diferencia > 0, se está aumentando la cantidad (restar del stock)
+                # Si diferencia < 0, se está disminuyendo la cantidad (sumar al stock)
+                inventario.stock_talla -= diferencia
+                if inventario.stock_talla < 0:
+                    return Response({"error": "No hay suficiente stock para la talla seleccionada."}, status=status.HTTP_400_BAD_REQUEST)
+                inventario.save()
+
             if nueva_cantidad <= 0:
                 item.delete()
             else:
                 item.cantidad = nueva_cantidad
                 item.save()
-            
+
             # Serializar el carrito con sus items actualizados
             serializer = CarritoSerializer(carrito)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1342,7 +1479,7 @@ class CarritoView(viewsets.ModelViewSet):
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1353,7 +1490,7 @@ class CarritoItemView(viewsets.ModelViewSet):
 
 class EstadoCarritoView(viewsets.ModelViewSet):
     serializer_class = EstadoCarritoSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Permite acceso a admin y cliente
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1366,7 +1503,7 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]  # Por definir
 
     def perform_create(self, serializer):
         try:

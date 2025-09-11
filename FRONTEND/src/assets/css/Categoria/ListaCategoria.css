@@ -1,194 +1,720 @@
+/* MODAL DE EDICIÓN (estilo Tallas) - Sin cambios */
+.dialog-categoria-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.form-categoria-modal {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.form-categoria-modal h3 {
+  margin-bottom: 20px;
+  color: #1A1F2E;
+}
+
+.form-categoria-modal .form-label {
+  font-weight: 600;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.form-categoria-modal .form-control,
+.form-categoria-modal .form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.form-categoria-modal .form-control:focus,
+.form-categoria-modal .form-select:focus {
+  outline: none;
+  border-color: #00b0e0;
+}
+
+.form-categoria-modal .form-check-label {
+  font-weight: 400; 
+}
+
+.form-categoria-modal .btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.form-categoria-modal .btn-primary {
+  background-color: #00b0e0;
+  color: #fff;
+}
+
+.form-categoria-modal .btn-primary:hover {
+  background-color: #0090b0;
+}
+
+.form-categoria-modal .btn-secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.form-categoria-modal .btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.form-categoria-modal .d-flex {
+  display: flex;
+}
+
+.form-categoria-modal .justify-content-end {
+  justify-content: flex-end;
+}
+
+.form-categoria-modal .gap-2 {
+  gap: 8px;
+}
+
+.form-categoria-modal .mb-2 {
+  margin-bottom: 8px;
+}
+
+.form-categoria-modal .mb-3 {
+  margin-bottom: 16px;
+}
+
+.form-categoria-modal .text-danger {
+  color: #dc3545;
+  background-color: #f8d7da;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.form-categoria-modal .text-muted {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.form-categoria-modal .d-block {
+  display: block;
+}
+
+.form-categoria-modal .form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-categoria-modal .form-switch .form-check-input {
+  width: 48px;
+  height: 24px;
+  margin: 0;
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA LISTA CATEGORIAS ===== */
+
 /* Contenedor principal */
 .contenedor-categorias {
-  max-width: 1000px;
-  margin: 30px auto;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  font-family: 'Segoe UI', sans-serif;
 }
 
-/* Título */
-.titulo-categorias {
-  font-size: 22px;
-  font-weight: 600;
+/* Título específico */
+.contenedor-categorias .titulo-categorias {
+  font-size: 28px;
+  font-weight: 700;
   text-align: center;
-  margin-bottom: 25px;
-  color: #222;
+  margin-bottom: 30px;
+  color: #343a40;
 }
 
-/* Contenedor de tarjetas */
-.contenedor-tarjetas {
-  display: flex;
-  flex-direction: column;
+/* Mensaje vacío específico */
+.contenedor-categorias .mensaje-vacio {
+  text-align: center;
+  color: #6c757d;
+  font-size: 18px;
+  font-style: italic;
+  padding: 40px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  border: 2px dashed #dee2e6;
+}
+
+/* Contenedor de tarjetas específico */
+.contenedor-categorias .contenedor-tarjetas {
+  display: grid;
   gap: 20px;
+  grid-template-columns: 1fr;
 }
 
-/* Tarjeta categoría */
-.tarjeta-categoria {
-  background: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px 20px;
-  transition: box-shadow 0.2s ease;
+/* Tarjeta categoría específica */
+.contenedor-categorias .tarjeta-categoria {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  position: relative;
+  overflow: hidden;
 }
 
-.tarjeta-categoria:hover {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+.contenedor-categorias .tarjeta-categoria::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #17a2b8, #007bff);
 }
 
-/* Header tarjeta */
-.header-tarjeta {
+/* Header tarjeta específico */
+.contenedor-categorias .header-tarjeta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+/* Container para input y checkbox específico */
+.contenedor-categorias .categoria-info {
   display: flex;
   align-items: center;
   gap: 15px;
-  flex-wrap: wrap;
-}
-
-/* Inputs */
-.input-categoria,
-.input-subcategoria {
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
   flex: 1;
-  min-width: 150px;
+  min-width: 0; /* Permite que se comprima */
 }
 
-/* Check */
-.label-check {
+/* Inputs específicos */
+.contenedor-categorias .input-categoria {
+  padding: 10px 14px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  background-color: #ffffff;
+  flex: 1;
+  min-width: 0; /* Permite que se comprima */
+}
+
+.contenedor-categorias .input-categoria:focus {
+  outline: none;
+  border-color: #17a2b8;
+  background-color: #f8f9fa;
+  box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.15);
+}
+
+/* Checkbox específico */
+.contenedor-categorias .label-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0; /* No se comprime */
+}
+
+.contenedor-categorias .label-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #28a745;
+  cursor: pointer;
+}
+
+/* Grupo de botones específico - MEJORADO PARA RESPONSIVIDAD */
+.contenedor-categorias .grupo-botones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap; /* No permitir wrap por defecto */
+  justify-content: flex-end;
+  flex-shrink: 0; /* Los botones no se comprimen */
+}
+
+/* Botones específicos - TAMAÑO CONSISTENTE EN TODAS LAS PANTALLAS */
+.contenedor-categorias .grupo-botones button {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-height: 32px;
+  min-width: 70px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
+  flex-shrink: 0; /* No se comprimen */
+}
+
+.contenedor-categorias .btn-editar {
+  background: linear-gradient(135deg, #00b0e0);
+  color: #ffffff;
+  border: 1px solid #00b0e0;
+}
+
+.contenedor-categorias .btn-editar:hover {
+  background: linear-gradient(#00b0e0);
+}
+
+.contenedor-categorias .btn-subcategorias {
+  background: linear-gradient(135deg, #6c757d, #545b62);
+  color: #ffffff;
+  border: 1px solid #6c757d;
+  min-width: 90px; /* Más ancho para el texto */
+  font-size: 10px; /* Texto ligeramente más pequeño */
+}
+
+.contenedor-categorias .btn-subcategorias:hover {
+  background: linear-gradient(135deg, #545b62, #383d41);
+}
+
+.contenedor-categorias .btn-eliminar {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: #ffffff;
+  border: 1px solid #dc3545;
+  min-width: 80px;
+}
+
+.contenedor-categorias .btn-eliminar:hover {
+  background: linear-gradient(135deg, #c82333, #a71e2a);
+}
+
+/* Subcategorías específicas */
+.contenedor-categorias .subcategorias {
+  margin-top: 20px;
+  padding: 18px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  border-left: 4px solid #17a2b8;
+}
+
+.contenedor-categorias .subcategorias em {
+  display: block;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 2px dashed #dee2e6;
+}
+
+/* Fila subcategoría específica */
+.contenedor-categorias .fila-subcategoria {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.contenedor-categorias .fila-subcategoria:last-child {
+  margin-bottom: 0;
+}
+
+/* Input subcategoría específico */
+.contenedor-categorias .fila-subcategoria input[type="text"] {
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #495057;
+  background-color: #ffffff;
+  width: 100%;
+  min-width: 0; /* Permite compresión */
+}
+
+.contenedor-categorias .fila-subcategoria input[type="text"]:focus {
+  outline: none;
+  border-color: #17a2b8;
+  box-shadow: 0 0 0 0.15rem rgba(23, 162, 184, 0.15);
+}
+
+/* Checkbox subcategoría específico */
+.contenedor-categorias .fila-subcategoria label {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  color: #444;
-}
-
-.checkbox {
-  transform: scale(1.1);
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
   cursor: pointer;
-}
-
-/* Botones */
-.grupo-botones {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-button {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background-color 0.2s ease;
   white-space: nowrap;
+  flex-shrink: 0; /* No se comprime */
 }
 
-.btn-editar {
-  background: #e0e7ff;
-  color: #1d4ed8;
+.contenedor-categorias .fila-subcategoria input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: #28a745;
+  cursor: pointer;
 }
 
-.btn-guardar {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.btn-cancelar {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.btn-eliminar,
-.btn-eliminar-sub {
-  background: #fca5a5;
-  color: #7f1d1d;
-}
-
-.btn-subcategorias {
-  background: #f3f4f6;
-  color: #333;
-}
-
-/* Subcategorías */
-.subcategorias {
-  margin-top: 12px;
-  padding-left: 18px;
-  border-left: 2px solid #ddd;
+/* Botones subcategoría específicos - TAMAÑO CONSISTENTE */
+.contenedor-categorias .fila-subcategoria .grupo-botones {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  flex-shrink: 0; /* No se comprimen */
 }
 
-.fila-subcategoria {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #fff;
-  padding: 8px 12px;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  flex-wrap: wrap;
+.contenedor-categorias .fila-subcategoria .grupo-botones button {
+  padding: 6px 10px;
+  font-size: 10px;
+  min-height: 28px;
+  min-width: 60px;
+  flex-shrink: 0; /* No se comprimen */
 }
 
-.mensaje-vacio,
-.mensaje-vacio-sub {
-  color: #777;
-  font-style: italic;
-  margin-top: 10px;
+/* ===== RESPONSIVE MEJORADO - MANTENIENDO APARIENCIA CONSISTENTE ===== */
+
+/* Tablets grandes */
+@media (max-width: 1024px) {
+  .contenedor-categorias {
+    padding: 18px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 26px;
+  }
+  
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 18px;
+  }
+
+  /* Header sigue igual */
+  .contenedor-categorias .header-tarjeta {
+    grid-template-columns: 1fr auto;
+    align-items: flex-start;
+  }
+
+  /* Botones mantienen tamaño */
+  .contenedor-categorias .grupo-botones button {
+    padding: 8px 12px;
+    font-size: 11px;
+    min-height: 32px;
+    min-width: 70px;
+  }
+
+  .contenedor-categorias .btn-subcategorias {
+    min-width: 90px;
+    font-size: 10px;
+  }
+
+  .contenedor-categorias .btn-eliminar {
+    min-width: 80px;
+  }
 }
 
-
-/* RESPONSIVE  */
-
+/* Tablets medianos */
 @media (max-width: 768px) {
-  .header-tarjeta {
-    flex-direction: column;
+  .contenedor-categorias {
+    padding: 15px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 24px;
+    margin-bottom: 25px;
+  }
+  
+  /* Header sigue con grid pero ajustado */
+  .contenedor-categorias .header-tarjeta {
+    grid-template-columns: 1fr auto;
     align-items: flex-start;
+    gap: 12px;
+  }
+  
+  /* Input y checkbox siguen en fila */
+  .contenedor-categorias .categoria-info {
+    gap: 12px;
+  }
+  
+  .contenedor-categorias .input-categoria {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+  
+  .contenedor-categorias .label-check {
+    font-size: 13px;
+  }
+  
+  /* Botones mantienen tamaño y disposición */
+  .contenedor-categorias .grupo-botones {
+    gap: 6px;
+  }
+  
+  .contenedor-categorias .grupo-botones button {
+    padding: 8px 10px;
+    font-size: 10px;
+    min-height: 30px;
+    min-width: 65px;
   }
 
-  .grupo-botones {
-    justify-content: flex-start;
-    width: 100%;
+  .contenedor-categorias .btn-subcategorias {
+    min-width: 85px;
+    font-size: 9px;
   }
 
-  button {
-    flex: 1;
-    min-width: 100px;
+  .contenedor-categorias .btn-eliminar {
+    min-width: 75px;
+  }
+  
+  /* Subcategorías mantienen estructura */
+  .contenedor-categorias .fila-subcategoria {
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+  }
+  
+  .contenedor-categorias .subcategorias {
+    padding: 15px;
   }
 
-  .fila-subcategoria {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .input-categoria,
-  .input-subcategoria {
-    width: 100%;
+  .contenedor-categorias .fila-subcategoria .grupo-botones button {
+    padding: 5px 8px;
+    font-size: 9px;
+    min-height: 26px;
+    min-width: 55px;
   }
 }
 
+/* Móviles grandes */
 @media (max-width: 480px) {
   .contenedor-categorias {
+    padding: 12px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+  
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 15px;
+  }
+  
+  /* Header sigue igual */
+  .contenedor-categorias .header-tarjeta {
+    grid-template-columns: 1fr auto;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .contenedor-categorias .input-categoria {
+    font-size: 13px;
+    padding: 9px 12px;
+  }
+  
+  .contenedor-categorias .label-check {
+    font-size: 12px;
+  }
+  
+  /* Botones ligeramente más pequeños pero mantienen estructura */
+  .contenedor-categorias .grupo-botones {
+    gap: 5px;
+  }
+
+  .contenedor-categorias .grupo-botones button {
+    padding: 7px 9px;
+    font-size: 9px;
+    min-height: 28px;
+    min-width: 60px;
+  }
+
+  .contenedor-categorias .btn-subcategorias {
+    min-width: 80px;
+    font-size: 8px;
+  }
+
+  .contenedor-categorias .btn-eliminar {
+    min-width: 70px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria {
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria input[type="text"] {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria label {
+    font-size: 11px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria .grupo-botones button {
+    padding: 4px 7px;
+    font-size: 8px;
+    min-height: 24px;
+    min-width: 50px;
+  }
+  
+  .contenedor-categorias .subcategorias {
+    padding: 12px;
+  }
+  
+  .contenedor-categorias .mensaje-vacio {
+    font-size: 16px;
+    padding: 30px 15px;
+  }
+
+  /* Modal responsive */
+  .dialog-categoria-modal {
     padding: 10px;
   }
 
-  .titulo-categorias {
-    font-size: 18px;
+  .form-categoria-modal {
+    padding: 20px;
+    margin: 0;
+    max-width: 100%;
+    width: calc(100% - 20px);
   }
 
-  .tarjeta-categoria {
-    padding: 12px 15px;
+  .form-categoria-modal h3 {
+    font-size: 1.3rem;
   }
 
-  button {
+  .form-categoria-modal .d-flex.justify-content-end {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .form-categoria-modal .btn {
+    width: 100%;
+    padding: 12px;
+    min-height: 44px;
+    font-size: 1rem;
+  }
+}
+
+/* Móviles muy pequeños - SOLO AQUÍ cambiamos a columnas */
+@media (max-width: 360px) {
+  .contenedor-categorias {
+    padding: 10px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 20px;
+  }
+  
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 12px;
+  }
+
+  /* AQUÍ SÍ cambiamos el layout a columnas */
+  .contenedor-categorias .header-tarjeta {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .contenedor-categorias .categoria-info {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .contenedor-categorias .input-categoria {
+    padding: 8px 10px;
     font-size: 12px;
-    padding: 6px 10px;
   }
 
-  .input-categoria,
-  .input-subcategoria {
-    font-size: 13px;
+  .contenedor-categorias .label-check {
+    font-size: 11px;
+    justify-self: start;
+  }
+  
+  /* Botones en fila aún */
+  .contenedor-categorias .grupo-botones {
+    justify-content: flex-start;
+    gap: 5px;
+  }
+  
+  .contenedor-categorias .grupo-botones button {
+    padding: 8px 10px;
+    font-size: 10px;
+    min-height: 32px;
+    min-width: 55px;
+  }
+
+  .contenedor-categorias .btn-subcategorias {
+    min-width: 75px;
+    font-size: 9px;
+  }
+
+  .contenedor-categorias .btn-eliminar {
+    min-width: 65px;
+  }
+  
+  /* Subcategorías en columna solo si es necesario */
+  .contenedor-categorias .fila-subcategoria {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    text-align: left;
+  }
+  
+  .contenedor-categorias .fila-subcategoria .grupo-botones {
+    justify-content: flex-start;
+  }
+  
+  .contenedor-categorias .fila-subcategoria .grupo-botones button {
+    padding: 6px 8px;
+    font-size: 9px;
+    min-height: 28px;
+    min-width: 50px;
+  }
+
+  /* Modal muy pequeño */
+  .form-categoria-modal {
+    padding: 15px;
+  }
+
+  .form-categoria-modal .form-control,
+  .form-categoria-modal .form-select {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+
+  .form-categoria-modal .btn {
+    padding: 10px;
+    font-size: 0.9rem;
+    min-height: 44px;
   }
 }

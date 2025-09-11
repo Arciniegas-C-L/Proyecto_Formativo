@@ -1,0 +1,24 @@
+/*VARIABLES GLOBALES DE ESTILO*/
+:root {
+  --primary-purple: #9d4edd;
+  --primary-blue: #4cc9f0;
+  --pink-accent: #F26BE2;
+  --gradient-primary: linear-gradient(135deg, #9d4edd, #4cc9f0);
+  --gradient-secondary: linear-gradient(135deg, #F26BE2, #9d4edd, #4cc9f0);
+  --white: #ffffff;
+  --text-dark: #2d2d3a;
+  --text-light: #718096;
+  --bg-light: #f8fafc;
+  --shadow-light: rgba(157, 78, 221, 0.1);
+  --shadow-strong: rgba(157, 78, 221, 0.3);
+  --border-radius: 15px;
+  --border-radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-main: 'Montserrat', 'Roboto', Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-light);
+  color: var(--text-dark);
+}

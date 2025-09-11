@@ -3,7 +3,9 @@ import { fetchProveedores, updateProveedor, deleteProveedor } from "../../api/Pr
 import { useAuth } from "../../context/AuthContext";
 import "../../assets/css/Proveedores/ProveedorRegistro.css";
 import "../../assets/css/Proveedores/Proveedores.css";
+
 import { FaEdit, FaTrash, FaSave, FaTimes } from "react-icons/fa";
+import { EliminarModal } from "../EliminarModal/EliminarModal.jsx";
 
 export function ProveedoresRegistrados() {
   const { autenticado } = useAuth();
@@ -78,15 +80,15 @@ export function ProveedoresRegistrados() {
     <div className="proveedores-registrados">
       <h2 className="titulo-proveedores">Lista de Proveedores Registrados</h2>
 
-      {proveedorAEliminar && (
-        <div className="alerta">
-          <p>¿Seguro que quieres eliminar este proveedor?</p>
-          <div className="alerta-botones">
-            <button className="btn-cancelar" onClick={cancelarEliminar}>Cancelar</button>
-            <button className="btn-eliminar" onClick={eliminarProveedor}>Eliminar</button>
-          </div>
-        </div>
-      )}
+
+      {/* Modal global de eliminar */}
+      <EliminarModal
+        abierto={!!proveedorAEliminar}
+        mensaje={"¿Seguro que quieres eliminar este proveedor?"}
+        onCancelar={cancelarEliminar}
+        onConfirmar={eliminarProveedor}
+      />
+
 
       <div className="tabla-responsive">
         <table className="tabla-proveedores">
@@ -110,35 +112,12 @@ export function ProveedoresRegistrados() {
                 const isEditing = editId === proveedor.idProveedor;
                 return (
                   <tr key={proveedor.idProveedor}>
-                    <td>
-                      {isEditing ? (
-                        <input className="input-proveedor" type="text" name="nombre" value={editData.nombre} onChange={manejarCambio} />
-                      ) : proveedor.nombre}
-                    </td>
-                    <td>
-                      {isEditing ? (
-                        <input className="input-proveedor" type="email" name="correo" value={editData.correo} onChange={manejarCambio} />
-                      ) : proveedor.correo}
-                    </td>
-                    <td>
-                      {isEditing ? (
-                        <input className="input-proveedor" type="text" name="telefono" value={editData.telefono} onChange={manejarCambio} />
-                      ) : proveedor.telefono}
-                    </td>
-                    <td>
-                      {isEditing ? (
-                        <select className="input-proveedor" name="tipo" value={editData.tipo} onChange={manejarCambio}>
-                          <option value="nacional">Nacional</option>
-                          <option value="importado">Importado</option>
-                        </select>
-                      ) : (
-                        <span className="badge">{proveedor.tipo === "nacional" ? "Nacional" : "Importado"}</span>
-                      )}
-                    </td>
+                    <td>{proveedor.nombre}</td>
+                    <td>{proveedor.correo}</td>
+                    <td>{proveedor.telefono}</td>
+                    <td><span className="badge">{proveedor.tipo === "nacional" ? "Nacional" : "Importado"}</span></td>
                     <td className="col-estado">
-                      {isEditing ? (
-                        <input type="checkbox" name="estado" checked={editData.estado} onChange={manejarCambio} className="checkbox-proveedor" />
-                      ) : proveedor.estado ? (
+                      {proveedor.estado ? (
                         <span className="badge bg-success">Activo</span>
                       ) : (
                         <span className="badge bg-secondary">Inactivo</span>
@@ -146,17 +125,8 @@ export function ProveedoresRegistrados() {
                     </td>
                     <td>
                       <div className="botones-acciones">
-                        {isEditing ? (
-                          <>
-                            <button className="btn-guardar" onClick={() => guardarEdicion(proveedor.idProveedor)} title="Guardar cambios"><FaSave /></button>
-                            <button className="btn-cancelar" onClick={cancelarEdicion} title="Cancelar edición"><FaTimes /></button>
-                          </>
-                        ) : (
-                          <>
-                            <button className="btn-editar" onClick={() => comenzarEdicion(proveedor)} title="Editar proveedor"><FaEdit /></button>
-                            <button className="btn-eliminar" onClick={() => confirmarEliminar(proveedor.idProveedor)} title="Eliminar proveedor"><FaTrash /></button>
-                          </>
-                        )}
+                        <button className="btn-editar" onClick={() => comenzarEdicion(proveedor)} title="Editar proveedor"><FaEdit /></button>
+                        <button className="btn-eliminar" onClick={() => confirmarEliminar(proveedor.idProveedor)} title="Eliminar proveedor"><FaTrash /></button>
                       </div>
                     </td>
                   </tr>
@@ -166,6 +136,75 @@ export function ProveedoresRegistrados() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal de edición tipo Tallas, adaptado para proveedores */}
+      {editId && (
+        <div className="dialog-talla-modal">
+          <div className="form-talla-modal">
+            <h3>Editar Proveedor</h3>
+            {/* No hay error, pero puedes agregar validación si lo deseas */}
+
+            <label className="form-label">Nombre *</label>
+            <input
+              className="form-control mb-2"
+              name="nombre"
+              value={editData.nombre}
+              onChange={manejarCambio}
+              maxLength={50}
+            />
+
+            <label className="form-label">Correo *</label>
+            <input
+              className="form-control mb-2"
+              type="email"
+              name="correo"
+              value={editData.correo}
+              onChange={manejarCambio}
+              maxLength={50}
+            />
+
+            <label className="form-label">Teléfono *</label>
+            <input
+              className="form-control mb-2"
+              name="telefono"
+              value={editData.telefono}
+              onChange={manejarCambio}
+              maxLength={20}
+            />
+
+            <label className="form-label">Tipo *</label>
+            <select
+              className="form-select mb-2"
+              name="tipo"
+              value={editData.tipo}
+              onChange={manejarCambio}
+            >
+              <option value="nacional">Nacional</option>
+              <option value="importado">Importado</option>
+            </select>
+
+            <div className="form-check form-switch mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                name="estado"
+                checked={!!editData.estado}
+                onChange={manejarCambio}
+              />
+              <label className="form-check-label">Activo</label>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2">
+              <button className="btn btn-secondary" onClick={cancelarEdicion}>
+                Cancelar
+              </button>
+              <button className="btn btn-primary" onClick={() => guardarEdicion(editId)}>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

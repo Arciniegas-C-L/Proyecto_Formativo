@@ -1,4 +1,7 @@
+
+
 from django.db import models
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.utils import timezone
 from datetime import timedelta
@@ -55,6 +58,8 @@ class UsuarioManager(BaseUserManager):
 
 
 class Usuario(AbstractBaseUser, PermissionsMixin):
+    avatar_seed = models.CharField(max_length=32, blank=True, null=True, help_text="Seed para el avatar personalizado")
+    avatar_options = models.JSONField(blank=True, null=True, help_text="Opciones JSON del avatar personalizado")
 
     @property
     def rol_nombre(self):
@@ -96,6 +101,30 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
+
+
+# ----------------------------
+# Direcciones de usuario
+# ----------------------------
+class Direccion(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='direcciones')
+    direccion = models.CharField(max_length=255)
+
+    from rest_framework.exceptions import ValidationError
+    def save(self, *args, **kwargs):
+        # Limitar a 3 direcciones por usuario
+        if not self.pk and Direccion.objects.filter(usuario=self.usuario).count() >= 3:
+            raise ValidationError({'detail': 'No puedes tener más de 3 direcciones.'})
+        # No permitir direcciones duplicadas para el mismo usuario
+        if Direccion.objects.filter(usuario=self.usuario, direccion=self.direccion).exclude(pk=self.pk).exists():
+            raise ValidationError({'detail': 'Ya tienes una dirección igual registrada.'})
+        # No permitir que la dirección sea igual a la de datos personales
+        if self.usuario.direccion and self.direccion.strip() == self.usuario.direccion.strip():
+            raise ValidationError({'detail': 'No puedes registrar una dirección igual a la de tus datos personales.'})
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.direccion} - {self.usuario.nombre} {self.usuario.apellido}"
 
 
 # ----------------------------
@@ -414,7 +443,7 @@ def crear_inventario_producto(sender, instance, created, **kwargs):
 def actualizar_inventario_subcategoria(sender, instance, created, **kwargs):
     if created:
         Inventario.crear_inventario_para_subcategoria(instance)
-    elif 'grupoTalla' in kwargs.get('update_fields', []):
+    elif kwargs.get('update_fields') and 'grupoTalla' in kwargs.get('update_fields'):
         try:
             productos = instance.productos.all()
             for producto in productos:

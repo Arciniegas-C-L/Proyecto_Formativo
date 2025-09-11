@@ -18,7 +18,7 @@ import {
 import "../../assets/css/Admin/AdminDashboard.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const AdminDashboard = () => {
+export const AdminDashboard = () => {
   const { logout, usuario } = useAuth();
   const location = useLocation();
   const [barraLateralColapsada, setBarraLateralColapsada] = useState(false);
@@ -55,6 +55,7 @@ const AdminDashboard = () => {
     { ruta: "/admin/usuarios", icono: FaUserShield, etiqueta: "Usuarios" },
     { ruta: "/admin/tallas", icono: FaRuler, etiqueta: "Tallas" },
     { ruta: "/admin/tallas/grupo", icono: FaRuler, etiqueta: "Grupo Tallas" },
+    { ruta: "/admin/reporte-ventas", icono: FaTags, etiqueta: "Reporte Ventas" },
   ];
 
   return (
@@ -126,10 +127,7 @@ const AdminDashboard = () => {
             <FaUserCircle />
           </div>
           <div className="detalles-usuario">
-            <span className="nombre-usuario">
-              {usuario?.nombre || usuario?.username}
-            </span>
-            <span className="rol-usuario">    Administradora</span>
+            <span className="rol-usuario">    Administrador </span>
           </div>
         </div>
 
@@ -160,18 +158,18 @@ const AdminDashboard = () => {
         </nav>
 
         {/* Footer sidebar */}
-        <div className="pie-barra-lateral">
-          <button
-            className="boton-cerrar-sesion-admin"
-            onClick={manejarCerrarSesion}
-            aria-label="Cerrar sesión"
-          >
-            <div className="contenedor-icono-cerrar-sesion">
-              <FaSignOutAlt />
-            </div>
-            <span className="texto-cerrar-sesion">Cerrar Sesión</span>
-          </button>
-        </div>
+          <div className="pie-barra-lateral">
+            <button
+              className="admin-logout-btn"
+              onClick={manejarCerrarSesion}
+              aria-label="Cerrar sesión"
+            >
+              <div className="contenedor-icono-cerrar-sesion">
+                <FaSignOutAlt />
+              </div>
+              <span className="texto-cerrar-sesion">Cerrar Sesión</span>
+            </button>
+          </div>
       </aside>
 
       {/* Botón hamburguesa - SOLO cuando sidebar colapsado */}

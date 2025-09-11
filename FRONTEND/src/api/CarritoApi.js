@@ -1,5 +1,5 @@
 // src/api/Carrito.api.js
-import { api } from './roles';
+import { api } from './axios';
 
 // Operaciones básicas del carrito
 export const fetchCarritos = () => api.get('carrito/');

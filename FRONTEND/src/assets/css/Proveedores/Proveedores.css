@@ -1,15 +1,18 @@
-/* Contenedor del formulario */
+
 form.form {
   max-width: 800px;
+  width: 100%;              
   margin: 2rem auto;
   padding: 2.5rem 2rem;
   background-color: #fff;
   border-radius: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
+  box-sizing: border-box;
+  overflow-x: auto;          
 }
 
-/* Título principal */
+/*  Título  */
 h2.title {
   text-align: center;
   font-size: 2.5rem;
@@ -19,18 +22,34 @@ h2.title {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilo general para inputs y selects */
+/* = Inputs y selects  */
 .input {
   width: 100%;
-  padding: 0.9rem 1rem;
-  font-size: 1rem;
-  border-radius: 10px;
-  background-color: #f4f5f9;
+  padding: 10px;
+  font-size: 0.95rem;
+  border: 1px solid #9adcef;
+  border-radius: 8px;
+  background: #fafafa;
   color: #111;
-  border: 1px solid #ccc;
+  transition: all 0.25s ease;
+  margin-bottom: 1.2rem;
   box-sizing: border-box;
-  margin-bottom: 1.5rem;
-  transition: 0.3s ease-in-out;
+}
+
+form.form select.input {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+form.form select.input option {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .input:focus {
@@ -39,13 +58,12 @@ h2.title {
   box-shadow: 0 0 5px rgba(0, 176, 224, 0.3);
 }
 
-/* Placeholder */
 .input::placeholder {
   color: #555;
   opacity: 0.8;
 }
 
-/* Contenedor de botones */
+/*  Botones  */
 .button-row {
   display: flex;
   justify-content: center;
@@ -55,7 +73,6 @@ h2.title {
   flex-wrap: wrap;
 }
 
-/* Botón principal */
 .btn.btn-save {
   background-color: #433c49;
   color: #fff;
@@ -68,13 +85,11 @@ h2.title {
   box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
   transition: all 0.3s ease;
 }
-
 .btn.btn-save:hover {
   background-color: #302a36;
   transform: translateY(-2px);
 }
 
-/* Botón cancelar */
 .btn.btn-cancel {
   background-color: #9AA0A6;
   color: #fff;
@@ -86,13 +101,11 @@ h2.title {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
 .btn.btn-cancel:hover {
   background-color: #7d8289;
   transform: translateY(-2px);
 }
 
-/* Botón ver proveedores */
 .btn.btn-view {
   background-color: #00b0e0;
   color: #fff;
@@ -105,13 +118,12 @@ h2.title {
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 176, 224, 0.25);
 }
-
 .btn.btn-view:hover {
   background-color: #0090bd;
   transform: translateY(-2px);
 }
 
-/* Responsividad */
+/*  Responsividad  */
 @media (max-width: 768px) {
   form.form {
     padding: 2rem 1.5rem;
@@ -143,7 +155,7 @@ h2.title {
     font-size: 1.6rem;
   }
 
-  .form {
+  form.form {
     padding: 1.5rem 1rem;
   }
 
@@ -157,5 +169,18 @@ h2.title {
   .btn.btn-view {
     width: 100%;
     padding: 0.75rem;
+  }
+
+  form.form select.input {
+    font-size: 1rem;
+    min-width: 100%;
+    max-width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+  }
+
+  form.form select.input option {
+    font-size: 1rem;
+    padding: 0.6rem 0.4rem;
   }
 }

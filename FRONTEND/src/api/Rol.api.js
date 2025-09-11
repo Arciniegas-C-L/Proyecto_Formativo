@@ -1,5 +1,5 @@
 
-import { api } from './roles';
+import { api } from './axios';
 
 // Usuarios (si aplica en este módulo)
 export const getUsuarios = () => api.get('usuarios/');

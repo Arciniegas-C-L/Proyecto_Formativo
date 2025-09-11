@@ -8,7 +8,7 @@
 .form-title {
     text-align: center;
     font-size: 2.5rem;
-    color: #6a1b9a;
+    color: #00b0e0;
     margin-bottom: 2rem;
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); 
@@ -16,27 +16,26 @@
 
 /* Caja del formulario */
 .producto-form {
-    background: #ffffff;
     padding: 25px;
     border-radius: 14px;
-    box-shadow: 0 4px 20px rgba(106, 27, 154, 0.15);
     animation: fadeIn 0.3s ease-out;
 }
 
 /* Estructura de columnas */
 .form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
 }
 
+/* Grupo de campos */
 .form-group {
     margin-bottom: 18px;
 }
 
 .form-group label {
     font-weight: 600;
-    color: #4a148c;
+    color: #00b0e0;
     margin-bottom: 6px;
     display: block;
 }
@@ -46,19 +45,21 @@
 .form-group textarea,
 .form-group select {
     width: 100%;
+    max-width: 100%;
     padding: 10px;
-    border: 1px solid #e1bee7; 
+    border: 1px solid #9adcef; 
     border-radius: 8px;
     font-size: 0.95rem;
     transition: all 0.25s ease;
     background: #fafafa;
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
-    border-color: #9c27b0;
-    box-shadow: 0 0 0 2px rgba(156, 39, 176, 0.25);
+    border-color: #00b0e0;
+    box-shadow: 0 0 0 2px rgba(69, 221, 248, 0.25);
     outline: none;
 }
 
@@ -78,7 +79,13 @@
 .error-message {
     color: #e53935;
     font-size: 0.85rem;
-    margin-top: 4px;
+    margin-top: 2px;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    display: block;
+    position: static;
 }
 
 /* Imagen */
@@ -101,26 +108,30 @@
 }
 
 .btn-guardar {
-    padding: 10px 25px;
+    padding: 20px 64px;   
+    min-width: 220px;     
+    font-size: 1.3rem;    
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 600;
-    font-size: 1rem;
     cursor: pointer;
-    background: linear-gradient(135deg, #9c27b0); 
-    color: white;
+    background: #00b0e0 !important;
+    color: white !important;
     transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 176, 224, 0.18);
 }
 
 .btn-guardar:hover:not(:disabled) {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
+    background: #0090bd;
+    filter: brightness(1.08);
+    transform: translateY(-2px);
 }
 
 .btn-guardar:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
 /* Animación */
 @keyframes fadeIn {
     from {
@@ -133,33 +144,17 @@
     }
 }
 
-/* Eliminar outline predeterminado en todos los elementos del formulario */
-.producto-form *:focus {
-    outline: none;
-}
-
-/* Asegurar que no aparezcan scrollbars innecesarias */
-.form-group {
-    overflow: hidden;
-}
-
-
 /* Responsive */
 @media (max-width: 768px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Responsive adicional para móviles más pequeños */
-@media (max-width: 480px) {
-    .form-container {
-        padding: 15px;
-    }
-
     .form-title {
         font-size: 2rem;
         margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-container {
+        padding: 15px;
     }
 
     .form-group input,

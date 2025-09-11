@@ -1,4 +1,4 @@
-import { api } from './roles';
+import { api } from './axios';
 
 // Función para obtener todas las categorías
 export const getAllCategorias = async () => {

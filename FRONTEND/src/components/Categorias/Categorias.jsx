@@ -1,48 +1,51 @@
 import React, { useState, useEffect } from "react";
 import { createCategoria, getAllCategorias } from "../../api/Categoria.api";
 import { createSubcategoria, getAllSubcategorias } from "../../api/Subcategoria.api";
-import {ListaCategorias} from "./ListaCategorias";
+import ListaCategorias from "./ListaCategorias";
 import "../../assets/css/Categoria/Categorias.css";
 
 function SubcategoriaForm({ subcategoria, onChange }) {
   return (
     <>
-      <div className="mb-3">
-        <label className="form-label">Nombre Subcategoría</label>
-        <input
-          type="text"
-          className="input-text"
-          name="nombre"
-          value={subcategoria.nombre}
-          onChange={onChange}
-          required
-        />
+      <div className="row">
+        <div className="col-md-6 mb-3">
+          <label className="form-label fw-medium">Nombre Subcategoría</label>
+          <input
+            type="text"
+            className="form-control custom-input"
+            name="nombre"
+            value={subcategoria.nombre}
+            onChange={onChange}
+            placeholder="Ingresa el nombre de la subcategoría"
+            required
+          />
+        </div>
+        <div className="col-md-6 mb-3">
+          <label className="form-label fw-medium">Stock Mínimo</label>
+          <input
+            type="number"
+            className="form-control custom-input"
+            name="stockMinimo"
+            value={subcategoria.stockMinimo}
+            onChange={onChange}
+            placeholder="0"
+            min="0"
+            required
+          />
+        </div>
       </div>
 
-      <div className="mb-3">
-        <label className="form-label">Stock Mínimo</label>
-        <input
-          type="number"
-          className="input-text"
-          name="stockMinimo"
-          value={subcategoria.stockMinimo}
-          onChange={onChange}
-          min="0"
-          required
-        />
-      </div>
-
-      <div className="form-check mb-3">
+      <div className="form-check mb-4">
         <input
           type="checkbox"
-          className="input-check"
+          className="form-check-input custom-checkbox"
           name="estado"
           checked={!!subcategoria.estado}
           onChange={onChange}
           id="estadoSubcategoria"
         />
-        <label className="form-check-label" htmlFor="estadoSubcategoria">
-          Activa
+        <label className="form-check-label fw-medium" htmlFor="estadoSubcategoria">
+          Subcategoría activa
         </label>
       </div>
     </>
@@ -63,9 +66,9 @@ export function CategoriaForm() {
   });
 
   const [categorias, setCategorias] = useState([]);
-  const [modoCategoria, setModoCategoria] = useState("nueva"); // "nueva" | "existente"
+  const [modoCategoria, setModoCategoria] = useState("nueva");
   const [categoriaExistenteId, setCategoriaExistenteId] = useState("");
-  const [modoVista, setModoVista] = useState("formulario"); // "formulario" | "lista"
+  const [modoVista, setModoVista] = useState("formulario");
 
   useEffect(() => {
     cargarDatos();
@@ -108,7 +111,6 @@ export function CategoriaForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       let idCategoria = null;
 
@@ -117,7 +119,6 @@ export function CategoriaForm() {
           nombre: categoria.nombre,
           estado: Boolean(categoria.estado),
         });
-        // soporta respuesta como objeto plano o {data: {...}}
         const payload = nuevaCategoria?.data ?? nuevaCategoria;
         idCategoria = payload?.idCategoria;
       } else {
@@ -142,13 +143,11 @@ export function CategoriaForm() {
         });
       }
 
-      // Reset del formulario
       setCategoria({ nombre: "", estado: true, usarSubcategorias: false });
       setSubcategoria({ nombre: "", estado: true, stockMinimo: 0 });
       setModoCategoria("nueva");
       setCategoriaExistenteId("");
 
-      // Refresca y pasa a la vista de lista para poder eliminar/interactuar
       await cargarDatos();
       setModoVista("lista");
 
@@ -160,128 +159,167 @@ export function CategoriaForm() {
   };
 
   return (
-    <div className="categorias-container container mt-4">
-      <h2 className="titulo-principal">Gestión de Categorías</h2>
-
-      <button
-        type="button"
-        className="btn-secundario mb-3"
-        onClick={() =>
-          setModoVista(modoVista === "formulario" ? "lista" : "formulario")
-        }
-      >
-        {modoVista === "formulario" ? "Ver Categorías" : "Volver al Formulario"}
-      </button>
-
-      {modoVista === "formulario" ? (
-        <form onSubmit={handleSubmit} className="form-categorias">
-          {/* Botones modo categoría */}
-          <div className="mb-3">
-            <label className="form-label d-block">Selecciona el modo</label>
-            <div className="btn-group-custom" role="group" aria-label="Modo de categoría">
-              <button
-                type="button"
-                className={`btn-toggle nueva ${modoCategoria === "nueva" ? "activo" : ""}`}
-                onClick={() => setModoCategoria("nueva")}
-              >
-                Crear nueva categoría
-              </button>
-              <button
-                type="button"
-                className={`btn-toggle existente ${modoCategoria === "existente" ? "activo" : ""}`}
-                onClick={() => setModoCategoria("existente")}
-              >
-                Usar categoría existente
-              </button>
-            </div>
+    <div className="container-fluid px-4 py-4">
+      <div className="row justify-content-center">
+        <div className="col-12 col-lg-10 col-xl-8">
+          
+          {/* Header */}
+          <div className="text-center mb-4">
+            <h1 className="display-6 fw-bold text-primary mb-3">Gestión de Categorías</h1>
+            <button
+              type="button"
+              className="btn btn-outline-primary px-4"
+              onClick={() =>
+                setModoVista(modoVista === "formulario" ? "lista" : "formulario")
+              }
+            >
+              {modoVista === "formulario" ? "Ver Lista de Categorías" : "Crear Nueva Categoría"}
+            </button>
           </div>
 
-          {/* Formulario de categoría */}
-          {modoCategoria === "nueva" ? (
-            <>
-              <div className="mb-3">
-                <label className="form-label">Nombre Categoría</label>
-                <input
-                  type="text"
-                  className="input-text"
-                  name="nombre"
-                  value={categoria.nombre}
-                  onChange={handleCategoriaChange}
-                  required
-                />
-              </div>
+          {modoVista === "formulario" ? (
+            <div className="card shadow-sm border-0 custom-card">
+              <div className="card-body p-4">
+                <form onSubmit={handleSubmit}>
+                  
+                  {/* Selector de Modo */}
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold text-secondary mb-3">
+                      Selecciona el modo de creación
+                    </label>
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <button
+                          type="button"
+                          className={`btn w-100 py-3 fw-medium ${modoCategoria === "nueva" ? "btn-primary" : "btn-outline-primary"}`}
+                          onClick={() => setModoCategoria("nueva")}
+                        >
+                          <i className="fas fa-plus-circle me-2"></i>
+                          Crear Nueva Categoría
+                        </button>
+                      </div>
+                      <div className="col-md-6">
+                        <button
+                          type="button"
+                          className={`btn w-100 py-3 fw-medium ${modoCategoria === "existente" ? "btn-primary" : "btn-outline-primary"}`}
+                          onClick={() => setModoCategoria("existente")}
+                        >
+                          <i className="fas fa-list me-2"></i>
+                          Usar Categoría Existente
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="form-check mb-3">
-                <input
-                  type="checkbox"
-                  className="input-check"
-                  name="estado"
-                  checked={!!categoria.estado}
-                  onChange={handleCategoriaChange}
-                  id="estadoCategoria"
-                />
-                <label className="form-check-label" htmlFor="estadoCategoria">
-                  Activa
-                </label>
+                  {/* Campos de Categoría */}
+                  {modoCategoria === "nueva" ? (
+                    <div className="row">
+                      <div className="col-md-8 mb-3">
+                        <label className="form-label fw-medium">Nombre de la Categoría</label>
+                        <input
+                          type="text"
+                          className="form-control custom-input"
+                          name="nombre"
+                          value={categoria.nombre}
+                          onChange={handleCategoriaChange}
+                          placeholder="Ingresa el nombre de la categoría"
+                          required
+                        />
+                      </div>
+                      <div className="col-md-4 d-flex align-items-end mb-3">
+                        <div className="form-check">
+                          <input
+                            type="checkbox"
+                            className="form-check-input custom-checkbox"
+                            name="estado"
+                            checked={!!categoria.estado}
+                            onChange={handleCategoriaChange}
+                            id="estadoCategoria"
+                          />
+                          <label className="form-check-label fw-medium" htmlFor="estadoCategoria">
+                            Categoría activa
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mb-4">
+                      <label className="form-label fw-medium">Seleccionar Categoría Existente</label>
+                      <select
+                        className="form-select custom-select"
+                        value={categoriaExistenteId}
+                        onChange={(e) => setCategoriaExistenteId(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Selecciona una categoría --</option>
+                        {categorias.map((cat) => (
+                          <option key={cat.idCategoria} value={cat.idCategoria}>
+                            {cat.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Checkbox Subcategoría */}
+                  <div className="form-check mb-4">
+                    <input
+                      type="checkbox"
+                      className="form-check-input custom-checkbox"
+                      name="usarSubcategorias"
+                      checked={!!categoria.usarSubcategorias}
+                      onChange={handleCategoriaChange}
+                      id="usarSubcategorias"
+                    />
+                    <label className="form-check-label fw-medium" htmlFor="usarSubcategorias">
+                      <i className="fas fa-layer-group me-2"></i>
+                      Agregar Subcategoría
+                    </label>
+                  </div>
+
+                  {/* Sección Subcategoría mejorada visualmente */}
+                  {categoria.usarSubcategorias && (
+                    <div className="subcategoria-card">
+                      <div className="subcategoria-card-header">
+                        <h5 className="mb-0">
+                          <i className="fas fa-layer-group me-2"></i>
+                          Información de la Subcategoría
+                        </h5>
+                      </div>
+                      <hr className="subcategoria-divider" />
+                      <div className="subcategoria-card-body">
+                        <SubcategoriaForm
+                          subcategoria={subcategoria}
+                          onChange={handleSubcategoriaChange}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Botón Guardar */}
+                  <div className="d-flex justify-content-center mt-4">
+                    <button type="submit" className="btn btn-primary btn-lg px-5 py-2 fw-medium">
+                      <i className="fas fa-save me-2"></i>
+                      Guardar Información
+                    </button>
+                  </div>
+                  
+                </form>
               </div>
-            </>
+            </div>
           ) : (
-            <div className="mb-3">
-              <label className="form-label">Seleccionar categoría</label>
-              <select
-                className="input-select"
-                value={categoriaExistenteId}
-                onChange={(e) => setCategoriaExistenteId(e.target.value)}
-                required
-              >
-                <option value="">-- Selecciona una categoría --</option>
-                {categorias.map((cat) => (
-                  <option key={cat.idCategoria} value={cat.idCategoria}>
-                    {cat.nombre}
-                  </option>
-                ))}
-              </select>
+            <div className="card shadow-sm border-0">
+              <div className="card-body p-0">
+                <ListaCategorias 
+                  categorias={categorias} 
+                  onCategoriasActualizadas={cargarDatos} 
+                />
+              </div>
             </div>
           )}
-
-          {/* Subcategoría */}
-          <div className="form-check mb-3">
-            <input
-              type="checkbox"
-              className="input-check"
-              name="usarSubcategorias"
-              checked={!!categoria.usarSubcategorias}
-              onChange={handleCategoriaChange}
-              id="usarSubcategorias"
-            />
-            <label className="form-check-label" htmlFor="usarSubcategorias">
-              ¿Agregar Subcategoría?
-            </label>
-          </div>
-
-          {categoria.usarSubcategorias && (
-            <div className="subcategoria-box">
-              <h5>Subcategoría</h5>
-              <SubcategoriaForm
-                subcategoria={subcategoria}
-                onChange={handleSubcategoriaChange}
-              />
-            </div>
-          )}
-
-          <button type="submit" className="btn-guardar">
-            Guardar
-          </button>
-        </form>
-      ) : (
-        // Vista de LISTA (aquí podrás eliminar/editar)
-        <ListaCategorias
-          categorias={categorias}
-          // Si tu ListaCategorias expone callbacks (onDelete/onUpdate), puedes pasarlos y luego llamar a cargarDatos()
-          // onDeleted={cargarDatos}
-          // onUpdated={cargarDatos}
-        />
-      )}
+          
+        </div>
+      </div>
     </div>
   );
 }

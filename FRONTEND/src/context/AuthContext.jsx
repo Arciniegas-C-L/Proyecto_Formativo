@@ -21,8 +21,13 @@ export const AuthProvider = ({ children }) => {
     setSesion({ token: null, usuario: null, rol: null, autenticado: false });
   };
 
+  // Permite actualizar el usuario en el contexto (por ejemplo, tras editar el perfil)
+  const updateUsuarioContext = (nuevoUsuario) => {
+    setSesion((prev) => ({ ...prev, usuario: nuevoUsuario }));
+  };
+
   return (
-    <AuthContext.Provider value={{ ...sesion, login, logout }}>
+    <AuthContext.Provider value={{ ...sesion, login, logout, updateUsuarioContext }}>
       {children}
     </AuthContext.Provider>
   );

@@ -11,6 +11,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'rol', views.Rolview, 'rol')
+router.register(r'direccion', views.DireccionViewSet, basename='direccion')
 router.register(r'usuario', views.UsuarioViewSet, basename='usuario')
 router.register(r'producto', views.ProductoView, 'producto')
 router.register(r'pedido', views.PedidoView, 'pedido')
@@ -28,7 +29,14 @@ router.register(r'grupo-talla', views.GrupoTallaViewSet, 'grupo-talla')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('', include(router.urls)),
-    path('api/usuario/login/', views.UsuarioViewSet.as_view({'get': 'login', 'post': 'login'}), name='usuario_login'),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Login
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Refrescar token
+    path('usuario/registro/', views.UsuarioViewSet.as_view({'post': 'register'}), name='usuario_register'),
+    path('usuario/guest/', views.UsuarioViewSet.as_view({'post': 'guest'}), name='usuario_guest'),
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Login
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Refrescar token
+]
+
+urlpatterns += [
+    path('BACKEND/api/usuario/recuperar_password/', views.UsuarioViewSet.as_view({'post': 'recuperar_password'}), name='recuperar_password'),
+    path('BACKEND/api/usuario/verificar_codigo/', views.UsuarioViewSet.as_view({'post': 'verificar_codigo'}), name='verificar_codigo'),
+    path('BACKEND/api/usuario/reset_password/', views.UsuarioViewSet.as_view({'post': 'reset_password'}), name='reset_password'),
 ]

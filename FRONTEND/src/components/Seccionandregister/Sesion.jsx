@@ -6,11 +6,14 @@ import '../../assets/css/Seccionandregistrer/sesion.css';
 import { useAuth } from '../../context/AuthContext';
 import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
 import toast from 'react-hot-toast';
+import "bootstrap-icons/font/bootstrap-icons.css"; 
 
 export function Sesion() {
   const { login } = useAuth();
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false); //  toggle login
+  const [showPasswordRegister, setShowPasswordRegister] = useState(false); //  toggle registro
   const navigate = useNavigate();
 
   const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
@@ -38,7 +41,6 @@ export function Sesion() {
 
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
 
-      // Redirección según rol
       if (data?.rol === 'administrador') {
         navigate('/admin/dashboard', { replace: true });
       } else {
@@ -106,8 +108,26 @@ export function Sesion() {
             <div className="container-input">
               <input type="email" name="correo" placeholder="Correo" required />
             </div>
-            <div className="container-input">
-              <input type="password" name="password" placeholder="Contraseña" required />
+            <div className="container-input" style={{ position: "relative" }}>
+              <input
+                type={showPasswordLogin ? "text" : "password"}
+                name="password"
+                placeholder="Contraseña"
+                required
+              />
+              <i
+                className={`bi ${showPasswordLogin ? "bi-eye-slash" : "bi-eye"}`}
+                onClick={() => setShowPasswordLogin(!showPasswordLogin)}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  cursor: "pointer",
+                  color: "#bbb",
+                  fontSize: "1rem"
+                }}
+              ></i>
             </div>
             <Link to="/sesion/recuperar_contrasena" className="forgot-password">
               ¿Olvidaste tu contraseña?
@@ -135,8 +155,26 @@ export function Sesion() {
             <div className="container-input">
               <input type="email" name="correo" placeholder="Correo" required />
             </div>
-            <div className="container-input">
-              <input type="password" name="password" placeholder="Contraseña" required />
+            <div className="container-input" style={{ position: "relative" }}>
+              <input
+                type={showPasswordRegister ? "text" : "password"}
+                name="password"
+                placeholder="Contraseña"
+                required
+              />
+              <i
+                className={`bi ${showPasswordRegister ? "bi-eye-slash" : "bi-eye"}`}
+                onClick={() => setShowPasswordRegister(!showPasswordRegister)}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  cursor: "pointer",
+                  color: "#bbb",
+                  fontSize: "1rem"
+                }}
+              ></i>
             </div>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? 'Procesando...' : 'Registrarse'}

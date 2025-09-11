@@ -162,12 +162,15 @@
 }
 
 /* Botón cerrar sesión */
+/* 🔹 Pie de la barra lateral */
 .pie-barra-lateral {
   padding: 1.25rem;
   border-top: 1px solid var(--color-borde);
 }
 
-.boton-cerrar-sesion-admin {
+/* 🔹 Botón cerrar sesión (violeta/morado) */
+.boton-cerrar-sesion-admin,
+.admin-logout-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -176,16 +179,21 @@
   border: 1px solid rgba(149, 32, 141, 0.3);
   border-radius: 6px;
   background: rgba(231, 104, 214, 0.1);
-  color: #8b3581;
+  color: #A78BFA; /* violeta */
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: var(--transicion);
+  transition: all 0.3s ease;
+  text-align: left;
 }
 
-.boton-cerrar-sesion-admin:hover {
+.boton-cerrar-sesion-admin:hover,
+.admin-logout-btn:hover {
   background: rgba(182, 26, 180, 0.2);
-  border-color: #8b3581
+  border-color: #A78BFA;
+  color: #fff; /* texto blanco al hover */
 }
+
 
 /* Botón móvil */
 .boton-hamburguesa {
@@ -215,75 +223,116 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(26, 31, 46, 0.98);
+  background: rgba(21, 26, 38, 0.75); /* más oscuro y elegante */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  backdrop-filter: blur(6px);
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .contenido-modal-admin {
-  background: var(--fondo-oscuro);
-  border: 1px solid var(--color-borde);
-  border-radius: 8px;
-  max-width: 400px;
+  background: #1F1F2E; /* mismo fondo oscuro del dashboard */
+  border: 1px solid rgba(149, 32, 141, 0.3);
+  border-radius: 12px;
+  max-width: 340px;
   width: 90%;
+  padding: 1.2rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  animation: modalContentFadeIn 0.4s cubic-bezier(.4,0,.2,1);
 }
 
+@keyframes modalContentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* 🔹 Encabezado */
 .encabezado-modal-admin {
-  padding: 1.5rem 1.5rem 0;
+  padding: 0 0 0.5rem;
+  text-align: center;
 }
 
 .titulo-modal-admin {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--texto-primario);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #A78BFA; /* violeta como el botón */
   margin: 0;
+  letter-spacing: 0.5px;
 }
 
+/* 🔹 Cuerpo */
 .cuerpo-modal-admin {
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 0 1rem;
+  text-align: center;
 }
 
 .cuerpo-modal-admin p {
-  color: var(--texto-secundario);
+  color: #bbbbbb;
+  font-size: 0.95rem;
   margin: 0;
 }
 
+/* 🔹 Footer */
 .pie-modal-admin {
-  padding: 0 1.5rem 1.5rem;
   display: flex;
   gap: 0.75rem;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
+/* 🔹 Botones */
 .boton-cancelar-modal-admin,
 .boton-confirmar-modal-admin {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: var(--transicion);
+  transition: all 0.3s ease;
+  min-width: 110px;
 }
 
+/* Cancelar → estilo oscuro */
 .boton-cancelar-modal-admin {
-  background: transparent;
-  color: var(--texto-secundario);
-  border: 1px solid var(--color-borde);
+  background: #2A2F3E;
+  color: #ffffff;
+  border: 1px solid #444;
 }
 
 .boton-cancelar-modal-admin:hover {
-  color: var(--texto-primario);
+  background: #3a3f4f;
 }
 
+/* Confirmar → violeta */
 .boton-confirmar-modal-admin {
-  background: #dc3545;
-  color: white;
-  border: 1px solid #dc3545;
+  background: rgba(231, 104, 214, 0.1);
+  border: 1px solid rgba(149, 32, 141, 0.3);
+  color: #A78BFA;
 }
 
 .boton-confirmar-modal-admin:hover {
-  background: #c82333;
+  background: rgba(182, 26, 180, 0.2);
+  border-color: #A78BFA;
+  color: #fff;
 }
 
 /* Overlay móvil */
