@@ -1,138 +1,298 @@
-/* Contenedor principal */
-.categorias-container {
-  max-width: 800px; 
-  margin: 20px auto; 
-  padding: 20px;     
-  font-family: 'Urbanist', sans-serif;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+/* Variables CSS para consistencia */
+:root {
+  --primary: #00b0e0;
+  --primary-dark: #0099cc;
+  --secondary: #8b3581;
+  --secondary-dark: #32234a;
+  --dark: #374151;
+  --gray: #6b7280;
+  --light-gray: #f8fafc;
+  --white: #ffffff;
+  --border: #e5e7eb;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 6px 12px -2px rgba(0, 176, 224, 0.3);
+  --transition: all 0.2s ease;
 }
-/* Título principal */
-.titulo-principal {
-  text-align: center;
-  font-size: 2.2rem;
-  color: #00b0e0;
+
+/* Container principal */
+.container-fluid {
+  background-color: var(--light-gray);
+  min-height: 100vh;
+}
+
+/* Títulos */
+.display-6.fw-bold.text-primary {
+  color: var(--primary) !important;
+  font-weight: 700;
+  font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
-/* Botón secundario */
-.btn-secundario {
-  background-color: #8b3581;
-  color: #fff;
+/* Botones principales */
+.btn.btn-outline-primary.px-4 {
+  background: var(--white);
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
+}
+
+.btn.btn-outline-primary.px-4:hover {
+  background: var(--primary);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+
+/* Cards principales */
+.card.custom-card {
+  background: var(--white);
   border: none;
-  border-radius: 10px;
-  padding: 10px 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.custom-card .card-body {
+  padding: 2rem;
+}
+
+/* Labels de sección */
+.form-label.fw-semibold.text-secondary {
+  color: var(--gray) !important;
   font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
 }
 
-.btn-secundario:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 53, 129, 0.4);
+.form-label.fw-medium {
+  color: var(--dark);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
-/* Formulario */
-.form-categorias {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Botones modo categoría */
-.btn-group-custom {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.btn-toggle {
-  flex: 1;
-  padding: 10px;
+/* Botones de modo (nueva categoría / existente) */
+.btn.w-100.py-3 {
   border-radius: 8px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  color: #fff;
+  padding: 1rem;
+  transition: var(--transition);
+  border: 2px solid var(--border);
 }
 
-/* Colores específicos */
-.btn-toggle.nueva {
-  background-color: #00b0e0;
+.btn.w-100.py-3.btn-outline-primary {
+  background: var(--white);
+  color: var(--gray);
+  border-color: var(--border);
 }
 
-.btn-toggle.existente {
-  background-color: #8b3581;
+.btn.w-100.py-3.btn-outline-primary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--white);
 }
 
-.btn-toggle.activo {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.btn.w-100.py-3.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
 }
 
-.btn-toggle:hover {
-  opacity: 0.85;
+.btn.w-100.py-3.btn-primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 /* Inputs y selects */
-.input-text,
-.input-select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 2px solid #8b3581;
+.form-control.custom-input,
+.form-select.custom-select {
+  border: 2px solid var(--border);
   border-radius: 8px;
-  font-size: 1rem;
-  color: #0c0c0c;
-  background-color: #fff;
-  box-shadow: inset 0 1px 6px rgba(138,124,200,0.18);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  transition: var(--transition);
 }
 
-.input-text:focus,
-.input-select:focus {
-  outline: none;
-  border-color: #00b0e0;
+.form-control.custom-input:focus,
+.form-select.custom-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 176, 224, 0.1);
 }
 
 /* Checkboxes */
-.input-check {
-  width: 18px;
-  height: 18px;
-  accent-color: #8b3581;
+.form-check-input.custom-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.125rem;
+  accent-color: var(--primary);
+  border: 2px solid var(--border);
+  border-radius: 4px;
 }
 
-/* Subcategoría */
-.subcategoria-box {
-  border: 1px solid #8b3581;
-  padding: 15px;
-  border-radius: 12px;
-  background-color: #f9f5fc;
+.form-check-input.custom-checkbox:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.form-check-label.fw-medium {
+  color: var(--dark);
+  font-weight: 500;
+  margin-left: 0.5rem;
 }
 
 /* Botón guardar */
-.btn-guardar {
-  background-color: #00b0e0;
-  color: #fff;
+.btn.btn-primary.btn-lg {
+  background: var(--primary);
   border: none;
-  border-radius: 10px;
-  padding: 12px 20px;
+  border-radius: 8px;
+  padding: 0.875rem 2.5rem;
   font-weight: 600;
-  cursor: pointer;
-  align-self: flex-start;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-size: 1rem;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
 }
 
-.btn-guardar:hover {
+.btn.btn-primary.btn-lg:hover {
+  background: var(--primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,176,224,0.4);
+  box-shadow: var(--shadow-hover);
 }
 
-/* Responsive */
+/* --- SECCIÓN SUBCATEGORÍA --- */
+.subcategoria-card {
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  background: #fcfcfd;
+  margin-top: 2rem;
+  box-shadow: 0 4px 24px rgba(139, 53, 129, 0.09);
+  transition: var(--transition);
+}
+
+.subcategoria-card:hover {
+  box-shadow: 0 8px 32px rgba(139, 53, 129, 0.15);
+}
+
+.subcategoria-card-header {
+  background: var(--secondary-dark) !important;
+  padding: 1.5rem 2rem;
+  border-radius: 18px 18px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(50, 35, 74, 0.07);
+}
+
+.subcategoria-card-header h5 {
+  color: var(--white);
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.5px;
+}
+
+.subcategoria-card-body {
+  background: #fcfcfd;
+  padding: 2.2rem 2rem 1.7rem 2rem;
+  border-radius: 0 0 18px 18px;
+}
+
+.subcategoria-card .form-label {
+  color: var(--secondary-dark);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.subcategoria-card .custom-input {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.subcategoria-card .custom-input:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 2px rgba(139, 53, 129, 0.08);
+}
+
+.subcategoria-card .custom-checkbox {
+  accent-color: var(--secondary);
+}
+
+/* Línea divisoria */
+.subcategoria-divider {
+  height: 2px;
+  background: linear-gradient(90deg, var(--secondary) 0%, var(--primary) 100%);
+  border: none;
+  margin: 0 0 1rem 0;
+}
+
+/* Iconos */
+.fas {
+  opacity: 0.8;
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 992px) {
+  .custom-card .card-body {
+    padding: 1.5rem;
+  }
+  
+  .btn.w-100.py-3 {
+    margin-bottom: 0.75rem;
+  }
+}
+
 @media (max-width: 768px) {
-  .btn-group-custom {
-    flex-direction: column;
+  .container-fluid {
+    padding: 1rem;
+  }
+  
+  .display-6.fw-bold.text-primary {
+    font-size: 2rem !important;
+  }
+  
+  .btn.w-100.py-3 {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .subcategoria-card {
+    margin-top: 1.5rem;
+    border-radius: 12px;
+  }
+  
+  .subcategoria-card-header {
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .subcategoria-card-body {
+    padding: 1.5rem;
+    border-radius: 0 0 12px 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .btn.btn-primary.btn-lg {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+  
+  .custom-card .card-body {
+    padding: 1.25rem;
+  }
+  
+  .subcategoria-card-header {
+    padding: 1rem;
+  }
+  
+  .subcategoria-card-body {
+    padding: 1.25rem;
+  }
+  
+  .display-6.fw-bold.text-primary {
+    font-size: 1.75rem !important;
+    margin-bottom: 1rem;
   }
 }

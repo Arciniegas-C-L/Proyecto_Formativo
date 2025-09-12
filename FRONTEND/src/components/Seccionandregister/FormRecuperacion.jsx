@@ -1,7 +1,7 @@
 // src/components/FormRecuperacion.jsx
 import { useState } from "react";
 import { VerificarCodigo } from "./FormCambio";
-import { solicitarRecuperacion } from "../../api/Usuario.api"; // ✅ Usamos el método centralizado
+import { solicitarRecuperacion } from "../../api/Usuario.api"; 
 import "../../assets/css/Seccionandregistrer/formRecuperacion.css";
 
 export function RecuperarContrasena() {

@@ -4,21 +4,23 @@ import { getALLProductos, deleteProducto } from '../../api/Producto.api';
 import { toast } from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import "../../assets/css/Productos/ListaProductos.css";
+import { EliminarModal } from  "../EliminarModal/EliminarModal"; 
 
 export function ListaProductos() {
-  // Estados para manejar la lista de productos, carga, errores y filtro de búsqueda
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const navigate = useNavigate();
 
-  // Cargar productos al montar el componente
+  // ---- estado para ventana eliminar global ----
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [productoToDelete, setProductoToDelete] = useState(null);
+
   useEffect(() => {
       cargarProductos();
   }, []);
 
-  // Función para obtener los productos desde la API
   const cargarProductos = async () => {
       try {
           setLoading(true);
@@ -39,15 +41,12 @@ export function ListaProductos() {
       }
   };
 
-  // Función para redirigir al formulario de edición dentro del admin
   const handleEditar = (producto) => {
       try {
           if (!producto || !producto.id) {
               toast.error('Producto o ID no válido');
               return;
           }
-
-          // Preparar los datos completos del producto
           const productoCompleto = {
               idProducto: producto.id,
               nombre: producto.nombre || '',
@@ -64,46 +63,28 @@ export function ListaProductos() {
                   nombre: producto.subcategoria_nombre || ''
               }
           };
-
-          // Redirigir a la ruta de edición dentro del admin
-          navigate(`/admin/productos/editar/${producto.id}`, { 
-              state: { producto: productoCompleto } 
-          });
+          navigate(`/admin/productos/editar/${producto.id}`, { state: { producto: productoCompleto } });
       } catch (error) {
           console.error('Error al editar producto:', error);
           toast.error('Error al abrir el formulario de edición');
       }
   };
 
-  // Función para eliminar un producto con confirmación
-  const handleEliminar = async (idProducto) => {
-      if (!idProducto) {
-          toast.error('ID de producto no válido');
-          return;
-      }
+  // ---- abrir ventana eliminar global ----
+  const handleEliminarClick = (producto) => {
+      setProductoToDelete(producto);
+      setOpenDeleteDialog(true);
+  };
 
-      const confirmacion = window.confirm(
-          '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.'
-      );
-
-      if (!confirmacion) return;
-
+  // ---- confirmar eliminación ----
+  const confirmDelete = async () => {
+      if (!productoToDelete) return;
       try {
           setLoading(true);
-          const productoExiste = productos.find(p => p.id === idProducto);
-          if (!productoExiste) {
-              toast.error('El producto ya no existe');
-              await cargarProductos();
-              return;
-          }
-
-          await deleteProducto(idProducto);
-
-          setProductos(prevProductos => 
-              prevProductos.filter(p => p.id !== idProducto)
-          );
-
+          await deleteProducto(productoToDelete.id);
           toast.success('Producto eliminado exitosamente');
+          setOpenDeleteDialog(false);
+          setProductoToDelete(null);
           await cargarProductos();
       } catch (error) {
           toast.error(error.message || 'Error al eliminar el producto');
@@ -115,19 +96,16 @@ export function ListaProductos() {
       }
   };
 
-  // Función para navegar al formulario de creación
   const handleCrear = () => {
       navigate('/admin/productos/crear');
   };
 
-  // Filtrar productos según búsqueda
   const productosFiltrados = productos.filter(producto =>
       producto.nombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
       producto.descripcion.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
       producto.categoria_nombre.toLowerCase().includes(filtroBusqueda.toLowerCase())
   );
 
-  // Vista de carga
   if (loading && productos.length === 0) {
       return (
           <div className="lista-productos-container">
@@ -136,7 +114,6 @@ export function ListaProductos() {
       );
   }
 
-  // Vista de error
   if (error && productos.length === 0) {
       return (
           <div className="lista-productos-container">
@@ -150,7 +127,6 @@ export function ListaProductos() {
       );
   }
 
-  // Vista principal de la tabla
   return (
       <div className="lista-productos-container">
         <div className="header-acciones">
@@ -230,7 +206,7 @@ export function ListaProductos() {
                       </button>
                       <button
                         className="btn-eliminar"
-                        onClick={() => handleEliminar(producto.id)}
+                        onClick={() => handleEliminarClick(producto)}
                         title="Eliminar producto"
                         disabled={loading}
                         aria-label={`Eliminar ${producto.nombre}`}
@@ -244,6 +220,14 @@ export function ListaProductos() {
             </tbody>
           </table>
         </div>
+
+        {/* Modal Eliminar Global */}
+        <EliminarModal
+          abierto={openDeleteDialog}
+          mensaje={`¿Seguro que quieres eliminar el producto "${productoToDelete?.nombre}"?`}
+          onCancelar={() => setOpenDeleteDialog(false)}
+          onConfirmar={confirmDelete}
+        />
       </div>
   );
 }

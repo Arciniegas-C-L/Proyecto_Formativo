@@ -464,7 +464,7 @@ def crear_inventario_producto(sender, instance, created, **kwargs):
 def actualizar_inventario_subcategoria(sender, instance, created, **kwargs):
     if created:
         Inventario.crear_inventario_para_subcategoria(instance)
-    elif 'grupoTalla' in kwargs.get('update_fields', []):
+    elif kwargs.get('update_fields') and 'grupoTalla' in kwargs.get('update_fields'):
         try:
             productos = instance.productos.all()
             for producto in productos:

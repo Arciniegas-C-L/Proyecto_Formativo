@@ -4,7 +4,7 @@ import AdminDashboard from "./AdminDashboard.jsx";
 import AdminFooter from "./AdminFooter.jsx";
 import "../../assets/css/Admin/AdminLayout.css";
 
-const AdminLayout = () => {
+export const AdminLayout = () => {
   return (
     <div className="admin-layout">
       {/* Sidebar de navegación */}

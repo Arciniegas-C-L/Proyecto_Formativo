@@ -21,6 +21,7 @@
   color: #00b0e0;
   font-weight: bold;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  margin: 0;
 }
 
 .header-controls {
@@ -43,6 +44,8 @@
   align-items: center;
   gap: 8px;
   transition: background 0.4s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  min-height: 44px;
+  white-space: nowrap;
 }
 
 .btn-nueva-talla:hover {
@@ -50,12 +53,29 @@
   transform: translateY(-2px);
 }
 
-/* Contenedor tabla */
+.btn-text-desktop {
+  display: inline;
+}
+
+/* Vistas Desktop y Mobile - SIEMPRE mostrar tabla */
+.desktop-view {
+  display: block;
+}
+
+.mobile-view {
+  display: none !important;
+}
+
+/* Contenedor tabla con scroll horizontal */
 .tabla-container {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #8b3581 #f3f9ff;
 }
 
 /* Tabla */
@@ -65,6 +85,8 @@
   font-size: 1rem;
   color: #0f0f10;
   min-width: 600px;
+  /* Para pantallas pequeñas, la tabla puede ser más ancha que el contenedor */
+  table-layout: auto;
 }
 
 .tabla-tallas th,
@@ -86,7 +108,7 @@
   transition: background-color 0.3s ease;
 }
 
-/* Estados activos / inactivos - igual que proveedores */
+/* Estados activos / inactivos - Tamaño fijo */
 .chip-estado {
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
@@ -95,12 +117,15 @@
   display: inline-block;
   background-color: #c3c3c9;
   text-align: center;
-  transform: none;
-  transition: none;
-  animation: none;
   border: none;
   cursor: pointer;
   color: #FFFFFF;
+  transition: all 0.3s ease;
+  min-width: 70px;
+  width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chip-estado.on {
@@ -111,11 +136,6 @@
 .chip-estado.off {
   background-color: #9AA0A6;
   color: #FFFFFF;
-}
-
-/* Ocultar botón agregar productos */
-.btn-agregar-productos {
-  display: none !important;
 }
 
 /* Botones acciones */
@@ -144,19 +164,17 @@
   transform: scale(1.05);
 }
 
-/* Botón eliminar - máxima especificidad */
-.btn-eliminar,
-.celda-acciones .btn-eliminar,
-.tabla-tallas .btn-eliminar,
-button.btn-eliminar {
+.btn-eliminar {
   background-color: #8b3581 !important;
-  background: #8b3581 !important;
   border-color: #8b3581 !important;
-  color: white !important;
 }
 
 .btn-eliminar:hover {
   transform: scale(1.05);
+}
+
+.btn-agregar-productos {
+  display: none !important;
 }
 
 /* Loading */
@@ -167,7 +185,17 @@ button.btn-eliminar {
   padding: 20px;
 }
 
-/* Modales Crear/Editar y Eliminar - igual que proveedores */
+.loading-mobile {
+  text-align: center;
+  font-size: 1.2em;
+  color: #7a6eb0;
+  padding: 40px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Modales - Solo el modal de crear/editar */
 .dialog-talla-modal {
   position: fixed;
   top: 0;
@@ -179,6 +207,7 @@ button.btn-eliminar {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .form-talla-modal {
@@ -186,7 +215,9 @@ button.btn-eliminar {
   border-radius: 12px;
   padding: 25px;
   max-width: 500px;
-  width: 90%;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 8px 25px rgba(0,0,0,0.2);
   position: relative;
 }
@@ -199,16 +230,24 @@ button.btn-eliminar {
 .form-talla-modal .form-label {
   font-weight: 600;
   margin-bottom: 5px;
+  display: block;
 }
 
 .form-talla-modal .form-control,
 .form-talla-modal .form-select {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 8px;
   border: 2px solid #ccc;
   margin-bottom: 10px;
   font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.form-talla-modal .form-control:focus,
+.form-talla-modal .form-select:focus {
+  outline: none;
+  border-color: #00b0e0;
 }
 
 .form-talla-modal .form-check-label {
@@ -216,16 +255,17 @@ button.btn-eliminar {
 }
 
 .form-talla-modal .btn {
-  padding: 8px 16px;
-  border-radius: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+  border: none;
+  transition: all 0.3s ease;
 }
 
 .form-talla-modal .btn-primary {
   background-color: #00b0e0;
   color: #fff;
-  border: none;
 }
 
 .form-talla-modal .btn-primary:hover {
@@ -235,133 +275,190 @@ button.btn-eliminar {
 .form-talla-modal .btn-secondary {
   background-color: #6c757d;
   color: #fff;
-  border: none;
 }
 
 .form-talla-modal .btn-secondary:hover {
-  background-color: #6c757d;
+  background-color: #5a6268;
 }
 
-/* Modal eliminar - estilo igual que proveedores */
-.form-talla-modal.text-center {
-  width: 300px;
-  background-color: #fefefe;
-  font-size: 0.95rem;
-  padding: 1rem;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-}
-
-.form-talla-modal .d-flex.justify-content-center {
-  margin-top: 1rem;
+.form-talla-modal .d-flex {
   display: flex;
-  justify-content: center;
-  gap: 1rem;
 }
 
-.form-talla-modal .d-flex.justify-content-center button {
-  padding: 0.5rem 1.2rem !important;
-  border: none !important;
-  border-radius: 4px !important;
-  font-family: "Tahoma", sans-serif !important;
-  font-size: 0.9rem !important;
-  color: white !important;
+.form-talla-modal .justify-content-end {
+  justify-content: flex-end;
 }
 
-/* Botón eliminar en modal - estilo proveedores */
-.form-talla-modal .btn-eliminar,
-.dialog-talla-modal .btn-eliminar,
-.form-talla-modal button.btn-eliminar,
-button[class="btn btn-eliminar"] {
-  background-color: #8b3581 !important;
-  background: #8b3581 !important;
-  border-color: #8b3581 !important;
-  color: #fff !important;
-  border: none !important;
+.form-talla-modal .gap-2 {
+  gap: 8px;
 }
 
-.form-talla-modal .btn-eliminar:hover {
-  background-color: #6d2a63 !important;
+.form-talla-modal .mb-2 {
+  margin-bottom: 8px;
 }
 
-/* Botón cancelar en modal eliminar */
-.form-talla-modal .btn-secondary {
-  background-color: #9AA0A6 !important;
-  color: #fff !important;
-  border: none !important;
+.form-talla-modal .mb-3 {
+  margin-bottom: 16px;
 }
 
-/* Responsive */
+.form-talla-modal .text-danger {
+  color: #dc3545;
+  background-color: #f8d7da;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.form-talla-modal .text-muted {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.form-talla-modal .d-block {
+  display: block;
+}
+
+.form-talla-modal .form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-talla-modal .form-switch .form-check-input {
+  width: 48px;
+  height: 24px;
+  margin: 0;
+}
+
+/* RESPONSIVE - Solo ajustes mínimos para mantener tabla con scroll */
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .lista-tallas-container {
+    padding: 15px;
+  }
+  
+  .tabla-tallas th,
+  .tabla-tallas td {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Mobile */
 @media (max-width: 768px) {
+  .lista-tallas-container {
+    padding: 12px;
+  }
+
   .header-acciones {
     flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-acciones h2 {
+    font-size: 1.8rem;
+    text-align: center;
   }
 
   .header-controls {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .btn-nueva-talla {
     width: 100%;
     justify-content: center;
   }
 
+  .btn-nueva-talla {
+    width: 100%;
+    max-width: 200px;
+    justify-content: center;
+    min-height: 44px;
+    font-size: 1rem;
+  }
+
+  /* Modal responsive */
+  .dialog-talla-modal {
+    padding: 10px;
+  }
+
+  .form-talla-modal {
+    padding: 20px;
+    margin: 0;
+    max-width: 100%;
+    width: calc(100% - 20px);
+  }
+
+  .form-talla-modal h3 {
+    font-size: 1.4rem;
+  }
+
+  .form-talla-modal .d-flex.justify-content-end {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .form-talla-modal .btn {
+    width: 100%;
+    padding: 12px;
+    min-height: 44px;
+    font-size: 1rem;
+  }
+  /* Scroll horizontal visible en móviles */
   .tabla-container {
-    margin: 0 -20px;
-    border-radius: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
   }
-
-  .celda-acciones {
-    flex-wrap: wrap;
-  }
-
-  .tabla-tallas th,
-  .tabla-tallas td {
-    padding: 0.7rem;
-    font-size: 0.95rem;
-  }
-
-  .header-acciones h2 {
-    font-size: 1.6rem;
-  }
-
-  .form-talla-modal.text-center {
-    width: 90%;
-    font-size: 0.9rem;
-  }
-
-  .form-talla-modal .d-flex.justify-content-center button {
-    font-size: 0.85rem !important;
+  .tabla-tallas {
+    min-width: 500px;
   }
 }
 
 @media (max-width: 480px) {
-  .tabla-tallas th,
-  .tabla-tallas td {
-    padding: 0.5rem;
-    font-size: 0.8rem;
+  .lista-tallas-container {
+    padding: 8px;
   }
 
   .header-acciones h2 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
   }
 
-  .btn-editar,
-  .btn-eliminar {
-    font-size: 0.8rem !important;
-    padding: 0.3rem 0.6rem !important;
+  .btn-nueva-talla {
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    min-height: 44px;
+    max-width: 180px;
   }
 
-  .form-talla-modal.text-center {
-    padding: 0.8rem;
+  .btn-text-desktop {
+    display: none;
   }
 
-  .chip-estado {
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
+  .form-talla-modal {
+    padding: 15px;
+  }
+
+  .form-talla-modal h3 {
+    font-size: 1.2rem;
+  }
+
+  .form-talla-modal .form-control,
+  .form-talla-modal .form-select {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+
+  .form-talla-modal .btn {
+    padding: 10px;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+  /* Scroll horizontal visible en móviles */
+  .tabla-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  }
+  .tabla-tallas {
+    min-width: 400px;
   }
 }

@@ -2,20 +2,108 @@ import React, { useEffect, useState } from "react";
 import { updateCategoria, deleteCategoria } from "../../api/Categoria.api";
 import { updateSubcategoria, deleteSubcategoria } from "../../api/Subcategoria.api";
 import "../../assets/css/Categoria/ListaCategoria.css";
+import { EliminarModal } from "../EliminarModal/EliminarModal.jsx";
 
-export function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} }) {
-  // === Estados con los NOMBRES que usa tu JSX ===
-  const [categoriasEditadas, setCategoriasEditadas] = useState(categorias); // lista editable
-  const [editarCategoria, setEditarCategoria] = useState({});              // { [idCategoria]: bool }
-  const [editarSubcategoria, setEditarSubcategoria] = useState({});        // { [idSubcategoria]: bool }
-  const [mostrarSub, setMostrarSub] = useState({});                        // { [idCategoria]: bool }
+function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} }) {
+  const [categoriasEditadas, setCategoriasEditadas] = useState(categorias);
+  const [mostrarSub, setMostrarSub] = useState({});
+  const [categoriaAEliminar, setCategoriaAEliminar] = useState(null);
+  const [subcategoriaAEliminar, setSubcategoriaAEliminar] = useState(null);
 
-  // Sincroniza cuando cambien las categorías del padre
+  const [categoriaEditModal, setCategoriaEditModal] = useState(null);
+  const [editModalData, setEditModalData] = useState({ nombre: "", estado: true });
+
+  const [subcategoriaEditModal, setSubcategoriaEditModal] = useState(null);
+  const [editSubModalData, setEditSubModalData] = useState({ nombre: "", estado: true });
+
   useEffect(() => {
     setCategoriasEditadas(Array.isArray(categorias) ? categorias : []);
   }, [categorias]);
 
-  // ======= Handlers para editar en memoria =======
+  // ======== FUNCIONES EDITAR ========
+  const abrirModalEditar = (cat) => {
+    setCategoriaEditModal(cat);
+    setEditModalData({ nombre: cat.nombre, estado: !!cat.estado });
+  };
+
+  const cerrarModalEditar = () => {
+    setCategoriaEditModal(null);
+    setEditModalData({ nombre: "", estado: true });
+  };
+
+  const guardarModalEditar = async () => {
+    try {
+      await updateCategoria(categoriaEditModal.idCategoria, {
+        nombre: editModalData.nombre,
+        estado: Boolean(editModalData.estado),
+      });
+      onCategoriasActualizadas();
+      cerrarModalEditar();
+    } catch (e) {
+      console.error("Error actualizando categoría", e);
+      alert("Error al actualizar categoría");
+    }
+  };
+
+  const abrirModalEditarSub = (sub) => {
+    setSubcategoriaEditModal(sub);
+    setEditSubModalData({ nombre: sub.nombre, estado: !!sub.estado });
+  };
+
+  const cerrarModalEditarSub = () => {
+    setSubcategoriaEditModal(null);
+    setEditSubModalData({ nombre: "", estado: true });
+  };
+
+  const guardarModalEditarSub = async (catId) => {
+    try {
+      await updateSubcategoria(subcategoriaEditModal.idSubcategoria, {
+        nombre: editSubModalData.nombre,
+        estado: Boolean(editSubModalData.estado),
+        categoria: Number(catId),
+      });
+      onCategoriasActualizadas();
+      cerrarModalEditarSub();
+    } catch (e) {
+      console.error("Error actualizando subcategoría", e);
+      alert("Error al actualizar subcategoría");
+    }
+  };
+
+  // ======== FUNCIONES ELIMINAR ========
+  const eliminarCategoria = async () => {
+    const cat = categoriaAEliminar;
+    if (!cat) return;
+    try {
+      for (const sub of cat.subcategorias || []) {
+        await deleteSubcategoria(sub.idSubcategoria).catch(() => {});
+      }
+      await deleteCategoria(cat.idCategoria);
+      alert("Categoría y subcategorías eliminadas");
+      onCategoriasActualizadas();
+    } catch (e) {
+      console.error("Error eliminando categoría y subcategorías", e);
+      alert("No se pudo eliminar la categoría");
+    } finally {
+      setCategoriaAEliminar(null);
+    }
+  };
+
+  const eliminarSubConfirmado = async () => {
+    if (!subcategoriaAEliminar) return;
+    try {
+      await deleteSubcategoria(subcategoriaAEliminar.idSubcategoria);
+      alert("Subcategoría eliminada");
+      onCategoriasActualizadas();
+    } catch (e) {
+      console.error("Error eliminando subcategoría", e);
+      alert("No se pudo eliminar la subcategoría");
+    } finally {
+      setSubcategoriaAEliminar(null);
+    }
+  };
+
+  // ======== FUNCIONES CAMBIO INLINE ========
   const cambiarCategoria = (id, field, value) => {
     setCategoriasEditadas(prev =>
       prev.map(cat => (cat.idCategoria === id ? { ...cat, [field]: value } : cat))
@@ -34,77 +122,7 @@ export function ListaCategorias({ categorias = [], onCategoriasActualizadas = ()
     );
   };
 
-  // ======= Guardar en API =======
-  const guardarCategoria = async (cat) => {
-    try {
-      await updateCategoria(cat.idCategoria, {
-        nombre: cat.nombre,
-        estado: Boolean(cat.estado),
-      });
-      alert("Categoría actualizada correctamente");
-      setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: false }));
-      onCategoriasActualizadas();
-    } catch (e) {
-      console.error("Error actualizando categoría", e);
-      alert("Error al actualizar categoría");
-    }
-  };
-
-  const guardarSubcategoria = async (catId, sub) => {
-    try {
-      await updateSubcategoria(sub.idSubcategoria, {
-        nombre: sub.nombre,
-        estado: Boolean(sub.estado),
-        categoria: Number(catId),
-      });
-      alert("Subcategoría actualizada correctamente");
-      setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: false }));
-      onCategoriasActualizadas();
-    } catch (e) {
-      console.error("Error actualizando subcategoría", e);
-      alert("Error al actualizar subcategoría");
-    }
-  };
-
-  // ======= Eliminar =======
-  const eliminarSub = async (sub) => {
-    if (!window.confirm(`¿Eliminar la subcategoría "${sub.nombre}"?`)) return;
-    try {
-      await deleteSubcategoria(sub.idSubcategoria);
-      alert("Subcategoría eliminada");
-      onCategoriasActualizadas();
-    } catch (e) {
-      console.error("Error eliminando subcategoría", e);
-      alert("No se pudo eliminar la subcategoría");
-    }
-  };
-
-  const eliminarCategoria = async (cat) => {
-    if (!window.confirm(`¿Eliminar la categoría "${cat.nombre}" y TODAS sus subcategorías?`)) return;
-
-    // 1) Intenta borrado directo (si tu backend tiene CASCADE)
-    try {
-      await deleteCategoria(cat.idCategoria);
-      alert("Categoría eliminada");
-      onCategoriasActualizadas();
-      return;
-    } catch {
-      // 2) Si falla, borra subcategorías manualmente y reintenta
-      try {
-        for (const sub of cat.subcategorias || []) {
-          await deleteSubcategoria(sub.idSubcategoria).catch(() => {});
-        }
-        await deleteCategoria(cat.idCategoria);
-        alert("Categoría y subcategorías eliminadas");
-        onCategoriasActualizadas();
-      } catch (e2) {
-        console.error("Error eliminando categoría y subcategorías", e2);
-        alert("No se pudo eliminar la categoría");
-      }
-    }
-  };
-
-  // ======= Render =======
+  // ======== RENDER ========
   return (
     <div className="contenedor-categorias">
       <h3 className="titulo-categorias">Listado de Categorías y Subcategorías</h3>
@@ -116,147 +134,153 @@ export function ListaCategorias({ categorias = [], onCategoriasActualizadas = ()
           {categoriasEditadas.map(cat => (
             <div key={cat.idCategoria} className="tarjeta-categoria">
               <div className="header-tarjeta">
-                <input
-                  type="text"
-                  className="input-categoria"
-                  value={cat.nombre || ""}
-                  disabled={!editarCategoria[cat.idCategoria]}
-                  onChange={e => cambiarCategoria(cat.idCategoria, "nombre", e.target.value)}
-                />
-
-                <label className="label-check">
-                  <input
-                    type="checkbox"
-                    className="checkbox"
-                    checked={!!cat.estado}
-                    disabled={!editarCategoria[cat.idCategoria]}
-                    onChange={e => cambiarCategoria(cat.idCategoria, "estado", e.target.checked)}
-                  />
-                  Activo
-                </label>
-
+                <div className="categoria-row">
+                  <div className="categoria-info">
+                    <input
+                      type="text"
+                      className="input-categoria"
+                      value={cat.nombre || ""}
+                      onChange={e => cambiarCategoria(cat.idCategoria, "nombre", e.target.value)}
+                    />
+                    <label className="label-check">
+                      <input
+                        type="checkbox"
+                        checked={!!cat.estado}
+                        onChange={e => cambiarCategoria(cat.idCategoria, "estado", e.target.checked)}
+                      />
+                      Activo
+                    </label>
+                  </div>
+                </div>
                 <div className="grupo-botones">
-                  {!editarCategoria[cat.idCategoria] ? (
-                    <button
-                      className="btn-editar"
-                      onClick={() =>
-                        setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: true }))
-                      }
-                    >
-                      Editar
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        className="btn-cancelar"
-                        onClick={() =>
-                          setEditarCategoria(prev => ({ ...prev, [cat.idCategoria]: false }))
-                        }
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        className="btn-guardar"
-                        onClick={() => guardarCategoria(cat)}
-                      >
-                        Guardar
-                      </button>
-                    </>
-                  )}
-
-                  <button
-                    className="btn-subcategorias"
-                    onClick={() =>
-                      setMostrarSub(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))
-                    }
-                  >
+                  <button className="btn-editar" onClick={() => abrirModalEditar(cat)}>Editar</button>
+                  <button className="btn-subcategorias" onClick={() =>
+                    setMostrarSub(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))
+                  }>
                     {mostrarSub[cat.idCategoria] ? "Ocultar Subcategorías" : "Mostrar Subcategorías"}
                   </button>
-
-                  <button
-                    className="btn-eliminar"
-                    onClick={() => eliminarCategoria(cat)}
-                  >
-                    Eliminar categoría
-                  </button>
+                  <button className="btn-eliminar" onClick={() => setCategoriaAEliminar(cat)}>Eliminar categoría</button>
                 </div>
               </div>
 
               {mostrarSub[cat.idCategoria] && (
                 <div className="subcategorias">
-                  {cat.subcategorias?.length > 0 ? (
-                    cat.subcategorias.map(sub => (
-                      <div key={sub.idSubcategoria} className="fila-subcategoria">
+                  {cat.subcategorias?.length > 0 ? cat.subcategorias.map(sub => (
+                    <div key={sub.idSubcategoria} className="fila-subcategoria">
+                      <input
+                        type="text"
+                        value={sub.nombre || ""}
+                        onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "nombre", e.target.value)}
+                      />
+                      <label>
                         <input
-                          type="text"
-                          className="input-subcategoria"
-                          value={sub.nombre || ""}
-                          disabled={!editarSubcategoria[sub.idSubcategoria]}
-                          onChange={e =>
-                            cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "nombre", e.target.value)
-                          }
+                          type="checkbox"
+                          checked={!!sub.estado}
+                          onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "estado", e.target.checked)}
                         />
-
-                        <label className="label-check">
-                          <input
-                            type="checkbox"
-                            className="checkbox"
-                            checked={!!sub.estado}
-                            disabled={!editarSubcategoria[sub.idSubcategoria]}
-                            onChange={e =>
-                              cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "estado", e.target.checked)
-                            }
-                          />
-                          Activo
-                        </label>
-
-                        <div className="grupo-botones">
-                          {!editarSubcategoria[sub.idSubcategoria] ? (
-                            <button
-                              className="btn-editar"
-                              onClick={() =>
-                                setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: true }))
-                              }
-                            >
-                              Editar
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                className="btn-cancelar"
-                                onClick={() =>
-                                  setEditarSubcategoria(prev => ({ ...prev, [sub.idSubcategoria]: false }))
-                                }
-                              >
-                                Cancelar
-                              </button>
-                              <button
-                                className="btn-guardar"
-                                onClick={() => guardarSubcategoria(cat.idCategoria, sub)}
-                              >
-                                Guardar
-                              </button>
-                            </>
-                          )}
-
-                          <button
-                            className="btn-eliminar-sub"
-                            onClick={() => eliminarSub(sub)}
-                          >
-                            Eliminar subcategoría
-                          </button>
-                        </div>
+                        Activo
+                      </label>
+                      <div className="grupo-botones">
+                        <button className="btn-editar" onClick={() => abrirModalEditarSub(sub)}>Editar</button>
+                        <button className="btn-eliminar" onClick={() => setSubcategoriaAEliminar(sub)}>Eliminar subcategoría</button>
                       </div>
-                    ))
-                  ) : (
-                    <em className="mensaje-vacio-sub">No hay subcategorías</em>
-                  )}
+                    </div>
+                  )) : <em>No hay subcategorías</em>}
                 </div>
               )}
             </div>
           ))}
         </div>
       )}
+
+      {/* ===== MODALES ===== */}
+      {categoriaEditModal && (
+        <div className="dialog-categoria-modal">
+          <div className="form-categoria-modal">
+            <h3>Editar Categoría</h3>
+            <label className="form-label">Nombre *</label>
+            <input
+              className="form-control mb-2"
+              name="nombre"
+              value={editModalData.nombre}
+              onChange={e => setEditModalData({ ...editModalData, nombre: e.target.value })}
+              maxLength={45}
+            />
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                name="estado"
+                checked={!!editModalData.estado}
+                onChange={e => setEditModalData({ ...editModalData, estado: e.target.checked })}
+              />
+              <label className="form-check-label">Activo</label>
+            </div>
+            <div className="d-flex justify-content-end gap-2">
+              <button className="btn btn-secondary" onClick={cerrarModalEditar}>
+                Cancelar
+              </button>
+              <button className="btn btn-primary" onClick={guardarModalEditar}>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {subcategoriaEditModal && (
+        <div className="dialog-categoria-modal">
+          <div className="form-categoria-modal">
+            <h3>Editar Subcategoría</h3>
+            <label className="form-label">Nombre *</label>
+            <input
+              className="form-control mb-2"
+              name="nombre"
+              value={editSubModalData.nombre}
+              onChange={e => setEditSubModalData({ ...editSubModalData, nombre: e.target.value })}
+              maxLength={45}
+            />
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                name="estado"
+                checked={!!editSubModalData.estado}
+                onChange={e => setEditSubModalData({ ...editSubModalData, estado: e.target.checked })}
+              />
+              <label className="form-check-label">Activo</label>
+            </div>
+            <div className="d-flex justify-content-end gap-2">
+              <button className="btn btn-secondary" onClick={cerrarModalEditarSub}>
+                Cancelar
+              </button>
+              <button className="btn btn-primary" onClick={() => guardarModalEditarSub(subcategoriaEditModal.categoria)}>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {categoriaAEliminar && (
+        <EliminarModal
+          abierto
+          mensaje={`¿Eliminar la categoría "${categoriaAEliminar.nombre}" y TODAS sus subcategorías?`}
+          onCancelar={() => setCategoriaAEliminar(null)}
+          onConfirmar={eliminarCategoria}
+        />
+      )}
+
+      {subcategoriaAEliminar && (
+        <EliminarModal
+          abierto
+          mensaje={`¿Eliminar la subcategoría "${subcategoriaAEliminar.nombre}"?`}
+          onCancelar={() => setSubcategoriaAEliminar(null)}
+          onConfirmar={eliminarSubConfirmado}
+        />
+      )}
     </div>
   );
 }
+
+export default ListaCategorias;

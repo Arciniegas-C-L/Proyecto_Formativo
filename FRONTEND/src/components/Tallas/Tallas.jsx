@@ -13,10 +13,11 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/Tallas.css";
 import { FaEdit, FaTrash, FaPlus, FaBoxes } from "react-icons/fa";
+import { EliminarModal } from "../EliminarModal/EliminarModal.jsx";
 
 export function Tallas() {
   const location = useLocation();
-  const navigate = useNavigate(); // opcional: para redirigir tras crear/editar/borrar
+  const navigate = useNavigate();
 
   const [tallas, setTallas] = useState([]);
   const [gruposTalla, setGruposTalla] = useState([]);
@@ -68,7 +69,6 @@ export function Tallas() {
   const handleOpenDialog = (talla = null) => {
     setError("");
     if (talla) {
-      // EDITAR
       setEditingTalla(talla);
       setFormData({
         nombre: talla?.nombre ?? "",
@@ -76,7 +76,6 @@ export function Tallas() {
         estado: Boolean(talla?.estado),
       });
     } else {
-      // NUEVA
       setEditingTalla(null);
       const grupoIdDesdeNavegacion = location.state?.grupoId || "";
       setFormData({
@@ -120,7 +119,6 @@ export function Tallas() {
       }
       handleCloseDialog();
       await cargarTallas();
-      // opcional: navigate("/tallas");
     } catch {
       toast.error("Error al guardar la talla");
     }
@@ -140,22 +138,20 @@ export function Tallas() {
       setTallaToDelete(null);
       cargarTallas();
     } catch (err) {
-      handleError(err);
+      toast.error("Error al eliminar la talla");
     }
   };
 
-  // --------------- Estado ---------------
   const handleEstadoChange = async (id, estado) => {
     try {
       await cambiarEstadoTalla(id, !estado);
       toast.success('Estado de la talla actualizado exitosamente');
       cargarTallas();
     } catch (err) {
-      handleError(err);
+      toast.error("Error al cambiar estado");
     }
   };
 
-  // --------------- Agregar talla a productos existentes ---------------
   const handleAgregarAProductosClick = (talla) => {
     setTallaToAdd(talla);
     setOpenAgregarDialog(true);
@@ -163,39 +159,14 @@ export function Tallas() {
 
   const confirmAgregarAProductos = async () => {
     if (!tallaToAdd) return;
-    
     try {
       setLoadingAgregar(true);
       const id = tallaToAdd.id ?? tallaToAdd.idTalla ?? tallaToAdd.id_talla;
-      const response = await agregarTallaAProductosExistentes(id);
-      
-      // Mostrar mensaje detallado del resultado
-      const { mensaje, estadisticas, inventarios_creados, inventarios_existentes } = response;
-      
-      if (estadisticas.inventarios_creados > 0) {
-        toast.success(
-          `${mensaje}. Se crearon ${estadisticas.inventarios_creados} nuevos registros de inventario para ${estadisticas.productos_procesados} productos.`,
-          { autoClose: 5000 }
-        );
-      } else if (estadisticas.inventarios_existentes > 0) {
-        toast.info(
-          `${mensaje}. Todos los productos ya tenían esta talla asignada (${estadisticas.inventarios_existentes} registros existentes).`,
-          { autoClose: 5000 }
-        );
-      } else {
-        toast.warning(
-          `${mensaje}. No se encontraron productos que usen el grupo de tallas de esta talla.`,
-          { autoClose: 5000 }
-        );
-      }
-      
+      await agregarTallaAProductosExistentes(id);
       setOpenAgregarDialog(false);
       setTallaToAdd(null);
-      
     } catch (err) {
-      const errorMessage = err?.response?.data?.error || 'Error al agregar la talla a productos existentes';
-      toast.error(errorMessage);
-      console.error('Error:', err);
+      toast.error("Error al agregar la talla a productos existentes");
     } finally {
       setLoadingAgregar(false);
     }
@@ -211,12 +182,13 @@ export function Tallas() {
             onClick={() => handleOpenDialog()}
           >
             <FaPlus />
-            Nueva Talla
+            <span className="btn-text-desktop">Nueva Talla</span>
           </button>
         </div>
       </div>
 
-      <div className="tabla-container">
+      {/* Vista Desktop - Tabla */}
+      <div className="tabla-container desktop-view">
         <table className="tabla-tallas">
           <thead>
             <tr>
@@ -272,6 +244,56 @@ export function Tallas() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Vista Mobile - Cards */}
+      <div className="mobile-view">
+        {tallas.length === 0 ? (
+          <div className="loading-mobile">
+            No hay tallas registradas
+          </div>
+        ) : (
+          <div className="tallas-cards">
+            {tallas.map((talla, index) => {
+              const id = talla.id ?? talla.idTalla ?? talla.id_talla ?? index;
+              return (
+                <div key={id} className="talla-card">
+                  <div className="card-header">
+                    <div className="talla-info">
+                      <h3 className="talla-nombre">{talla.nombre}</h3>
+                      <p className="talla-grupo">{talla.grupo?.nombre ?? '-'}</p>
+                    </div>
+                    <button
+                      className={`chip-estado-mobile ${talla.estado ? 'on' : 'off'}`}
+                      onClick={() => handleEstadoChange(id, talla.estado)}
+                    >
+                      {talla.estado ? "Activo" : "Inactivo"}
+                    </button>
+                  </div>
+                  <div className="card-actions">
+                    <button className="btn-card btn-editar-card" onClick={() => handleOpenDialog(talla)}>
+                      <FaEdit />
+                      <span>Editar</span>
+                    </button>
+                    <button className="btn-card btn-eliminar-card" onClick={() => handleDeleteClick(talla)}>
+                      <FaTrash />
+                      <span>Eliminar</span>
+                    </button>
+                    {talla.estado && (
+                      <button 
+                        className="btn-card btn-agregar-card" 
+                        onClick={() => handleAgregarAProductosClick(talla)}
+                      >
+                        <FaBoxes />
+                        <span>Agregar</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Modal Crear/Editar */}
@@ -331,28 +353,13 @@ export function Tallas() {
         </div>
       )}
 
-      {/* Modal eliminar */}
-      {openDeleteDialog && (
-        <div className="dialog-talla-modal">
-          <div className="form-talla-modal text-center">
-            <p>
-              ¿Seguro que quieres eliminar la talla "{tallaToDelete?.nombre}"?
-            </p>
-            <div className="d-flex justify-content-center gap-2 mt-3">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setOpenDeleteDialog(false)}
-              >
-                Cancelar
-              </button>
-              <button className="btn btn-eliminar" onClick={confirmDelete}>
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Nuevo Modal Eliminar Global */}
+      <EliminarModal
+        abierto={openDeleteDialog}
+        mensaje={`¿Seguro que quieres eliminar la talla "${tallaToDelete?.nombre}"?`}
+        onCancelar={() => setOpenDeleteDialog(false)}
+        onConfirmar={confirmDelete}
+      />
     </div>
   );
-};
-
+}

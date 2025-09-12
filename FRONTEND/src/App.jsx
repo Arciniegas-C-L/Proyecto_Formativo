@@ -24,32 +24,51 @@ import { ProveedoresRegistradosPage } from "./pages/ProveedoresRegistradosPage.j
 import { AdminUsuariosPage } from "./pages/AdminUsuariosPage.jsx";
 import { InventarioPage } from "./pages/InventarioPage.jsx";
 import { ProductosFormPage } from "./pages/ProductosFormPage.jsx";
-import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
-import { RolFormPage } from "./pages/RolFormPage.jsx";
-import { RolListaPage } from "./pages/RolListaPage.jsx";
+import { TallasPage } from "./pages/Tallaspage.jsx";
 import { GrupoTallaPage } from "./pages/GrupoTallePage.jsx";
-import { TallasPage } from "./pages/TallasPage.jsx";
+import { RolListaPage } from "./pages/RolListaPage.jsx";
+import { RolFormPage } from "./pages/RolFormPage.jsx";
+import { AdminDashboard } from "./components/Admin/AdminDashboard.jsx";
+import { AdminLayout } from "./components/Admin/AdminLayout.jsx";
+import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
+import { ReporteVentasPage } from "./pages/ReporteVentasPage.jsx";
+import "bootstrap/dist/css/bootstrap.min.css";
+
+import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { RetornoMPpage } from "./pages/RetornoMPpage";
 import {MisPedidosPage} from "./pages/MisPedidosPage"
 
 // Layout y contexto Admin
-import AdminLayout from "./components/Admin/AdminLayout.jsx";
+//import AdminLayout from "./components/Admin/AdminLayout.jsx";
 
 // Contexto y rutas privadas
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
-import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 
+// --- Componente principal ---
 function AppContent() {
   const location = useLocation();
-  const { rol } = useAuth();
-  const mainKey = rol || "guest";
-  
+  const { autenticado, rol } = useAuth();
+
+  const esAdminAutenticado = autenticado && rol === "administrador";
+
+  // No mostrar en la página de sesión o de recuperación
+  const noEsPaginaDeSesion =
+    location.pathname !== "/sesion" &&
+    location.pathname !== "/sesion/recuperar_contrasena";
+
+  // Verificar si estamos en rutas de admin
+  const esRutaAdmin = location.pathname.startsWith("/admin");
 
   return (
     <>
-      {!location.pathname.startsWith("/admin") && <Header />}
+      {/* Solo mostrar Header si NO es una ruta de admin */}
+      {!esRutaAdmin && <Header />}
 
-      <main key={mainKey}>
+      {/* MAIN AGREGADO - contenido que se expande */}
+      <main>
+        {/* Renderiza el dashboard si el usuario es admin y no está en la página de sesión */}
+        {esAdminAutenticado && noEsPaginaDeSesion && !esRutaAdmin && <AdminDashboard />}
+
         <Routes>
           {/* Rutas públicas */}
           <Route path="/" element={<Home />} />
@@ -131,6 +150,7 @@ function AppContent() {
             />
             <Route path="tallas" element={<TallasPage />} />
             <Route path="categorias" element={<CategoriasPage />} />
+            <Route path="reporte-ventas" element={<ReporteVentasPage />} />
           </Route>
 
           {/* Redirección por defecto */}
