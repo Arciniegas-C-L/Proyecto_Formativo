@@ -85,6 +85,24 @@
   color: #aaa;
 }
 
+/* Cuando el input está en foco */
+.container-sesion .container-input input:focus {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Quitar fondo blanco/amarillo del autocompletado */
+.container-sesion .container-input input:-webkit-autofill,
+.container-sesion .container-input input:-webkit-autofill:focus,
+.container-sesion .container-input input:-webkit-autofill:hover {
+  -webkit-box-shadow: 0 0 0 1000px #2A2F3E inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: #2A2F3E !important;
+  caret-color: #ffffff; /* color del cursor */
+}
+
 /*  ENLACES  */
 .container-sesion .container-form a {
   color: #A78BFA;
@@ -134,7 +152,7 @@
 
 /*  Botón del panel de bienvenida */
 .container-sesion .container-welcome .button {
-  width: clamp(6rem, 15vw, 10rem);
+  width: clamp(6rem, 50vw, 10rem);
   height: clamp(2rem, 5vw, 2.5rem);
   padding: 0 clamp(0.7rem, 3vw, 1.25rem);
   font-size: clamp(0.65rem, 2vw, 0.9375rem);
@@ -166,7 +184,7 @@
   align-items: center;
   background-color: #111827;
   transform: translateX(100%);
-  transition: transform 0.5s ease-in-out, border-radius 0.5s ease-in-out;
+  transition: transform 1.0s ease-in-out, border-radius 0.5s ease-in-out;
   overflow: hidden;
   border-radius: 40% 0 0 36%;
 }

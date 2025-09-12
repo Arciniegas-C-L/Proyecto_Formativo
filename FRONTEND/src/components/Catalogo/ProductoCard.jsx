@@ -28,14 +28,24 @@ export default function ProductoCard({
   const aumentarCantidad = () => {
     if (tallaSeleccionada) {
       const stock = tallaSeleccionada.stock || 0;
-      if (cantidad < stock) setCantidad((prev) => prev + 1);
+      if (cantidad < stock) {
+        const nuevaCantidad = cantidad + 1;
+        console.log('Aumentando cantidad de', cantidad, 'a', nuevaCantidad);
+        setCantidad(nuevaCantidad);
+      }
     } else {
-      setCantidad((prev) => prev + 1);
+      const nuevaCantidad = cantidad + 1;
+      console.log('Aumentando cantidad (sin talla) de', cantidad, 'a', nuevaCantidad);
+      setCantidad(nuevaCantidad);
     }
   };
 
   const disminuirCantidad = () => {
-    if (cantidad > 0) setCantidad((prev) => prev - 1);
+    if (cantidad > 0) {
+      const nuevaCantidad = cantidad - 1;
+      console.log('Disminuyendo cantidad de', cantidad, 'a', nuevaCantidad);
+      setCantidad(nuevaCantidad);
+    }
   };
 
   const mostrarStock = (productoId, idTalla, stock, inventarioCompleto) => {
@@ -44,6 +54,14 @@ export default function ProductoCard({
   };
 
   const agregarAlCarrito = async () => {
+    // AGREGAR DEBUG LOGGING
+    console.log('=== INICIO agregarAlCarrito ===');
+    console.log('Usuario:', usuario?.idUsuario);
+    console.log('Producto ID:', producto.id);
+    console.log('Cantidad seleccionada:', cantidad);
+    console.log('Talla seleccionada:', tallaSeleccionada);
+    console.log('Estado agregando:', agregando);
+
     if (!usuario) {
       toast.error("Debes iniciar sesión para agregar productos al carrito");
       return;
@@ -64,26 +82,39 @@ export default function ProductoCard({
       return;
     }
 
+    // PREVENIR MÚLTIPLES EJECUCIONES
+    if (agregando) {
+      console.log('Ya está agregando, saliendo...');
+      return;
+    }
+
     try {
+      console.log('Iniciando proceso de agregar...');
       setAgregando(true);
 
       // Obtener o crear carrito
       let carrito = null;
       try {
+        console.log('Obteniendo carritos...');
         const carritosResponse = await fetchCarritos();
+        console.log('Carritos obtenidos:', carritosResponse.data);
+        
         const carritosActivos = carritosResponse.data.filter(
           (c) => c.estado === true
         );
 
         if (carritosActivos.length > 0) {
           carrito = carritosActivos[0];
+          console.log('Carrito activo encontrado:', carrito.idCarrito);
         } else {
           // Crear nuevo carrito si no existe uno activo
+          console.log('Creando nuevo carrito...');
           const nuevoCarritoResponse = await createCarrito({
             usuario: usuario.idUsuario,
             estado: true,
           });
           carrito = nuevoCarritoResponse.data;
+          console.log('Nuevo carrito creado:', carrito.idCarrito);
         }
       } catch (error) {
         console.error("Error al obtener/crear carrito:", error);
@@ -91,14 +122,24 @@ export default function ProductoCard({
         return;
       }
 
-      // Agregar producto al carrito
-      const response = await agregarProducto(carrito.idCarrito, {
+      // Preparar datos para enviar
+      const datosParaEnviar = {
         producto: producto.id,
-        cantidad: cantidad,
+        cantidad: parseInt(cantidad),
         talla: tallaSeleccionada.idTalla,
-      });
+      };
+
+      console.log('Datos a enviar:', datosParaEnviar);
+      console.log('ID del carrito:', carrito.idCarrito);
+
+      // Agregar producto al carrito
+      console.log('Llamando a agregarProducto...');
+      const response = await agregarProducto(carrito.idCarrito, datosParaEnviar);
+      
+      console.log('Respuesta de agregarProducto:', response);
 
       if (response.data) {
+        console.log('Producto agregado exitosamente');
         toast.success(`${cantidad} ${producto.nombre} agregado al carrito`);
         setCantidad(0);
         setTallaSeleccionada(null);
@@ -108,17 +149,27 @@ export default function ProductoCard({
 
         // Notificar al componente padre que se agregó un producto
         if (onProductoAgregado) {
+          console.log('Llamando a onProductoAgregado...');
           onProductoAgregado();
         }
       }
     } catch (error) {
-      console.error("Error al agregar al carrito:", error);
+      console.error("Error completo al agregar al carrito:", error);
+      
+      // Log detallado de la respuesta del servidor
+      if (error.response) {
+        console.error("Respuesta del servidor:", error.response.data);
+        console.error("Status:", error.response.status);
+        console.error("Headers:", error.response.headers);
+      }
+      
       let mensajeError = "Error al agregar al carrito";
 
       if (error.response) {
         switch (error.response.status) {
           case 400:
             mensajeError = error.response.data.error || "Datos inválidos";
+            console.error("Mensaje específico del servidor:", error.response.data);
             break;
           case 404:
             mensajeError = "Producto o carrito no encontrado";
@@ -133,7 +184,9 @@ export default function ProductoCard({
 
       toast.error(mensajeError);
     } finally {
+      console.log('Finalizando proceso de agregar...');
       setAgregando(false);
+      console.log('=== FIN agregarAlCarrito ===');
     }
   };
 

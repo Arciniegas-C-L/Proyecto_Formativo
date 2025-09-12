@@ -312,17 +312,23 @@
 /* Mobile Grande - 2 cards por fila */
 @media (min-width: 576px) and (max-width: 767px) {
   .product-card {
-    min-height: 440px; /* Aumentar para que se vea completa */
+    min-height: 460px; /* Aumentar para que se vea completa */
   }
   
   .product-image-container {
-    height: 250px; 
+    height: 240px; 
   }
   
   .product-info {
-    padding: 0.3rem;
-    gap: 0.1rem;
-    min-height: 190px;
+    padding: 0.4rem;
+    gap: 0.15rem;
+    min-height: 220px;
+  }
+  .product-description {
+    font-size: 0.65rem;
+    height: 2.4rem; /* Permitir 2 líneas */
+    -webkit-line-clamp: 2;
+    line-height: 1.2;
   }
   
   .product-title {
@@ -339,35 +345,40 @@
 /* Mobile Pequeño - 1-2 cards por fila */
 @media (max-width: 575px) {
   .product-card {
-    min-height: 420px; /* Aumentar para card completa */
+    min-height: 440px; /* Aumentar para card completa */
   }
   
   .product-image-container {
-    height: 230px; 
+    height: 220px; 
   }
   
   .product-info {
-    padding: 0.3rem;
-    gap: 0.1rem;
-    min-height: 190px;
+    padding: 0.4rem;
+    gap: 0.15rem;
+    min-height: 220px;
   }
   
   .product-title {
     font-size: 0.7rem;
-    height: 1.8rem;
+    height: 2rem;
+    -webkit-line-clamp: 2;
   }
   
   .product-description {
-    font-size: 0.62rem;
+    font-size: 0.64rem;
+    height: 2.4rem; 
+    -webkit-line-clamp: 2;
+    line-height: 1.2;
+    overflow: visible;
   }
   
   .current-price {
-    font-size: 0.85rem;
+    font-size: 0.88rem;
   }
   
   .add-to-cart-btn {
-    height: 28px;
-    font-size: 0.58rem;
+    height: 30px;
+    font-size: 0.6rem;
   }
   
   .talla-item {

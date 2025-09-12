@@ -43,3 +43,27 @@
     margin-left: 0; /* sidebar oculto en móviles */
   }
 }
+
+@media (max-width: 768px) {
+  .contenido-principal {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 576px) {
+  .contenido-principal {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contenido-principal {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .contenido-principal {
+    padding: 6px;
+  }
+}

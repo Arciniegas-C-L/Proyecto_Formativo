@@ -12,12 +12,12 @@
 env
 
 # Migraciones de Django
-*/migrations/*.py
-*/migrations/*.pyc
-!*/migrations/__init__.py
+/migrations/.py
+/migrations/.pyc
+!*/migrations/_init_.py
 
 # Archivos compilados de Python
-__pycache__/
+_pycache_/
 *.pyc
 *.pyo
 
