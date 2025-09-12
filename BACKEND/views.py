@@ -6,6 +6,7 @@ import time
 from datetime import timedelta
 from decimal import Decimal
 
+
 # --- Django
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
@@ -76,6 +77,7 @@ from .models import (
     # facturación
     Factura,
     FacturaItem,
+    Comentario,
 )
 
 # --- SERIALIZERS del proyecto (import explícito)
@@ -115,11 +117,32 @@ from .serializer import (
     FacturaSerializer,
     FacturaItemSerializer,
     FacturaCreateSerializer,
+    ComentarioSerializer,
 )
 
 # --- SDK Mercado Pago (usa tu token de settings)
 sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
 
+
+class ComentarioViewSet(viewsets.ModelViewSet):
+    queryset = Comentario.objects.select_related('usuario').all().order_by('-fecha')
+    serializer_class = ComentarioSerializer
+    permission_classes = [IsAuthenticated, NotGuest, AdminandCliente]
+
+    def perform_create(self, serializer):
+        # Asigna el usuario autenticado y guarda snapshot de datos
+        user = self.request.user
+        if user.is_authenticated:
+            serializer.save(
+                usuario=user,
+                usuario_nombre=user.nombre,
+                usuario_apellido=user.apellido,
+                usuario_avatar_seed=user.avatar_seed,
+                usuario_avatar_options=user.avatar_options
+            )
+        else:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'usuario': 'Debes iniciar sesión para comentar.'})
 
 # CRUD de direcciones de usuario
 class DireccionViewSet(viewsets.ModelViewSet):
@@ -144,9 +167,25 @@ class Rolview(viewsets.ModelViewSet):
     permission_classes = [IsAdminWriteClienteRead, AllowGuestReadOnly]
 
 class UsuarioViewSet(viewsets.ModelViewSet):
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='me')
+    def me(self, request):
+        """
+        Devuelve los datos del usuario autenticado.
+        """
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
     permission_classes = [AllowAny]
+
+    def update(self, request, *args, **kwargs):
+        # Permitir actualizar avatar_seed y avatar_options por id
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='guest')
     def guest(self, request):
         """

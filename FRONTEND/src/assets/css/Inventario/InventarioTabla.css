@@ -9,27 +9,42 @@
   margin-bottom: 0;
 }
 
-.table th {
+
+/* Encabezado de tabla similar a Bootstrap */
+.table th, .MuiTableHead-root .MuiTableCell-head {
   font-weight: 600;
   border-top: none;
   vertical-align: middle;
+  background-color: #f8f9fa;
+  color: #212529;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
 }
 
 .table td {
   vertical-align: middle;
 }
 
-.table-dark th {
+
+/* Para tablas oscuras, si se usan */
+.table-dark th, .MuiTableHead-root .MuiTableCell-head.table-dark {
   background-color: #212529;
+  color: #fff;
   border-color: #373b3e;
 }
 
-.table-striped tbody tr:nth-of-type(odd) td {
-  background-color: rgba(0, 0, 0, 0.025);
+
+/* Rayado de filas como Bootstrap */
+.table-striped tbody tr:nth-of-type(odd) td,
+.MuiTableBody-root .MuiTableRow-root:nth-of-type(odd) .MuiTableCell-root {
+  background-color: #f2f2f2;
 }
 
-.table-hover tbody tr:hover td {
-  background-color: rgba(0, 0, 0, 0.075);
+
+.table-hover tbody tr:hover td,
+.MuiTableBody-root .MuiTableRow-root:hover .MuiTableCell-root {
+  background-color: #e9ecef;
 }
 
 /* Estilos para las imágenes de productos */
@@ -38,7 +53,7 @@
   height: 40px;
   object-fit: cover;
   border-radius: 0.25rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #dee2e6;
   flex-shrink: 0;
 }
 
@@ -48,17 +63,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f5f5f5;
+  background-color: #f8f9fa;
   border-radius: 0.25rem;
-  border: 1px solid #e0e0e0;
-  color: #9e9e9e;
+  border: 1px solid #dee2e6;
+  color: #adb5bd;
   flex-shrink: 0;
 }
 
 /* Estilos para badges personalizados */
-.badge {
-  font-size: 0.75em;
+.badge, .MuiChip-root {
+  font-size: 0.85em;
   font-weight: 500;
+  border-radius: 0.25rem;
+  padding: 0.25em 0.6em;
 }
 
 /* Estilos para botones de acción */
@@ -77,21 +94,23 @@
 }
 
 /* Estilos para los breadcrumbs */
-.breadcrumb {
+.breadcrumb, .MuiBreadcrumbs-root {
   background-color: transparent;
   padding: 0;
   margin-bottom: 1rem;
+  font-size: 1rem;
 }
 
-.breadcrumb .btn-link {
-  color: var(--bs-breadcrumb-item-active-color);
+.breadcrumb .btn-link, .MuiBreadcrumbs-root .MuiLink-root {
+  color: #0d6efd;
   border: none;
   background: none;
   text-decoration: none;
+  font-weight: 500;
 }
 
-.breadcrumb .btn-link:hover {
-  color: var(--bs-link-hover-color);
+.breadcrumb .btn-link:hover, .MuiBreadcrumbs-root .MuiLink-root:hover {
+  color: #0a58ca;
   text-decoration: underline;
 }
 
@@ -276,7 +295,7 @@
 }
 
 /* Mejoras visuales para las tablas */
-.table th {
+.table th, .MuiTableHead-root .MuiTableCell-head {
   position: sticky;
   top: 0;
   z-index: 10;

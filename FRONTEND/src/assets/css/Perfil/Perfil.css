@@ -1,3 +1,233 @@
+/* ====== GESTIÓN DE DIRECCIONES EN PERFIL ====== */
+.direcciones {
+  background: #f7faff;
+  border-radius: 14px;
+  padding: 28px 22px 18px 22px;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.07);
+  margin-top: 10px;
+}
+.direcciones-titulo {
+  color: #4a5568;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  letter-spacing: 0.5px;
+}
+.lista-direcciones {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.direccion-personal {
+  background: #e9f0ff;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-weight: 600;
+  color: #1d3557;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.06);
+}
+.direccion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1.5px solid #bcd0fa;
+  border-radius: 8px;
+  padding: 12px 18px;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.04);
+  transition: box-shadow 0.2s;
+}
+.direccion-item:hover {
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.10);
+  border-color: #3b82f6;
+}
+.direccion-info-texto {
+  flex: 1;
+  color: #222;
+  font-size: 15px;
+  font-weight: 500;
+}
+.direccion-actions-horizontal {
+  display: flex;
+  gap: 10px;
+}
+.direccion-actions-horizontal button {
+  background: linear-gradient(135deg, #667eea 0%, #3b82f6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.10);
+}
+.direccion-actions-horizontal button:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #667eea 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.18);
+}
+.direccion-actions-horizontal button:last-child {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+}
+.direccion-actions-horizontal button:last-child:hover {
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.18);
+}
+.direccion-vacia {
+  color: #a0aec0;
+  font-size: 15px;
+  padding: 10px 0 0 0;
+  text-align: left;
+}
+.direccion-btn-agregar {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+  box-shadow: 0 2px 8px rgba(72, 187, 120, 0.10);
+  transition: all 0.3s;
+}
+.direccion-btn-agregar:hover {
+  background: linear-gradient(135deg, #38a169 0%, #48bb78 100%);
+  box-shadow: 0 4px 16px rgba(72, 187, 120, 0.18);
+}
+.direccion-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+.direccion-form input {
+  padding: 12px 14px;
+  border: 2px solid #bcd0fa;
+  border-radius: 7px;
+  font-size: 15px;
+  background: #f7faff;
+  color: #1a202c;
+  transition: all 0.3s;
+  outline: none;
+}
+.direccion-form input:focus {
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+}
+.direccion-form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.direccion-form-actions button {
+  background: linear-gradient(135deg, #667eea 0%, #3b82f6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.10);
+}
+.direccion-form-actions button:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #667eea 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.18);
+}
+.direccion-form-actions button:last-child {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+}
+.direccion-form-actions button:last-child:hover {
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.18);
+}
+/* ====== INPUTS CAMBIAR CONTRASEÑA ====== */
+.cambiar-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.cambiar-password-input {
+  padding: 14px 16px;
+  border: 2px solid #bcd0fa;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #f7faff;
+  color: #1a202c;
+  transition: all 0.3s;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.04);
+}
+.cambiar-password-input:focus {
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.10);
+}
+.cambiar-password-input::placeholder {
+  color: #a0aec0;
+  opacity: 1;
+  font-size: 14px;
+}
+
+.cambiar-password-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.10);
+  transition: all 0.3s;
+}
+.cambiar-password-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.18);
+}
+.config-card.cambiar-password {
+  border: 2px solid #667eea;
+  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.10);
+  background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 100%);
+}
+
+.config-card.cambiar-password h4 {
+  color: #3b82f6;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.config-btn.cambiar {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.18);
+  margin-bottom: 8px;
+  transition: all 0.3s;
+}
+.config-btn.cambiar:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.22);
+}
+
+.config-expand.cambiar {
+  background: #e9f0ff;
+  border-radius: 10px;
+  padding: 18px 16px 10px 16px;
+  margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+  border: 1px solid #bcd0fa;
+}
 /* ===============================================
    PERFIL ZOE - DISEÑO E-COMMERCE REFINADO
    =============================================== */
@@ -250,17 +480,97 @@
 }
 
 /* ========== CONFIGURACIONES ========== */
+
 .config-section {
   padding: 40px;
 }
 
 .config-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  max-width: 900px;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+}
+
+.config-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px 28px 28px 28px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.07);
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 80%;
   margin: 0 auto;
 }
+
+.config-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.config-card h4 {
+  color: #2d3748;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 18px 0;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.config-btn {
+  background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  width: 100%;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(113, 128, 150, 0.18);
+  margin-bottom: 8px;
+}
+
+.config-btn:hover {
+  background: linear-gradient(135deg, #4a5568 0%, #718096 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(113, 128, 150, 0.22);
+}
+
+.config-btn.danger {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.18);
+}
+
+.config-btn.danger:hover {
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.22);
+}
+
+.config-expand {
+  margin-top: 18px;
+  animation: expandConfig 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes expandConfig {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
 
 .config-card {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);

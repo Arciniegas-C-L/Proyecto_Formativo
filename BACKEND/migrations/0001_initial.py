@@ -27,10 +27,6 @@ class Migration(migrations.Migration):
                 ('payment_id', models.CharField(blank=True, max_length=100, null=True)),
                 ('mp_status', models.CharField(blank=True, max_length=50, null=True)),
             ],
-            options={
-                'verbose_name': 'Carrito',
-                'verbose_name_plural': 'Carritos',
-            },
         ),
         migrations.CreateModel(
             name='Categoria',
@@ -283,6 +279,14 @@ class Migration(migrations.Migration):
             model_name='factura',
             name='usuario',
             field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.CreateModel(
+            name='Direccion',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('direccion', models.CharField(max_length=255)),
+                ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='direcciones', to=settings.AUTH_USER_MODEL)),
+            ],
         ),
         migrations.CreateModel(
             name='Direccion',

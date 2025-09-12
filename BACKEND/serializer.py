@@ -1,3 +1,4 @@
+from .models import Comentario
 from decimal import Decimal
 
 from django.db import transaction
@@ -29,6 +30,21 @@ from .models import (
 
 from django.db.models import Q   # <-- IMPORTANTE
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+# Serializer para Comentario
+class ComentarioSerializer(serializers.ModelSerializer):
+    usuario_nombre = serializers.CharField(read_only=True)
+    usuario_apellido = serializers.CharField(read_only=True)
+    usuario_avatar_seed = serializers.CharField(read_only=True)
+    usuario_avatar_options = serializers.JSONField(read_only=True)
+
+    class Meta:
+        model = Comentario
+        fields = ['id', 'usuario', 'usuario_nombre', 'usuario_apellido', 'usuario_avatar_seed', 'usuario_avatar_options', 'texto', 'valoracion', 'fecha']
+        read_only_fields = ['usuario']
+
 # Serializer para Direccion
 class DireccionSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import "bootstrap/dist/css/bootstrap.min.css";
 
 // Layout público
 import { Header } from "./components/Singlepage/Header.jsx";
@@ -38,6 +37,7 @@ import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { RetornoMPpage } from "./pages/RetornoMPpage";
 import {MisPedidosPage} from "./pages/MisPedidosPage"
 
+
 // Layout y contexto Admin 
 // import AdminLayout from "./components/Admin/AdminLayout.jsx";
 
@@ -58,6 +58,11 @@ function AppContent() {
 
   // Verificar si estamos en rutas de admin
   const esRutaAdmin = location.pathname.startsWith("/admin");
+
+  //useefect para actualizar avatar al ingresar a home
+  useEffect(() => {
+    
+  }, [location]);
 
   return (
     <>

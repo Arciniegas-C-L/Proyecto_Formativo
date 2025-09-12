@@ -127,7 +127,10 @@ export const AdminDashboard = () => {
             <FaUserCircle />
           </div>
           <div className="detalles-usuario">
-            <span className="rol-usuario">    Administrador </span>
+            <span className="nombre-usuario">
+              {usuario?.nombre || usuario?.username}
+            </span>
+            <span className="rol-usuario">    Administrador</span>
           </div>
         </div>
 
