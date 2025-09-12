@@ -270,7 +270,7 @@ export function Carrito() {
     await handlePagar();
   };
 
-  const handleConfirmarCompra = async ({ direccion, metodoPago }) => {
+ /* const handleConfirmarCompra = async ({ direccion, metodoPago }) => {
     try {
       if (!carrito) return;
       await handlePagar();
@@ -279,7 +279,7 @@ export function Carrito() {
       console.error('Error al finalizar compra:', error);
       toast.error(error.response?.data?.error || 'Error al finalizar la compra');
     }
-  };
+  }; */
 
   const calcularTotal = () => {
     const total = items.reduce((total, item) => {
@@ -480,25 +480,24 @@ export function Carrito() {
           onCancelar={() => setShowConfirmarCompra(false)}
         />
       )}
-
       <div className="productos-recomendados-section">
-        <h2><FaEye /> También te puede interesar</h2>
-        <div className="productos-recomendados row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-          {productosRecomendados.map((producto) => (
-            <ProductoCard
-              key={producto.id}
-              producto={producto}
-              capitalizar={capitalizar}
-            />
-          ))}
-        </div>
-        <div className="ver-mas-container">
-          <button
-            className="btn-ver-mas"
-            onClick={() => navigate('/catalogo')}
-          >
-            Ver más productos
-          </button>
+                <h2><FaEye /> También te puede interesar</h2>
+                <div className="productos-recomendados row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                    {productosRecomendados.map((producto) => (
+                        <ProductoCard
+                            key={producto.id}
+                            producto={producto}
+                            capitalizar={capitalizar}
+                        />
+                    ))}
+                </div>
+                <div className="ver-mas-container">
+                    <button 
+                        className="btn-ver-mas"
+                        onClick={() => navigate('/catalogo')}
+                    >
+                        Ver más productos
+                    </button>
         </div>
       </div>
     </div>

@@ -38,8 +38,8 @@ import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { RetornoMPpage } from "./pages/RetornoMPpage";
 import {MisPedidosPage} from "./pages/MisPedidosPage"
 
-// Layout y contexto Admin
-//import AdminLayout from "./components/Admin/AdminLayout.jsx";
+// Layout y contexto Admin 
+// import AdminLayout from "./components/Admin/AdminLayout.jsx";
 
 // Contexto y rutas privadas
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
