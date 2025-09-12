@@ -1,11 +1,11 @@
-/* MODAL DE EDICIÓN (estilo Tallas) - Sin cambios */
+/* MODAL DE EDICIÃ"N - COLORES MEJORADOS */
 .dialog-categoria-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0,0,0,0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -14,169 +14,227 @@
 }
 
 .form-categoria-modal {
-  background-color: #fff;
-  border-radius: 12px;
-  padding: 25px;
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 16px;
+  padding: 30px;
   max-width: 500px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   position: relative;
+  border: 1px solid #e3e6ea;
 }
 
-.form-categoria-modal h3 {
+.form-categoria-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.form-categoria-modal .modal-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-categoria-modal .modal-header h3 i {
+  color: #17a2b8;
+}
+
+.form-categoria-modal .btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 5px;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.form-categoria-modal .btn-close:hover {
+  background-color: #f8f9fa;
+  color: #dc3545;
+}
+
+.form-categoria-modal .modal-body {
+  margin-bottom: 25px;
+}
+
+.form-categoria-modal .form-group {
   margin-bottom: 20px;
-  color: #1A1F2E;
 }
 
 .form-categoria-modal .form-label {
   font-weight: 600;
-  margin-bottom: 5px;
-  display: block;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #495057;
+  font-size: 0.95rem;
+}
+
+.form-categoria-modal .form-label i {
+  color: #17a2b8;
 }
 
 .form-categoria-modal .form-control,
 .form-categoria-modal .form-select {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 2px solid #ccc;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid #dee2e6;
   margin-bottom: 10px;
   font-size: 1rem;
   box-sizing: border-box;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
 }
 
 .form-categoria-modal .form-control:focus,
 .form-categoria-modal .form-select:focus {
   outline: none;
-  border-color: #00b0e0;
-}
-
-.form-categoria-modal .form-check-label {
-  font-weight: 400; 
-}
-
-.form-categoria-modal .btn {
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.form-categoria-modal .btn-primary {
-  background-color: #00b0e0;
-  color: #fff;
-}
-
-.form-categoria-modal .btn-primary:hover {
-  background-color: #0090b0;
-}
-
-.form-categoria-modal .btn-secondary {
-  background-color: #6c757d;
-  color: #fff;
-}
-
-.form-categoria-modal .btn-secondary:hover {
-  background-color: #5a6268;
-}
-
-.form-categoria-modal .d-flex {
-  display: flex;
-}
-
-.form-categoria-modal .justify-content-end {
-  justify-content: flex-end;
-}
-
-.form-categoria-modal .gap-2 {
-  gap: 8px;
-}
-
-.form-categoria-modal .mb-2 {
-  margin-bottom: 8px;
-}
-
-.form-categoria-modal .mb-3 {
-  margin-bottom: 16px;
-}
-
-.form-categoria-modal .text-danger {
-  color: #dc3545;
-  background-color: #f8d7da;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #f5c6cb;
-}
-
-.form-categoria-modal .text-muted {
-  color: #6c757d;
-  font-size: 0.875rem;
-}
-
-.form-categoria-modal .d-block {
-  display: block;
+  border-color: #17a2b8;
+  box-shadow: 0 0 0 0.25rem rgba(23, 162, 184, 0.15);
 }
 
 .form-categoria-modal .form-check {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
 }
 
-.form-categoria-modal .form-switch .form-check-input {
-  width: 48px;
-  height: 24px;
+.form-categoria-modal .form-check-input {
+  width: 20px;
+  height: 20px;
   margin: 0;
+  accent-color: #28a745;
 }
 
-/* ===== ESTILOS ESPECÍFICOS PARA LISTA CATEGORIAS ===== */
+.form-categoria-modal .form-check-label {
+  font-weight: 500;
+  color: #495057;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.form-categoria-modal .form-check-label i {
+  font-size: 1.2rem;
+  color: #28a745;
+}
+
+.form-categoria-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.form-categoria-modal .btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.form-categoria-modal .btn-primary {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.form-categoria-modal .btn-primary:hover {
+  background: linear-gradient(135deg, #138496, #117a8b);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
+
+.form-categoria-modal .btn-secondary {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.form-categoria-modal .btn-secondary:hover {
+  background: linear-gradient(135deg, #5a6268, #454a4f);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+/* ===== ESTILOS ESPECÃFICOS PARA LISTA CATEGORIAS - SIMPLIFICADOS ===== */
 
 /* Contenedor principal */
 .contenedor-categorias {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 25px;
 }
 
-/* Título específico */
+/* TÃ­tulo especÃ­fico */
 .contenedor-categorias .titulo-categorias {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   text-align: center;
-  margin-bottom: 30px;
-  color: #343a40;
+  margin-bottom: 35px;
+  color: #2c3e50;
 }
 
-/* Mensaje vacío específico */
+/* Mensaje vacÃ­o especÃ­fico */
 .contenedor-categorias .mensaje-vacio {
   text-align: center;
   color: #6c757d;
   font-size: 18px;
   font-style: italic;
-  padding: 40px 20px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  padding: 50px 25px;
+  background: #f8f9fa;
+  border-radius: 16px;
   border: 2px dashed #dee2e6;
+  margin: 20px 0;
 }
 
-/* Contenedor de tarjetas específico */
+/* Contenedor de tarjetas especÃ­fico */
 .contenedor-categorias .contenedor-tarjetas {
   display: grid;
-  gap: 20px;
+  gap: 25px;
   grid-template-columns: 1fr;
 }
 
-/* Tarjeta categoría específica */
+/* Tarjeta categorÃ­a especÃ­fica - SIMPLIFICADA */
 .contenedor-categorias .tarjeta-categoria {
   background: #ffffff;
   border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 25px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   position: relative;
   overflow: hidden;
@@ -187,162 +245,201 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 5px;
   height: 100%;
-  background: linear-gradient(135deg, #17a2b8, #007bff);
+  background: #17a2b8;
 }
 
-/* Header tarjeta específico */
+/* Header tarjeta - LAYOUT RESPONSIVO */
 .contenedor-categorias .header-tarjeta {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: flex-start;
-  gap: 15px;
-  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 15px;
 }
 
-/* Container para input y checkbox específico */
+/* Fila principal de categorÃ­a - FLEX RESPONSIVO */
+.contenedor-categorias .categoria-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Container para input y checkbox */
 .contenedor-categorias .categoria-info {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
   flex: 1;
-  min-width: 0; /* Permite que se comprima */
+  min-width: 0;
 }
 
-/* Inputs específicos */
+/* Input de categorÃ­a - SOLO LECTURA */
 .contenedor-categorias .input-categoria {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border: 2px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 16px;
   font-weight: 500;
   color: #495057;
-  background-color: #ffffff;
-  flex: 1;
-  min-width: 0; /* Permite que se comprima */
-}
-
-.contenedor-categorias .input-categoria:focus {
-  outline: none;
-  border-color: #17a2b8;
   background-color: #f8f9fa;
-  box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.15);
+  flex: 1;
+  min-width: 0;
+  cursor: default;
+  pointer-events: none;
 }
 
-/* Checkbox específico */
+/* Checkbox - SIMPLIFICADO */
 .contenedor-categorias .label-check {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   color: #495057;
-  cursor: pointer;
   white-space: nowrap;
-  user-select: none;
-  flex-shrink: 0; /* No se comprime */
+  flex-shrink: 0;
+  background: #e9ecef;
+  padding: 8px 12px;
+  border-radius: 20px;
+  pointer-events: none;
 }
 
 .contenedor-categorias .label-check input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   accent-color: #28a745;
-  cursor: pointer;
+  pointer-events: none;
 }
 
-/* Grupo de botones específico - MEJORADO PARA RESPONSIVIDAD */
+/* Grupo de botones - SIMPLIFICADO */
 .contenedor-categorias .grupo-botones {
   display: flex;
   gap: 8px;
-  flex-wrap: nowrap; /* No permitir wrap por defecto */
-  justify-content: flex-end;
-  flex-shrink: 0; /* Los botones no se comprimen */
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
 }
 
-/* Botones específicos - TAMAÑO CONSISTENTE EN TODAS LAS PANTALLAS */
+/* Botones - SIMPLIFICADOS */
 .contenedor-categorias .grupo-botones button {
-  padding: 8px 12px;
-  border-radius: 4px;
+  padding: 10px 16px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  min-height: 32px;
-  min-width: 70px;
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  line-height: 1;
-  flex-shrink: 0; /* No se comprimen */
+  line-height: 1.2;
+  flex: 1;
+  min-width: 120px;
+  max-width: 180px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .contenedor-categorias .btn-editar {
-  background: linear-gradient(135deg, #00b0e0);
+  background: #17a2b8;
   color: #ffffff;
-  border: 1px solid #00b0e0;
+  border: 2px solid #17a2b8;
 }
 
 .contenedor-categorias .btn-editar:hover {
-  background: linear-gradient(#00b0e0);
+  background: #138496;
+  border-color: #138496;
 }
 
 .contenedor-categorias .btn-subcategorias {
-  background: linear-gradient(135deg, #6c757d, #545b62);
+  background: #6c757d;
   color: #ffffff;
-  border: 1px solid #6c757d;
-  min-width: 90px; /* Más ancho para el texto */
-  font-size: 10px; /* Texto ligeramente más pequeño */
+  border: 2px solid #6c757d;
+  min-width: 140px;
 }
 
 .contenedor-categorias .btn-subcategorias:hover {
-  background: linear-gradient(135deg, #545b62, #383d41);
+  background: #5a6268;
+  border-color: #5a6268;
 }
 
 .contenedor-categorias .btn-eliminar {
-  background: linear-gradient(135deg, #dc3545, #c82333);
+  background: #dc3545;
   color: #ffffff;
-  border: 1px solid #dc3545;
-  min-width: 80px;
+  border: 2px solid #dc3545;
+  min-width: 130px;
 }
 
 .contenedor-categorias .btn-eliminar:hover {
-  background: linear-gradient(135deg, #c82333, #a71e2a);
+  background: #c82333;
+  border-color: #c82333;
 }
 
-/* Subcategorías específicas */
+/* SubcategorÃ­as */
 .contenedor-categorias .subcategorias {
-  margin-top: 20px;
-  padding: 18px;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  border-radius: 8px;
-  border-left: 4px solid #17a2b8;
+  margin-top: 25px;
+  padding: 20px;
+  background: #f1f3f4;
+  border-radius: 12px;
+  border-left: 5px solid #17a2b8;
 }
 
-.contenedor-categorias .subcategorias em {
-  display: block;
+.contenedor-categorias .subcategorias-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.contenedor-categorias .subcategorias-header h4 {
+  margin: 0;
+  color: #495057;
+  font-size: 1.1rem;
+}
+
+.contenedor-categorias .subcategorias-count {
+  background: #17a2b8;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.contenedor-categorias .subcategorias-vacio {
   text-align: center;
   color: #6c757d;
   font-style: italic;
-  padding: 20px;
+  padding: 25px;
   background: #ffffff;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 2px dashed #dee2e6;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-/* Fila subcategoría específica */
+.contenedor-categorias .subcategorias-vacio i {
+  color: #17a2b8;
+}
+
+/* Fila subcategorÃ­a - SIMPLIFICADA */
 .contenedor-categorias .fila-subcategoria {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   background: #ffffff;
-  padding: 12px;
-  margin-bottom: 8px;
+  padding: 18px;
+  margin-bottom: 12px;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
@@ -350,119 +447,220 @@
   margin-bottom: 0;
 }
 
-/* Input subcategoría específico */
-.contenedor-categorias .fila-subcategoria input[type="text"] {
-  padding: 8px 12px;
-  border: 2px solid #e9ecef;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #495057;
-  background-color: #ffffff;
+/* Contenedor de input y checkbox de subcategorÃ­a */
+.contenedor-categorias .fila-subcategoria .sub-input-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
   width: 100%;
-  min-width: 0; /* Permite compresión */
 }
 
-.contenedor-categorias .fila-subcategoria input[type="text"]:focus {
-  outline: none;
-  border-color: #17a2b8;
-  box-shadow: 0 0 0 0.15rem rgba(23, 162, 184, 0.15);
+/* Input subcategorÃ­a - SOLO LECTURA */
+.contenedor-categorias .fila-subcategoria input[type="text"] {
+  padding: 10px 14px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #495057;
+  background-color: #f8f9fa;
+  flex: 1;
+  min-width: 0;
+  cursor: default;
+  pointer-events: none;
 }
 
-/* Checkbox subcategoría específico */
+/* Checkbox subcategorÃ­a - SOLO LECTURA */
 .contenedor-categorias .fila-subcategoria label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
   color: #495057;
-  cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0; /* No se comprime */
+  flex-shrink: 0;
+  background: #e9ecef;
+  padding: 6px 10px;
+  border-radius: 15px;
+  pointer-events: none;
 }
 
 .contenedor-categorias .fila-subcategoria input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   accent-color: #28a745;
-  cursor: pointer;
+  pointer-events: none;
 }
 
-/* Botones subcategoría específicos - TAMAÑO CONSISTENTE */
+/* Botones subcategorÃ­a */
 .contenedor-categorias .fila-subcategoria .grupo-botones {
   display: flex;
-  gap: 6px;
-  flex-shrink: 0; /* No se comprimen */
+  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .contenedor-categorias .fila-subcategoria .grupo-botones button {
-  padding: 6px 10px;
-  font-size: 10px;
-  min-height: 28px;
-  min-width: 60px;
-  flex-shrink: 0; /* No se comprimen */
+  padding: 8px 14px;
+  font-size: 12px;
+  min-height: 35px;
+  flex: 1;
+  min-width: 100px;
+  max-width: 140px;
 }
 
-/* ===== RESPONSIVE MEJORADO - MANTENIENDO APARIENCIA CONSISTENTE ===== */
+/* ===== RESPONSIVE DESIGN COMPLETO ===== */
 
-/* Tablets grandes */
-@media (max-width: 1024px) {
+/* Pantallas extra grandes (1400px+) */
+@media (min-width: 1400px) {
+  .contenedor-categorias {
+    padding: 30px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 36px;
+    margin-bottom: 40px;
+  }
+  
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 30px;
+  }
+  
+  .contenedor-categorias .grupo-botones {
+    gap: 12px;
+  }
+  
+  .contenedor-categorias .grupo-botones button {
+    min-width: 140px;
+    max-width: 200px;
+    font-size: 14px;
+  }
+}
+
+/* Laptops grandes (1200px - 1399px) */
+@media (max-width: 1399px) {
+  .contenedor-categorias {
+    max-width: 1200px;
+    padding: 25px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 30px;
+  }
+  
+  .contenedor-categorias .grupo-botones button {
+    min-width: 110px;
+    max-width: 160px;
+  }
+}
+
+/* Laptops medianos (992px - 1199px) */
+@media (max-width: 1199px) {
+  .contenedor-categorias {
+    padding: 20px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 28px;
+    margin-bottom: 30px;
+  }
+  
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 20px;
+  }
+  
+  .contenedor-categorias .grupo-botones button {
+    min-width: 100px;
+    max-width: 140px;
+    font-size: 12px;
+  }
+  
+  .contenedor-categorias .btn-subcategorias {
+    min-width: 120px;
+  }
+}
+
+/* Tablets (768px - 991px) */
+@media (max-width: 991px) {
   .contenedor-categorias {
     padding: 18px;
   }
   
   .contenedor-categorias .titulo-categorias {
     font-size: 26px;
+    margin-bottom: 25px;
   }
   
   .contenedor-categorias .tarjeta-categoria {
     padding: 18px;
   }
-
-  /* Header sigue igual */
-  .contenedor-categorias .header-tarjeta {
-    grid-template-columns: 1fr auto;
-    align-items: flex-start;
+  
+  .contenedor-categorias .categoria-info {
+    gap: 15px;
   }
-
-  /* Botones mantienen tamaño */
+  
+  .contenedor-categorias .input-categoria {
+    font-size: 15px;
+    padding: 11px 15px;
+  }
+  
+  .contenedor-categorias .grupo-botones {
+    gap: 6px;
+  }
+  
   .contenedor-categorias .grupo-botones button {
-    padding: 8px 12px;
-    font-size: 11px;
-    min-height: 32px;
-    min-width: 70px;
-  }
-
-  .contenedor-categorias .btn-subcategorias {
     min-width: 90px;
-    font-size: 10px;
+    max-width: 120px;
+    font-size: 11px;
+    padding: 9px 14px;
   }
-
+  
+  .contenedor-categorias .btn-subcategorias {
+    min-width: 110px;
+  }
+  
   .contenedor-categorias .btn-eliminar {
-    min-width: 80px;
+    min-width: 100px;
+  }
+  
+  .contenedor-categorias .subcategorias {
+    padding: 16px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria {
+    padding: 15px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria .grupo-botones button {
+    min-width: 85px;
+    max-width: 110px;
   }
 }
 
-/* Tablets medianos */
-@media (max-width: 768px) {
+/* MÃ³viles grandes (576px - 767px) */
+@media (max-width: 767px) {
   .contenedor-categorias {
     padding: 15px;
   }
   
   .contenedor-categorias .titulo-categorias {
     font-size: 24px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
   }
   
-  /* Header sigue con grid pero ajustado */
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 15px;
+    border-radius: 12px;
+  }
+  
+  /* Cambio a layout vertical en mÃ³viles */
   .contenedor-categorias .header-tarjeta {
-    grid-template-columns: 1fr auto;
-    align-items: flex-start;
-    gap: 12px;
+    gap: 15px;
   }
   
-  /* Input y checkbox siguen en fila */
   .contenedor-categorias .categoria-info {
+    flex-direction: column;
+    align-items: stretch;
     gap: 12px;
   }
   
@@ -472,68 +670,75 @@
   }
   
   .contenedor-categorias .label-check {
+    align-self: flex-start;
     font-size: 13px;
   }
   
-  /* Botones mantienen tamaño y disposición */
   .contenedor-categorias .grupo-botones {
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+    width: 100%;
   }
   
   .contenedor-categorias .grupo-botones button {
-    padding: 8px 10px;
-    font-size: 10px;
-    min-height: 30px;
-    min-width: 65px;
-  }
-
-  .contenedor-categorias .btn-subcategorias {
-    min-width: 85px;
-    font-size: 9px;
-  }
-
-  .contenedor-categorias .btn-eliminar {
-    min-width: 75px;
-  }
-  
-  /* Subcategorías mantienen estructura */
-  .contenedor-categorias .fila-subcategoria {
-    grid-template-columns: 1fr auto auto;
-    gap: 10px;
+    min-width: unset;
+    max-width: unset;
+    font-size: 11px;
+    padding: 10px 12px;
+    min-height: 38px;
   }
   
   .contenedor-categorias .subcategorias {
-    padding: 15px;
+    padding: 14px;
   }
-
+  
+  .contenedor-categorias .fila-subcategoria {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria .sub-input-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria label {
+    align-self: flex-start;
+  }
+  
+  .contenedor-categorias .fila-subcategoria .grupo-botones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  
   .contenedor-categorias .fila-subcategoria .grupo-botones button {
-    padding: 5px 8px;
-    font-size: 9px;
-    min-height: 26px;
-    min-width: 55px;
+    min-width: unset;
+    max-width: unset;
+  }
+  
+  .contenedor-categorias .mensaje-vacio {
+    font-size: 16px;
+    padding: 30px 15px;
   }
 }
 
-/* Móviles grandes */
-@media (max-width: 480px) {
+/* MÃ³viles medianos (480px - 575px) */
+@media (max-width: 575px) {
   .contenedor-categorias {
     padding: 12px;
   }
   
   .contenedor-categorias .titulo-categorias {
     font-size: 22px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
   
   .contenedor-categorias .tarjeta-categoria {
-    padding: 15px;
-  }
-  
-  /* Header sigue igual */
-  .contenedor-categorias .header-tarjeta {
-    grid-template-columns: 1fr auto;
-    align-items: flex-start;
-    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
   }
   
   .contenedor-categorias .input-categoria {
@@ -543,32 +748,83 @@
   
   .contenedor-categorias .label-check {
     font-size: 12px;
+    padding: 6px 8px;
   }
   
-  /* Botones ligeramente más pequeños pero mantienen estructura */
-  .contenedor-categorias .grupo-botones {
-    gap: 5px;
-  }
-
   .contenedor-categorias .grupo-botones button {
-    padding: 7px 9px;
-    font-size: 9px;
-    min-height: 28px;
-    min-width: 60px;
+    font-size: 10px;
+    padding: 8px 10px;
+    min-height: 35px;
   }
-
-  .contenedor-categorias .btn-subcategorias {
-    min-width: 80px;
-    font-size: 8px;
-  }
-
-  .contenedor-categorias .btn-eliminar {
-    min-width: 70px;
+  
+  .contenedor-categorias .subcategorias {
+    padding: 12px;
   }
   
   .contenedor-categorias .fila-subcategoria {
     padding: 10px;
-    gap: 8px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria input[type="text"] {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria label {
+    font-size: 11px;
+  }
+  
+  .contenedor-categorias .mensaje-vacio {
+    font-size: 15px;
+    padding: 25px 12px;
+  }
+}
+
+/* MÃ³viles pequeÃ±os (360px - 479px) */
+@media (max-width: 479px) {
+  .contenedor-categorias {
+    padding: 10px;
+  }
+  
+  .contenedor-categorias .titulo-categorias {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 10px;
+    border-radius: 8px;
+  }
+  
+  .contenedor-categorias .input-categoria {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  
+  .contenedor-categorias .label-check {
+    font-size: 11px;
+    padding: 5px 7px;
+  }
+  
+  .contenedor-categorias .grupo-botones {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  
+  .contenedor-categorias .grupo-botones button {
+    font-size: 10px;
+    padding: 10px;
+    min-height: 36px;
+    width: 100%;
+  }
+  
+  .contenedor-categorias .subcategorias {
+    padding: 10px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria {
+    padding: 8px;
+    gap: 10px;
   }
   
   .contenedor-categorias .fila-subcategoria input[type="text"] {
@@ -577,144 +833,117 @@
   }
   
   .contenedor-categorias .fila-subcategoria label {
-    font-size: 11px;
+    font-size: 10px;
   }
   
-  .contenedor-categorias .fila-subcategoria .grupo-botones button {
-    padding: 4px 7px;
-    font-size: 8px;
-    min-height: 24px;
-    min-width: 50px;
-  }
-  
-  .contenedor-categorias .subcategorias {
-    padding: 12px;
+  .contenedor-categorias .fila-subcategoria .grupo-botones {
+    grid-template-columns: 1fr;
   }
   
   .contenedor-categorias .mensaje-vacio {
-    font-size: 16px;
-    padding: 30px 15px;
+    font-size: 14px;
+    padding: 20px 10px;
+  }
+}
+
+/* MÃ³viles muy pequeÃ±os (menos de 360px) */
+@media (max-width: 359px) {
+  .contenedor-categorias {
+    padding: 8px;
+  }
+  
+  .contenedor-categorias .tarjeta-categoria {
+    padding: 8px;
+  }
+  
+  .contenedor-categorias .input-categoria {
+    font-size: 11px;
+    padding: 7px 8px;
+  }
+  
+  .contenedor-categorias .grupo-botones button {
+    font-size: 9px;
+    padding: 8px;
+    min-height: 34px;
+  }
+  
+  .contenedor-categorias .fila-subcategoria input[type="text"] {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  
+  .contenedor-categorias .mensaje-vacio {
+    font-size: 13px;
+    padding: 15px 8px;
+  }
+}
+
+/* ===== MODAL RESPONSIVE ===== */
+@media (max-width: 767px) {
+  .dialog-categoria-modal {
+    padding: 15px;
   }
 
-  /* Modal responsive */
+  .form-categoria-modal {
+    padding: 25px;
+    max-width: 100%;
+    width: calc(100% - 30px);
+    border-radius: 12px;
+  }
+
+  .form-categoria-modal .modal-header h3 {
+    font-size: 1.3rem;
+  }
+
+  .form-categoria-modal .form-control,
+  .form-categoria-modal .form-select {
+    padding: 12px 14px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
   .dialog-categoria-modal {
     padding: 10px;
   }
 
   .form-categoria-modal {
     padding: 20px;
-    margin: 0;
-    max-width: 100%;
     width: calc(100% - 20px);
   }
 
-  .form-categoria-modal h3 {
-    font-size: 1.3rem;
-  }
-
-  .form-categoria-modal .d-flex.justify-content-end {
+  .form-categoria-modal .modal-footer {
     flex-direction: column-reverse;
-    gap: 8px;
+    gap: 12px;
   }
 
   .form-categoria-modal .btn {
     width: 100%;
-    padding: 12px;
-    min-height: 44px;
+    padding: 14px;
+    min-height: 48px;
     font-size: 1rem;
+    min-width: unset;
   }
 }
 
-/* Móviles muy pequeños - SOLO AQUÍ cambiamos a columnas */
-@media (max-width: 360px) {
-  .contenedor-categorias {
-    padding: 10px;
-  }
-  
-  .contenedor-categorias .titulo-categorias {
-    font-size: 20px;
-  }
-  
-  .contenedor-categorias .tarjeta-categoria {
-    padding: 12px;
-  }
-
-  /* AQUÍ SÍ cambiamos el layout a columnas */
-  .contenedor-categorias .header-tarjeta {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-  .contenedor-categorias .categoria-info {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  
-  .contenedor-categorias .input-categoria {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-
-  .contenedor-categorias .label-check {
-    font-size: 11px;
-    justify-self: start;
-  }
-  
-  /* Botones en fila aún */
-  .contenedor-categorias .grupo-botones {
-    justify-content: flex-start;
-    gap: 5px;
-  }
-  
-  .contenedor-categorias .grupo-botones button {
-    padding: 8px 10px;
-    font-size: 10px;
-    min-height: 32px;
-    min-width: 55px;
-  }
-
-  .contenedor-categorias .btn-subcategorias {
-    min-width: 75px;
-    font-size: 9px;
-  }
-
-  .contenedor-categorias .btn-eliminar {
-    min-width: 65px;
-  }
-  
-  /* Subcategorías en columna solo si es necesario */
-  .contenedor-categorias .fila-subcategoria {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    text-align: left;
-  }
-  
-  .contenedor-categorias .fila-subcategoria .grupo-botones {
-    justify-content: flex-start;
-  }
-  
-  .contenedor-categorias .fila-subcategoria .grupo-botones button {
-    padding: 6px 8px;
-    font-size: 9px;
-    min-height: 28px;
-    min-width: 50px;
-  }
-
-  /* Modal muy pequeño */
+@media (max-width: 359px) {
   .form-categoria-modal {
     padding: 15px;
   }
 
+  .form-categoria-modal .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
   .form-categoria-modal .form-control,
   .form-categoria-modal .form-select {
-    padding: 8px 10px;
-    font-size: 0.9rem;
+    padding: 10px 12px;
+    font-size: 0.95rem;
   }
 
   .form-categoria-modal .btn {
-    padding: 10px;
-    font-size: 0.9rem;
+    padding: 12px;
+    font-size: 0.95rem;
     min-height: 44px;
   }
 }

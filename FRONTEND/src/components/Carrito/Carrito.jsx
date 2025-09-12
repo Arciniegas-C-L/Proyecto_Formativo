@@ -1,5 +1,5 @@
 import ProductoCard from '../Catalogo/ProductoCard';
-// import ProductoRecomendado from './ProductoRecomendado';
+import ProductoRecomendado from './ProductoRecomendado';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmarCompra from './ConfirmarCompra';
 import React, { useState, useEffect } from 'react';
@@ -15,7 +15,7 @@ import {
     finalizarCompra
 } from '../../api/CarritoApi';
 import { getALLProductos } from '../../api/Producto.api';
-import '../../assets/css/Carrito.css';
+import '../../assets/css/Carrito/Carrito.css';
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 

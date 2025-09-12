@@ -103,30 +103,9 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
     }
   };
 
-  // ======== FUNCIONES CAMBIO INLINE ========
-  const cambiarCategoria = (id, field, value) => {
-    setCategoriasEditadas(prev =>
-      prev.map(cat => (cat.idCategoria === id ? { ...cat, [field]: value } : cat))
-    );
-  };
-
-  const cambiarSubcategoria = (catId, subId, field, value) => {
-    setCategoriasEditadas(prev =>
-      prev.map(cat => {
-        if (cat.idCategoria !== catId) return cat;
-        const subcategorias = (cat.subcategorias || []).map(sub =>
-          sub.idSubcategoria === subId ? { ...sub, [field]: value } : sub
-        );
-        return { ...cat, subcategorias };
-      })
-    );
-  };
-
   // ======== RENDER ========
   return (
     <div className="contenedor-categorias">
-      <h3 className="titulo-categorias">Listado de Categorías y Subcategorías</h3>
-
       {categoriasEditadas.length === 0 ? (
         <p className="mensaje-vacio">No hay categorías registradas</p>
       ) : (
@@ -140,52 +119,105 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
                       type="text"
                       className="input-categoria"
                       value={cat.nombre || ""}
-                      onChange={e => cambiarCategoria(cat.idCategoria, "nombre", e.target.value)}
+                      readOnly
+                      placeholder="Nombre de la categoría"
                     />
                     <label className="label-check">
                       <input
                         type="checkbox"
                         checked={!!cat.estado}
-                        onChange={e => cambiarCategoria(cat.idCategoria, "estado", e.target.checked)}
+                        readOnly
                       />
-                      Activo
+                      <span>Activo</span>
                     </label>
                   </div>
                 </div>
+                
                 <div className="grupo-botones">
-                  <button className="btn-editar" onClick={() => abrirModalEditar(cat)}>Editar</button>
-                  <button className="btn-subcategorias" onClick={() =>
-                    setMostrarSub(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))
-                  }>
-                    {mostrarSub[cat.idCategoria] ? "Ocultar Subcategorías" : "Mostrar Subcategorías"}
+                  <button 
+                    className="btn-editar" 
+                    onClick={() => abrirModalEditar(cat)}
+                    title="Editar categoría"
+                  >
+                    <i className="fas fa-edit" aria-hidden="true"></i>
+                    <span>Editar</span>
                   </button>
-                  <button className="btn-eliminar" onClick={() => setCategoriaAEliminar(cat)}>Eliminar categoría</button>
+                  
+                  <button 
+                    className="btn-subcategorias" 
+                    onClick={() =>
+                      setMostrarSub(prev => ({ ...prev, [cat.idCategoria]: !prev[cat.idCategoria] }))
+                    }
+                    title={mostrarSub[cat.idCategoria] ? "Ocultar subcategorías" : "Mostrar subcategorías"}
+                  >
+                    <i className={`fas ${mostrarSub[cat.idCategoria] ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true"></i>
+                    <span>{mostrarSub[cat.idCategoria] ? "Ocultar Sub" : "Mostrar Sub"}</span>
+                  </button>
+                  
+                  <button 
+                    className="btn-eliminar" 
+                    onClick={() => setCategoriaAEliminar(cat)}
+                    title="Eliminar categoría"
+                  >
+                    <i className="fas fa-trash-alt" aria-hidden="true"></i>
+                    <span>Eliminar</span>
+                  </button>
                 </div>
               </div>
 
               {mostrarSub[cat.idCategoria] && (
                 <div className="subcategorias">
+                  <div className="subcategorias-header">
+                    <h4>Subcategorías</h4>
+                    <span className="subcategorias-count">
+                      ({cat.subcategorias?.length || 0})
+                    </span>
+                  </div>
+                  
                   {cat.subcategorias?.length > 0 ? cat.subcategorias.map(sub => (
                     <div key={sub.idSubcategoria} className="fila-subcategoria">
-                      <input
-                        type="text"
-                        value={sub.nombre || ""}
-                        onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "nombre", e.target.value)}
-                      />
-                      <label>
+                      <div className="sub-input-container">
                         <input
-                          type="checkbox"
-                          checked={!!sub.estado}
-                          onChange={e => cambiarSubcategoria(cat.idCategoria, sub.idSubcategoria, "estado", e.target.checked)}
+                          type="text"
+                          value={sub.nombre || ""}
+                          readOnly
+                          placeholder="Nombre de la subcategoría"
                         />
-                        Activo
-                      </label>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={!!sub.estado}
+                            readOnly
+                          />
+                          <span>Activo</span>
+                        </label>
+                      </div>
+                      
                       <div className="grupo-botones">
-                        <button className="btn-editar" onClick={() => abrirModalEditarSub(sub)}>Editar</button>
-                        <button className="btn-eliminar" onClick={() => setSubcategoriaAEliminar(sub)}>Eliminar subcategoría</button>
+                        <button 
+                          className="btn-editar" 
+                          onClick={() => abrirModalEditarSub(sub)}
+                          title="Editar subcategoría"
+                        >
+                          <i className="fas fa-edit" aria-hidden="true"></i>
+                          <span>Editar</span>
+                        </button>
+                        <button 
+                          className="btn-eliminar" 
+                          onClick={() => setSubcategoriaAEliminar(sub)}
+                          title="Eliminar subcategoría"
+                        >
+                          <i className="fas fa-trash-alt" aria-hidden="true"></i>
+                          <span>Eliminar</span>
+                        </button>
                       </div>
                     </div>
-                  )) : <em>No hay subcategorías</em>}
+                  )) : (
+                    <div className="subcategorias-vacio">
+                      <i className="fas fa-info-circle" aria-hidden="true"></i>
+                      <em>No hay subcategorías registradas</em>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -197,30 +229,60 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
       {categoriaEditModal && (
         <div className="dialog-categoria-modal">
           <div className="form-categoria-modal">
-            <h3>Editar Categoría</h3>
-            <label className="form-label">Nombre *</label>
-            <input
-              className="form-control mb-2"
-              name="nombre"
-              value={editModalData.nombre}
-              onChange={e => setEditModalData({ ...editModalData, nombre: e.target.value })}
-              maxLength={45}
-            />
-            <div className="form-check mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                name="estado"
-                checked={!!editModalData.estado}
-                onChange={e => setEditModalData({ ...editModalData, estado: e.target.checked })}
-              />
-              <label className="form-check-label">Activo</label>
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-edit" aria-hidden="true"></i>
+                Editar Categoría
+              </h3>
+              <button 
+                type="button" 
+                className="btn-close"
+                onClick={cerrarModalEditar}
+                aria-label="Cerrar modal"
+              >
+                <i className="fas fa-times" aria-hidden="true"></i>
+              </button>
             </div>
-            <div className="d-flex justify-content-end gap-2">
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">
+                  <i className="fas fa-tag" aria-hidden="true"></i>
+                  Nombre *
+                </label>
+                <input
+                  className="form-control"
+                  name="nombre"
+                  value={editModalData.nombre}
+                  onChange={e => setEditModalData({ ...editModalData, nombre: e.target.value })}
+                  maxLength={45}
+                  placeholder="Ingrese el nombre de la categoría"
+                />
+              </div>
+              
+              <div className="form-check mb-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  name="estado"
+                  id="estadoCategoria"
+                  checked={!!editModalData.estado}
+                  onChange={e => setEditModalData({ ...editModalData, estado: e.target.checked })}
+                />
+                <label className="form-check-label" htmlFor="estadoCategoria">
+                  <i className={`fas ${editModalData.estado ? 'fa-toggle-on' : 'fa-toggle-off'}`} aria-hidden="true"></i>
+                  Categoría Activa
+                </label>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
               <button className="btn btn-secondary" onClick={cerrarModalEditar}>
+                <i className="fas fa-times" aria-hidden="true"></i>
                 Cancelar
               </button>
               <button className="btn btn-primary" onClick={guardarModalEditar}>
+                <i className="fas fa-save" aria-hidden="true"></i>
                 Guardar
               </button>
             </div>
@@ -231,30 +293,60 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
       {subcategoriaEditModal && (
         <div className="dialog-categoria-modal">
           <div className="form-categoria-modal">
-            <h3>Editar Subcategoría</h3>
-            <label className="form-label">Nombre *</label>
-            <input
-              className="form-control mb-2"
-              name="nombre"
-              value={editSubModalData.nombre}
-              onChange={e => setEditSubModalData({ ...editSubModalData, nombre: e.target.value })}
-              maxLength={45}
-            />
-            <div className="form-check mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                name="estado"
-                checked={!!editSubModalData.estado}
-                onChange={e => setEditSubModalData({ ...editSubModalData, estado: e.target.checked })}
-              />
-              <label className="form-check-label">Activo</label>
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-edit" aria-hidden="true"></i>
+                Editar Subcategoría
+              </h3>
+              <button 
+                type="button" 
+                className="btn-close"
+                onClick={cerrarModalEditarSub}
+                aria-label="Cerrar modal"
+              >
+                <i className="fas fa-times" aria-hidden="true"></i>
+              </button>
             </div>
-            <div className="d-flex justify-content-end gap-2">
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">
+                  <i className="fas fa-tags" aria-hidden="true"></i>
+                  Nombre *
+                </label>
+                <input
+                  className="form-control"
+                  name="nombre"
+                  value={editSubModalData.nombre}
+                  onChange={e => setEditSubModalData({ ...editSubModalData, nombre: e.target.value })}
+                  maxLength={45}
+                  placeholder="Ingrese el nombre de la subcategoría"
+                />
+              </div>
+              
+              <div className="form-check mb-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  name="estado"
+                  id="estadoSubcategoria"
+                  checked={!!editSubModalData.estado}
+                  onChange={e => setEditSubModalData({ ...editSubModalData, estado: e.target.checked })}
+                />
+                <label className="form-check-label" htmlFor="estadoSubcategoria">
+                  <i className={`fas ${editSubModalData.estado ? 'fa-toggle-on' : 'fa-toggle-off'}`} aria-hidden="true"></i>
+                  Subcategoría Activa
+                </label>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
               <button className="btn btn-secondary" onClick={cerrarModalEditarSub}>
+                <i className="fas fa-times" aria-hidden="true"></i>
                 Cancelar
               </button>
               <button className="btn btn-primary" onClick={() => guardarModalEditarSub(subcategoriaEditModal.categoria)}>
+                <i className="fas fa-save" aria-hidden="true"></i>
                 Guardar
               </button>
             </div>
