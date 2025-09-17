@@ -1,5 +1,5 @@
 from .models import Comentario
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from rest_framework import serializers
 from django.db import transaction
 from django.db.models import Q
@@ -427,38 +427,46 @@ class MovimientoSerializer(serializers.ModelSerializer):
         model = Movimiento
         fields = ['idmovimiento', 'tipo', 'cantidad', 'fecha', 'inventario']
 
+class ProductoMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = ("id", "nombre", "precio", "imagen")
+
 class PedidoItemSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     talla_nombre    = serializers.CharField(source='talla.nombre', read_only=True)
+    # opcional: ayuda mucho al front
+    producto_data   = ProductoMiniSerializer(source='producto', read_only=True)
 
     class Meta:
         model = PedidoItem
         fields = [
-            'id', 'producto', 'producto_nombre', 'talla', 'talla_nombre',
-            'cantidad', 'precio', 'subtotal'
+            'id', 'producto', 'producto_nombre', 'producto_data',
+            'talla', 'talla_nombre', 'cantidad', 'precio', 'subtotal'
         ]
 
     def validate(self, attrs):
-        cantidad = attrs.get('cantidad', 1)
+        cantidad = attrs.get('cantidad') or 1
         precio   = attrs.get('precio')
         subtotal = attrs.get('subtotal')
 
         if precio is None:
             raise serializers.ValidationError("El campo 'precio' es obligatorio.")
 
-        # si no mandan subtotal, lo calculo; si lo mandan, lo verifico
-        calc = (cantidad or 1) * precio
+        # Usa Decimal para comparar a 2 decimales
+        calc = (Decimal(cantidad) * Decimal(precio)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if subtotal is None:
             attrs['subtotal'] = calc
         else:
-            # opcional: permitir pequeña diferencia por redondeo
-            if round(subtotal, 2) != round(calc, 2):
+            sub_q = Decimal(subtotal).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            if sub_q != calc:
                 raise serializers.ValidationError("El 'subtotal' no coincide con cantidad * precio.")
-        return attrs        
+        return attrs
+
 
 class PedidoSerializer(serializers.ModelSerializer):
     usuario_nombre = serializers.CharField(source='usuario.first_name', read_only=True)
-    items = PedidoItemSerializer(many=True)  # related_name='items' ya está en el modelo
+    items = PedidoItemSerializer(many=True)
 
     class Meta:
         model  = Pedido
@@ -466,41 +474,76 @@ class PedidoSerializer(serializers.ModelSerializer):
             'idPedido', 'numero', 'total', 'estado', 'usuario', 'usuario_nombre',
             'created_at', 'updated_at', 'items'
         ]
-        read_only_fields = ['total', 'created_at', 'updated_at']
+        read_only_fields = ['idPedido', 'total', 'created_at', 'updated_at']
 
+    @transaction.atomic
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
         pedido = Pedido.objects.create(**validated_data)
 
-        total = 0
+        total = Decimal('0.00')
+        objs = []
         for item in items_data:
-            item['pedido'] = pedido
-            obj = PedidoItem.objects.create(**item)
-            total += obj.subtotal
+            obj = PedidoItem(pedido=pedido, **item)
+            objs.append(obj)
+            total += Decimal(item['subtotal'])
+        if objs:
+            PedidoItem.objects.bulk_create(objs)
+
         pedido.total = total
         pedido.save(update_fields=['total'])
         return pedido
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
 
-        # actualizar campos simples
         for attr, val in validated_data.items():
             setattr(instance, attr, val)
 
-        total = 0
         if items_data is not None:
-            # estrategia simple: borrar y recrear (o podrías hacer upsert si lo prefieres)
             instance.items.all().delete()
+            total = Decimal('0.00')
+            objs = []
             for item in items_data:
-                item['pedido'] = instance
-                obj = PedidoItem.objects.create(**item)
-                total += obj.subtotal
+                objs.append(PedidoItem(pedido=instance, **item))
+                total += Decimal(item['subtotal'])
+            if objs:
+                PedidoItem.objects.bulk_create(objs)
             instance.total = total
 
         instance.save()
         return instance
 
+    # 👇 Fallback SOLO para lectura:
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Si no hay PedidoItem, armamos items mínimos desde PedidoProducto
+        if not data.get('items'):
+            pp_qs = (PedidoProducto.objects
+                     .filter(pedido=instance)
+                     .select_related('producto'))
+            items = []
+            for pp in pp_qs:
+                precio = Decimal(str(getattr(pp.producto, 'precio', 0) or 0))
+                items.append({
+                    "id": f"pp-{pp.id}",          # id sintético
+                    "producto": pp.producto_id,
+                    "producto_nombre": pp.producto.nombre,
+                    "producto_data": {            # útil para el front
+                        "id": pp.producto_id,
+                        "nombre": pp.producto.nombre,
+                        "precio": str(precio),
+                        "imagen": getattr(pp.producto, 'imagen', None),
+                    },
+                    "talla": None,
+                    "talla_nombre": None,
+                    "cantidad": 1,
+                    "precio": str(precio),
+                    "subtotal": str(precio),
+                })
+            data['items'] = items
+        return data
 
 class PedidoProductoSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
@@ -517,12 +560,10 @@ class PagoSerializer(serializers.ModelSerializer):
         fields = ['idPago', 'total', 'fechaPago', 'pedido']
 
 class TipoPagoSerializer(serializers.ModelSerializer):
-    pago = PagoSerializer()  
-
-class Meta:
-    model = TipoPago
-    fields = ['idtipoPago', 'nombre', 'monto', 'pago']
-
+    pago = PagoSerializer()
+    class Meta:
+        model = TipoPago
+        fields = ['idtipoPago', 'nombre', 'monto', 'pago']
 class CarritoItemSerializer(serializers.ModelSerializer):
 
     producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
@@ -876,7 +917,7 @@ class FacturaCreateSerializer(serializers.Serializer):
             estado="emitida",
         )
 
-        # 6) Crear ítems
+        # 6) Crear ítems (ya lo tienes)
         items_bulk = []
         for it in validated["items"]:
             precio = Decimal(str(it["precio"]))
@@ -891,6 +932,29 @@ class FacturaCreateSerializer(serializers.Serializer):
                 subtotal=precio * Decimal(cantidad),
             ))
         FacturaItem.objects.bulk_create(items_bulk)
+
+        # 6B) 🔁 SINCRONIZAR PedidoItem (lo que usa "Mis pedidos")
+        # Dejamos las líneas del pedido exactamente como la factura
+        from .models import PedidoItem
+        pi_bulk = []
+        PedidoItem.objects.filter(pedido=pedido).delete()
+        for it in validated["items"]:
+            precio = Decimal(str(it["precio"]))
+            cantidad = int(it["cantidad"])
+            pi_bulk.append(PedidoItem(
+                pedido=pedido,
+                producto=it["producto"],
+                talla=it["talla"],          # puede ser None
+                cantidad=cantidad,
+                precio=precio,
+                subtotal=precio * Decimal(cantidad),
+            ))
+        if pi_bulk:
+            PedidoItem.objects.bulk_create(pi_bulk)
+
+        # Alinear total del pedido con la factura
+        pedido.total = total
+        pedido.save(update_fields=["total"])
 
         return factura
 

@@ -6,6 +6,7 @@ import time
 from datetime import timedelta
 from decimal import Decimal
 import io
+from django.db.models import Prefetch
 
 from django.http import FileResponse, HttpResponse
 from rest_framework.decorators import action
@@ -84,6 +85,7 @@ from .models import (
     Factura,
     FacturaItem,
     Comentario,
+    PedidoItem,
 )
 
 # --- SERIALIZERS del proyecto (import explícito)
@@ -1326,14 +1328,18 @@ class PedidoView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
 
     def get_queryset(self):
-        qs = Pedido.objects.select_related("usuario").all()
+        qs = (Pedido.objects
+                .select_related("usuario")
+                .prefetch_related(
+                    Prefetch("items", queryset=PedidoItem.objects.select_related("producto","talla"), to_attr="_pref_items"),
+                    Prefetch("pedidoproducto_set", queryset=PedidoProducto.objects.select_related("producto"), to_attr="_pref_pp"),
+                ))
 
         user = self.request.user
         es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
         if not es_admin:
             qs = qs.filter(usuario=user)
 
-        # Quita filtros inexistentes y ordena por idPedido
         return qs.order_by("-idPedido")
 
 class PedidoProductoView(viewsets.ModelViewSet):
@@ -1554,30 +1560,70 @@ class CarritoView(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def finalizar_compra(self, request, pk=None):
         """
-        Si usas Mercado Pago + factura, normalmente NO querrás usar este endpoint.
-        Aquí no se descuenta stock tampoco (se hace al facturar).
+        Convierte el carrito en pedido.
+        NO descuenta stock aquí (eso se hace al facturar).
         """
         carrito = self.get_object()
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=400)
 
+        # Creamos el pedido (total lo recalculamos abajo)
         pedido = Pedido.objects.create(
             usuario=carrito.usuario,
-            total=carrito.calcular_total(),
+            total=0,
             estado=True
         )
-        for item in carrito.items.all():
-            PedidoProducto.objects.create(pedido=pedido, producto=item.producto)
 
+        from decimal import Decimal
+        from .models import PedidoItem, PedidoProducto  # mantenemos ambos para compatibilidad
+
+        total = Decimal('0.00')
+        # Menos queries:
+        items = carrito.items.select_related('producto', 'talla').all()
+
+        for it in items:
+            # precio unitario: usa el guardado en el carrito; si no, el del producto
+            precio = getattr(it, 'precio_unitario', None)
+            if precio is None:
+                precio = getattr(it.producto, 'precio', 0)
+
+            precio = Decimal(str(precio))
+            cantidad = int(it.cantidad or 1)
+            subtotal = precio * Decimal(cantidad)
+
+            # 1) Línea "oficial" del pedido (esto es lo que lee tu serializer como items)
+            PedidoItem.objects.create(
+                pedido=pedido,
+                producto=it.producto,
+                talla=it.talla,
+                cantidad=cantidad,
+                precio=precio,
+                subtotal=subtotal,
+            )
+
+            # 2) Mantén PedidoProducto si ya lo usas en otros lados (compatibilidad)
+            PedidoProducto.objects.create(pedido=pedido, producto=it.producto)
+
+            total += subtotal
+
+        # Guardar total calculado
+        pedido.total = total
+        pedido.save(update_fields=['total'])
+
+        # Cerrar carrito (sin tocar inventario)
         carrito.estado = False
-        carrito.save()
+        carrito.save(update_fields=['estado'])
 
         EstadoCarrito.objects.create(
             carrito=carrito,
             estado='entregado',
             observacion='Carrito convertido en pedido'
         )
-        return Response({"mensaje": "Compra finalizada exitosamente", "pedido_id": pedido.idPedido}, status=200)
+
+        return Response(
+            {"mensaje": "Compra finalizada exitosamente", "pedido_id": pedido.idPedido},
+            status=200
+        )
 
     @action(detail=True, methods=['post'])
     def crear_preferencia_pago(self, request, pk=None):

@@ -3,6 +3,8 @@ import { listarPedidos } from "../../api/Pedido.api";
 import { listarItemsDePedido } from "../../api/PedidoProducto.api.js";
 import { Link } from "react-router-dom";
 
+const PAGE_SIZE = 5;
+
 function fmtMoney(value, locale = "es-CO") {
   const n = typeof value === "number" ? value : parseFloat(value ?? 0);
   if (Number.isNaN(n)) return "—";
@@ -28,10 +30,7 @@ function fmtFecha(iso) {
 function EstadoBadge({ estado }) {
   const ok = !!estado;
   return (
-    <span
-      className={`badge ${ok ? "bg-success" : "bg-secondary"}`}
-      title={ok ? "Completado" : "Pendiente"}
-    >
+    <span className={`badge ${ok ? "bg-success" : "bg-secondary"}`} title={ok ? "Completado" : "Pendiente"}>
       {ok ? "Completado" : "Pendiente"}
     </span>
   );
@@ -40,26 +39,19 @@ function EstadoBadge({ estado }) {
 /** Normaliza diferentes formas de items para mostrarlos homogéneamente */
 function normalizeItems(rawItems) {
   if (!Array.isArray(rawItems)) return [];
-
   return rawItems.map((it) => {
-    // Caso A: PedidoItem (serializer anidado en Pedido)
-    // fields esperados: producto (id), producto_nombre, talla_nombre, cantidad, precio, subtotal
+    // Caso A: PedidoItem (serializer anidado)
     if ("producto_nombre" in it || "subtotal" in it || "precio" in it) {
       return {
-        nombre: it.producto_nombre ?? "Producto",
-        imagen:
-          it.producto?.imagen ??
-          it.imagen ??
-          null, // intenta buscar imagen si vino un objeto producto
+        nombre: it.producto_nombre ?? it.producto_data?.nombre ?? "Producto",
+        imagen: it.producto?.imagen ?? it.producto_data?.imagen ?? it.imagen ?? null,
         cantidad: it.cantidad ?? 1,
-        precio: it.precio ?? null,
+        precio: it.precio ?? it.producto_data?.precio ?? null,
         subtotal: it.subtotal ?? null,
         talla: it.talla_nombre ?? null,
       };
     }
-
     // Caso B: PedidoProducto (producto viene anidado)
-    // fields esperados: { producto: { nombre, imagen, precio }, cantidad? }
     const prod = it.producto ?? {};
     return {
       nombre: prod.nombre ?? "Producto",
@@ -77,18 +69,33 @@ export function MisPedidos() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
+  // paginación
+  const [page, setPage] = useState(1);
+
   // estado por pedido: abierto/cerrado + cache de items
   const [expanded, setExpanded] = useState({});
   const [itemsByPedido, setItemsByPedido] = useState({});
   const [loadingItems, setLoadingItems] = useState({});
 
+  // placeholder inline (sin llamadas externas)
+  const PLACEHOLDER =
+    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'><rect width='100%' height='100%' fill='%23f4f4f5'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23666' font-family='Arial' font-size='16'>Producto</text></svg>";
+
   const ordered = useMemo(() => {
-    return [...pedidos].sort((a, b) => {
+    const arr = [...pedidos].sort((a, b) => {
       const ai = a.idPedido ?? a.id ?? 0;
       const bi = b.idPedido ?? b.id ?? 0;
       return bi - ai;
     });
+    return arr;
   }, [pedidos]);
+
+  // recalcular límites de paginación al cambiar lista
+  const totalPages = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const from = (safePage - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE;
+  const pageSlice = ordered.slice(from, to);
 
   useEffect(() => {
     (async () => {
@@ -98,6 +105,7 @@ export function MisPedidos() {
         const { data } = await listarPedidos();
         const rows = Array.isArray(data) ? data : data?.results ?? [];
         setPedidos(rows);
+        setPage(1); // resetea a la primera página al cargar
       } catch (e) {
         console.error("Error listando pedidos:", e);
         setErr("No se pudieron cargar tus pedidos.");
@@ -108,8 +116,8 @@ export function MisPedidos() {
   }, []);
 
   const resolveImg = (src) => {
-    if (!src) return "https://via.placeholder.com/300x200?text=Producto";
-    if (src.startsWith("http")) return src;
+    if (!src) return PLACEHOLDER;
+    if (typeof src === "string" && src.startsWith("http")) return src;
     const base = import.meta.env.VITE_BACK_URL || "http://127.0.0.1:8000";
     return `${base}${src}`;
   };
@@ -118,20 +126,19 @@ export function MisPedidos() {
     const pid = pedido.idPedido ?? pedido.id;
     const next = !expanded[pid];
     setExpanded((s) => ({ ...s, [pid]: next }));
-
     if (!next) return;
 
-    // 1) Si ya tenemos items cacheados, no hacemos nada
+    // 1) cache
     if (Array.isArray(itemsByPedido[pid])) return;
 
-    // 2) Si el pedido ya trae items anidados, úsalo y cachea
-    if (Array.isArray(pedido.items) && pedido.items.length >= 0) {
+    // 2) items anidados
+    if (Array.isArray(pedido.items) && pedido.items.length > 0) {
       const norm = normalizeItems(pedido.items);
       setItemsByPedido((s) => ({ ...s, [pid]: norm }));
       return;
     }
 
-    // 3) Fallback: pedirlos al endpoint /pedidoproductos/?pedido=<id>
+    // 3) fallback: /pedidoproductos/?pedido=<id>
     try {
       setLoadingItems((s) => ({ ...s, [pid]: true }));
       const { data } = await listarItemsDePedido(pid);
@@ -147,6 +154,13 @@ export function MisPedidos() {
     } finally {
       setLoadingItems((s) => ({ ...s, [pid]: false }));
     }
+  };
+
+  const changePage = (p) => {
+    if (p < 1 || p > totalPages) return;
+    setPage(p);
+    // opcional: cerrar expansiones al cambiar de página
+    // setExpanded({});
   };
 
   if (loading) {
@@ -173,9 +187,7 @@ export function MisPedidos() {
         <h1 className="h4 mb-3">Mis pedidos</h1>
         <div className="text-center p-5 bg-light rounded">
           <p className="mb-3">Aún no tienes pedidos.</p>
-          <Link to="/catalogo" className="btn btn-primary">
-            Ir al catálogo
-          </Link>
+          <Link to="/catalogo" className="btn btn-primary">Ir al catálogo</Link>
         </div>
       </div>
     );
@@ -189,10 +201,13 @@ export function MisPedidos() {
         <div className="text-muted small">
           {ordered.length} {ordered.length === 1 ? "pedido" : "pedidos"}
         </div>
+        <div className="text-muted small">
+          Página {safePage} de {totalPages}
+        </div>
       </div>
 
       <div className="vstack gap-3">
-        {ordered.map((p) => {
+        {pageSlice.map((p) => {
           const pid = p.idPedido ?? p.id;
           const abierto = !!expanded[pid];
           const itemsState = itemsByPedido[pid];
@@ -211,42 +226,26 @@ export function MisPedidos() {
                     </div>
 
                     <div className="text-muted small mt-1">
-                      {p.created_at && (
-                        <span className="me-3">Fecha: {fmtFecha(p.created_at)}</span>
-                      )}
+                      {p.created_at && <span className="me-3">Fecha: {fmtFecha(p.created_at)}</span>}
                       <span>Total: </span>
                       <strong>${fmtMoney(p.total)}</strong>
                     </div>
                   </div>
 
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => toggleExpand(p)}
-                  >
+                  <button className="btn btn-sm btn-outline-primary" onClick={() => toggleExpand(p)}>
                     {abierto ? "Ocultar productos" : "Ver productos"}
                   </button>
                 </div>
 
                 {abierto && (
                   <div className="mt-3">
-                    {cargandoItems && (
-                      <div className="alert alert-info py-2">
-                        Cargando productos del pedido…
-                      </div>
-                    )}
-
-                    {tieneError && (
-                      <div className="alert alert-warning py-2">
-                        {itemsState._error}
-                      </div>
-                    )}
+                    {cargandoItems && <div className="alert alert-info py-2">Cargando productos del pedido…</div>}
+                    {tieneError && <div className="alert alert-warning py-2">{itemsState._error}</div>}
 
                     {!cargandoItems && !tieneError && (
                       <>
                         {!items.length ? (
-                          <div className="text-muted small">
-                            Sin productos para mostrar.
-                          </div>
+                          <div className="text-muted small">Sin productos para mostrar.</div>
                         ) : (
                           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                             {items.map((it, idx) => {
@@ -263,10 +262,7 @@ export function MisPedidos() {
                                       src={urlImg}
                                       className="card-img-top"
                                       alt={nombre}
-                                      onError={(e) => {
-                                        e.currentTarget.src =
-                                          "https://via.placeholder.com/300x200?text=Producto";
-                                      }}
+                                      onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
                                     />
                                     <div className="card-body">
                                       <h6 className="card-title mb-1">{nombre}</h6>
@@ -291,6 +287,28 @@ export function MisPedidos() {
           );
         })}
       </div>
+
+      {/* Controles de paginación */}
+      <nav className="mt-4 d-flex justify-content-center">
+        <ul className="pagination mb-0">
+          <li className={`page-item ${safePage === 1 ? "disabled" : ""}`}>
+            <button className="page-link" onClick={() => changePage(safePage - 1)}>Anterior</button>
+          </li>
+
+          {Array.from({ length: totalPages }).map((_, i) => {
+            const pnum = i + 1;
+            return (
+              <li key={pnum} className={`page-item ${pnum === safePage ? "active" : ""}`}>
+                <button className="page-link" onClick={() => changePage(pnum)}>{pnum}</button>
+              </li>
+            );
+          })}
+
+          <li className={`page-item ${safePage === totalPages ? "disabled" : ""}`}>
+            <button className="page-link" onClick={() => changePage(safePage + 1)}>Siguiente</button>
+          </li>
+        </ul>
+      </nav>
     </div>
   );
 }
