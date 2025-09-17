@@ -842,38 +842,57 @@ class FacturaItemSerializer(serializers.ModelSerializer):
 
 
 # serializers.py
+# serializers.py
+
+# serializers.py
 class FacturaSerializer(serializers.ModelSerializer):
-    # 🔁 en vez de ManyRelatedField directo, usamos method para tolerar ambos nombres
     items = serializers.SerializerMethodField()
-    cliente_nombre = serializers.SerializerMethodField()
+    cliente_email = serializers.SerializerMethodField()   # ⬅ nuevo
     fecha = serializers.SerializerMethodField()
 
     class Meta:
         model = Factura
         fields = (
-            "id", "numero", "pedido", "usuario",
-            "subtotal", "impuestos", "total", "moneda",
-            "metodo_pago", "mp_payment_id",
-            "emitida_en", "estado", "items",
-            "cliente_nombre", "fecha",
+            "id","numero","pedido","usuario",
+            "subtotal","impuestos","total","moneda",
+            "metodo_pago","mp_payment_id",
+            "emitida_en","estado","items",
+            "fecha",
+            "cliente_email",                      # ⬅ aquí
         )
         read_only_fields = fields
 
     def get_items(self, obj):
-        # Soporta tanto related_name="items" como el default facturaitem_set
-        qs = getattr(obj, "items", None)
-        if qs is None:
-            qs = getattr(obj, "facturaitem_set", None)
-        if qs is None:
-            return []
-        return FacturaItemSerializer(qs.all(), many=True).data
+        qs = getattr(obj, "items", None) or getattr(obj, "facturaitem_set", None)
+        return FacturaItemSerializer(qs.all(), many=True).data if qs is not None else []
 
-    def get_cliente_nombre(self, obj):
+    def get_cliente_email(self, obj):
+        """
+        Devuelve el email del usuario con tolerancia a distintos nombres de campo.
+        """
         u = getattr(obj, "usuario", None)
         if not u:
             return None
-        nombre = f"{getattr(u,'first_name','')} {getattr(u,'last_name','')}".strip()
-        return nombre or getattr(u, "username", None) or getattr(u, "email", None)
+
+        # candidatos comunes
+        possibles = [
+            "email", "correo", "correo_electronico", "mail",
+            "emailUsuario", "correoUsuario", "user_email"
+        ]
+        for attr in possibles:
+            val = getattr(u, attr, None)
+            if val:
+                return str(val)
+
+        # como último recurso, si el __str__ del usuario es un email
+        try:
+            text = str(u)
+            if "@" in text:
+                return text
+        except Exception:
+            pass
+
+        return None
 
     def get_fecha(self, obj):
         dt = getattr(obj, "emitida_en", None) or getattr(obj, "created_at", None)

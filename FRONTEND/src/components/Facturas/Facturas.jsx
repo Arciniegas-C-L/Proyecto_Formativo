@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { listarFacturas, descargarFacturaPDF, getFactura /* opcional */ } from "../../api/Factura.api";
+import { listarFacturas, descargarFacturaPDF } from "../../api/Factura.api";
 import { Link } from "react-router-dom";
 
 function usePaginatedResponse(data) {
-  // Adapta respuesta paginada DRF o array simple
   return useMemo(() => {
     if (!data) return { items: [], count: 0 };
     if (Array.isArray(data)) return { items: data, count: data.length };
-    // DRF-like
     if (Array.isArray(data.results)) return { items: data.results, count: data.count ?? data.results.length };
-    // fallback
     return { items: [], count: 0 };
   }, [data]);
 }
@@ -21,8 +18,8 @@ export function Facturas() {
 
   // Filtros
   const [qNumero, setQNumero] = useState("");
-  const [qDesde, setQDesde] = useState(""); // yyyy-mm-dd
-  const [qHasta, setQHasta] = useState(""); // yyyy-mm-dd
+  const [qDesde, setQDesde] = useState("");
+  const [qHasta, setQHasta] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -33,10 +30,7 @@ export function Facturas() {
     setLoading(true);
     setErr(null);
     try {
-      const params = {
-        page,
-        page_size: pageSize,
-      };
+      const params = { page, page_size: pageSize };
       if (qNumero) params.numero = qNumero;
       if (qDesde) params.fecha_desde = qDesde;
       if (qHasta) params.fecha_hasta = qHasta;
@@ -79,7 +73,7 @@ export function Facturas() {
       a.download = `Factura_${numero || id}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (e) {
+    } catch {
       alert("No fue posible descargar el PDF.");
     }
   };
@@ -118,7 +112,9 @@ export function Facturas() {
             <div className="col-6 col-md-2">
               <label className="form-label small text-muted mb-1">Filas</label>
               <select className="form-select" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
-                {[5,10,20,50].map(n => <option key={n} value={n}>{n}</option>)}
+                {[5, 10, 20, 50].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
               </select>
             </div>
             <div className="col-12 col-md-3 d-flex gap-2">
@@ -150,11 +146,11 @@ export function Facturas() {
                 <tr>
                   <th>Número</th>
                   <th>Fecha</th>
-                  <th>Cliente</th>
+                  <th>Correo</th>{/* ← antes decía Cliente */}
                   <th>Total</th>
                   <th>Moneda</th>
                   <th>Estado</th>
-                  <th style={{width: 160}}>Acciones</th>
+                  <th style={{ width: 160 }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,7 +165,13 @@ export function Facturas() {
                   <tr key={f.id}>
                     <td className="fw-semibold">{f.numero || "—"}</td>
                     <td>{f.fecha || f.created_at || "—"}</td>
-                    <td>{f.cliente_nombre || f.cliente || "—"}</td>
+                    <td>
+                      {f.cliente_email
+                        || f.usuario_email
+                        || f.email
+                        || (f.usuario && f.usuario.email)
+                        || "—"}
+                    </td>
                     <td>{f.total != null ? f.total : "—"}</td>
                     <td>{f.moneda || "—"}</td>
                     <td>
