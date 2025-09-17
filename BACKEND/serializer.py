@@ -1,6 +1,6 @@
 from .models import Comentario
 from decimal import Decimal
-
+from rest_framework import serializers
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -686,9 +686,29 @@ class FacturaCreateSerializer(serializers.Serializer):
     moneda = serializers.CharField(max_length=8, default="COP")
     metodo_pago = serializers.CharField(max_length=32, default="mercadopago")
     mp_payment_id = serializers.CharField(max_length=64, required=False, allow_blank=True)
+    # ✅ nuevo (opcional, no rompe): si True NO descuenta stock
+    skip_stock = serializers.BooleanField(required=False, default=False)
 
     # Detalle
     items = FacturaItemCreateSerializer(many=True)
+
+    # ---- helpers seguros para stock (soporta stock_talla o cantidad) ----
+    def _get_stock_value(self, inv):
+        if hasattr(inv, "stock_talla"):
+            return inv.stock_talla
+        if hasattr(inv, "cantidad"):
+            return inv.cantidad
+        # Si el modelo tiene otro nombre de campo, ajusta aquí:
+        raise serializers.ValidationError({"inventario": "Modelo Inventario no tiene campo de stock esperado."})
+
+    def _set_stock_value(self, inv, value):
+        if hasattr(inv, "stock_talla"):
+            inv.stock_talla = value
+            return
+        if hasattr(inv, "cantidad"):
+            inv.cantidad = value
+            return
+        raise serializers.ValidationError({"inventario": "Modelo Inventario no tiene campo de stock esperado."})
 
     def validate(self, data):
         if not data.get("items"):
@@ -719,6 +739,7 @@ class FacturaCreateSerializer(serializers.Serializer):
         moneda = validated.get("moneda", "COP")
         metodo = validated.get("metodo_pago", "mercadopago")
         mp_id = validated.get("mp_payment_id", "")
+        skip_stock = bool(validated.get("skip_stock", False))  # ✅
 
         # 1) Bloquear inventario de todos los (producto, talla)
         claves = {(it["producto"].pk, (it["talla"].pk if it["talla"] else None)) for it in validated["items"]}
@@ -743,23 +764,31 @@ class FacturaCreateSerializer(serializers.Serializer):
             if not inv:
                 raise serializers.ValidationError({"inventario": "No existe inventario para ese producto/talla."})
 
-            # AJUSTA 'stock_talla' al nombre real de tu campo de stock
-            if inv.stock_talla < cantidad:
-                nombre_prod = getattr(it["producto"], "nombre", f"Producto {prod_id}")
-                nombre_talla = getattr(it["talla"], "nombre", "") if it["talla"] else ""
-                msg = f"Stock insuficiente para {nombre_prod}"
-                if nombre_talla:
-                    msg += f" - Talla {nombre_talla}"
-                msg += f". Disponible: {inv.stock_talla}"
-                raise serializers.ValidationError({"inventario": msg})
+            stock_actual = self._get_stock_value(inv)
+            if not skip_stock:
+                if stock_actual < cantidad:
+                    nombre_prod = getattr(it["producto"], "nombre", f"Producto {prod_id}")
+                    nombre_talla = getattr(it["talla"], "nombre", "") if it["talla"] else ""
+                    msg = f"Stock insuficiente para {nombre_prod}"
+                    if nombre_talla:
+                        msg += f" - Talla {nombre_talla}"
+                    msg += f". Disponible: {stock_actual}"
+                    raise serializers.ValidationError({"inventario": msg})
+                # Descontar en memoria solo si no se salta stock
+                self._set_stock_value(inv, stock_actual - cantidad)
 
-            # Descontar en memoria
-            inv.stock_talla -= cantidad
             subtotal += (precio * Decimal(cantidad))
 
-        # 3) Guardar inventarios
-        for inv in inv_bloq:
-            inv.save(update_fields=["stock_talla"])  # agrega otros campos si procede
+        # 3) Guardar inventarios (solo si se descontó)
+        if not skip_stock:
+            for inv in inv_bloq:
+                # guarda el campo correcto
+                if hasattr(inv, "stock_talla"):
+                    inv.save(update_fields=["stock_talla"])
+                elif hasattr(inv, "cantidad"):
+                    inv.save(update_fields=["cantidad"])
+                else:
+                    inv.save()
 
         # 4) Totales
         impuestos = Decimal("0.00")   # ajusta si manejas IVA
@@ -798,23 +827,63 @@ class FacturaCreateSerializer(serializers.Serializer):
 
         return factura
 
-# ---------- Serializers de salida ----------
 class FacturaItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FacturaItem            # <-- era Factura, corregido
-        fields = ("id", "producto", "descripcion", "cantidad", "precio", "subtotal")
+    # opcional y no rompe nada: nombre legible del producto
+    producto_nombre = serializers.SerializerMethodField()
 
+    class Meta:
+        model = FacturaItem
+        fields = ("id", "producto", "producto_nombre", "descripcion", "cantidad", "precio", "subtotal")
+        read_only_fields = fields
+
+    def get_producto_nombre(self, obj):
+        p = getattr(obj, "producto", None)
+        return getattr(p, "nombre", None) if p else None
+
+
+# serializers.py
 class FacturaSerializer(serializers.ModelSerializer):
-    items = FacturaItemSerializer(many=True, read_only=True)
+    # 🔁 en vez de ManyRelatedField directo, usamos method para tolerar ambos nombres
+    items = serializers.SerializerMethodField()
+    cliente_nombre = serializers.SerializerMethodField()
+    fecha = serializers.SerializerMethodField()
+
     class Meta:
         model = Factura
         fields = (
             "id", "numero", "pedido", "usuario",
             "subtotal", "impuestos", "total", "moneda",
-            "metodo_pago", "mp_payment_id", "emitida_en", "estado", "items"
+            "metodo_pago", "mp_payment_id",
+            "emitida_en", "estado", "items",
+            "cliente_nombre", "fecha",
         )
+        read_only_fields = fields
 
-# --- NUEVO: items dentro del pedido (ligero, para listar) ---
+    def get_items(self, obj):
+        # Soporta tanto related_name="items" como el default facturaitem_set
+        qs = getattr(obj, "items", None)
+        if qs is None:
+            qs = getattr(obj, "facturaitem_set", None)
+        if qs is None:
+            return []
+        return FacturaItemSerializer(qs.all(), many=True).data
+
+    def get_cliente_nombre(self, obj):
+        u = getattr(obj, "usuario", None)
+        if not u:
+            return None
+        nombre = f"{getattr(u,'first_name','')} {getattr(u,'last_name','')}".strip()
+        return nombre or getattr(u, "username", None) or getattr(u, "email", None)
+
+    def get_fecha(self, obj):
+        dt = getattr(obj, "emitida_en", None) or getattr(obj, "created_at", None)
+        if not dt:
+            return None
+        try:
+            return dt.strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            return str(dt)
+
 class PedidoProductoItemLiteSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     producto_imagen = serializers.SerializerMethodField()

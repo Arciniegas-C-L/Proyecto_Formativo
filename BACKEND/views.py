@@ -5,7 +5,13 @@ import string
 import time
 from datetime import timedelta
 from decimal import Decimal
+import io
 
+from django.http import FileResponse, HttpResponse
+from rest_framework.decorators import action
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from django.conf import settings
 
 # --- Django
 from django.conf import settings
@@ -1316,9 +1322,33 @@ class MovimientoView(viewsets.ModelViewSet):
 
 class PedidoView(viewsets.ModelViewSet):
     serializer_class = PedidoSerializer
-    queryset = Pedido.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
 
+    def get_queryset(self):
+        qs = (
+            Pedido.objects
+            .select_related("usuario")
+            .all()
+        )
+
+        user = self.request.user
+        if not es_admin(user):
+            qs = qs.filter(usuario=user)  # ✅ solo mis pedidos
+
+        # Filtros opcionales (si los vas a usar desde el front)
+        numero = self.request.query_params.get("numero")
+        if numero:
+            qs = qs.filter(numero__icontains=numero)
+
+        f_desde = self.request.query_params.get("fecha_desde")
+        f_hasta = self.request.query_params.get("fecha_hasta")
+        # ajusta created_at/fecha segun tu modelo
+        if f_desde:
+            qs = qs.filter(created_at__date__gte=f_desde)
+        if f_hasta:
+            qs = qs.filter(created_at__date__lte=f_hasta)
+
+        return qs.order_by("-created_at", "-pk")  # ajusta campos si difieren
 
 class PedidoProductoView(viewsets.ModelViewSet):
     """
@@ -1913,6 +1943,75 @@ class FacturaView(viewsets.ModelViewSet):
         carrito.save(update_fields=["estado"])
 
         return Response(FacturaSerializer(factura).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"], url_path="pdf", url_name="pdf")
+    def pdf(self, request, pk=None):
+        """
+        Devuelve el PDF de la factura como application/pdf.
+        Implementa UNA de estas variantes:
+        A) si guardas el archivo en un FileField (ej: factura.archivo_pdf)
+        B) si lo generas al vuelo (servicio/generador)
+        """
+
+        factura = get_object_or_404(Factura, pk=pk)
+
+        # === Variante A: archivo guardado en modelo ===
+        if hasattr(factura, "archivo_pdf") and factura.archivo_pdf:
+            # archivo_pdf es un FileField
+            return FileResponse(
+                factura.archivo_pdf.open("rb"),
+                content_type="application/pdf",
+                as_attachment=False,  # true si prefieres descarga automática
+                filename=f"Factura_{factura.numero or factura.pk}.pdf",
+            )
+
+        # === Variante B: generar al vuelo (ejemplo genérico) ===
+        # pdf_bytes = tu_servicio_generar_pdf(factura)  # <-- implementa tu lógica
+        # return HttpResponse(pdf_bytes, content_type="application/pdf")
+
+        # Si no hay PDF disponible:
+        return Response(
+            {"detail": "PDF no disponible para esta factura."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    
+    def get_queryset(self):
+        qs = (
+            Factura.objects
+            .select_related("usuario", "pedido")
+            .all()
+        )
+
+        user = self.request.user
+        if not user.is_superuser and not user.is_staff:
+            qs = qs.filter(usuario=user)  # ✅ solo mis facturas
+
+        # Filtros opcionales
+        numero = self.request.query_params.get("numero")
+        if numero:
+            qs = qs.filter(numero__icontains=numero)
+
+        f_desde = self.request.query_params.get("fecha_desde")
+        f_hasta = self.request.query_params.get("fecha_hasta")
+        estado = self.request.query_params.get("estado")
+
+        # Usa emitida_en si existe, si no, quita filtro de fecha
+        fecha_field = "emitida_en" if hasattr(Factura, "emitida_en") else None
+        if fecha_field:
+            if f_desde:
+                qs = qs.filter(**{f"{fecha_field}__date__gte": f_desde})
+            if f_hasta:
+                qs = qs.filter(**{f"{fecha_field}__date__lte": f_hasta})
+
+        if estado:
+            qs = qs.filter(estado=estado)
+
+        # Ordena por fecha si existe, si no, solo por PK
+        if fecha_field:
+            return qs.order_by(f"-{fecha_field}", "-pk")
+        return qs.order_by("-pk")
+
+
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
