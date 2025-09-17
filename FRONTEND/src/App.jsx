@@ -31,6 +31,7 @@ import { AdminDashboard } from "./components/Admin/AdminDashboard.jsx";
 import { AdminLayout } from "./components/Admin/AdminLayout.jsx";
 import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
 import { ReporteVentasPage } from "./pages/ReporteVentasPage.jsx";
+import { FacturasPage } from "./pages/FacturasPage.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -93,6 +94,14 @@ function AppContent() {
             element={
               <RutaPrivada role={["cliente", "administrador"]}>
                 <PerfilPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/Facturas"
+            element={
+              <RutaPrivada role={["cliente"]}>
+                <FacturasPage />
               </RutaPrivada>
             }
           />
