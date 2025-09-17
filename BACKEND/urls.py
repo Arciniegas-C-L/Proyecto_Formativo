@@ -25,9 +25,9 @@ router.register(r'estado-carrito', views.EstadoCarritoView, 'estado-carrito')
 router.register(r'subcategoria', views.SubcategoriaViewSet, 'subcategoria')
 router.register(r'talla', views.TallaViewSet, 'talla')
 router.register(r'grupo-talla', views.GrupoTallaViewSet, 'grupo-talla')
-router.register(r'comentarios', views.ComentarioViewSet, basename='comentario')
 router.register(r'facturas', views.FacturaView, 'facturas')
 router.register(r'pedidoproductos', views.PedidoProductoView, basename='pedidoproducto')
+router.register(r'comentarios', views.ComentarioViewSet, basename='comentario')
 
 urlpatterns = [
     path('api/', include(router.urls)),

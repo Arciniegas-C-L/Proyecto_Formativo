@@ -9,6 +9,22 @@ function fmtMoney(value, locale = "es-CO") {
   return n.toLocaleString(locale, { maximumFractionDigits: 0 });
 }
 
+function fmtFecha(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("es-CO", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 function EstadoBadge({ estado }) {
   const ok = !!estado;
   return (
@@ -21,18 +37,52 @@ function EstadoBadge({ estado }) {
   );
 }
 
+/** Normaliza diferentes formas de items para mostrarlos homogéneamente */
+function normalizeItems(rawItems) {
+  if (!Array.isArray(rawItems)) return [];
+
+  return rawItems.map((it) => {
+    // Caso A: PedidoItem (serializer anidado en Pedido)
+    // fields esperados: producto (id), producto_nombre, talla_nombre, cantidad, precio, subtotal
+    if ("producto_nombre" in it || "subtotal" in it || "precio" in it) {
+      return {
+        nombre: it.producto_nombre ?? "Producto",
+        imagen:
+          it.producto?.imagen ??
+          it.imagen ??
+          null, // intenta buscar imagen si vino un objeto producto
+        cantidad: it.cantidad ?? 1,
+        precio: it.precio ?? null,
+        subtotal: it.subtotal ?? null,
+        talla: it.talla_nombre ?? null,
+      };
+    }
+
+    // Caso B: PedidoProducto (producto viene anidado)
+    // fields esperados: { producto: { nombre, imagen, precio }, cantidad? }
+    const prod = it.producto ?? {};
+    return {
+      nombre: prod.nombre ?? "Producto",
+      imagen: prod.imagen ?? null,
+      cantidad: it.cantidad ?? 1,
+      precio: prod.precio ?? it.precio ?? null,
+      subtotal: it.subtotal ?? null,
+      talla: prod.talla ?? it.talla ?? null,
+    };
+  });
+}
+
 export function MisPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
-  // estado por pedido: abierto/cerrado + carga de items
+  // estado por pedido: abierto/cerrado + cache de items
   const [expanded, setExpanded] = useState({});
   const [itemsByPedido, setItemsByPedido] = useState({});
   const [loadingItems, setLoadingItems] = useState({});
 
   const ordered = useMemo(() => {
-    // intenta ordenar por id descendente si existe idPedido
     return [...pedidos].sort((a, b) => {
       const ai = a.idPedido ?? a.id ?? 0;
       const bi = b.idPedido ?? b.id ?? 0;
@@ -45,9 +95,9 @@ export function MisPedidos() {
       try {
         setLoading(true);
         setErr(null);
-        // si tu backend soporta ordering, podrías pasar { ordering: "-idPedido" }
         const { data } = await listarPedidos();
-        setPedidos(Array.isArray(data) ? data : data?.results ?? []);
+        const rows = Array.isArray(data) ? data : data?.results ?? [];
+        setPedidos(rows);
       } catch (e) {
         console.error("Error listando pedidos:", e);
         setErr("No se pudieron cargar tus pedidos.");
@@ -57,24 +107,45 @@ export function MisPedidos() {
     })();
   }, []);
 
-  const toggleExpand = async (pedido) => {
-    const key = pedido.idPedido ?? pedido.id;
-    const next = !expanded[key];
-    setExpanded((s) => ({ ...s, [key]: next }));
+  const resolveImg = (src) => {
+    if (!src) return "https://via.placeholder.com/300x200?text=Producto";
+    if (src.startsWith("http")) return src;
+    const base = import.meta.env.VITE_BACK_URL || "http://127.0.0.1:8000";
+    return `${base}${src}`;
+  };
 
-    if (next && !itemsByPedido[key]) {
-      try {
-        setLoadingItems((s) => ({ ...s, [key]: true }));
-        const { data } = await listarItemsDePedido(key);
-        // El serializer de PedidoProducto que mostraste devuelve { pedido, producto }
-        const rows = Array.isArray(data) ? data : data?.results ?? [];
-        setItemsByPedido((s) => ({ ...s, [key]: rows }));
-      } catch (e) {
-        console.error("Error listando items del pedido:", e);
-        setItemsByPedido((s) => ({ ...s, [key]: { _error: "No se pudieron cargar los productos." } }));
-      } finally {
-        setLoadingItems((s) => ({ ...s, [key]: false }));
-      }
+  const toggleExpand = async (pedido) => {
+    const pid = pedido.idPedido ?? pedido.id;
+    const next = !expanded[pid];
+    setExpanded((s) => ({ ...s, [pid]: next }));
+
+    if (!next) return;
+
+    // 1) Si ya tenemos items cacheados, no hacemos nada
+    if (Array.isArray(itemsByPedido[pid])) return;
+
+    // 2) Si el pedido ya trae items anidados, úsalo y cachea
+    if (Array.isArray(pedido.items) && pedido.items.length >= 0) {
+      const norm = normalizeItems(pedido.items);
+      setItemsByPedido((s) => ({ ...s, [pid]: norm }));
+      return;
+    }
+
+    // 3) Fallback: pedirlos al endpoint /pedidoproductos/?pedido=<id>
+    try {
+      setLoadingItems((s) => ({ ...s, [pid]: true }));
+      const { data } = await listarItemsDePedido(pid);
+      const rows = Array.isArray(data) ? data : data?.results ?? [];
+      const norm = normalizeItems(rows);
+      setItemsByPedido((s) => ({ ...s, [pid]: norm }));
+    } catch (e) {
+      console.error("Error listando items del pedido:", e);
+      setItemsByPedido((s) => ({
+        ...s,
+        [pid]: { _error: "No se pudieron cargar los productos." },
+      }));
+    } finally {
+      setLoadingItems((s) => ({ ...s, [pid]: false }));
     }
   };
 
@@ -102,7 +173,9 @@ export function MisPedidos() {
         <h1 className="h4 mb-3">Mis pedidos</h1>
         <div className="text-center p-5 bg-light rounded">
           <p className="mb-3">Aún no tienes pedidos.</p>
-          <Link to="/catalogo" className="btn btn-primary">Ir al catálogo</Link>
+          <Link to="/catalogo" className="btn btn-primary">
+            Ir al catálogo
+          </Link>
         </div>
       </div>
     );
@@ -136,9 +209,11 @@ export function MisPedidos() {
                       <h2 className="h6 mb-0">Pedido #{pid}</h2>
                       <EstadoBadge estado={p.estado} />
                     </div>
+
                     <div className="text-muted small mt-1">
-                      {/* Si tienes fecha en tu modelo/serializer, muéstrala aquí */}
-                      {/* <span className="me-2">Fecha: {formatFecha(p.fecha)}</span> */}
+                      {p.created_at && (
+                        <span className="me-3">Fecha: {fmtFecha(p.created_at)}</span>
+                      )}
                       <span>Total: </span>
                       <strong>${fmtMoney(p.total)}</strong>
                     </div>
@@ -169,20 +244,17 @@ export function MisPedidos() {
                     {!cargandoItems && !tieneError && (
                       <>
                         {!items.length ? (
-                          <div className="text-muted small">Sin productos (¿serializer sin items?).</div>
+                          <div className="text-muted small">
+                            Sin productos para mostrar.
+                          </div>
                         ) : (
                           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                             {items.map((it, idx) => {
-                              const prod = it.producto ?? {};
-                              const nombre = prod.nombre ?? "Producto";
-                              const urlImg = prod.imagen?.startsWith("http")
-                                ? prod.imagen
-                                : prod.imagen
-                                  ? `${import.meta.env.VITE_BACK_URL || "http://127.0.0.1:8000"}${prod.imagen}`
-                                  : "https://via.placeholder.com/300x200?text=Producto";
-                              const precio = prod.precio ?? it.precio ?? null;
-                              // Si tu modelo de PedidoProducto tuviera cantidad, úsala aquí:
+                              const nombre = it.nombre ?? "Producto";
+                              const urlImg = resolveImg(it.imagen);
+                              const precio = it.precio ?? it.subtotal ?? null;
                               const cantidad = it.cantidad ?? 1;
+                              const talla = it.talla ? ` · Talla: ${it.talla}` : "";
 
                               return (
                                 <div className="col" key={idx}>
@@ -192,7 +264,8 @@ export function MisPedidos() {
                                       className="card-img-top"
                                       alt={nombre}
                                       onError={(e) => {
-                                        e.currentTarget.src = "https://via.placeholder.com/300x200?text=Producto";
+                                        e.currentTarget.src =
+                                          "https://via.placeholder.com/300x200?text=Producto";
                                       }}
                                     />
                                     <div className="card-body">
@@ -200,6 +273,7 @@ export function MisPedidos() {
                                       <div className="small text-muted">
                                         {cantidad > 1 ? `Cantidad: ${cantidad} · ` : ""}
                                         Precio: ${fmtMoney(precio)}
+                                        {talla}
                                       </div>
                                     </div>
                                   </div>

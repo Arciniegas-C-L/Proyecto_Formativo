@@ -116,7 +116,7 @@ function AppContent() {
           <Route
             path="/Mispedidos"
             element={
-              <RutaPrivada role={["administrador", "cliente"]}>
+              <RutaPrivada role={[ "cliente"]}>
                 <MisPedidosPage />
               </RutaPrivada>
             }

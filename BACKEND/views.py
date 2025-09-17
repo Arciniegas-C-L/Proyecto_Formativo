@@ -1320,35 +1320,21 @@ class MovimientoView(viewsets.ModelViewSet):
     queryset = Movimiento.objects.all()
     permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
+# views.py (solo si NO agregas campos al modelo)
 class PedidoView(viewsets.ModelViewSet):
     serializer_class = PedidoSerializer
     permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
 
     def get_queryset(self):
-        qs = (
-            Pedido.objects
-            .select_related("usuario")
-            .all()
-        )
+        qs = Pedido.objects.select_related("usuario").all()
 
         user = self.request.user
-        if not es_admin(user):
-            qs = qs.filter(usuario=user)  # ✅ solo mis pedidos
+        es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
+        if not es_admin:
+            qs = qs.filter(usuario=user)
 
-        # Filtros opcionales (si los vas a usar desde el front)
-        numero = self.request.query_params.get("numero")
-        if numero:
-            qs = qs.filter(numero__icontains=numero)
-
-        f_desde = self.request.query_params.get("fecha_desde")
-        f_hasta = self.request.query_params.get("fecha_hasta")
-        # ajusta created_at/fecha segun tu modelo
-        if f_desde:
-            qs = qs.filter(created_at__date__gte=f_desde)
-        if f_hasta:
-            qs = qs.filter(created_at__date__lte=f_hasta)
-
-        return qs.order_by("-created_at", "-pk")  # ajusta campos si difieren
+        # Quita filtros inexistentes y ordena por idPedido
+        return qs.order_by("-idPedido")
 
 class PedidoProductoView(viewsets.ModelViewSet):
     """

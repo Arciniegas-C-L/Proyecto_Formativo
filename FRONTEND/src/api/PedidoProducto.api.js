@@ -1,7 +1,7 @@
 // src/api/PedidoProducto.api.js
 import { api } from "./axios";
 
-/** Lista todos los items pedido-producto (puedes filtrar con params) */
+/** Lista todos los items pedido-producto (filtrable con params) */
 export const listarPedidoProductos = (params = {}) =>
   api.get("pedidoproductos/", { params });
 
@@ -17,14 +17,14 @@ export const listarItemsDePedidoAlt = (pedidoId, params = {}) =>
 export const getPedidoProducto = (id) =>
   api.get(`pedidoproductos/${id}/`);
 
-/** (Opcional) crear un item de pedido-producto */
+/** Crear un item de pedido-producto */
 export const crearPedidoProducto = (payload) =>
   api.post("pedidoproductos/", payload);
 
-/** (Opcional) actualizar un item */
+/** Actualizar un item */
 export const actualizarPedidoProducto = (id, payload) =>
   api.put(`pedidoproductos/${id}/`, payload);
 
-/** (Opcional) eliminar un item */
+/** Eliminar un item */
 export const eliminarPedidoProducto = (id) =>
   api.delete(`pedidoproductos/${id}/`);

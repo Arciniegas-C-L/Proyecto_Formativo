@@ -334,11 +334,15 @@ class Movimiento(models.Model):
 # ----------------------------
 # Pedidos y pagos
 # ----------------------------
+# models.py
 class Pedido(models.Model):
-    idPedido = models.AutoField(primary_key=True)
-    total = models.DecimalField(max_digits=30, decimal_places=2)
-    estado = models.BooleanField()
-    usuario = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
+    idPedido   = models.AutoField(primary_key=True)
+    numero     = models.CharField(max_length=30, unique=True, blank=True, null=True)  # si quieres filtrar por "numero"
+    total      = models.DecimalField(max_digits=30, decimal_places=2, default=0)
+    estado     = models.BooleanField(default=True)
+    usuario    = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
+    created_at = models.DateTimeField(auto_now_add=True)  # lo usas en filtros/orden
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Pedido {self.idPedido}"

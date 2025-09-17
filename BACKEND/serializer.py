@@ -24,7 +24,7 @@ from .models import (
     Carrito, CarritoItem, EstadoCarrito,
 
     # facturación
-    Factura, FacturaItem,
+    Factura, FacturaItem, PedidoItem,
 )
 
 
@@ -427,20 +427,87 @@ class MovimientoSerializer(serializers.ModelSerializer):
         model = Movimiento
         fields = ['idmovimiento', 'tipo', 'cantidad', 'fecha', 'inventario']
 
-class PedidoSerializer(serializers.ModelSerializer):
-    usuario = UsuarioSerializer()  
+class PedidoItemSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    talla_nombre    = serializers.CharField(source='talla.nombre', read_only=True)
 
     class Meta:
-        model = Pedido
-        fields = ['idPedido', 'total', 'estado', 'usuario']
+        model = PedidoItem
+        fields = [
+            'id', 'producto', 'producto_nombre', 'talla', 'talla_nombre',
+            'cantidad', 'precio', 'subtotal'
+        ]
+
+    def validate(self, attrs):
+        cantidad = attrs.get('cantidad', 1)
+        precio   = attrs.get('precio')
+        subtotal = attrs.get('subtotal')
+
+        if precio is None:
+            raise serializers.ValidationError("El campo 'precio' es obligatorio.")
+
+        # si no mandan subtotal, lo calculo; si lo mandan, lo verifico
+        calc = (cantidad or 1) * precio
+        if subtotal is None:
+            attrs['subtotal'] = calc
+        else:
+            # opcional: permitir pequeña diferencia por redondeo
+            if round(subtotal, 2) != round(calc, 2):
+                raise serializers.ValidationError("El 'subtotal' no coincide con cantidad * precio.")
+        return attrs        
+
+class PedidoSerializer(serializers.ModelSerializer):
+    usuario_nombre = serializers.CharField(source='usuario.first_name', read_only=True)
+    items = PedidoItemSerializer(many=True)  # related_name='items' ya está en el modelo
+
+    class Meta:
+        model  = Pedido
+        fields = [
+            'idPedido', 'numero', 'total', 'estado', 'usuario', 'usuario_nombre',
+            'created_at', 'updated_at', 'items'
+        ]
+        read_only_fields = ['total', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        pedido = Pedido.objects.create(**validated_data)
+
+        total = 0
+        for item in items_data:
+            item['pedido'] = pedido
+            obj = PedidoItem.objects.create(**item)
+            total += obj.subtotal
+        pedido.total = total
+        pedido.save(update_fields=['total'])
+        return pedido
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+
+        # actualizar campos simples
+        for attr, val in validated_data.items():
+            setattr(instance, attr, val)
+
+        total = 0
+        if items_data is not None:
+            # estrategia simple: borrar y recrear (o podrías hacer upsert si lo prefieres)
+            instance.items.all().delete()
+            for item in items_data:
+                item['pedido'] = instance
+                obj = PedidoItem.objects.create(**item)
+                total += obj.subtotal
+            instance.total = total
+
+        instance.save()
+        return instance
+
 
 class PedidoProductoSerializer(serializers.ModelSerializer):
-    pedido = PedidoSerializer()  
-    producto = ProductoSerializer()  
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
 
     class Meta:
-        model = PedidoProducto
-        fields = ['pedido', 'producto']
+        model  = PedidoProducto
+        fields = ['id', 'pedido', 'producto', 'producto_nombre']
 
 class PagoSerializer(serializers.ModelSerializer):
     pedido = PedidoSerializer() 
