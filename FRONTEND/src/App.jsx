@@ -100,7 +100,7 @@ function AppContent() {
           <Route
             path="/Facturas"
             element={
-              <RutaPrivada role={["cliente"]}>
+              <RutaPrivada role={["cliente", "administrador"]}>
                 <FacturasPage />
               </RutaPrivada>
             }
