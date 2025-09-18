@@ -152,25 +152,24 @@ export function PedidosAdmin() {
       <div className="table-responsive">
         <table className="table table-hover align-middle">
           <thead className="table-light">
-            <tr>
-              <th>Número</th>
-              <th>Fecha</th>
-              <th>Usuario (email)</th>
-              <th>Total</th>
-              <th>Estado</th>
-              <th style={{width: 120}}>Acciones</th>
-            </tr>
+              <tr>
+                <th>Nuemro</th>
+                <th>Fecha</th>
+                <th>Usuario (email)</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th style={{ width: 120 }}>Acciones</th>
+              </tr>
           </thead>
-          <tbody>
+         <tbody>
             {pageData.map((p) => (
               <React.Fragment key={p.idPedido}>
+                {/* FILA PRINCIPAL: 7 celdas */}
                 <tr>
                   <td>{p.idPedido}</td>
-                  <td>{p.numero || "—"}</td>
                   <td title={p.created_at}>{formatDate(p.created_at)}</td>
-                  <td>
-                    {/* usa el campo nuevo del serializer */}
-                    {p.usuario_email || "—"}
+                  <td className="text-truncate" style={{maxWidth: 240}}>
+                    {(p.usuario_email ?? "").trim() || "—"}
                   </td>
                   <td>{formatCurrencyCOP(p.total)}</td>
                   <td>
@@ -179,13 +178,16 @@ export function PedidosAdmin() {
                     </span>
                   </td>
                   <td>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => toggleExpand(p.idPedido)}>
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => toggleExpand(p.idPedido)}
+                    >
                       {expanded[p.idPedido] ? "Ocultar" : "Ver productos"}
                     </button>
                   </td>
                 </tr>
 
-                {/* Fila expandible con items */}
+                {/* FILA EXPANDIDA: colSpan = 7 */}
                 {expanded[p.idPedido] && (
                   <tr>
                     <td colSpan={7} className="bg-light">
@@ -203,7 +205,7 @@ export function PedidosAdmin() {
                               </tr>
                             </thead>
                             <tbody>
-                              {(p.items?.length ? p.items : []).map((it) => (
+                              {(Array.isArray(p.items) ? p.items : []).map((it) => (
                                 <tr key={it.id}>
                                   <td>{it.producto_nombre || it.producto_data?.nombre || it.producto}</td>
                                   <td>{it.talla_nombre || "—"}</td>
@@ -212,8 +214,10 @@ export function PedidosAdmin() {
                                   <td className="text-end">{formatCurrencyCOP(it.subtotal)}</td>
                                 </tr>
                               ))}
-                              {(!p.items || p.items.length === 0) && (
-                                <tr><td colSpan={5} className="text-center text-muted">Sin productos</td></tr>
+                              {(!p.items || !p.items.length) && (
+                                <tr>
+                                  <td colSpan={5} className="text-center text-muted">Sin productos</td>
+                                </tr>
                               )}
                             </tbody>
                           </table>
@@ -224,9 +228,13 @@ export function PedidosAdmin() {
                 )}
               </React.Fragment>
             ))}
+
+            {/* ESTADO VACÍO: colSpan = 7 */}
             {pageData.length === 0 && !loading && (
               <tr>
-                <td colSpan={7} className="text-center text-muted py-4">No hay pedidos para mostrar</td>
+                <td colSpan={7} className="text-center text-muted py-4">
+                  No hay pedidos para mostrar
+                </td>
               </tr>
             )}
           </tbody>
