@@ -56,6 +56,9 @@ export const AdminDashboard = () => {
     { ruta: "/admin/tallas", icono: FaRuler, etiqueta: "Tallas" },
     { ruta: "/admin/tallas/grupo", icono: FaRuler, etiqueta: "Grupo Tallas" },
     { ruta: "/admin/reporte-ventas", icono: FaTags, etiqueta: "Reporte Ventas" },
+    { ruta: "/", icono: FaHome, etiqueta: "Inicio" },
+    { ruta: "/admin/dashboard", icono: FaHome, etiqueta: "Dashboard" },
+    { ruta: "/admin/pedidos", icono: FaTags, etiqueta: "Pedidos" },
   ];
 
   return (

@@ -14,6 +14,8 @@ export function Header() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const esCliente = usuario?.rol === "cliente";
+  const esAdmin = usuario?.rol === "administrador";
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -169,6 +171,7 @@ export function Header() {
                       <i className="bi bi-chevron-down dropdown-arrow"></i>
                     </div>
                   </button>
+
                   {showDropdown && (
                     <ul className="dropdown-menu-custom">
                       <li>
@@ -180,9 +183,34 @@ export function Header() {
                           <i className="bi bi-person-gear"></i> Mi Perfil
                         </Link>
                       </li>
+
+                     {/* Solo CLIENTE: Mis pedidos */}
+                      {esCliente && (
+                        <li>
+                          <Link
+                            to="/Mispedidos"
+                            className="dropdown-item-custom"
+                            onClick={() => setShowDropdown(false)}
+                          >
+                            <i className="bi bi-bag-check"></i> Mis pedidos
+                          </Link>
+                        </li>
+                      )}
+                      {/* NUEVO: Facturas (ruta privada /Facturas) */}
+                      <li>
+                        <Link
+                          to="/Facturas"
+                          className="dropdown-item-custom"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <i className="bi bi-receipt"></i> Facturas
+                        </Link>
+                      </li>
+
                       <li>
                         <hr className="dropdown-divider-custom" />
                       </li>
+
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión
@@ -198,7 +226,7 @@ export function Header() {
                     <span className="nav-text">Sesión</span>
                   </Link>
                 </li>
-              )}
+              )}{" "}
             </ul>
           </nav>
         </div>

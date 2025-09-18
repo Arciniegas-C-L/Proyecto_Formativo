@@ -32,6 +32,7 @@ import { AdminLayout } from "./components/Admin/AdminLayout.jsx";
 import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
 import { ReporteVentasPage } from "./pages/ReporteVentasPage.jsx";
 import { FacturasPage } from "./pages/FacturasPage.jsx";
+import { PedidosPage } from "./pages/PedidosPage.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -165,6 +166,7 @@ function AppContent() {
             <Route path="tallas" element={<TallasPage />} />
             <Route path="categorias" element={<CategoriasPage />} />
             <Route path="reporte-ventas" element={<ReporteVentasPage />} />
+            <Route path="pedidos" element={<PedidosPage />} />
           </Route>
 
           {/* Redirección por defecto */}
