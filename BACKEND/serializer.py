@@ -464,14 +464,18 @@ class PedidoItemSerializer(serializers.ModelSerializer):
         return attrs
 
 
+# serializers.py
 class PedidoSerializer(serializers.ModelSerializer):
-    usuario_nombre = serializers.CharField(source='usuario.first_name', read_only=True)
+    usuario_nombre = serializers.CharField(source='usuario.nombre', read_only=True)
+    usuario_apellido = serializers.CharField(source='usuario.apellido', read_only=True)  # opcional
+    usuario_email = serializers.EmailField(source='usuario.correo', read_only=True)
     items = PedidoItemSerializer(many=True)
 
     class Meta:
-        model  = Pedido
+        model = Pedido
         fields = [
-            'idPedido', 'numero', 'total', 'estado', 'usuario', 'usuario_nombre',
+            'idPedido', 'numero', 'total', 'estado', 'usuario',
+            'usuario_nombre', 'usuario_apellido', 'usuario_email',
             'created_at', 'updated_at', 'items'
         ]
         read_only_fields = ['idPedido', 'total', 'created_at', 'updated_at']

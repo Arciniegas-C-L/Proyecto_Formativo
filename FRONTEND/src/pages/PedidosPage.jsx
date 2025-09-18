@@ -1,4 +1,5 @@
+import { PedidosAdmin } from "../components/Pedidos/Pedidosadmin";
 
 export function PedidosPage() {
-  return <div>PedidosPage</div>;
+  return <PedidosAdmin />;
 }
