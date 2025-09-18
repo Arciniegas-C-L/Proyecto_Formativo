@@ -8,14 +8,33 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export function Header() {
-  const { autenticado, /* rol, */ logout, usuario } = useAuth();
+  const { autenticado, logout, rol, usuario } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
-  const esCliente = usuario?.rol === "cliente";
-  const esAdmin = usuario?.rol === "administrador";
+
+  const rolNorm = React.useMemo(() => {
+  // candidatos posibles
+  const candidates = [
+    rol,
+    usuario?.rol,
+    usuario?.role,
+    Array.isArray(rol) ? rol[0] : undefined,
+    Array.isArray(usuario?.roles) ? usuario.roles[0] : undefined,
+  ];
+
+  // toma el primero definido y extrae texto
+  let raw = candidates.find(v => v != null);
+
+  if (typeof raw === "object") {
+    raw = raw?.nombre ?? raw?.role ?? raw?.slug ?? "";
+  }
+  return String(raw ?? "").trim().toLowerCase(); // "cliente", "administrador", etc.
+}, [rol, usuario]);
+
+  const esCliente = rolNorm === "cliente";
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -197,6 +216,7 @@ export function Header() {
                         </li>
                       )}
                       {/* NUEVO: Facturas (ruta privada /Facturas) */}
+                      { esCliente && (
                       <li>
                         <Link
                           to="/Facturas"
@@ -206,11 +226,7 @@ export function Header() {
                           <i className="bi bi-receipt"></i> Facturas
                         </Link>
                       </li>
-
-                      <li>
-                        <hr className="dropdown-divider-custom" />
-                      </li>
-
+                    )}
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión

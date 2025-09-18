@@ -52,12 +52,13 @@ export const AdminDashboard = () => {
     },
     { ruta: "/admin/inventario", icono: FaWarehouse, etiqueta: "Inventario" },
     { ruta: "/admin/categorias", icono: FaTags, etiqueta: "Categorías" },
-    { ruta: "/admin/usuarios", icono: FaUserShield, etiqueta: "Usuarios" },
+    //{ ruta: "/admin/usuarios", icono: FaUserShield, etiqueta: "Usuarios" },
     { ruta: "/admin/tallas", icono: FaRuler, etiqueta: "Tallas" },
     { ruta: "/admin/tallas/grupo", icono: FaRuler, etiqueta: "Grupo Tallas" },
     { ruta: "/admin/reporte-ventas", icono: FaTags, etiqueta: "Reporte Ventas" },
     { ruta: "/", icono: FaHome, etiqueta: "Inicio" },
     { ruta: "/admin/dashboard", icono: FaHome, etiqueta: "Dashboard" },
+    { ruta: "/Facturas", icono: FaUserShield, etiqueta: "Facturas" },
     { ruta: "/admin/pedidos", icono: FaTags, etiqueta: "Pedidos" },
   ];
 
