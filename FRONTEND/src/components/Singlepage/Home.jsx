@@ -64,6 +64,7 @@ import pareja from "../../assets/images/home/pareja.jpg";
 import calzado from "../../assets/images/home/calzado.jpg";
 import colcha from "../../assets/images/home/colcha.jpg";
 import guayos from "../../assets/images/home/guayos.jpg";
+import gafas from '../../assets/images/home/gafas.jpg'
 import Radio from './estrellas';
 import { enviarComentario, obtenerComentarios } from '../../api/Comentario.api';
 
@@ -247,14 +248,14 @@ export const Home = () => {
               funcionalidad.
             </p>
           </div>
-          {/* <div className="producto-home">
+          <div className="producto-home">
             <img src={gafas} alt="gafas como accesorio" />
             <h2>Gafas de Moda</h2>
             <p>
               Completa tu look con nuestras gafas modernas y elegantes,
               perfectas para cualquier ocasión y estilo.
             </p>
-          </div> */}
+          </div>
           <div className="producto-home">
             <img src={guayos} alt="zapatosdeportivos" />
             <h2>Guayos Deportivos</h2>

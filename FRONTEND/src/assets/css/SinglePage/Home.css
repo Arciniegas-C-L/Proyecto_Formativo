@@ -23,6 +23,11 @@
   border: 1.5px solid #bcd0fa;
   margin: 0;
 }
+
+.formulario-comentarios-formbox h2{
+  text-align: center;
+}
+
 @media (max-width: 900px) {
   .formulario-comentarios-flex {
     flex-direction: column;
