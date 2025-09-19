@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Página de No Autorizado */
 .unauthorized-page {
   min-height: 80vh;
@@ -127,4 +128,98 @@
     padding: 0.6rem 1rem;
     font-size: 0.85rem;
   }
+=======
+
+.no-autorizado-container {
+    width: fit-content;
+    margin: 2.5rem auto 2rem auto;
+    padding: 2.5rem 3rem;
+    text-align: center;
+    background: rgba(26, 31, 46, 0.98);;
+    color: #f4f4f4;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25), 0 1.5px 6px 0 rgba(0,0,0,0.10);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.no-autorizado-container:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 36px 0 rgba(31, 38, 135, 0.30), 0 2px 8px 0 rgba(0,0,0,0.13);
+}
+
+.acceso-denegado-img {
+    width: 4.5rem;
+    margin: 1.2rem auto 1.5rem auto;
+    filter: drop-shadow(0 2px 8px rgba(31,38,135,0.15));
+    transition: filter 0.2s;
+}
+
+.acceso-denegado-img:hover {
+    filter: drop-shadow(0 4px 16px rgba(31,38,135,0.25));
+}
+
+.no-autorizado-error {
+    font-size: 1.05rem;
+    background: linear-gradient(90deg, #d7263d 70%, #a61b2b 100%);
+    color: #fff;
+    margin-top: 1.5rem;
+    width: fit-content;
+    padding: 0.4rem 1.2rem;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px 0 rgba(215,38,61,0.10);
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.no-autorizado-error:hover {
+    background: linear-gradient(90deg, #a61b2b 60%, #d7263d 100%);
+}
+
+/* Responsive: móviles y tablets */
+@media (max-width: 600px) {
+    .no-autorizado-container {
+        width: 95vw;
+        min-width: unset;
+        max-width: 99vw;
+        padding: 1.2rem 0.5rem;
+        border-radius: 12px;
+    }
+    .acceso-denegado-img {
+        width: 3.2rem;
+        margin: 0.8rem auto 1rem auto;
+    }
+    .no-autorizado-error {
+        font-size: 0.95rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 6px;
+    }
+    .no-autorizado-container h2 {
+        font-size: 1.1rem;
+    }
+    .no-autorizado-container p {
+        font-size: 0.98rem;
+    }
+    .no-autorizado-container span {
+        font-size: 0.95rem;
+        word-break: break-word;
+        display: block;
+        margin-top: 1rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .no-autorizado-container {
+        padding: 0.7rem 0.2rem;
+        border-radius: 8px;
+    }
+    .acceso-denegado-img {
+        width: 2.2rem;
+    }
+    .no-autorizado-error {
+        font-size: 0.85rem;
+        padding: 0.2rem 0.4rem;
+    }
+>>>>>>> 97812d6 (Cambio de base de datos a MySQL)
 }
