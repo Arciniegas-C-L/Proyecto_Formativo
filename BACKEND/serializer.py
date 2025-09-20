@@ -146,7 +146,7 @@ class UsuarioRegistroSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['nombre', 'apellido', 'correo', 'password', 'rol']
+        fields = ['nombre', 'apellido', 'correo', 'telefono', 'password', 'rol']
 
     def validate_correo(self, value):
         if Usuario.objects.filter(correo=value).exists():

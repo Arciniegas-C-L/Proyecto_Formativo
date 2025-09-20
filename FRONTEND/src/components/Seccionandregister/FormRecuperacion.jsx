@@ -1,5 +1,5 @@
 // src/components/FormRecuperacion.jsx
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { VerificarCodigo } from "./FormCambio";
 import { solicitarRecuperacion } from "../../api/Usuario.api"; 
 import "../../assets/css/Seccionandregistrer/formRecuperacion.css";
@@ -9,6 +9,8 @@ export function RecuperarContrasena() {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [codigoEnviado, setCodigoEnviado] = useState(false);
+  const [espera, setEspera] = useState(0);
+  const timerRef = useRef(null);
 
   const enviarCodigo = async (e) => {
     e.preventDefault();
@@ -29,6 +31,18 @@ export function RecuperarContrasena() {
     // Si todo salió bien
     setMensaje(data.mensaje);
     setCodigoEnviado(true);
+
+    // Deshabilitar botón por 30 segundos
+    setEspera(30);
+    timerRef.current = setInterval(() => {
+      setEspera((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   if (codigoEnviado) {
@@ -46,7 +60,9 @@ export function RecuperarContrasena() {
           onChange={(e) => setCorreo(e.target.value)}
           required
         />
-        <button type="submit">Enviar código</button>
+        <button type="submit" disabled={espera > 0}>
+          {espera > 0 ? `Espera ${espera}s` : "Enviar código"}
+        </button>
         {mensaje && <p style={{ color: "green" }}>{mensaje}</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
