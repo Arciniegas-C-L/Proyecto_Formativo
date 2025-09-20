@@ -323,9 +323,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         try:
             usuario = Usuario.objects.get(correo=correo)
 
-            # Verificar si ya hay un código activo en los últimos 3 minutos
+            # Verificar si ya hay un código activo en los últimos 30 segundos
             codigo_activo = CodigoRecuperacion.objects.filter(
-                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=3)
+                usuario=usuario, creado__gte=timezone.now() - timedelta(seconds=30)
             ).exists()
 
             if codigo_activo:

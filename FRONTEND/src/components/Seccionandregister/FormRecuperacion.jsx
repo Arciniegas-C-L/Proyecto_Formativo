@@ -10,6 +10,7 @@ export function RecuperarContrasena() {
   const [error, setError] = useState("");
   const [codigoEnviado, setCodigoEnviado] = useState(false);
   const [espera, setEspera] = useState(0);
+  const [reenviar, setReenviar] = useState(false);
   const timerRef = useRef(null);
 
   const enviarCodigo = async (e) => {
@@ -31,6 +32,7 @@ export function RecuperarContrasena() {
     // Si todo salió bien
     setMensaje(data.mensaje);
     setCodigoEnviado(true);
+    setReenviar(true);
 
     // Deshabilitar botón por 30 segundos
     setEspera(30);
@@ -61,7 +63,11 @@ export function RecuperarContrasena() {
           required
         />
         <button type="submit" disabled={espera > 0}>
-          {espera > 0 ? `Espera ${espera}s` : "Enviar código"}
+          {espera > 0
+            ? `Espera ${espera}s`
+            : reenviar
+              ? "Reenviar código"
+              : "Enviar código"}
         </button>
         {mensaje && <p style={{ color: "green" }}>{mensaje}</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
