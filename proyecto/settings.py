@@ -90,6 +90,7 @@ INSTALLED_APPS = [
 # ========= Middleware =========
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",   # CORS antes de CommonMiddleware
     "django.middleware.common.CommonMiddleware",
@@ -136,20 +137,36 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
 
-# ========= DB (dev) =========
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "db_proyecto",
-        "USER": os.getenv("MYSQL_USER", "root"),
-        "PASSWORD": os.getenv("MYSQL_PASSWORD", "proyecto"),
-        "HOST": os.getenv("MYSQL_HOST", "localhost"),
-        "PORT": os.getenv("MYSQL_PORT", "3306"),
-        "OPTIONS": {
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+# ========= DB (local/railway) =========
+DB_ENV = os.getenv("DB_ENV", "local")  # "local" o "railway"
+if DB_ENV == "railway":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("MYSQL_DATABASE", "railway"),
+            "USER": os.getenv("MYSQL_USER", "root"),
+            "PASSWORD": os.getenv("MYSQL_PASSWORD", ""),
+            "HOST": os.getenv("MYSQL_HOST", "gondola.proxy.rlwy.net"),
+            "PORT": os.getenv("MYSQL_PORT", "42442"),
+            "OPTIONS": {
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("MYSQL_DATABASE", "db_proyecto"),
+            "USER": os.getenv("MYSQL_USER", "root"),
+            "PASSWORD": os.getenv("MYSQL_PASSWORD", "proyecto"),
+            "HOST": os.getenv("MYSQL_HOST", "localhost"),
+            "PORT": os.getenv("MYSQL_PORT", "3306"),
+            "OPTIONS": {
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
 
 # ========= Usuario, i18n, estáticos =========
 AUTH_USER_MODEL = "BACKEND.Usuario"
@@ -159,7 +176,9 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
