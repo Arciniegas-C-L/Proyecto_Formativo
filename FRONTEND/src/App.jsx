@@ -29,7 +29,7 @@ import { RolListaPage } from "./pages/RolListaPage.jsx";
 import { RolFormPage } from "./pages/RolFormPage.jsx";
 import { AdminDashboard } from "./components/Admin/AdminDashboard.jsx";
 import { AdminLayout } from "./components/Admin/AdminLayout.jsx";
-import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
+import { ListaProductosPage } from "./pages/ListaproductosPage.jsx";
 import { ReporteVentasPage } from "./pages/ReporteVentasPage.jsx";
 import { FacturasPage } from "./pages/FacturasPage.jsx";
 import { PedidosPage } from "./pages/PedidosPage.jsx";
