@@ -135,7 +135,15 @@ sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
 class ComentarioViewSet(viewsets.ModelViewSet):
     queryset = Comentario.objects.select_related('usuario').all().order_by('-fecha')
     serializer_class = ComentarioSerializer
-    permission_classes = [IsAuthenticated, NotGuest, AdminandCliente]
+    def get_permissions(self):
+        # Permitir acceso público solo para lectura
+        if self.action in ['list', 'retrieve'] or self.request.method in ['GET']:
+            from rest_framework.permissions import AllowAny
+            return [AllowAny()]
+        # Para crear, actualizar o eliminar, requiere autenticación y no ser invitado
+        from BACKEND.permissions import NotGuest, AdminandCliente
+        from rest_framework.permissions import IsAuthenticated
+        return [IsAuthenticated(), NotGuest(), AdminandCliente()]
 
     def perform_create(self, serializer):
         # Asigna el usuario autenticado y guarda snapshot de datos
@@ -1408,7 +1416,26 @@ class TipoPagoView(viewsets.ModelViewSet):
 
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+    def get_permissions(self):
+        # Permitir acceso público solo para lectura
+        if self.action in ['list', 'retrieve'] or self.request.method in ['GET']:
+            from rest_framework.permissions import AllowAny
+            return [AllowAny()]
+        # Para crear, actualizar o eliminar, requiere autenticación y no ser invitado
+        from BACKEND.permissions import NotGuest, AdminandCliente
+        from rest_framework.permissions import IsAuthenticated
+        return [IsAuthenticated(), AdminandCliente(), NotGuest()]
+    @action(detail=True, methods=['post'])
+    def finalizar_compra(self, request, pk=None):
+        """
+        Convierte el carrito en pedido. Solo usuarios autenticados y no invitados pueden finalizar compra.
+        """
+        if not request.user.is_authenticated or getattr(getattr(request.user, 'rol', None), 'nombre', '').lower() == 'invitado':
+            from rest_framework.response import Response
+            from rest_framework import status
+            return Response({'error': 'Debes iniciar sesión para finalizar la compra.'}, status=status.HTTP_401_UNAUTHORIZED)
+        # ... lógica original de finalizar compra ...
+        return super().finalizar_compra(request, pk=pk)
 
     def list(self, request, *args, **kwargs):
         rol = getattr(getattr(request.user, 'rol', None), 'nombre', '').lower()
