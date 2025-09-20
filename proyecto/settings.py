@@ -186,7 +186,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ========= CORS =========
 CORS_ALLOWED_ORIGINS = [
-    f"{front.scheme}://{front.hostname}" + (f":{front.port}" if front.port else "")
+    f"{front.scheme}://{front.hostname}" + (f":{front.port}" if front.port else ""),
+    "https://variedad-y-estilos-zoe.onrender.com"
 ]
 CORS_ALLOW_HEADERS = list(default_headers) + ["x-rol"]
 # CORS_ALLOW_CREDENTIALS = True  # solo si usas cookies entre dominios
