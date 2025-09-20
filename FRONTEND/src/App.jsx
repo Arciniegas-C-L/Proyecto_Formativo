@@ -15,7 +15,7 @@ import { NoAutorizadoPage } from "./pages/NoAutorizadoPage.jsx";
 import { PerfilPage } from "./pages/PerfilPage.jsx";
 import { Catalogopage } from "./pages/Catalogopage.jsx";
 import { Carritopage } from "./pages/Carritopage.jsx";
-import { CategoriasPage } from "./pages/CategoriasPage.jsx";
+import CategoriasPage from "./pages/Categoriaspage.jsx";
 
 // Páginas Admin
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
