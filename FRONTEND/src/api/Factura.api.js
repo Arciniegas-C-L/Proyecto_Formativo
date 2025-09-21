@@ -17,4 +17,8 @@ export const listarFacturas = (params = {}) =>
 export const buscarFacturaPorNumero = (numero) =>
   api.get(`facturas/por-numero/${encodeURIComponent(numero)}/`);
 
+// ✅ Nuevo: descargar comprobante de pago
+export const descargarComprobantePago = (id) =>
+  api.get(`facturas/${id}/comprobante/pdf/`, { responseType: "blob" });
+
 

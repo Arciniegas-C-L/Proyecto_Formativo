@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { listarFacturas, descargarFacturaPDF } from "../../api/Factura.api";
+import { listarFacturas, descargarFacturaPDF, descargarComprobantePago } from "../../api/Factura.api";
 import { Link } from "react-router-dom";
 
 function usePaginatedResponse(data) {
@@ -10,6 +10,43 @@ function usePaginatedResponse(data) {
     return { items: [], count: 0 };
   }, [data]);
 }
+
+const fmtMoney = (value, currency = "COP") => {
+  if (value == null || value === "") return "—";
+  const num = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(num)) return String(value);
+  try {
+    return new Intl.NumberFormat("es-CO", { style: "currency", currency }).format(num);
+  } catch {
+    return new Intl.NumberFormat("es-CO").format(num);
+  }
+};
+
+const fmtDate = (value) => {
+  if (!value) return "—";
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    // dd/mm/aaaa hh:mm
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+  } catch {
+    return String(value);
+  }
+};
+
+const descargarBlob = (blob, nombreArchivo) => {
+  const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombreArchivo;
+  a.click();
+  window.URL.revokeObjectURL(url);
+};
 
 export function Facturas() {
   const [loading, setLoading] = useState(true);
@@ -31,7 +68,7 @@ export function Facturas() {
     setErr(null);
     try {
       const params = { page, page_size: pageSize };
-      if (qNumero) params.numero = qNumero;
+      if (qNumero.trim()) params.numero = qNumero.trim();
       if (qDesde) params.fecha_desde = qDesde;
       if (qHasta) params.fecha_hasta = qHasta;
 
@@ -64,17 +101,21 @@ export function Facturas() {
     fetchData();
   };
 
-  const descargarPdf = async (id, numero) => {
+  const descargarPdfFactura = async (id, numero) => {
     try {
       const { data: blob } = await descargarFacturaPDF(id);
-      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Factura_${numero || id}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      descargarBlob(blob, `Factura_${numero || id}.pdf`);
     } catch {
-      alert("No fue posible descargar el PDF.");
+      alert("No fue posible descargar el PDF de la factura.");
+    }
+  };
+
+  const descargarPdfComprobante = async (id, numero) => {
+    try {
+      const { data: blob } = await descargarComprobantePago(id);
+      descargarBlob(blob, `Comprobante_${numero || id}.pdf`);
+    } catch {
+      alert("No fue posible descargar el comprobante de pago.");
     }
   };
 
@@ -118,10 +159,10 @@ export function Facturas() {
               </select>
             </div>
             <div className="col-12 col-md-3 d-flex gap-2">
-              <button type="submit" className="btn btn-primary w-100">
+              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
                 <i className="bi bi-search me-1" /> Buscar
               </button>
-              <button type="button" className="btn btn-outline-secondary" onClick={onLimpiar}>
+              <button type="button" className="btn btn-outline-secondary" onClick={onLimpiar} disabled={loading}>
                 Limpiar
               </button>
             </div>
@@ -146,11 +187,11 @@ export function Facturas() {
                 <tr>
                   <th>Número</th>
                   <th>Fecha</th>
-                  <th>Correo</th>{/* ← antes decía Cliente */}
-                  <th>Total</th>
+                  <th>Correo</th>
+                  <th className="text-end">Total</th>
                   <th>Moneda</th>
                   <th>Estado</th>
-                  <th style={{ width: 160 }}>Acciones</th>
+                  <th style={{ width: 240 }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,38 +202,57 @@ export function Facturas() {
                     </td>
                   </tr>
                 )}
-                {items.map((f) => (
-                  <tr key={f.id}>
-                    <td className="fw-semibold">{f.numero || "—"}</td>
-                    <td>{f.fecha || f.created_at || "—"}</td>
-                    <td>
-                      {f.cliente_email
-                        || f.usuario_email
-                        || f.email
-                        || (f.usuario && f.usuario.email)
-                        || "—"}
-                    </td>
-                    <td>{f.total != null ? f.total : "—"}</td>
-                    <td>{f.moneda || "—"}</td>
-                    <td>
-                      {f.estado ? (
-                        <span className={`badge ${f.estado === "pagada" ? "bg-success" : "bg-secondary"}`}>
-                          {f.estado}
-                        </span>
-                      ) : "—"}
-                    </td>
-                    <td>
-                      <div className="btn-group btn-group-sm">
-                        <Link className="btn btn-outline-primary" to={`/facturas/${f.id}`}>
-                          Ver
-                        </Link>
-                        <button className="btn btn-outline-secondary" onClick={() => descargarPdf(f.id, f.numero)}>
-                          PDF
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {items.map((f) => {
+                  const fecha = f.fecha || f.emitida_en || f.created_at || null;
+                  const correo =
+                    f.cliente_email ||
+                    f.usuario_email ||
+                    f.email ||
+                    (f.usuario && f.usuario.email) ||
+                    "—";
+                  const moneda = f.moneda || "COP";
+                  const totalFmt = fmtMoney(f.total, moneda);
+                  const estado = (f.estado || "").toLowerCase();
+                  const badge =
+                    estado === "pagada" ? "bg-success" :
+                    estado === "pendiente" ? "bg-warning text-dark" :
+                    estado === "anulada" ? "bg-danger" :
+                    "bg-secondary";
+
+                  return (
+                    <tr key={f.id}>
+                      <td className="fw-semibold">{f.numero || "—"}</td>
+                      <td>{fmtDate(fecha)}</td>
+                      <td>{correo}</td>
+                      <td className="text-end">{totalFmt}</td>
+                      <td>{moneda}</td>
+                      <td>
+                        {f.estado ? (
+                          <span className={`badge ${badge}`}>{f.estado}</span>
+                        ) : "—"}
+                      </td>
+                      <td>
+                        <div className="btn-group btn-group-sm">
+                          <Link className="btn btn-outline-primary" to={`/facturas/${f.id}`}>
+                            Ver
+                          </Link>
+                          <button
+                            className="btn btn-outline-secondary"
+                            onClick={() => descargarPdfFactura(f.id, f.numero)}
+                          >
+                            PDF
+                          </button>
+                          <button
+                            className="btn btn-outline-secondary"
+                            onClick={() => descargarPdfComprobante(f.id, f.numero)}
+                          >
+                            Comprobante
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -202,10 +262,10 @@ export function Facturas() {
               {count} resultado{count === 1 ? "" : "s"} · Página {page} de {totalPages}
             </div>
             <div className="btn-group">
-              <button className="btn btn-outline-secondary btn-sm" disabled={page <= 1} onClick={goPrev}>
+              <button className="btn btn-outline-secondary btn-sm" disabled={page <= 1 || loading} onClick={goPrev}>
                 « Anterior
               </button>
-              <button className="btn btn-outline-secondary btn-sm" disabled={page >= totalPages} onClick={goNext}>
+              <button className="btn btn-outline-secondary btn-sm" disabled={page >= totalPages || loading} onClick={goNext}>
                 Siguiente »
               </button>
             </div>

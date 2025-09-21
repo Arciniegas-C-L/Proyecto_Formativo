@@ -3,7 +3,7 @@ import json
 import random
 import string
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 import io
 from django.db.models import Prefetch
@@ -127,6 +127,18 @@ from .serializer import (
     FacturaCreateSerializer,
     ComentarioSerializer,
 )
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import mm
+
+# --- Utilidades adicionales
+from io import BytesIO
+from django.db.models import Sum
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
+from reportlab.lib import colors
 
 # --- SDK Mercado Pago (usa tu token de settings)
 sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
@@ -1862,21 +1874,90 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 </html>"""
         return HttpResponse(html)
 
+
+# =========================
+# HELPERS (money/fecha/estado)
+# =========================
+def fmt_money(value, currency="COP"):
+    """
+    12.345,67 COP — acepta Decimal/str/float/None
+    """
+    try:
+        n = float(Decimal(str(value or 0)))
+    except Exception:
+        n = 0.0
+    return f"{n:,.2f} {currency}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _parse_dt(val):
+    """str ISO/ datetime naive/aware -> datetime aware en tz local"""
+    if val in (None, ""):
+        return None
+    try:
+        if isinstance(val, str):
+            try:
+                dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
+            except Exception:
+                dt = datetime.strptime(val[:19], "%Y-%m-%dT%H:%M:%S")
+        else:
+            dt = val
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, timezone.get_current_timezone())
+        return dt.astimezone(timezone.get_current_timezone())
+    except Exception:
+        return None
+
+
+def fmt_date(value):
+    dt = _parse_dt(value)
+    return dt.strftime("%d/%m/%Y %H:%M") if dt else "—"
+
+
+def estado_badge(estado):
+    """
+    Devuelve (texto, color_texto, color_fondo)
+    Acepta estados internos o de MP.
+    """
+    est = (estado or "").lower()
+    if est in ("pagada", "approved"):
+        return ("PAGADA", colors.white, colors.green)
+    if est in ("pendiente", "pending", "in_process", "authorized"):
+        return ("PENDIENTE", colors.black, colors.yellow)
+    if est in ("anulada", "rejected", "cancelled", "refunded", "charged_back"):
+        return ("ANULADA", colors.white, colors.red)
+    return ("SIN ESTADO", colors.white, colors.grey)
+
+
+def map_mp_to_estado_factura(mp_status: str) -> str:
+    mp = (mp_status or "").lower()
+    if mp == "approved":
+        return "pagada"
+    if mp in ("in_process", "pending", "authorized"):
+        return "pendiente"
+    if mp in ("rejected", "cancelled", "refunded", "charged_back"):
+        return "anulada"
+    return "emitida"
+
+
+# =========================
+# VISTA
+# =========================
 class FacturaView(viewsets.ModelViewSet):
-    queryset = Factura.objects.all().select_related("usuario", "pedido")
-    serializer_class = FacturaSerializer  # <- para GET/response
-    permission_classes = [IsAuthenticated]  # + AdminandCliente, NotGuest si aplica
+    queryset = Factura.objects.select_related("usuario", "pedido").all()
+    serializer_class = FacturaSerializer
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=["post"])
     @transaction.atomic
     def crear_desde_pago(self, request):
         """
-        Crea una factura (idempotente) a partir de un pago de MP.
+        Crea una factura (idempotente) a partir de un pago de Mercado Pago.
+
         Body:
         {
-        "payment_id": "125178556047",
-        "external_reference": "ORDER-2-1757556908",
-        "carrito_id": 2
+          "payment_id": "125178556047",
+          "external_reference": "ORDER-2-1757556908",
+          "carrito_id": 2
         }
         """
         payment_id = str(request.data.get("payment_id") or "").strip()
@@ -1892,17 +1973,26 @@ class FacturaView(viewsets.ModelViewSet):
         # 1) Resolver carrito
         try:
             if external_ref:
-                carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
-                    external_reference=external_ref
+                carrito = (
+                    Carrito.objects
+                    .select_related("usuario")
+                    .prefetch_related("items")
+                    .get(external_reference=external_ref)
                 )
             elif carrito_id:
-                carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
-                    pk=carrito_id  # <-- AJUSTA si tu PK es idCarrito
+                carrito = (
+                    Carrito.objects
+                    .select_related("usuario")
+                    .prefetch_related("items")
+                    .get(pk=carrito_id)
                 )
                 external_ref = carrito.external_reference or external_ref
             else:
-                carrito = Carrito.objects.select_related("usuario").prefetch_related("items").get(
-                    payment_id=payment_id
+                carrito = (
+                    Carrito.objects
+                    .select_related("usuario")
+                    .prefetch_related("items")
+                    .get(payment_id=payment_id)
                 )
                 external_ref = carrito.external_reference or external_ref
         except Carrito.DoesNotExist:
@@ -1911,7 +2001,7 @@ class FacturaView(viewsets.ModelViewSet):
         if carrito.items.count() == 0:
             return Response({"detail": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2) Consultar estado de MP (opcional pero recomendado)
+        # 2) Consultar estado de MP (recomendado)
         status_mp = None
         if payment_id:
             url = f"https://api.mercadopago.com/v1/payments/{payment_id}"
@@ -1935,15 +2025,14 @@ class FacturaView(viewsets.ModelViewSet):
             if f_exist:
                 return Response(FacturaSerializer(f_exist).data, status=status.HTTP_200_OK)
 
-        # 4) Preparar payload de creación (items desde el carrito)
+        # 4) Crear Pedido si falta y armar payload
         numero = external_ref or f"F-{getattr(carrito, 'id', carrito.pk)}-{int(time.time())}"
 
-        # Pedido: crea si no existe
         pedido = getattr(carrito, "pedido", None)
         if not pedido:
-            pedido = Pedido.objects.create(  # <-- AJUSTA campos
+            pedido = Pedido.objects.create(
                 usuario=carrito.usuario,
-                total=carrito.calcular_total(),  # <-- AJUSTA
+                total=carrito.calcular_total(),
                 estado=True
             )
 
@@ -1953,13 +2042,13 @@ class FacturaView(viewsets.ModelViewSet):
                 "producto_id": it.producto_id,
                 "talla_id": getattr(it.talla, "id", None),
                 "cantidad": int(it.cantidad),
-                "precio": str(Decimal(it.precio_unitario)),  # o toma del producto
+                "precio": str(Decimal(it.precio_unitario)),
             })
 
         payload = {
             "numero": numero,
-            "pedido_id": getattr(pedido, 'id', getattr(pedido, 'pk', None)),       # <-- AJUSTA a idPedido si aplica
-            "usuario_id": getattr(carrito.usuario, 'id', getattr(carrito.usuario, 'pk', None)),  # <-- AJUSTA
+            "pedido_id": getattr(pedido, 'id', getattr(pedido, 'pk', None)),
+            "usuario_id": getattr(carrito.usuario, 'id', getattr(carrito.usuario, 'pk', None)),
             "moneda": "COP",
             "metodo_pago": "mercadopago",
             "mp_payment_id": payment_id or "",
@@ -1970,8 +2059,36 @@ class FacturaView(viewsets.ModelViewSet):
         ser.is_valid(raise_exception=True)
         factura = ser.save()
 
+        # 4.1) (Opcional) Denormaliza datos de cliente si tu modelo los tiene
+        update_fields = []
+        if hasattr(factura, "cliente_email"):
+            em = getattr(carrito.usuario, "email", "") or ""
+            if em and em != getattr(factura, "cliente_email", ""):
+                factura.cliente_email = em
+                update_fields.append("cliente_email")
+        if hasattr(factura, "cliente_nombre"):
+            nm = (
+                getattr(carrito.usuario, "nombre", None)
+                or getattr(carrito.usuario, "first_name", None)
+                or getattr(carrito.usuario, "username", None)
+                or ""
+            )
+            if nm and nm != getattr(factura, "cliente_nombre", ""):
+                factura.cliente_nombre = nm
+                update_fields.append("cliente_nombre")
+
+        # 4.2) Ajusta estado de la factura según MP
+        if status_mp:
+            nuevo_estado = map_mp_to_estado_factura(status_mp)
+            if nuevo_estado != getattr(factura, "estado", "emitida"):
+                factura.estado = nuevo_estado
+                update_fields.append("estado")
+
+        if update_fields:
+            factura.save(update_fields=update_fields)
+
         # 5) Cerrar carrito
-        carrito.estado = False  # <-- AJUSTA campo
+        carrito.estado = False
         carrito.save(update_fields=["estado"])
 
         return Response(FacturaSerializer(factura).data, status=status.HTTP_201_CREATED)
@@ -1979,46 +2096,210 @@ class FacturaView(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="pdf", url_name="pdf")
     def pdf(self, request, pk=None):
         """
-        Devuelve el PDF de la factura como application/pdf.
-        Implementa UNA de estas variantes:
-        A) si guardas el archivo en un FileField (ej: factura.archivo_pdf)
-        B) si lo generas al vuelo (servicio/generador)
+        Si guardas un FileField con el PDF, descomenta Variante A.
+        Si lo generas al vuelo, reemplaza el placeholder.
         """
-
         factura = get_object_or_404(Factura, pk=pk)
 
-        # === Variante A: archivo guardado en modelo ===
-        if hasattr(factura, "archivo_pdf") and factura.archivo_pdf:
-            # archivo_pdf es un FileField
+        # Variante A (archivo físico)
+        if hasattr(factura, "archivo_pdf") and getattr(factura, "archivo_pdf"):
             return FileResponse(
                 factura.archivo_pdf.open("rb"),
                 content_type="application/pdf",
-                as_attachment=False,  # true si prefieres descarga automática
+                as_attachment=False,
                 filename=f"Factura_{factura.numero or factura.pk}.pdf",
             )
 
-        # === Variante B: generar al vuelo (ejemplo genérico) ===
-        # pdf_bytes = tu_servicio_generar_pdf(factura)  # <-- implementa tu lógica
-        # return HttpResponse(pdf_bytes, content_type="application/pdf")
+        # Placeholder
+        return Response({"detail": "PDF no disponible para esta factura."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Si no hay PDF disponible:
-        return Response(
-            {"detail": "PDF no disponible para esta factura."},
-            status=status.HTTP_404_NOT_FOUND,
+    @action(detail=True, methods=["get"], url_path="comprobante/pdf", url_name="comprobante_pdf")
+    def comprobante_pdf(self, request, pk=None):
+        """
+        Genera un comprobante de pago bonito (ReportLab/Platypus).
+        Si no tienes tabla Pago, consulta MercadoPago por mp_payment_id.
+        """
+        factura = get_object_or_404(Factura.objects.select_related("usuario"), pk=pk)
+
+        def _get_email_from_factura(f):
+            # intenta campos que tu serializer pudo incluir
+            for attr in ("cliente_email", "usuario_email", "email"):
+                val = getattr(f, attr, None)
+                if val:
+                    return val
+            # intenta en el usuario relacionado con varios nombres comunes
+            u = getattr(f, "usuario", None)
+            if u:
+                for attr in ("email", "correo", "correo_electronico"):
+                    val = getattr(u, attr, None)
+                    if val:
+                        return val
+            return "—"
+
+        # Datos de encabezado
+        fecha_fact = getattr(factura, "emitida_en", None) or getattr(factura, "created_at", None) or ""
+        cliente_nombre = (
+            getattr(factura, "cliente_nombre", None)
+            or (hasattr(factura, "usuario") and getattr(factura.usuario, "nombre", None))
+            or (hasattr(factura, "usuario") and getattr(factura.usuario, "first_name", None))
+            or (hasattr(factura, "usuario") and getattr(factura.usuario, "username", None))
+            or "—"
         )
-    
+        cliente_email = _get_email_from_factura(factura)
+
+        # Pagos (fallback a MP)
+        pagos_list = []
+        total_pagado = Decimal("0")
+        mp_id = getattr(factura, "mp_payment_id", None)
+
+        if mp_id:
+            try:
+                url = f"https://api.mercadopago.com/v1/payments/{mp_id}"
+                r = requests.get(url, headers={"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"}, timeout=12)
+                if r.status_code == 200:
+                    mp = r.json()
+                    estado_mp = mp.get("status")
+                    monto_mp = Decimal(str(mp.get("transaction_amount") or mp.get("amount") or 0))
+                    moneda_mp = mp.get("currency_id") or (factura.moneda or "COP")
+                    fecha_mp = mp.get("date_approved") or mp.get("date_created") or ""
+
+                    pagos_list = [{
+                        "created_at": fecha_mp,
+                        "metodo": "mercadopago",
+                        "payment_id": mp_id,
+                        "moneda": moneda_mp,
+                        "monto": monto_mp,
+                        "estado": estado_mp,
+                    }]
+                    if (estado_mp or "").lower() == "approved":
+                        total_pagado = monto_mp
+            except Exception:
+                pass
+
+        saldo = (factura.total or Decimal("0")) - (total_pagado or Decimal("0"))
+
+        # === PDF ===
+        buf = BytesIO()
+        doc = SimpleDocTemplate(
+            buf, pagesize=letter,
+            leftMargin=18*mm, rightMargin=18*mm,
+            topMargin=16*mm, bottomMargin=16*mm,
+        )
+
+        styles = getSampleStyleSheet()
+        styles.add(ParagraphStyle(name="h1center", parent=styles["Heading1"], alignment=TA_CENTER, spaceAfter=8))
+        styles.add(ParagraphStyle(name="label", fontName="Helvetica", fontSize=9, textColor=colors.grey))
+        styles.add(ParagraphStyle(name="value", fontName="Helvetica-Bold", fontSize=10))
+        styles.add(ParagraphStyle(name="small", fontName="Helvetica", fontSize=8, textColor=colors.grey, alignment=TA_CENTER))
+
+        story = []
+        story.append(Paragraph("COMPROBANTE DE PAGO", styles["h1center"]))
+        story.append(Spacer(1, 2*mm))
+
+        meta_left = [
+            [Paragraph("<b>Factura</b>", styles["label"]), Paragraph(f"{getattr(factura, 'numero', '') or factura.pk}", styles["value"])],
+            [Paragraph("<b>Factura ID</b>", styles["label"]), Paragraph(str(factura.pk), styles["value"])],
+            [Paragraph("<b>Fecha factura</b>", styles["label"]), Paragraph(fmt_date(fecha_fact), styles["value"])],
+        ]
+        meta_right = [
+            [Paragraph("<b>Cliente</b>", styles["label"]), Paragraph(cliente_nombre, styles["value"])],
+            [Paragraph("<b>Email</b>", styles["label"]), Paragraph(cliente_email, styles["value"])],
+            [Paragraph("<b>Moneda</b>", styles["label"]), Paragraph(factura.moneda or "COP", styles["value"])],
+        ]
+
+        t_meta_left  = Table(meta_left,  colWidths=[32*mm, 58*mm])
+        t_meta_right = Table(meta_right, colWidths=[22*mm, 68*mm])
+        t_meta = Table([[t_meta_left, t_meta_right]], colWidths=[90*mm, 90*mm])
+        t_meta.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+            ("TOPPADDING", (0,0), (-1,-1), 2),
+        ]))
+        story.append(t_meta)
+        story.append(Spacer(1, 3*mm))
+
+        # --- Badge de estado (usa MP si factura está 'emitida' o vacía)
+        estado_para_badge = (getattr(factura, "estado", "") or "").lower()
+        if estado_para_badge in ("", "emitida"):
+            mp_estado = (pagos_list and pagos_list[0].get("estado")) or None
+            if mp_estado:
+                estado_para_badge = mp_estado  # o map_mp_to_estado_factura(mp_estado)
+
+        badge_text, badge_fg, badge_bg = estado_badge(estado_para_badge)
+        badge_tbl = Table(
+            [[Paragraph(badge_text, ParagraphStyle(name="badge", textColor=badge_fg, alignment=TA_CENTER,
+                                                   fontName="Helvetica-Bold", fontSize=9))]],
+            colWidths=[30*mm], rowHeights=[8*mm]
+        )
+        badge_tbl.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,-1), badge_bg),
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ]))
+        story.append(Table([[badge_tbl, ""]], colWidths=[32*mm, 148*mm]))
+        story.append(Spacer(1, 4*mm))
+
+        # Resumen
+        resumen = [
+            ["Total factura:", fmt_money(factura.total, factura.moneda or "COP")],
+            ["Total pagado:",  fmt_money(total_pagado, factura.moneda or "COP")],
+            ["Saldo:",         fmt_money(saldo, factura.moneda or "COP")],
+        ]
+        t_resumen = Table(resumen, colWidths=[40*mm, 40*mm], hAlign="RIGHT")
+        t_resumen.setStyle(TableStyle([
+            ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+            ("FONTNAME", (0,0), (0,-1), "Helvetica"),
+            ("FONTNAME", (1,0), (1,-1), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,-1), 10),
+            ("TOPPADDING", (0,0), (-1,-1), 2),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+        ]))
+        story.append(t_resumen)
+        story.append(Spacer(1, 6*mm))
+
+        # Tabla de pagos
+        story.append(Paragraph("Pagos aplicados", styles["Heading3"]))
+        pagos_rows = [["Fecha", "Método", "Monto", "Estado", "Referencia"]]
+        if pagos_list:
+            for pg in pagos_list:
+                fecha_pg = pg.get("created_at") or pg.get("fecha") or ""
+                pagos_rows.append([
+                    fmt_date(fecha_pg),
+                    (pg.get("metodo") or pg.get("gateway") or "—"),
+                    fmt_money(pg.get("monto") or 0, pg.get("moneda") or (factura.moneda or "COP")),
+                    (pg.get("estado") or pg.get("estado_gateway") or "—"),
+                    (pg.get("payment_id") or "—"),
+                ])
+        else:
+            pagos_rows.append(["—", "—", "—", "—", "—"])
+
+        t_pagos = Table(pagos_rows, colWidths=[34*mm, 34*mm, 28*mm, 28*mm, 36*mm])
+        t_pagos.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f2f2f2")),
+            ("GRID", (0,0), (-1,-1), 0.25, colors.HexColor("#d9d9d9")),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("FONTNAME", (0,1), (-1,-1), "Helvetica"),
+            ("ALIGN", (2,1), (2,-1), "RIGHT"),
+            ("FONTSIZE", (0,0), (-1,-1), 9.5),
+        ]))
+        story.append(t_pagos)
+        story.append(Spacer(1, 10*mm))
+        story.append(Paragraph("Este documento certifica los pagos recibidos para la factura indicada.", styles["small"]))
+
+        doc.build(story)
+        buf.seek(0)
+        filename = f"Comprobante_{getattr(factura, 'numero', None) or factura.pk}.pdf"
+        resp = HttpResponse(buf.read(), content_type="application/pdf")
+        resp["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
+        return resp
+
+    # Listado con filtros
     def get_queryset(self):
-        qs = (
-            Factura.objects
-            .select_related("usuario", "pedido")
-            .all()
-        )
+        qs = super().get_queryset()
 
         user = self.request.user
-        if not user.is_superuser and not user.is_staff:
-            qs = qs.filter(usuario=user)  # ✅ solo mis facturas
+        if not (getattr(user, "is_superuser", False) or getattr(user, "is_staff", False)):
+            qs = qs.filter(usuario=user)
 
-        # Filtros opcionales
         numero = self.request.query_params.get("numero")
         if numero:
             qs = qs.filter(numero__icontains=numero)
@@ -2027,22 +2308,19 @@ class FacturaView(viewsets.ModelViewSet):
         f_hasta = self.request.query_params.get("fecha_hasta")
         estado = self.request.query_params.get("estado")
 
-        # Usa emitida_en si existe, si no, quita filtro de fecha
-        fecha_field = "emitida_en" if hasattr(Factura, "emitida_en") else None
-        if fecha_field:
+        if hasattr(Factura, "emitida_en"):
             if f_desde:
-                qs = qs.filter(**{f"{fecha_field}__date__gte": f_desde})
+                qs = qs.filter(emitida_en__date__gte=f_desde)
             if f_hasta:
-                qs = qs.filter(**{f"{fecha_field}__date__lte": f_hasta})
+                qs = qs.filter(emitida_en__date__lte=f_hasta)
+            qs = qs.order_by("-emitida_en", "-pk")
+        else:
+            qs = qs.order_by("-pk")
 
         if estado:
             qs = qs.filter(estado=estado)
 
-        # Ordena por fecha si existe, si no, solo por PK
-        if fecha_field:
-            return qs.order_by(f"-{fecha_field}", "-pk")
-        return qs.order_by("-pk")
-
+        return qs
 
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()

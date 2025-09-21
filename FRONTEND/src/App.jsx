@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 // Layout público
@@ -99,10 +99,19 @@ function AppContent() {
             }
           />
           <Route
-            path="/Facturas"
+          path="/facturas"
+          element={
+            <RutaPrivada role={["cliente", "administrador"]}>
+              <FacturasPage />
+            </RutaPrivada>
+          }
+          />
+          {/* ✅ Ver factura por ID reutilizando RetornoMPpage */}
+          <Route
+            path="/facturas/:id"
             element={
               <RutaPrivada role={["cliente", "administrador"]}>
-                <FacturasPage />
+                <RetornoMPpage />
               </RutaPrivada>
             }
           />
@@ -130,8 +139,15 @@ function AppContent() {
               </RutaPrivada>
             }
           />
-
-
+          {/* ✅ Retorno de Mercado Pago (ruta clara) */}
+          <Route
+            path="/pago/retorno"
+            element={
+              <RutaPrivada role={["cliente", "administrador"]}>
+                <RetornoMPpage />
+              </RutaPrivada>
+            }
+          />
           {/* Admin con layout */}
           <Route
             path="/admin/*"
