@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx"; 
 import "../../assets/css/Proveedores/Proveedores.css";
 import "../../assets/css/Proveedores/ProveedorRegistro.css";
+import { FaCheck, FaTimes } from "react-icons/fa";
 
 // Componente que permite registrar o editar proveedores
 export function AdminProveedores({ proveedorEditar, onEditComplete }) {
@@ -17,6 +18,17 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
   });
   const [editingId, setEditingId] = useState(null);
   const navigate = useNavigate();
+
+  // Estado para el toast
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
+
+  // Función para mostrar toast
+  const mostrarToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "" });
+    }, 3000);
+  };
 
   // Carga datos si estamos en edición
   useEffect(() => {
@@ -41,8 +53,10 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
     try {
       if (editingId) {
         await updateProveedor(editingId, form);
+        mostrarToast("Proveedor actualizado exitosamente", "success");
       } else {
         await createProveedor(form);
+        mostrarToast("Proveedor registrado exitosamente", "success");
       }
 
       // Reset del formulario
@@ -60,7 +74,23 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
         "Error al registrar proveedor:",
         error?.response?.data || error?.message
       );
+      mostrarToast(
+        editingId ? "Error al actualizar el proveedor" : "Error al registrar el proveedor", 
+        "error"
+      );
     }
+  };
+
+  const handleCancelar = () => {
+    setEditingId(null);
+    setForm({
+      nombre: "",
+      correo: "",
+      telefono: "",
+      tipo: "nacional",
+    });
+    onEditComplete?.();
+    mostrarToast("Edición cancelada", "error");
   };
 
   // Protección por sesión/rol
@@ -84,6 +114,18 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
 
   return (
     <>
+      {/* Toast de notificaciones */}
+      {toast.show && (
+        <div className="toast-notification">
+          <div className={`toast-content ${toast.type}`}>
+            <div className="toast-icon">
+              {toast.type === "success" ? <FaCheck /> : <FaTimes />}
+            </div>
+            <span className="toast-message">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       <h2 className="title">{editingId ? "Editar Proveedor" : "Registrar Proveedor"}</h2>
 
       <form className="form" onSubmit={handleSubmit}>
@@ -132,16 +174,7 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
             <button
               className="btn btn-cancel"
               type="button"
-              onClick={() => {
-                setEditingId(null);
-                setForm({
-                  nombre: "",
-                  correo: "",
-                  telefono: "",
-                  tipo: "nacional",
-                });
-                onEditComplete?.();
-              }}
+              onClick={handleCancelar}
             >
               Cancelar
             </button>

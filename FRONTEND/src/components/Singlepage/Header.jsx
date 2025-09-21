@@ -7,13 +7,16 @@ import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-export function Header() {
-  const { autenticado, /* rol, */ logout, usuario } = useAuth();
+export function Header({ toggleAdminPanel }) {
+  const { autenticado, rol, logout, usuario } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  // Verificar si el usuario es administrador
+  const esAdministrador = rol === "administrador";
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -34,6 +37,12 @@ export function Header() {
   const cancelLogout = () => setShowConfirm(false);
 
   const toggleDropdown = () => setShowDropdown((prev) => !prev);
+
+  // Función para ir al panel de admin directamente
+  const goToAdminPanel = () => {
+    setShowDropdown(false);
+    navigate("/admin/proveedores");
+  };
 
   // Cerrar dropdown si clic fuera del contenedor
   useEffect(() => {
@@ -180,6 +189,19 @@ export function Header() {
                           <i className="bi bi-person-gear"></i> Mi Perfil
                         </Link>
                       </li>
+                      
+                      {/* NUEVA OPCIÓN: Panel de Administración - Solo para administradores */}
+                      {esAdministrador && (
+                        <li>
+                          <button
+                            className="dropdown-item-custom admin-panel-btn"
+                            onClick={goToAdminPanel}
+                          >
+                            <i className="bi bi-gear-wide-connected"></i> Panel de Administración
+                          </button>
+                        </li>
+                      )}
+
                       <li>
                         <hr className="dropdown-divider-custom" />
                       </li>

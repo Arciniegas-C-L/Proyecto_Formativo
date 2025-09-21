@@ -1,4 +1,4 @@
-// AdminFooter.jsx - Usando tu AuthContext real
+
 import React from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import "../../assets/css/Admin/AdminFooter.css";
@@ -25,7 +25,7 @@ const AdminFooter = () => {
       <div className="pie-footer-admin">
         <div className="copyright-admin">
           <span>
-            <strong>© {currentYear} Variedad y Estilos ZOE.</strong> Dashboard - Panel de Administración
+            <strong>© {currentYear} Variedad y Estilos ZOE.</strong> 
           </span>
         </div>
         <div className="info-sesion-admin">
