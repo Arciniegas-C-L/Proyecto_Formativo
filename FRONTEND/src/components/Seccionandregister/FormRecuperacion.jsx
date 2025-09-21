@@ -11,40 +11,46 @@ export function RecuperarContrasena() {
   const [codigoEnviado, setCodigoEnviado] = useState(false);
   const [espera, setEspera] = useState(0);
   const [reenviar, setReenviar] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const timerRef = useRef(null);
 
   const enviarCodigo = async (e) => {
     e.preventDefault();
     setMensaje("");
     setError("");
+    setIsSubmitting(true);
 
-    // Llamamos a la API centralizada
-    const { data, error } = await solicitarRecuperacion({ correo });
+    try {
+      // Llamamos a la API centralizada
+      const { data, error } = await solicitarRecuperacion({ correo });
 
-    if (error) {
-      console.error("Error al enviar código:", error);
-      setError(
-        error.response?.data?.error || "Error de conexión con el servidor"
-      );
-      return;
+      if (error) {
+        console.error("Error al enviar código:", error);
+        setError(
+          error.response?.data?.error || "Error de conexión con el servidor"
+        );
+        return;
+      }
+
+      // Si todo salió bien
+      setMensaje(data.mensaje);
+      setCodigoEnviado(true);
+      setReenviar(true);
+
+      // Deshabilitar botón por 30 segundos
+      setEspera(30);
+      timerRef.current = setInterval(() => {
+        setEspera((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Si todo salió bien
-    setMensaje(data.mensaje);
-    setCodigoEnviado(true);
-    setReenviar(true);
-
-    // Deshabilitar botón por 30 segundos
-    setEspera(30);
-    timerRef.current = setInterval(() => {
-      setEspera((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   if (codigoEnviado) {
@@ -62,12 +68,14 @@ export function RecuperarContrasena() {
           onChange={(e) => setCorreo(e.target.value)}
           required
         />
-        <button type="submit" disabled={espera > 0}>
-          {espera > 0
-            ? `Espera ${espera}s`
-            : reenviar
-              ? "Reenviar código"
-              : "Enviar código"}
+        <button type="submit" disabled={espera > 0 || isSubmitting}>
+          {isSubmitting
+            ? "Enviando..."
+            : espera > 0
+              ? `Espera ${espera}s`
+              : reenviar
+                ? "Reenviar código"
+                : "Enviar código"}
         </button>
         {mensaje && <p style={{ color: "green" }}>{mensaje}</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
