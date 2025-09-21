@@ -126,6 +126,7 @@ from .serializer import (
     FacturaItemSerializer,
     FacturaCreateSerializer,
     ComentarioSerializer,
+    CrearPreferenciaPagoSerializer,
 )
 
 from reportlab.pdfgen import canvas

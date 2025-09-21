@@ -119,31 +119,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
 
-
-# ----------------------------
-# Direcciones de usuario
-# ----------------------------
-class Direccion(models.Model):
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='direcciones')
-    direccion = models.CharField(max_length=255)
-
-    from rest_framework.exceptions import ValidationError
-    def save(self, *args, **kwargs):
-        # Limitar a 3 direcciones por usuario
-        if not self.pk and Direccion.objects.filter(usuario=self.usuario).count() >= 3:
-            raise ValidationError({'detail': 'No puedes tener más de 3 direcciones.'})
-        # No permitir direcciones duplicadas para el mismo usuario
-        if Direccion.objects.filter(usuario=self.usuario, direccion=self.direccion).exclude(pk=self.pk).exists():
-            raise ValidationError({'detail': 'Ya tienes una dirección igual registrada.'})
-        # No permitir que la dirección sea igual a la de datos personales
-        if self.usuario.direccion and self.direccion.strip() == self.usuario.direccion.strip():
-            raise ValidationError({'detail': 'No puedes registrar una dirección igual a la de tus datos personales.'})
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.direccion} - {self.usuario.nombre} {self.usuario.apellido}"
-
-
 # ----------------------------
 # Código de recuperación
 # ----------------------------
@@ -337,17 +312,38 @@ class Movimiento(models.Model):
 # models.py
 class Pedido(models.Model):
     idPedido   = models.AutoField(primary_key=True)
-    numero     = models.CharField(max_length=30, unique=True, blank=True, null=True)  # si quieres filtrar por "numero"
+    numero     = models.CharField(max_length=30, unique=True, blank=True, null=True)
     total      = models.DecimalField(max_digits=30, decimal_places=2, default=0)
     estado     = models.BooleanField(default=True)
-    usuario    = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
-    created_at = models.DateTimeField(auto_now_add=True)  # lo usas en filtros/orden
+    usuario    = models.ForeignKey('Usuario', on_delete=models.DO_NOTHING)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # ⬇⬇⬇ NUEVO: snapshot de envío
+    shipping_address = models.JSONField(null=True, blank=True)
+    shipping_city = models.CharField(max_length=120, null=True, blank=True)
+    shipping_department = models.CharField(max_length=120, null=True, blank=True)
 
     def __str__(self):
         return f"Pedido {self.idPedido}"
 
 
+class Direccion(models.Model):
+    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='direcciones')
+    direccion = models.CharField(max_length=255)
+
+    from rest_framework.exceptions import ValidationError
+    def save(self, *args, **kwargs):
+        if not self.pk and Direccion.objects.filter(usuario=self.usuario).count() >= 3:
+            raise ValidationError({'detail': 'No puedes tener más de 3 direcciones.'})
+        if Direccion.objects.filter(usuario=self.usuario, direccion=self.direccion).exclude(pk=self.pk).exists():
+            raise ValidationError({'detail': 'Ya tienes una dirección igual registrada.'})
+        if getattr(self.usuario, 'direccion', None) and self.direccion.strip() == self.usuario.direccion.strip():
+            raise ValidationError({'detail': 'No puedes registrar una dirección igual a la de tus datos personales.'})
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.direccion} - {self.usuario.nombre} {self.usuario.apellido}"
 class PedidoProducto(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.DO_NOTHING)
     producto = models.ForeignKey(Producto, on_delete=models.DO_NOTHING)
@@ -528,7 +524,7 @@ class WebhookEvent(models.Model):
 
 # BACKEND/models.py
 class Factura(models.Model):
-    numero       = models.CharField(max_length=32, unique=True)         # consecutivo propio
+    numero       = models.CharField(max_length=32, unique=True)
     pedido       = models.OneToOneField('Pedido', on_delete=models.PROTECT)
     usuario      = models.ForeignKey('Usuario', on_delete=models.PROTECT)
     subtotal     = models.DecimalField(max_digits=12, decimal_places=2)
@@ -538,9 +534,16 @@ class Factura(models.Model):
     metodo_pago  = models.CharField(max_length=32, default='mercadopago')
     mp_payment_id= models.CharField(max_length=64, blank=True, default='')
     emitida_en   = models.DateTimeField(default=timezone.now)
-    estado       = models.CharField(max_length=16, default='emitida')   # emitida, anulada, etc.
+    estado       = models.CharField(max_length=16, default='emitida')
+
+    # ⬇⬇⬇ NUEVO: snapshot de envío copiado desde Pedido
+    shipping_address = models.JSONField(null=True, blank=True)
+    shipping_city = models.CharField(max_length=120, null=True, blank=True)
+    shipping_department = models.CharField(max_length=120, null=True, blank=True)
+
     class Meta:
-        db_table = "BACKEND_factura"   # <— coincide con lo que busca el ORM
+        db_table = "BACKEND_factura"
+
 
 
 class FacturaItem(models.Model):

@@ -466,19 +466,29 @@ class PedidoItemSerializer(serializers.ModelSerializer):
 
 # serializers.py
 class PedidoSerializer(serializers.ModelSerializer):
-    usuario_nombre = serializers.CharField(source='usuario.nombre', read_only=True)
+    usuario_nombre   = serializers.CharField(source='usuario.nombre', read_only=True)
     usuario_apellido = serializers.CharField(source='usuario.apellido', read_only=True)  # opcional
-    usuario_email = serializers.EmailField(source='usuario.correo', read_only=True)
-    items = PedidoItemSerializer(many=True)
+    usuario_email    = serializers.EmailField(source='usuario.correo', read_only=True)
+    items            = PedidoItemSerializer(many=True)
+
+    # 🆕 Exponer snapshot de dirección (solo lectura)
+    shipping_address     = serializers.JSONField(read_only=True)
+    shipping_city        = serializers.CharField(read_only=True)
+    shipping_department  = serializers.CharField(read_only=True)
 
     class Meta:
-        model = Pedido
+        model  = Pedido
         fields = [
             'idPedido', 'numero', 'total', 'estado', 'usuario',
             'usuario_nombre', 'usuario_apellido', 'usuario_email',
-            'created_at', 'updated_at', 'items'
+            'created_at', 'updated_at', 'items',
+            # ⬇️ Nuevos campos de envío
+            'shipping_address', 'shipping_city', 'shipping_department',
         ]
-        read_only_fields = ['idPedido', 'total', 'created_at', 'updated_at']
+        read_only_fields = [
+            'idPedido', 'total', 'created_at', 'updated_at',
+            'shipping_address', 'shipping_city', 'shipping_department',
+        ]
 
     @transaction.atomic
     def create(self, validated_data):
@@ -522,6 +532,11 @@ class PedidoSerializer(serializers.ModelSerializer):
     # 👇 Fallback SOLO para lectura:
     def to_representation(self, instance):
         data = super().to_representation(instance)
+
+        # Normaliza shipping_address a {} en lugar de null para evitar chequeos en el front
+        if data.get('shipping_address') is None:
+            data['shipping_address'] = {}
+
         # Si no hay PedidoItem, armamos items mínimos desde PedidoProducto
         if not data.get('items'):
             pp_qs = (PedidoProducto.objects
@@ -982,8 +997,13 @@ class FacturaItemSerializer(serializers.ModelSerializer):
 # serializers.py
 class FacturaSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
-    cliente_email = serializers.SerializerMethodField()   # ⬅ nuevo
+    cliente_email = serializers.SerializerMethodField()
     fecha = serializers.SerializerMethodField()
+
+    # 🆕 Snapshot de envío (solo lectura, vienen del pedido relacionado)
+    shipping_address    = serializers.SerializerMethodField()
+    shipping_city       = serializers.SerializerMethodField()
+    shipping_department = serializers.SerializerMethodField()
 
     class Meta:
         model = Factura
@@ -993,7 +1013,9 @@ class FacturaSerializer(serializers.ModelSerializer):
             "metodo_pago","mp_payment_id",
             "emitida_en","estado","items",
             "fecha",
-            "cliente_email",                      # ⬅ aquí
+            "cliente_email",
+            # ⬇️ Nuevos campos
+            "shipping_address","shipping_city","shipping_department",
         )
         read_only_fields = fields
 
@@ -1002,14 +1024,10 @@ class FacturaSerializer(serializers.ModelSerializer):
         return FacturaItemSerializer(qs.all(), many=True).data if qs is not None else []
 
     def get_cliente_email(self, obj):
-        """
-        Devuelve el email del usuario con tolerancia a distintos nombres de campo.
-        """
         u = getattr(obj, "usuario", None)
         if not u:
             return None
 
-        # candidatos comunes
         possibles = [
             "email", "correo", "correo_electronico", "mail",
             "emailUsuario", "correoUsuario", "user_email"
@@ -1019,14 +1037,12 @@ class FacturaSerializer(serializers.ModelSerializer):
             if val:
                 return str(val)
 
-        # como último recurso, si el __str__ del usuario es un email
         try:
             text = str(u)
             if "@" in text:
                 return text
         except Exception:
             pass
-
         return None
 
     def get_fecha(self, obj):
@@ -1037,6 +1053,26 @@ class FacturaSerializer(serializers.ModelSerializer):
             return dt.strftime("%Y-%m-%d %H:%M")
         except Exception:
             return str(dt)
+
+    # 🆕 Extraer snapshot de envío desde el pedido asociado
+    def get_shipping_address(self, obj):
+        try:
+            return getattr(obj.pedido, "shipping_address", {}) or {}
+        except Exception:
+            return {}
+
+    def get_shipping_city(self, obj):
+        try:
+            return getattr(obj.pedido, "shipping_city", None)
+        except Exception:
+            return None
+
+    def get_shipping_department(self, obj):
+        try:
+            return getattr(obj.pedido, "shipping_department", None)
+        except Exception:
+            return None
+
 
 class PedidoProductoItemLiteSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
@@ -1097,3 +1133,15 @@ class PedidoConItemsSerializer(serializers.ModelSerializer):
     def get_estado_label(self, obj):
         return "Completado" if getattr(obj, 'estado', False) else "Pendiente"
 
+class AddressSerializer(serializers.Serializer):
+    nombre = serializers.CharField(max_length=120)
+    telefono = serializers.CharField(max_length=50)
+    departamento = serializers.CharField(max_length=120)
+    ciudad = serializers.CharField(max_length=120)
+    linea1 = serializers.CharField(max_length=255)
+    linea2 = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    referencia = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+class CrearPreferenciaPagoSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    address = AddressSerializer()
