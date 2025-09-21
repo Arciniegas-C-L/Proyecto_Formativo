@@ -2093,25 +2093,203 @@ class FacturaView(viewsets.ModelViewSet):
 
         return Response(FacturaSerializer(factura).data, status=status.HTTP_201_CREATED)
 
+    # dentro de FacturaView
     @action(detail=True, methods=["get"], url_path="pdf", url_name="pdf")
     def pdf(self, request, pk=None):
         """
-        Si guardas un FileField con el PDF, descomenta Variante A.
-        Si lo generas al vuelo, reemplaza el placeholder.
+        Genera el PDF de la FACTURA (no comprobante).
+        Usa Factura + FacturaItem y muestra encabezado, items y totales.
         """
-        factura = get_object_or_404(Factura, pk=pk)
+        # Trae factura + items
+        factura = get_object_or_404(
+            Factura.objects.select_related("usuario", "pedido").prefetch_related("items"),
+            pk=pk
+        )
 
-        # Variante A (archivo físico)
-        if hasattr(factura, "archivo_pdf") and getattr(factura, "archivo_pdf"):
-            return FileResponse(
-                factura.archivo_pdf.open("rb"),
-                content_type="application/pdf",
-                as_attachment=False,
-                filename=f"Factura_{factura.numero or factura.pk}.pdf",
-            )
+        # -------- Helpers locales (si ya tienes fmt_*, puedes usar los tuyos) -----
+        from decimal import Decimal
+        from io import BytesIO
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.units import mm
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
-        # Placeholder
-        return Response({"detail": "PDF no disponible para esta factura."}, status=status.HTTP_404_NOT_FOUND)
+        def money(v, cur=None):
+            cur = cur or (getattr(factura, "moneda", None) or "COP")
+            try:
+                n = float(Decimal(str(v or 0)))
+            except Exception:
+                n = 0.0
+            return f"{n:,.2f} {cur}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+        def dmy_hm(dt):
+            # usa tu fmt_date si ya lo tienes
+            from django.utils import timezone
+            from datetime import datetime
+            if not dt:
+                return "—"
+            try:
+                if isinstance(dt, str):
+                    try:
+                        dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+                    except Exception:
+                        dt = datetime.strptime(dt[:19], "%Y-%m-%dT%H:%M:%S")
+                if timezone.is_naive(dt):
+                    dt = timezone.make_aware(dt, timezone.get_current_timezone())
+                dt = dt.astimezone(timezone.get_current_timezone())
+                return dt.strftime("%d/%m/%Y %H:%M")
+            except Exception:
+                return str(dt)
+
+        # --------- Documento ----------
+        buf = BytesIO()
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize=letter,
+            leftMargin=18*mm, rightMargin=18*mm,
+            topMargin=16*mm, bottomMargin=16*mm,
+            title=f"Factura {getattr(factura,'numero', factura.pk)}"
+        )
+
+        styles = getSampleStyleSheet()
+        styles.add(ParagraphStyle(name="h1center", parent=styles["Heading1"], alignment=TA_CENTER, spaceAfter=8))
+        styles.add(ParagraphStyle(name="label", fontName="Helvetica", fontSize=9, textColor=colors.grey))
+        styles.add(ParagraphStyle(name="value", fontName="Helvetica-Bold", fontSize=10))
+        styles.add(ParagraphStyle(name="right", parent=styles["Normal"], alignment=TA_RIGHT))
+        styles.add(ParagraphStyle(name="smallcenter", fontName="Helvetica", fontSize=8, textColor=colors.grey, alignment=TA_CENTER))
+
+        story = []
+        story.append(Paragraph("FACTURA", styles["h1center"]))
+        story.append(Spacer(1, 2*mm))
+
+        # --------- Encabezado: emisor / receptor / meta ----------
+        # Emisor (si tienes datos en settings, cámbialos aquí)
+        emisor_nombre = getattr(settings, "FACTURA_EMISOR_NOMBRE", "Variedad y Estilos ZOE")
+        emisor_nit    = getattr(settings, "FACTURA_EMISOR_NIT",    "")
+        emisor_dir    = getattr(settings, "FACTURA_EMISOR_DIR",    "")
+
+        cliente_nombre = (
+            getattr(factura, "cliente_nombre", None)
+            or getattr(getattr(factura, "usuario", None), "nombre", None)
+            or getattr(getattr(factura, "usuario", None), "first_name", None)
+            or getattr(getattr(factura, "usuario", None), "username", None)
+            or "—"
+        )
+        # Resolver email con varios candidatos
+        cliente_email = (
+            getattr(factura, "cliente_email", None)
+            or getattr(factura, "usuario_email", None)
+            or getattr(factura, "email", None)
+            or (getattr(factura, "usuario", None) and getattr(factura.usuario, "email", None))
+            or (getattr(factura, "usuario", None) and getattr(factura.usuario, "correo", None))
+            or "—"
+        )
+
+        fecha_fact = getattr(factura, "emitida_en", None) or getattr(factura, "created_at", None)
+
+        meta_left = [
+            [Paragraph("<b>Emisor</b>", styles["label"]), Paragraph(emisor_nombre, styles["value"])],
+            [Paragraph("<b>NIT</b>", styles["label"]), Paragraph(emisor_nit or "—", styles["value"])],
+            [Paragraph("<b>Dirección</b>", styles["label"]), Paragraph(emisor_dir or "—", styles["value"])],
+        ]
+        meta_mid = [
+            [Paragraph("<b>Factura</b>", styles["label"]), Paragraph(getattr(factura, "numero", "") or str(factura.pk), styles["value"])],
+            [Paragraph("<b>Factura ID</b>", styles["label"]), Paragraph(str(factura.pk), styles["value"])],
+            [Paragraph("<b>Fecha</b>", styles["label"]), Paragraph(dmy_hm(fecha_fact), styles["value"])],
+        ]
+        meta_right = [
+            [Paragraph("<b>Cliente</b>", styles["label"]), Paragraph(cliente_nombre, styles["value"])],
+            [Paragraph("<b>Email</b>", styles["label"]), Paragraph(cliente_email, styles["value"])],
+            [Paragraph("<b>Moneda</b>", styles["label"]), Paragraph(factura.moneda or "COP", styles["value"])],
+        ]
+
+        t = Table([[meta_left, meta_mid, meta_right]], colWidths=[64*mm, 40*mm, 56*mm])
+        t.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+            ("TOPPADDING", (0,0), (-1,-1), 2),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 6*mm))
+
+        # --------- Items ----------
+        rows = [["Descripción", "Cant.", "P. Unitario", "Importe"]]
+        items = list(factura.items.all())
+        if items:
+            for it in items:
+                desc = getattr(it, "descripcion", None) or (getattr(it, "producto", None) and getattr(it.producto, "nombre", None)) or "-"
+                qty  = int(getattr(it, "cantidad", 0) or 0)
+                unit = getattr(it, "precio", 0)
+                sub  = getattr(it, "subtotal", None)
+                if sub is None:
+                    # por si no guardas subtotal en BD
+                    try:
+                        sub = Decimal(str(unit)) * Decimal(str(qty))
+                    except Exception:
+                        sub = 0
+                rows.append([desc, str(qty), money(unit), money(sub)])
+        else:
+            rows.append(["— Sin ítems —", "", "", ""])
+
+        t_items = Table(rows, colWidths=[90*mm, 18*mm, 32*mm, 32*mm], hAlign="LEFT")
+        t_items.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f2f2f2")),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("GRID", (0,0), (-1,-1), 0.25, colors.HexColor("#d9d9d9")),
+            ("ALIGN", (1,1), (1,-1), "RIGHT"),
+            ("ALIGN", (2,1), (3,-1), "RIGHT"),
+            ("FONTSIZE", (0,0), (-1,-1), 9.5),
+            ("TOPPADDING", (0,0), (-1,-1), 4),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+        ]))
+        story.append(t_items)
+        story.append(Spacer(1, 6*mm))
+
+        # --------- Totales ----------
+        subtotal  = getattr(factura, "subtotal", None)
+        impuestos = getattr(factura, "impuestos", None)
+        total     = getattr(factura, "total", 0)
+
+        # Si no tienes subtotal/impuestos guardados, intenta calcular un subtotal
+        if subtotal is None:
+            try:
+                subtotal = sum([(it.subtotal if it.subtotal is not None else Decimal(str(it.precio))*it.cantidad) for it in items], Decimal("0"))
+            except Exception:
+                subtotal = total  # fallback
+        if impuestos is None:
+            try:
+                impuestos = Decimal(str(total)) - Decimal(str(subtotal))
+            except Exception:
+                impuestos = 0
+
+        tot_rows = [
+            ["Subtotal:",  money(subtotal)],
+            ["Impuestos:", money(impuestos)],
+            ["Total:",     money(total)],
+        ]
+        t_tot = Table(tot_rows, colWidths=[40*mm, 40*mm], hAlign="RIGHT")
+        t_tot.setStyle(TableStyle([
+            ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+            ("FONTNAME", (0,0), (0,-1), "Helvetica"),
+            ("FONTNAME", (1,0), (1,-1), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,-1), 10),
+            ("TOPPADDING", (0,0), (-1,-1), 2),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+        ]))
+        story.append(t_tot)
+        story.append(Spacer(1, 10*mm))
+
+        story.append(Paragraph("Gracias por su compra.", styles["smallcenter"]))
+
+        # Render
+        doc.build(story)
+        buf.seek(0)
+        filename = f"Factura_{getattr(factura, 'numero', None) or factura.pk}.pdf"
+        resp = HttpResponse(buf.read(), content_type="application/pdf")
+        resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return resp
 
     @action(detail=True, methods=["get"], url_path="comprobante/pdf", url_name="comprobante_pdf")
     def comprobante_pdf(self, request, pk=None):
