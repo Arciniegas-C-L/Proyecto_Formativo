@@ -1,45 +1,96 @@
 // src/api/Carrito.api.js
 import { api } from './axios';
 
-// Operaciones básicas del carrito
+/** ─────────────────────────────────────────────────────────────
+ *  Operaciones básicas del carrito
+ *  ────────────────────────────────────────────────────────────*/
 export const fetchCarritos = () => api.get('carrito/');
 export const createCarrito = (carrito) => api.post('carrito/', carrito);
 export const updateCarrito = (id, carrito) => api.put(`carrito/${id}/`, carrito);
 export const deleteCarrito = (id) => api.delete(`carrito/${id}/`);
 
-// Operaciones específicas del carrito
-export const agregarProducto = (id, data) => {
+/** ─────────────────────────────────────────────────────────────
+ *  Operaciones específicas del carrito
+ *  ────────────────────────────────────────────────────────────*/
+
+/**
+ * Agregar producto al carrito
+ * @param {number|string} id - id del carrito
+ * @param {{ producto:number|string, cantidad:number|string, talla?:number|string }} data
+ * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts] - banderas opcionales
+ */
+export const agregarProducto = (id, data, opts = {}) => {
   const requestData = {
     producto: parseInt(data.producto),
     cantidad: parseInt(data.cantidad),
-    talla: data.talla ? parseInt(data.talla) : undefined,
+    ...(data.talla ? { talla: parseInt(data.talla) } : {}),
+    ...(opts ? { ...opts } : {})
   };
   return api.post(`carrito/${id}/agregar_producto/`, requestData);
 };
 
-export const actualizarCantidad = (id, itemId, cantidad) =>
+/**
+ * Actualizar cantidad de un ítem
+ * @param {number|string} id - id del carrito
+ * @param {number|string} itemId
+ * @param {number|string} cantidad
+ * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts] - banderas opcionales
+ */
+export const actualizarCantidad = (id, itemId, cantidad, opts = {}) =>
   api.post(`carrito/${id}/actualizar_cantidad/`, {
     item_id: itemId,
     cantidad: parseInt(cantidad),
+    ...(opts ? { ...opts } : {})
   });
 
-export const eliminarProducto = (id, itemId) =>
-  api.post(`carrito/${id}/eliminar_producto/`, { item_id: itemId });
+/**
+ * Eliminar producto del carrito
+ * @param {number|string} id
+ * @param {number|string} itemId
+ * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts]
+ */
+export const eliminarProducto = (id, itemId, opts = {}) =>
+  api.post(`carrito/${id}/eliminar_producto/`, {
+    item_id: itemId,
+    ...(opts ? { ...opts } : {})
+  });
 
-export const limpiarCarrito = (id) => api.post(`carrito/${id}/limpiar_carrito/`);
+/**
+ * Limpiar carrito
+ * @param {number|string} id
+ * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts]
+ */
+export const limpiarCarrito = (id, opts = {}) =>
+  api.post(`carrito/${id}/limpiar_carrito/`, { ...(opts ? { ...opts } : {}) });
+
 export const finalizarCompra = (id) => api.post(`carrito/${id}/finalizar_compra/`);
 
-// 🔥 Nuevo: crear preferencia de pago (Mercado Pago)
-export const crearPreferenciaPago = (id, email) =>
-  api.post(`carrito/${id}/crear_preferencia_pago/`, { email });
+/**
+ * 🔥 Crear preferencia de pago (Mercado Pago)
+ * Soporta:
+ *  - crearPreferenciaPago(id, "email@dominio.com")
+ *  - crearPreferenciaPago(id, { email, address: { nombre, telefono, departamento, ciudad, linea1, linea2?, referencia? } })
+ * @param {number|string} id
+ * @param {string|{ email:string, address?:object }} payload
+ */
+export const crearPreferenciaPago = (id, payload) => {
+  const body = typeof payload === 'string'
+    ? { email: payload }
+    : payload; // { email, address? }
+  return api.post(`carrito/${id}/crear_preferencia_pago/`, body);
+};
 
-// Operaciones de items del carrito
+/** ─────────────────────────────────────────────────────────────
+ *  Operaciones de items del carrito
+ *  ────────────────────────────────────────────────────────────*/
 export const fetchCarritoItems = () => api.get('carrito-item/');
 export const getCarritoItem = (id) => api.get(`carrito-item/${id}/`);
 export const updateCarritoItem = (id, item) => api.put(`carrito-item/${id}/`, item);
 export const deleteCarritoItem = (id) => api.delete(`carrito-item/${id}/`);
 
-// Operaciones de estados del carrito
+/** ─────────────────────────────────────────────────────────────
+ *  Operaciones de estados del carrito
+ *  ────────────────────────────────────────────────────────────*/
 export const fetchEstadosCarrito = () => api.get('estado-carrito/');
 export const getEstadoCarrito = (id) => api.get(`estado-carrito/${id}/`);
 
@@ -47,7 +98,9 @@ export const getEstadoCarrito = (id) => api.get(`estado-carrito/${id}/`);
 export const consultarEstadoCarrito = (params) =>
   api.get('estado-carrito/consultar_estado/', { params });
 
-// Endpoints del carrito
+/** ─────────────────────────────────────────────────────────────
+ *  Endpoints del carrito
+ *  ────────────────────────────────────────────────────────────*/
 export const CARRITO_ENDPOINTS = {
   BASE: 'carrito/',
   ITEMS: 'carrito-item/',
@@ -58,10 +111,12 @@ export const CARRITO_ENDPOINTS = {
   LIMPIAR_CARRITO: (id) => `carrito/${id}/limpiar_carrito/`,
   FINALIZAR_COMPRA: (id) => `carrito/${id}/finalizar_compra/`,
   CREAR_PREFERENCIA_PAGO: (id) => `carrito/${id}/crear_preferencia_pago/`, // 🔥
-  CONSULTAR_ESTADO: () => `estado-carrito/consultar_estado/`, // 🔥
+  CONSULTAR_ESTADO: () => `estado-carrito/consultar_estado/`,             // 🔥
 };
 
-// Estados posibles del carrito
+/** ─────────────────────────────────────────────────────────────
+ *  Estados / mensajes / acciones (sin cambios)
+ *  ────────────────────────────────────────────────────────────*/
 export const ESTADOS_CARRITO = {
   ACTIVO: 'activo',
   PENDIENTE: 'pendiente',
@@ -71,7 +126,6 @@ export const ESTADOS_CARRITO = {
   CANCELADO: 'cancelado',
 };
 
-// Mensajes de error comunes
 export const ERROR_MESSAGES = {
   CARRITO_NO_ENCONTRADO: 'Carrito no encontrado',
   PRODUCTO_NO_ENCONTRADO: 'Producto no encontrado',
@@ -82,7 +136,6 @@ export const ERROR_MESSAGES = {
   NO_PERMISOS: 'No tiene permisos para realizar esta acción',
 };
 
-// Tipos de acciones del carrito
 export const ACCIONES_CARRITO = {
   AGREGAR: 'agregar',
   ACTUALIZAR: 'actualizar',
