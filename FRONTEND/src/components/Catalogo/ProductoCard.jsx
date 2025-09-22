@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { getImagenUrl } from "../../utils/getImagenUrl";
-import noDisponible from '../../assets/images/no-disponible.png';
 import { toast } from "react-hot-toast";
 import {
   agregarProducto,
@@ -195,15 +194,17 @@ export default function ProductoCard({
   return (
     <div className="product-card">
       <div className="product-image-container">
-        <img
-          src={getImagenUrl(producto.imagen) || noDisponible}
-          alt={producto.nombre || "Producto"}
-          className="product-image"
-          onError={e => {
-            e.target.onerror = null;
-            e.target.src = noDisponible;
-          }}
-        />
+        {getImagenUrl(producto.imagen) && (
+          <img
+            src={getImagenUrl(producto.imagen)}
+            alt={producto.nombre || "Producto"}
+            className="product-image"
+            onError={e => {
+              e.target.onerror = null;
+              e.target.style.display = 'none';
+            }}
+          />
+        )}
       </div>
 
       <div className="product-info">
