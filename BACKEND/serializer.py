@@ -29,7 +29,7 @@ from .models import (
 
 
 from django.db.models import Q   # <-- IMPORTANTE
-from django.contrib.auth import authenticate
+ 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -90,13 +90,20 @@ class LoginSerializer(serializers.Serializer):
         correo = data.get('correo')
         password = data.get('password')
 
-        if correo and password:
-            user = authenticate(request=self.context.get('request'), username=correo, password=password)
-
-            if not user:
-                raise serializers.ValidationError("Credenciales inválidas", code='authorization')
-        else:
+        if not correo or not password:
             raise serializers.ValidationError("Debe incluir correo y contraseña", code='authorization')
+
+        from BACKEND.models import Usuario
+        try:
+            user = Usuario.objects.get(correo=correo)
+        except Usuario.DoesNotExist:
+            raise serializers.ValidationError("Credenciales inválidas", code='authorization')
+
+        if not user.check_password(password):
+            raise serializers.ValidationError("Credenciales inválidas", code='authorization')
+
+        if not user.is_active:
+            raise serializers.ValidationError("Usuario inactivo", code='authorization')
 
         data['user'] = user
         return data
