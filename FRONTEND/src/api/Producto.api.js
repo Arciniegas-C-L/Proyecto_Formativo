@@ -20,11 +20,7 @@ export const getALLProductos = async () => {
 // Crear un nuevo producto
 export const createProducto = async (formData) => {
   try {
-    return await api.post('producto/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    return await api.post('producto/', formData);
   } catch (error) {
     console.error(' Backend respondió:', error.response?.data); 
     handleProductoError(error);
