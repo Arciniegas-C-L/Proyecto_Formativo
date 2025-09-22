@@ -20,8 +20,8 @@ export default function ProductoCard({
   const [agregando, setAgregando] = useState(false);
   const { usuario } = useAuth();
 
-  // Validar que el producto tenga todos los datos necesarios
-  if (!producto || !producto.nombre || !producto.imagen) {
+  // Validar que el producto tenga los datos esenciales (nombre)
+  if (!producto || !producto.nombre) {
     console.warn("Producto con datos incompletos:", producto);
     return null; // No renderizar si faltan datos esenciales
   }
