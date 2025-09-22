@@ -16,6 +16,7 @@ import {
 } from '../../api/CarritoApi';
 import { getALLProductos } from '../../api/Producto.api';
 import '../../assets/css/Carrito/Carrito.css';
+import { getImagenUrl } from '../../utils/getImagenUrl';
 
 const API_BASE_URL = "http://127.0.0.1:8000"; // Backend Django
 const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
@@ -367,9 +368,9 @@ export function Carrito() {
                       <img
                         src={getImagenUrl(item.producto?.imagen)}
                         alt={item.producto?.nombre || "Producto"}
-                        onError={(e) => {
+                        onError={e => {
                           e.target.onerror = null;
-                          e.target.src = "https://via.placeholder.com/100";
+                          e.target.src = getImagenUrl();
                         }}
                       />
                     </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import "../../assets/css/Carrito/ProductoRecomendado.css";
+import { getImagenUrl } from "../../utils/getImagenUrl";
 
 export default function ProductoRecomendado({ producto, capitalizar, onVerDetalle }) {
   if (!producto) return null;
@@ -9,12 +10,12 @@ export default function ProductoRecomendado({ producto, capitalizar, onVerDetall
   return (
     <div className="producto-recomendado-card">
       <img
-        src={producto.imagen || "https://via.placeholder.com/300x200?text=Imagen+no+disponible"}
+        src={getImagenUrl(producto.imagen)}
         alt={producto.nombre || "Producto"}
         className="producto-recomendado-img"
-        onError={(e) => {
+        onError={e => {
           e.target.onerror = null;
-          e.target.src = "https://via.placeholder.com/300x200?text=Imagen+no+disponible";
+          e.target.src = getImagenUrl();
         }}
       />
       <div className="producto-recomendado-body">

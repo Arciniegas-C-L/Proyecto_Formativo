@@ -49,8 +49,7 @@ import {
 import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
 import { getAllGruposTalla } from "../../api/GrupoTalla.api";
 
-// Constante para la URL base del backend
-const BACKEND_URL = "http://127.0.0.1:8000";
+import { getImagenUrl } from '../../utils/getImagenUrl';
 
 const InventarioTabla = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
@@ -493,7 +492,7 @@ const InventarioTabla = () => {
                   {producto.imagen ? (
                     <>
                       <img
-                        src={`${BACKEND_URL}${producto.imagen}`}
+                        src={getImagenUrl(producto.imagen)}
                         alt={producto.nombre}
                         style={{ 
                           width: 40, 
@@ -502,9 +501,9 @@ const InventarioTabla = () => {
                           borderRadius: 4,
                           border: '1px solid #e0e0e0'
                         }}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
+                        onError={e => {
+                          e.target.onerror = null;
+                          e.target.src = getImagenUrl();
                         }}
                         loading="lazy"
                       />

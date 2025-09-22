@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getImagenUrl } from "../../utils/getImagenUrl";
 import { toast } from "react-hot-toast";
 import {
   agregarProducto,
@@ -194,16 +195,12 @@ export default function ProductoCard({
     <div className="product-card">
       <div className="product-image-container">
         <img
-          src={
-            producto.imagen ||
-            "https://via.placeholder.com/250x350?text=Imagen+no+disponible"
-          }
+          src={getImagenUrl(producto.imagen)}
           alt={producto.nombre || "Producto"}
           className="product-image"
-          onError={(e) => {
+          onError={e => {
             e.target.onerror = null;
-            e.target.src =
-              "https://via.placeholder.com/250x350?text=Imagen+no+disponible";
+            e.target.src = getImagenUrl();
           }}
         />
       </div>

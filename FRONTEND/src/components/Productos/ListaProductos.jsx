@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import "../../assets/css/Productos/ListaProductos.css";
 import { EliminarModal } from  "../EliminarModal/EliminarModal"; 
+import { getImagenUrl } from "../../utils/getImagenUrl";
 
 export function ListaProductos() {
   const [productos, setProductos] = useState([]);
@@ -181,9 +182,9 @@ export function ListaProductos() {
                   <tr key={`producto-${producto.id}`}>
                     <td className="celda-imagen">
                       <img
-                        src={producto.imagen || 'https://via.placeholder.com/50'}
+                        src={getImagenUrl(producto.imagen)}
                         alt={producto.nombre}
-                        onError={e => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/50'; }}
+                        onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
                         tabIndex={0}
                       />
                     </td>

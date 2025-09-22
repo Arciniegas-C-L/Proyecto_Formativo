@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { getImagenUrl } from '../../utils/getImagenUrl';
 import { listarPedidos } from "../../api/Pedido.api";
 import { listarItemsDePedido } from "../../api/PedidoProducto.api.js";
 import { Link } from "react-router-dom";
@@ -115,12 +116,9 @@ export function MisPedidos() {
     })();
   }, []);
 
-  const resolveImg = (src) => {
-    if (!src) return PLACEHOLDER;
-    if (typeof src === "string" && src.startsWith("http")) return src;
-    const base = import.meta.env.VITE_BACK_URL || "http://127.0.0.1:8000";
-    return `${base}${src}`;
-  };
+  import { getImagenUrl } from '../../utils/getImagenUrl';
+
+  const resolveImg = (src) => getImagenUrl(src);
 
   const toggleExpand = async (pedido) => {
     const pid = pedido.idPedido ?? pedido.id;
@@ -250,7 +248,7 @@ export function MisPedidos() {
                           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                             {items.map((it, idx) => {
                               const nombre = it.nombre ?? "Producto";
-                              const urlImg = resolveImg(it.imagen);
+                              const urlImg = getImagenUrl(it.imagen);
                               const precio = it.precio ?? it.subtotal ?? null;
                               const cantidad = it.cantidad ?? 1;
                               const talla = it.talla ? ` · Talla: ${it.talla}` : "";
@@ -262,7 +260,7 @@ export function MisPedidos() {
                                       src={urlImg}
                                       className="card-img-top"
                                       alt={nombre}
-                                      onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                                      onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
                                     />
                                     <div className="card-body">
                                       <h6 className="card-title mb-1">{nombre}</h6>
