@@ -116,7 +116,6 @@ export function MisPedidos() {
     })();
   }, []);
 
-  import { getImagenUrl } from '../../utils/getImagenUrl';
 
   const resolveImg = (src) => getImagenUrl(src);
 
