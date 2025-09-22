@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run postbuild",
-    "postbuild": "cp static.json dist/static.json",
+  "build": "vite build && copy static.json dist\\",
     "lint": "eslint .",
     "preview": "vite preview"
   },
