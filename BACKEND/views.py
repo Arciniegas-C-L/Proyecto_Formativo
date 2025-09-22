@@ -286,18 +286,21 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     # --- LOGIN ---
     @action(detail=False, methods=['get', 'post'], permission_classes=[AllowAny])
     def login(self, request):
-        if request.method == 'GET':
-            serializer = LoginSerializer()
-            return Response(serializer.data)
-
-        serializer = LoginSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        correo = serializer.validated_data['correo']
-        password = serializer.validated_data['password']
         try:
-            usuario = Usuario.objects.select_related('rol').get(correo=correo)
+            if request.method == 'GET':
+                serializer = LoginSerializer()
+                return Response(serializer.data)
+
+            serializer = LoginSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            correo = serializer.validated_data['correo']
+            password = serializer.validated_data['password']
+            try:
+                usuario = Usuario.objects.select_related('rol').get(correo=correo)
+            except Usuario.DoesNotExist:
+                return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
             if not usuario.is_active:
                 return Response({"error": "Usuario inactivo"}, status=status.HTTP_403_FORBIDDEN)
@@ -320,8 +323,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 "token": token
             }, status=status.HTTP_200_OK)
 
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            import traceback
+            print("Error en login:", traceback.format_exc())
+            return Response({"error": "Error interno en el servidor", "detalle": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # --- ENVIAR CÓDIGO RECUPERACIÓN ---
     @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
