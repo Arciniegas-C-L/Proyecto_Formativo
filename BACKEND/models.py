@@ -327,21 +327,27 @@ class Pedido(models.Model):
     def __str__(self):
         return f"Pedido {self.idPedido}"
 
-
 class Direccion(models.Model):
     usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='direcciones')
     direccion = models.CharField(max_length=255)
 
-    from rest_framework.exceptions import ValidationError
     def save(self, *args, **kwargs):
+        # 1) Limita máximo 3 direcciones por usuario
         if not self.pk and Direccion.objects.filter(usuario=self.usuario).count() >= 3:
             raise ValidationError({'detail': 'No puedes tener más de 3 direcciones.'})
+
+        # 2) Evita duplicados exactos
         if Direccion.objects.filter(usuario=self.usuario, direccion=self.direccion).exclude(pk=self.pk).exists():
             raise ValidationError({'detail': 'Ya tienes una dirección igual registrada.'})
+
+        # 3) Evita que coincida con la dirección de perfil del usuario
         if getattr(self.usuario, 'direccion', None) and self.direccion.strip() == self.usuario.direccion.strip():
             raise ValidationError({'detail': 'No puedes registrar una dirección igual a la de tus datos personales.'})
-        super().save(*args, **kwargs)
 
+        super().save(*args, **kwargs)
+    class Meta:
+        verbose_name = "Dirección"
+        verbose_name_plural = "Direcciones"
     def __str__(self):
         return f"{self.direccion} - {self.usuario.nombre} {self.usuario.apellido}"
 class PedidoProducto(models.Model):

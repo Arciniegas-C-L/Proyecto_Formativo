@@ -1,23 +1,42 @@
 // src/api/Carrito.api.js
 import { api } from './axios';
 
-/** ─────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────
  *  Operaciones básicas del carrito
- *  ────────────────────────────────────────────────────────────*/
+ * ──────────────────────────────────────────────────────────── */
 export const fetchCarritos = () => api.get('carrito/');
 export const createCarrito = (carrito) => api.post('carrito/', carrito);
 export const updateCarrito = (id, carrito) => api.put(`carrito/${id}/`, carrito);
 export const deleteCarrito = (id) => api.delete(`carrito/${id}/`);
 
-/** ─────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────
+ *  Helpers
+ * ──────────────────────────────────────────────────────────── */
+const addressToString = (addr = {}) => {
+  const {
+    nombre, telefono, departamento, ciudad,
+    linea1, linea2, referencia
+  } = addr || {};
+  const parts = [
+    nombre ? `Nombre: ${nombre}` : null,
+    telefono ? `Tel: ${telefono}` : null,
+    (departamento || ciudad) ? `Ubicación: ${departamento || ''}${departamento && ciudad ? ' - ' : ''}${ciudad || ''}` : null,
+    linea1 ? `Dirección: ${linea1}` : null,
+    linea2 ? `Compl.: ${linea2}` : null,
+    referencia ? `Ref.: ${referencia}` : null,
+  ].filter(Boolean);
+  return parts.join(' | ');
+};
+
+/* ─────────────────────────────────────────────────────────────
  *  Operaciones específicas del carrito
- *  ────────────────────────────────────────────────────────────*/
+ * ──────────────────────────────────────────────────────────── */
 
 /**
  * Agregar producto al carrito
- * @param {number|string} id - id del carrito
+ * @param {number|string} id
  * @param {{ producto:number|string, cantidad:number|string, talla?:number|string }} data
- * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts] - banderas opcionales
+ * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts]
  */
 export const agregarProducto = (id, data, opts = {}) => {
   const requestData = {
@@ -31,10 +50,6 @@ export const agregarProducto = (id, data, opts = {}) => {
 
 /**
  * Actualizar cantidad de un ítem
- * @param {number|string} id - id del carrito
- * @param {number|string} itemId
- * @param {number|string} cantidad
- * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts] - banderas opcionales
  */
 export const actualizarCantidad = (id, itemId, cantidad, opts = {}) =>
   api.post(`carrito/${id}/actualizar_cantidad/`, {
@@ -45,9 +60,6 @@ export const actualizarCantidad = (id, itemId, cantidad, opts = {}) =>
 
 /**
  * Eliminar producto del carrito
- * @param {number|string} id
- * @param {number|string} itemId
- * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts]
  */
 export const eliminarProducto = (id, itemId, opts = {}) =>
   api.post(`carrito/${id}/eliminar_producto/`, {
@@ -57,8 +69,6 @@ export const eliminarProducto = (id, itemId, opts = {}) =>
 
 /**
  * Limpiar carrito
- * @param {number|string} id
- * @param {{ skip_stock?:boolean, reserve?:boolean }} [opts]
  */
 export const limpiarCarrito = (id, opts = {}) =>
   api.post(`carrito/${id}/limpiar_carrito/`, { ...(opts ? { ...opts } : {}) });
@@ -69,38 +79,43 @@ export const finalizarCompra = (id) => api.post(`carrito/${id}/finalizar_compra/
  * 🔥 Crear preferencia de pago (Mercado Pago)
  * Soporta:
  *  - crearPreferenciaPago(id, "email@dominio.com")
- *  - crearPreferenciaPago(id, { email, address: { nombre, telefono, departamento, ciudad, linea1, linea2?, referencia? } })
- * @param {number|string} id
- * @param {string|{ email:string, address?:object }} payload
+ *  - crearPreferenciaPago(id, { email, address: {...} })
  */
 export const crearPreferenciaPago = (id, payload) => {
-  const body = typeof payload === 'string'
-    ? { email: payload }
-    : payload; // { email, address? }
+  const body =
+    typeof payload === 'string'
+      ? { email: payload }
+      : { ...payload };
+
+  // Compat: si tu backend también espera un único campo "direccion", lo enviamos calculado.
+  if (body?.address && !body.direccion) {
+    body.direccion = addressToString(body.address);
+  }
+
   return api.post(`carrito/${id}/crear_preferencia_pago/`, body);
 };
 
-/** ─────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────
  *  Operaciones de items del carrito
- *  ────────────────────────────────────────────────────────────*/
+ * ──────────────────────────────────────────────────────────── */
 export const fetchCarritoItems = () => api.get('carrito-item/');
 export const getCarritoItem = (id) => api.get(`carrito-item/${id}/`);
 export const updateCarritoItem = (id, item) => api.put(`carrito-item/${id}/`, item);
 export const deleteCarritoItem = (id) => api.delete(`carrito-item/${id}/`);
 
-/** ─────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────
  *  Operaciones de estados del carrito
- *  ────────────────────────────────────────────────────────────*/
+ * ──────────────────────────────────────────────────────────── */
 export const fetchEstadosCarrito = () => api.get('estado-carrito/');
 export const getEstadoCarrito = (id) => api.get(`estado-carrito/${id}/`);
 
-// 🔥 Nuevo: consultar estado de un carrito por external_reference o payment_id
+// 🔥 Consultar estado por external_reference o payment_id
 export const consultarEstadoCarrito = (params) =>
   api.get('estado-carrito/consultar_estado/', { params });
 
-/** ─────────────────────────────────────────────────────────────
- *  Endpoints del carrito
- *  ────────────────────────────────────────────────────────────*/
+/* ─────────────────────────────────────────────────────────────
+ *  Endpoints del carrito (constantes)
+ * ──────────────────────────────────────────────────────────── */
 export const CARRITO_ENDPOINTS = {
   BASE: 'carrito/',
   ITEMS: 'carrito-item/',
@@ -110,13 +125,13 @@ export const CARRITO_ENDPOINTS = {
   ELIMINAR_PRODUCTO: (id) => `carrito/${id}/eliminar_producto/`,
   LIMPIAR_CARRITO: (id) => `carrito/${id}/limpiar_carrito/`,
   FINALIZAR_COMPRA: (id) => `carrito/${id}/finalizar_compra/`,
-  CREAR_PREFERENCIA_PAGO: (id) => `carrito/${id}/crear_preferencia_pago/`, // 🔥
-  CONSULTAR_ESTADO: () => `estado-carrito/consultar_estado/`,             // 🔥
+  CREAR_PREFERENCIA_PAGO: (id) => `carrito/${id}/crear_preferencia_pago/`,
+  CONSULTAR_ESTADO: () => `estado-carrito/consultar_estado/`,
 };
 
-/** ─────────────────────────────────────────────────────────────
- *  Estados / mensajes / acciones (sin cambios)
- *  ────────────────────────────────────────────────────────────*/
+/* ─────────────────────────────────────────────────────────────
+ *  Estados / mensajes / acciones
+ * ──────────────────────────────────────────────────────────── */
 export const ESTADOS_CARRITO = {
   ACTIVO: 'activo',
   PENDIENTE: 'pendiente',
@@ -142,9 +157,9 @@ export const ACCIONES_CARRITO = {
   ELIMINAR: 'eliminar',
   LIMPIAR: 'limpiar',
   FINALIZAR: 'finalizar',
-  CREAR_PREFERENCIA: 'crear_preferencia', // 🔥
-  CONSULTAR_ESTADO: 'consultar_estado',   // 🔥
+  CREAR_PREFERENCIA: 'crear_preferencia',
+  CONSULTAR_ESTADO: 'consultar_estado',
 };
 
-// Extra: usuarios (si aplica en este módulo)
+// Extra
 export const getUsuarios = () => api.get('usuarios/');

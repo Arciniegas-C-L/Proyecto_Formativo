@@ -1,29 +1,26 @@
 import ProductoCard from '../Catalogo/ProductoCard';
-import ProductoRecomendado from './ProductoRecomendado';
 import { useAuth } from '../../context/AuthContext';
-import ConfirmarCompra from './ConfirmarCompra';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaEye, FaMapMarkerAlt, FaPhone, FaUser } from 'react-icons/fa';
+import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaEye, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
+
 import {
   fetchCarritos,
   actualizarCantidad,
   eliminarProducto,
   limpiarCarrito,
-  finalizarCompra,     // por si lo usas fuera de MP
-  crearPreferenciaPago // 🔥 integración Mercado Pago (actualizado para aceptar address)
+  crearPreferenciaPago
 } from '../../api/CarritoApi';
 import { getALLProductos } from '../../api/Producto.api';
 import '../../assets/css/Carrito/Carrito.css';
 
-const API_BASE_URL = "http://127.0.0.1:8000"; // Backend Django
+const API_BASE_URL = "http://127.0.0.1:8000";
 const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
 
-// 👉 bandera para decirle al backend que NO toque stock en acciones del carrito
+// No tocar stock en acciones de carrito
 const NO_STOCK_TOUCH = { skip_stock: true, reserve: false };
 
-// Hook para cargar el SDK de Mercado Pago si no está presente
 function useMercadoPagoLoader(publicKey) {
   const [loaded, setLoaded] = useState(!!window.MercadoPago);
 
@@ -45,7 +42,6 @@ function useMercadoPagoLoader(publicKey) {
 
   useEffect(() => {
     if (loaded && window.MercadoPago && publicKey) {
-      // Si más adelante usas Bricks:
       // const mp = new window.MercadoPago(publicKey, { locale: 'es-CO' });
     }
   }, [loaded, publicKey]);
@@ -64,17 +60,10 @@ export function Carrito() {
   const [error, setError] = useState(null);
   const [creatingPreference, setCreatingPreference] = useState(false);
 
-  // 📦 Dirección de envío
-  const [address, setAddress] = useState({
-    nombre: usuario?.nombre || "",
-    telefono: usuario?.telefono || "",
-    departamento: "",
-    ciudad: "",
-    linea1: "",
-    linea2: "",
-    referencia: ""
-  });
-  const [addressErrors, setAddressErrors] = useState({});
+  // Solo lo que acepta tu modelo: telefono (se usa para contacto) + direccion (string)
+  const [telefono, setTelefono] = useState(usuario?.telefono || "");
+  const [direccion, setDireccion] = useState(usuario?.direccion || "");
+  const [formErrors, setFormErrors] = useState({});
 
   const mpLoaded = useMercadoPagoLoader(MP_PUBLIC_KEY_TEST);
 
@@ -83,16 +72,38 @@ export function Carrito() {
     cargarProductosRecomendados();
   }, []);
 
+  // Normaliza response.data (array | {results: []} | objeto)
   const cargarCarrito = async () => {
     try {
       setLoading(true);
       setError(null);
+
       const response = await fetchCarritos();
-      const carritosActivos = (response.data || []).filter(c => c.estado === true);
-      if (carritosActivos.length > 0) {
+      const data = response?.data;
+
+      const carritos = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+        ? data.results
+        : data
+        ? [data]
+        : [];
+
+      const carritosActivos = carritos.filter(
+        c => c?.estado === true || c?.estado === 'activo'
+      );
+
+      if (carritosActivos.length) {
         const carritoActivo = carritosActivos[0];
         setCarrito(carritoActivo);
-        setItems(Array.isArray(carritoActivo.items) ? carritoActivo.items : []);
+
+        const listaItems = Array.isArray(carritoActivo?.items)
+          ? carritoActivo.items
+          : Array.isArray(carritoActivo?.carrito_items)
+          ? carritoActivo.carrito_items
+          : [];
+
+        setItems(listaItems);
       } else {
         setCarrito(null);
         setItems([]);
@@ -184,19 +195,16 @@ export function Carrito() {
     }
   };
 
-  // ✅ Validación simple de la dirección
-  const validarAddress = () => {
+  // Validación mínima
+  const validar = () => {
     const errs = {};
-    if (!address.nombre?.trim()) errs.nombre = 'Requerido';
-    if (!address.telefono?.trim() || address.telefono.trim().length < 7) errs.telefono = 'Teléfono inválido';
-    if (!address.departamento?.trim()) errs.departamento = 'Requerido';
-    if (!address.ciudad?.trim()) errs.ciudad = 'Requerido';
-    if (!address.linea1?.trim() || address.linea1.trim().length < 5) errs.linea1 = 'Dirección muy corta';
-    setAddressErrors(errs);
+    if (!telefono?.trim() || telefono.trim().length < 7) errs.telefono = 'Teléfono inválido';
+    if (!direccion?.trim() || direccion.trim().length < 5) errs.direccion = 'Dirección muy corta';
+    setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  // Pago (crea preferencia y redirige)
+  // Crear preferencia y redirigir (SOLO email + direccion)
   const handlePagar = async () => {
     try {
       if (!carrito || items.length === 0) {
@@ -215,24 +223,20 @@ export function Carrito() {
         }, 5000);
         return;
       }
-      if (!validarAddress()) {
-        toast.error("Por favor completa la dirección de envío");
+      if (!validar()) {
+        toast.error("Revisa teléfono y dirección");
         return;
       }
 
       setCreatingPreference(true);
 
+      // Respetar max_length=255 en tu modelo
+      const direccionTrimmed = direccion.trim().slice(0, 255);
+
       const payload = {
-        email: usuario?.email,
-        address: {
-          nombre: address.nombre.trim(),
-          telefono: address.telefono.trim(),
-          departamento: address.departamento.trim(),
-          ciudad: address.ciudad.trim(),
-          linea1: address.linea1.trim(),
-          linea2: address.linea2?.trim() || "",
-          referencia: address.referencia?.trim() || ""
-        }
+        email: usuario?.correo || usuario?.email,
+        direccion: direccionTrimmed,
+        // (el teléfono NO va a la tabla Direccion; lo usas solo para contacto/notificación)
       };
 
       const { data } = await crearPreferenciaPago(carrito.idCarrito, payload);
@@ -423,91 +427,32 @@ export function Carrito() {
                   </div>
                 </div>
 
-                {/* 🏠 Datos de envío */}
+                {/* Solo Teléfono + Dirección */}
                 <div className="direccion-envio-card">
                   <h3><FaMapMarkerAlt /> Datos de envío</h3>
-
                   <div className="form-grid">
-                    <div className="form-group">
-                      <label><FaUser /> Nombre y Apellido</label>
-                      <input
-                        type="text"
-                        value={address.nombre}
-                        onChange={(e) => setAddress({ ...address, nombre: e.target.value })}
-                        placeholder="Ej: Juan Pérez"
-                        disabled={creatingPreference}
-                      />
-                      {addressErrors.nombre && <small className="error">{addressErrors.nombre}</small>}
-                    </div>
-
                     <div className="form-group">
                       <label><FaPhone /> Teléfono</label>
                       <input
                         type="tel"
-                        value={address.telefono}
-                        onChange={(e) => setAddress({ ...address, telefono: e.target.value })}
+                        value={telefono}
+                        onChange={(e) => setTelefono(e.target.value)}
                         placeholder="Ej: 3001234567"
                         disabled={creatingPreference}
                       />
-                      {addressErrors.telefono && <small className="error">{addressErrors.telefono}</small>}
-                    </div>
-
-                    <div className="form-group">
-                      <label>Departamento</label>
-                      <input
-                        type="text"
-                        value={address.departamento}
-                        onChange={(e) => setAddress({ ...address, departamento: e.target.value })}
-                        placeholder="Ej: Cundinamarca"
-                        disabled={creatingPreference}
-                      />
-                      {addressErrors.departamento && <small className="error">{addressErrors.departamento}</small>}
-                    </div>
-
-                    <div className="form-group">
-                      <label>Ciudad / Municipio</label>
-                      <input
-                        type="text"
-                        value={address.ciudad}
-                        onChange={(e) => setAddress({ ...address, ciudad: e.target.value })}
-                        placeholder="Ej: Bogotá"
-                        disabled={creatingPreference}
-                      />
-                      {addressErrors.ciudad && <small className="error">{addressErrors.ciudad}</small>}
+                      {formErrors.telefono && <small className="error">{formErrors.telefono}</small>}
                     </div>
 
                     <div className="form-group form-group-col2">
-                      <label>Dirección (calle, #, barrio)</label>
+                      <label>Dirección (string)</label>
                       <input
                         type="text"
-                        value={address.linea1}
-                        onChange={(e) => setAddress({ ...address, linea1: e.target.value })}
+                        value={direccion}
+                        onChange={(e) => setDireccion(e.target.value)}
                         placeholder="Ej: Calle 10 #5-23, Barrio Centro"
                         disabled={creatingPreference}
                       />
-                      {addressErrors.linea1 && <small className="error">{addressErrors.linea1}</small>}
-                    </div>
-
-                    <div className="form-group form-group-col2">
-                      <label>Complemento — opcional</label>
-                      <input
-                        type="text"
-                        value={address.linea2}
-                        onChange={(e) => setAddress({ ...address, linea2: e.target.value })}
-                        placeholder="Ej: Torre 3, Apto 502"
-                        disabled={creatingPreference}
-                      />
-                    </div>
-
-                    <div className="form-group form-group-col2">
-                      <label>Punto de referencia — opcional</label>
-                      <input
-                        type="text"
-                        value={address.referencia}
-                        onChange={(e) => setAddress({ ...address, referencia: e.target.value })}
-                        placeholder="Ej: Cerca al parque principal"
-                        disabled={creatingPreference}
-                      />
+                      {formErrors.direccion && <small className="error">{formErrors.direccion}</small>}
                     </div>
                   </div>
                 </div>

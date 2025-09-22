@@ -86,6 +86,7 @@ from .models import (
     FacturaItem,
     Comentario,
     PedidoItem,
+    Direccion,
 )
 
 # --- SERIALIZERS del proyecto (import explícito)
@@ -140,6 +141,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
 from reportlab.lib import colors
+
 
 # --- SDK Mercado Pago (usa tu token de settings)
 sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
@@ -1421,7 +1423,45 @@ class TipoPagoView(viewsets.ModelViewSet):
 
 class CarritoView(viewsets.ModelViewSet):
     serializer_class = CarritoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+    # dentro de CarritoView
+    def _ensure_pedido_from_carrito(self, carrito):
+        """
+        Garantiza que exista un Pedido asociado al carrito.
+        Si ya existe, lo retorna; si no, lo crea con el total del carrito.
+        """
+        # Si ya tienes relación Carrito->Pedido:
+        pedido = getattr(carrito, "pedido", None)
+        if pedido:
+            return pedido
+
+        # Calcula total del carrito sin romper por campos faltantes
+        total = Decimal("0")
+        try:
+            # si tu modelo Carrito ya tiene método calcular_total():
+            t = carrito.calcular_total()
+            total = Decimal(str(t))
+        except Exception:
+            # fallback: sumar item a item
+            for it in carrito.items.all():
+                precio = Decimal(str(getattr(it, "precio_unitario", 0) or 0))
+                cantidad = Decimal(str(getattr(it, "cantidad", 0) or 0))
+                sub = getattr(it, "subtotal", None)
+                sub = Decimal(str(sub)) if sub is not None else (precio * cantidad)
+                total += sub
+
+        from .models import Pedido
+        pedido = Pedido.objects.create(
+            usuario=carrito.usuario,
+            total=total,
+            estado=True
+        )
+
+        # Si Carrito tiene campo para enlazarlo, persiste el vínculo:
+        if hasattr(carrito, "pedido"):
+            carrito.pedido = pedido
+            carrito.save(update_fields=["pedido"])
+
+        return pedido
 
     def list(self, request, *args, **kwargs):
         rol = getattr(getattr(request.user, 'rol', None), 'nombre', '').lower()
@@ -1507,7 +1547,11 @@ class CarritoView(viewsets.ModelViewSet):
     def actualizar_cantidad(self, request, pk=None):
         """
         Actualiza la cantidad de un item. Solo VALIDA stock; NO descuenta.
+        Acepta flags del front: skip_stock / reserve
         """
+        skip_stock = bool(request.data.get('skip_stock', False))
+        reserve    = bool(request.data.get('reserve', False))
+
         try:
             carrito = Carrito.objects.prefetch_related('items__producto', 'items__talla').get(pk=pk)
             item_id = request.data.get('item_id')
@@ -1543,19 +1587,21 @@ class CarritoView(viewsets.ModelViewSet):
         except CarritoItem.DoesNotExist:
             return Response({"error": "Item no encontrado en el carrito"}, status=404)
         except Exception as e:
-            print("Error al actualizar cantidad:", str(e))
             return Response({"error": f"Error al actualizar la cantidad: {str(e)}"}, status=400)
 
     @action(detail=True, methods=['post'])
     def eliminar_producto(self, request, pk=None):
         """
         Elimina un item del carrito. NO devuelve stock aquí.
+        Acepta flags del front: skip_stock / reserve
         """
+        skip_stock = bool(request.data.get('skip_stock', False))
+        reserve    = bool(request.data.get('reserve', False))
+
         carrito = self.get_object()
         item_id = request.data.get('item_id')
         try:
             item = CarritoItem.objects.get(idCarritoItem=item_id, carrito=carrito)
-            # NO modificar inventario aquí
             item.delete()
             return Response(CarritoSerializer(carrito).data, status=200)
         except CarritoItem.DoesNotExist:
@@ -1565,10 +1611,15 @@ class CarritoView(viewsets.ModelViewSet):
     def limpiar_carrito(self, request, pk=None):
         """
         Limpia el carrito. NO modifica inventario aquí.
+        Acepta flags del front: skip_stock / reserve
         """
+        skip_stock = bool(request.data.get('skip_stock', False))
+        reserve    = bool(request.data.get('reserve', False))
+
         carrito = self.get_object()
         carrito.items.all().delete()
         return Response(CarritoSerializer(carrito).data, status=200)
+
 
     @action(detail=True, methods=['post'])
     def finalizar_compra(self, request, pk=None):
@@ -1640,32 +1691,52 @@ class CarritoView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def crear_preferencia_pago(self, request, pk=None):
-        """
-        Crea una preferencia de pago en Mercado Pago para este carrito.
-        Request opcional: { "email": "comprador@test.com" }
-        """
         carrito = self.get_object()
 
-        # 1) Validaciones básicas
+        # ---- 0) Sanitizar entrada ----
+        data = request.data or {}
+        email = data.get("email") or getattr(carrito.usuario, "email", None) or "test_user@example.com"
+        address = data.get("address")  # opcional; puede venir del front
+
+        # Guardar dirección (solo 'direccion' string) si llegó address
+        if address:
+            # arma una sola línea con lo que tengas
+            linea = ", ".join([
+                str(address.get("linea1", "")).strip(),
+                str(address.get("linea2", "")).strip(),
+                str(address.get("referencia", "")).strip()
+            ]).strip(", ").strip()
+            if linea:
+                try:
+                    Direccion.objects.create(
+                        usuario=carrito.usuario,
+                        direccion=linea[:255]  # tu CharField max_length=255
+                    )
+                except ValidationError as ve:
+                    # tu modelo puede lanzar ValidationError si hay reglas de negocio
+                    return Response({"error": ve.detail if hasattr(ve, "detail") else str(ve)},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2) Construir items para MP (solo lectura)
-        items_mp = []
-        total = 0.0
-        for it in carrito.items.all():
-            try:
-                unit_price = float(it.precio_unitario)
-                qty = int(it.cantidad)
-            except Exception:
-                return Response({"error": "Ítems con datos inválidos (precio/cantidad)"}, status=status.HTTP_400_BAD_REQUEST)
+        # ---- 1) Asegurar Pedido (usa tu helper) ----
+        try:
+            pedido = self._ensure_pedido_from_carrito(carrito)
+        except Exception as e:
+            return Response({"error": f"No se pudo preparar el pedido: {str(e)}"}, status=500)
 
+        # ---- 2) Construir ítems para MP ----
+        items_mp, total = [], 0.0
+        for it in carrito.items.select_related("producto").all():
+            unit_price = float(getattr(it, "precio_unitario", None) or getattr(it.producto, "precio", 0) or 0)
+            qty = int(it.cantidad or 0)
             if unit_price <= 0 or qty <= 0:
-                return Response({"error": "Precio o cantidad inválidos en algún ítem"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Precio o cantidad inválidos en algún ítem"}, status=400)
 
             items_mp.append({
-                "id": str(it.producto.id),
-                "title": it.producto.nombre,
+                "id": str(getattr(it.producto, "id", getattr(it.producto, "pk", ""))),
+                "title": getattr(it.producto, "nombre", "Producto"),
                 "quantity": qty,
                 "unit_price": unit_price,
                 "currency_id": "COP",
@@ -1673,38 +1744,44 @@ class CarritoView(viewsets.ModelViewSet):
             total += unit_price * qty
 
         if total <= 0:
-            return Response({"error": "El total del carrito debe ser mayor a 0"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "El total del carrito debe ser mayor a 0"}, status=400)
 
-        # 3) external_reference único y persistido
+        # ---- 3) Snapshot opcional y refs ----
+        if address and hasattr(carrito, "shipping_snapshot"):
+            try:
+                carrito.shipping_snapshot = address
+                carrito.save(update_fields=["shipping_snapshot"])
+            except Exception:
+                pass
+
         external_ref = f"ORDER-{carrito.idCarrito}-{int(time.time())}"
         carrito.external_reference = external_ref
         carrito.mp_status = "pending"
         carrito.save(update_fields=["external_reference", "mp_status"])
 
-        # 4) Payload para MP usando settings.py
-        email = request.data.get("email") or "test_user@example.com"
-        return_url = f"{settings.FRONTEND_URL}{settings.FRONTEND_RETURN_PATH}?carritoId={carrito.idCarrito}"
+        # Valores por defecto si no están en settings
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
+        frontend_return_path = getattr(settings, "FRONTEND_RETURN_PATH", "/pagos/retorno")
+        return_url = f"{frontend_url}{frontend_return_path}?carritoId={carrito.idCarrito}"
 
         preference_data = {
             "items": items_mp,
             "payer": {"email": email},
             "external_reference": external_ref,
-            "back_urls": {
-                "success": return_url,
-                "failure": return_url,
-                "pending": return_url,
-            },
-            "notification_url": settings.MP_NOTIFICATION_URL,
+            "back_urls": {"success": return_url, "failure": return_url, "pending": return_url},
+            "notification_url": getattr(settings, "MP_NOTIFICATION_URL", f"{frontend_url}/mp/webhook"),
         }
+        if address:
+            preference_data["metadata"] = {"address": address}
         if getattr(settings, "MP_SEND_AUTO_RETURN", False):
             preference_data["auto_return"] = "approved"
 
-        # 5) Llamada a Mercado Pago
+        # ---- 4) Llamada a MP con manejo de errores ----
         try:
             resp = requests.post(
                 "https://api.mercadopago.com/checkout/preferences",
                 headers={
-                    "Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}",
+                    "Authorization": f"Bearer {getattr(settings, 'MP_ACCESS_TOKEN', '')}",
                     "Content-Type": "application/json",
                 },
                 json=preference_data,
@@ -1728,7 +1805,6 @@ class CarritoView(viewsets.ModelViewSet):
         carrito.mp_init_point = preference.get("init_point")
         carrito.save(update_fields=["mp_init_point"])
 
-        # ✅ IMPORTANTE: no hay código duplicado después de este return.
         return Response(
             {"id": preference.get("id"), "init_point": preference.get("init_point")},
             status=status.HTTP_201_CREATED
@@ -1939,6 +2015,21 @@ def map_mp_to_estado_factura(mp_status: str) -> str:
         return "anulada"
     return "emitida"
 
+def _addr_from_snapshot(snap: dict) -> str:
+    if not isinstance(snap, dict):
+        return ""
+    partes = [
+        str(snap.get("linea1", "")).strip(),
+        str(snap.get("linea2", "")).strip(),
+        str(snap.get("referencia", "")).strip(),
+        " ".join([
+            str(snap.get("ciudad", "")).strip(),
+            str(snap.get("departamento", "")).strip()
+        ]).strip()
+    ]
+    txt = ", ".join([p for p in partes if p])
+    return txt[:255]
+
 
 # =========================
 # VISTA
@@ -1958,12 +2049,17 @@ class FacturaView(viewsets.ModelViewSet):
         {
           "payment_id": "125178556047",
           "external_reference": "ORDER-2-1757556908",
-          "carrito_id": 2
+          "carrito_id": 2,
+          "address": { nombre, telefono, departamento, ciudad, linea1, linea2, referencia }  # opcional
         }
         """
-        payment_id = str(request.data.get("payment_id") or "").strip()
-        external_ref = str(request.data.get("external_reference") or "").strip()
-        carrito_id = request.data.get("carrito_id")
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+        data = request.data or {}
+
+        payment_id  = str(data.get("payment_id") or "").strip()
+        external_ref = str(data.get("external_reference") or "").strip()
+        carrito_id  = data.get("carrito_id")
+        address     = data.get("address") or {}  # opcional
 
         if not external_ref and not carrito_id and not payment_id:
             return Response(
@@ -1971,30 +2067,22 @@ class FacturaView(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 1) Resolver carrito
+        # 1) Resolver carrito (con lock cuando sea posible)
         try:
+            qs = Carrito.objects.select_related("usuario").prefetch_related("items")
+            # Para evitar "database is locked" en SQLite con writes simultáneos:
+            try:
+                qs = qs.select_for_update()
+            except Exception:
+                pass
+
             if external_ref:
-                carrito = (
-                    Carrito.objects
-                    .select_related("usuario")
-                    .prefetch_related("items")
-                    .get(external_reference=external_ref)
-                )
+                carrito = qs.get(external_reference=external_ref)
             elif carrito_id:
-                carrito = (
-                    Carrito.objects
-                    .select_related("usuario")
-                    .prefetch_related("items")
-                    .get(pk=carrito_id)
-                )
+                carrito = qs.get(pk=carrito_id)
                 external_ref = carrito.external_reference or external_ref
             else:
-                carrito = (
-                    Carrito.objects
-                    .select_related("usuario")
-                    .prefetch_related("items")
-                    .get(payment_id=payment_id)
-                )
+                carrito = qs.get(payment_id=payment_id)
                 external_ref = carrito.external_reference or external_ref
         except Carrito.DoesNotExist:
             return Response({"detail": "Carrito no encontrado"}, status=status.HTTP_404_NOT_FOUND)
@@ -2002,19 +2090,29 @@ class FacturaView(viewsets.ModelViewSet):
         if carrito.items.count() == 0:
             return Response({"detail": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2) Consultar estado de MP (recomendado)
+        # 2) Consultar estado del pago en MP (opcional pero recomendado)
         status_mp = None
         if payment_id:
-            url = f"https://api.mercadopago.com/v1/payments/{payment_id}"
-            resp = requests.get(url, headers={"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"}, timeout=15)
-            if resp.status_code != 200:
-                return Response({"detail": "No se pudo consultar el pago en MP"}, status=status.HTTP_502_BAD_GATEWAY)
-            data_mp = resp.json()
-            status_mp = data_mp.get("status")  # approved | pending | rejected
+            try:
+                url = f"https://api.mercadopago.com/v1/payments/{payment_id}"
+                resp = requests.get(
+                    url,
+                    headers={"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"},
+                    timeout=15
+                )
+                if resp.status_code != 200:
+                    return Response({"detail": "No se pudo consultar el pago en MP"},
+                                    status=status.HTTP_502_BAD_GATEWAY)
+                data_mp = resp.json()
+                status_mp = data_mp.get("status")  # approved | pending | rejected
 
-            carrito.payment_id = payment_id
-            carrito.mp_status = status_mp or carrito.mp_status
-            carrito.save(update_fields=["payment_id", "mp_status"])
+                # Guardamos rápido y simple; si hay lock, lo reintentará la transacción
+                carrito.payment_id = payment_id
+                carrito.mp_status = status_mp or carrito.mp_status
+                carrito.save(update_fields=["payment_id", "mp_status"])
+            except Exception as e:
+                # No abortamos toda la operación por un fallo de consulta
+                pass
 
         # 3) Idempotencia
         if payment_id:
@@ -2026,26 +2124,34 @@ class FacturaView(viewsets.ModelViewSet):
             if f_exist:
                 return Response(FacturaSerializer(f_exist).data, status=status.HTTP_200_OK)
 
-        # 4) Crear Pedido si falta y armar payload
-        numero = external_ref or f"F-{getattr(carrito, 'id', carrito.pk)}-{int(time.time())}"
-
+        # 4) Asegurar Pedido asociado al carrito
         pedido = getattr(carrito, "pedido", None)
         if not pedido:
-            pedido = Pedido.objects.create(
-                usuario=carrito.usuario,
-                total=carrito.calcular_total(),
-                estado=True
-            )
+            try:
+                # Si tienes el helper en CarritoView, puedes reutilizarlo;
+                # aquí re-calculamos total de forma segura.
+                total = Decimal("0")
+                for it in carrito.items.all():
+                    pu = Decimal(str(getattr(it, "precio_unitario", 0) or 0))
+                    qty = Decimal(str(getattr(it, "cantidad", 0) or 0))
+                    sub = getattr(it, "subtotal", None)
+                    sub = Decimal(str(sub)) if sub is not None else (pu * qty)
+                    total += sub
+                pedido = Pedido.objects.create(usuario=carrito.usuario, total=total, estado=True)
+            except Exception as e:
+                return Response({"detail": f"No se pudo crear el pedido: {e}"}, status=500)
 
-        items = []
+        # 5) Armar items para la FacturaCreateSerializer
+        items_payload = []
         for it in carrito.items.all():
-            items.append({
+            items_payload.append({
                 "producto_id": it.producto_id,
                 "talla_id": getattr(it.talla, "id", None),
                 "cantidad": int(it.cantidad),
-                "precio": str(Decimal(it.precio_unitario)),
+                "precio": str(Decimal(getattr(it, "precio_unitario", 0) or 0)),
             })
 
+        numero = external_ref or f"F-{getattr(carrito, 'id', carrito.pk)}-{int(time.time())}"
         payload = {
             "numero": numero,
             "pedido_id": getattr(pedido, 'id', getattr(pedido, 'pk', None)),
@@ -2053,20 +2159,22 @@ class FacturaView(viewsets.ModelViewSet):
             "moneda": "COP",
             "metodo_pago": "mercadopago",
             "mp_payment_id": payment_id or "",
-            "items": items
+            "items": items_payload
         }
 
         ser = FacturaCreateSerializer(data=payload)
         ser.is_valid(raise_exception=True)
         factura = ser.save()
 
-        # 4.1) (Opcional) Denormaliza datos de cliente si tu modelo los tiene
+        # 6) Denormalizar datos del cliente y direccion
         update_fields = []
+        # nombre / email
         if hasattr(factura, "cliente_email"):
-            em = getattr(carrito.usuario, "email", "") or ""
+            em = getattr(carrito.usuario, "email", "") or getattr(carrito.usuario, "correo", "") or ""
             if em and em != getattr(factura, "cliente_email", ""):
                 factura.cliente_email = em
                 update_fields.append("cliente_email")
+
         if hasattr(factura, "cliente_nombre"):
             nm = (
                 getattr(carrito.usuario, "nombre", None)
@@ -2078,41 +2186,76 @@ class FacturaView(viewsets.ModelViewSet):
                 factura.cliente_nombre = nm
                 update_fields.append("cliente_nombre")
 
-        # 4.2) Ajusta estado de la factura según MP
-        if status_mp:
-            nuevo_estado = map_mp_to_estado_factura(status_mp)
-            if nuevo_estado != getattr(factura, "estado", "emitida"):
-                factura.estado = nuevo_estado
-                update_fields.append("estado")
+        # Dirección en Factura (si el modelo tiene el campo)
+        def _addr_line(a: dict) -> str:
+            if not isinstance(a, dict):
+                return ""
+            partes = [
+                str(a.get("linea1", "")).strip(),
+                str(a.get("linea2", "")).strip(),
+                str(a.get("referencia", "")).strip(),
+                " ".join([str(a.get("ciudad", "")).strip(), str(a.get("departamento", "")).strip()]).strip()
+            ]
+            txt = ", ".join([p for p in partes if p])
+            return txt[:255]
+
+        linea_dir = _addr_line(address) if address else ""
+        # si no vino en body, intenta snapshot en Pedido/Carrito
+        if not linea_dir and hasattr(pedido, "shipping_snapshot"):
+            linea_dir = _addr_line(getattr(pedido, "shipping_snapshot", {}) or {})
+        if not linea_dir and hasattr(carrito, "shipping_snapshot"):
+            linea_dir = _addr_line(getattr(carrito, "shipping_snapshot", {}) or {})
+
+        if linea_dir and hasattr(factura, "direccion"):
+            if linea_dir != (getattr(factura, "direccion", "") or ""):
+                factura.direccion = linea_dir
+                update_fields.append("direccion")
 
         if update_fields:
             factura.save(update_fields=update_fields)
 
-        # 5) Cerrar carrito
-        carrito.estado = False
-        carrito.save(update_fields=["estado"])
+        # Guardar también en tabla Direccion (si existe) y manejar validaciones
+        if linea_dir:
+            try:
+                from .models import Direccion
+                Direccion.objects.create(usuario=carrito.usuario, direccion=linea_dir)
+            except DRFValidationError as ve:
+                # devolvemos 200/201 igualmente, pero informamos el warning
+                # (opcional: puedes registrar en logs)
+                pass
+            except Exception:
+                pass
+
+        # 7) Ajustar estado de la factura según MP
+        if status_mp:
+            try:
+                nuevo_estado = map_mp_to_estado_factura(status_mp)
+                if nuevo_estado != getattr(factura, "estado", "emitida"):
+                    factura.estado = nuevo_estado
+                    factura.save(update_fields=["estado"])
+            except Exception:
+                pass
+
+        # 8) Cerrar carrito (como en tu lógica original)
+        try:
+            carrito.estado = False
+            carrito.save(update_fields=["estado"])
+        except Exception:
+            pass
 
         return Response(FacturaSerializer(factura).data, status=status.HTTP_201_CREATED)
-
-    # dentro de FacturaView
+    
     @action(detail=True, methods=["get"], url_path="pdf", url_name="pdf")
     def pdf(self, request, pk=None):
-        """
-        Genera el PDF de la FACTURA (no comprobante).
-        Usa Factura + FacturaItem y muestra encabezado, items y totales.
-        """
-        # Trae factura + items
+        # ------- datos base -------
         factura = get_object_or_404(
             Factura.objects.select_related("usuario", "pedido").prefetch_related("items"),
             pk=pk
         )
 
-        # -------- Helpers locales (si ya tienes fmt_*, puedes usar los tuyos) -----
-        from decimal import Decimal
         from io import BytesIO
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.units import mm
-        from reportlab.lib import colors
         from reportlab.lib.enums import TA_RIGHT, TA_CENTER
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -2126,9 +2269,6 @@ class FacturaView(viewsets.ModelViewSet):
             return f"{n:,.2f} {cur}".replace(",", "X").replace(".", ",").replace("X", ".")
 
         def dmy_hm(dt):
-            # usa tu fmt_date si ya lo tienes
-            from django.utils import timezone
-            from datetime import datetime
             if not dt:
                 return "—"
             try:
@@ -2144,11 +2284,10 @@ class FacturaView(viewsets.ModelViewSet):
             except Exception:
                 return str(dt)
 
-        # --------- Documento ----------
+        # ------- documento -------
         buf = BytesIO()
         doc = SimpleDocTemplate(
-            buf,
-            pagesize=letter,
+            buf, pagesize=letter,
             leftMargin=18*mm, rightMargin=18*mm,
             topMargin=16*mm, bottomMargin=16*mm,
             title=f"Factura {getattr(factura,'numero', factura.pk)}"
@@ -2165,11 +2304,9 @@ class FacturaView(viewsets.ModelViewSet):
         story.append(Paragraph("FACTURA", styles["h1center"]))
         story.append(Spacer(1, 2*mm))
 
-        # --------- Encabezado: emisor / receptor / meta ----------
-        # Emisor (si tienes datos en settings, cámbialos aquí)
+        # ------- encabezado (SIN NIT + dirección cliente) -------
         emisor_nombre = getattr(settings, "FACTURA_EMISOR_NOMBRE", "Variedad y Estilos ZOE")
-        emisor_nit    = getattr(settings, "FACTURA_EMISOR_NIT",    "")
-        emisor_dir    = getattr(settings, "FACTURA_EMISOR_DIR",    "")
+        emisor_dir    = getattr(settings, "FACTURA_EMISOR_DIR", "")
 
         cliente_nombre = (
             getattr(factura, "cliente_nombre", None)
@@ -2178,7 +2315,6 @@ class FacturaView(viewsets.ModelViewSet):
             or getattr(getattr(factura, "usuario", None), "username", None)
             or "—"
         )
-        # Resolver email con varios candidatos
         cliente_email = (
             getattr(factura, "cliente_email", None)
             or getattr(factura, "usuario_email", None)
@@ -2188,11 +2324,25 @@ class FacturaView(viewsets.ModelViewSet):
             or "—"
         )
 
+        # Dirección cliente: Factura.direccion -> Pedido.shipping_snapshot -> última Direccion
+        cliente_dir = getattr(factura, "direccion", "") or ""
+        pedido = getattr(factura, "pedido", None)
+        if not cliente_dir and pedido and hasattr(pedido, "shipping_snapshot"):
+            cliente_dir = _addr_from_snapshot(getattr(pedido, "shipping_snapshot", {}) or {})
+        if not cliente_dir and getattr(factura, "usuario", None):
+            try:
+                from .models import Direccion
+                ult = Direccion.objects.filter(usuario=factura.usuario).order_by("-pk").first()
+                if ult and getattr(ult, "direccion", ""):
+                    cliente_dir = ult.direccion
+            except Exception:
+                pass
+        cliente_dir = cliente_dir or "—"
+
         fecha_fact = getattr(factura, "emitida_en", None) or getattr(factura, "created_at", None)
 
         meta_left = [
             [Paragraph("<b>Emisor</b>", styles["label"]), Paragraph(emisor_nombre, styles["value"])],
-            [Paragraph("<b>NIT</b>", styles["label"]), Paragraph(emisor_nit or "—", styles["value"])],
             [Paragraph("<b>Dirección</b>", styles["label"]), Paragraph(emisor_dir or "—", styles["value"])],
         ]
         meta_mid = [
@@ -2203,6 +2353,7 @@ class FacturaView(viewsets.ModelViewSet):
         meta_right = [
             [Paragraph("<b>Cliente</b>", styles["label"]), Paragraph(cliente_nombre, styles["value"])],
             [Paragraph("<b>Email</b>", styles["label"]), Paragraph(cliente_email, styles["value"])],
+            [Paragraph("<b>Dirección</b>", styles["label"]), Paragraph(cliente_dir, styles["value"])],
             [Paragraph("<b>Moneda</b>", styles["label"]), Paragraph(factura.moneda or "COP", styles["value"])],
         ]
 
@@ -2215,7 +2366,7 @@ class FacturaView(viewsets.ModelViewSet):
         story.append(t)
         story.append(Spacer(1, 6*mm))
 
-        # --------- Items ----------
+        # ------- items -------
         rows = [["Descripción", "Cant.", "P. Unitario", "Importe"]]
         items = list(factura.items.all())
         if items:
@@ -2225,7 +2376,6 @@ class FacturaView(viewsets.ModelViewSet):
                 unit = getattr(it, "precio", 0)
                 sub  = getattr(it, "subtotal", None)
                 if sub is None:
-                    # por si no guardas subtotal en BD
                     try:
                         sub = Decimal(str(unit)) * Decimal(str(qty))
                     except Exception:
@@ -2248,17 +2398,16 @@ class FacturaView(viewsets.ModelViewSet):
         story.append(t_items)
         story.append(Spacer(1, 6*mm))
 
-        # --------- Totales ----------
+        # ------- totales -------
         subtotal  = getattr(factura, "subtotal", None)
         impuestos = getattr(factura, "impuestos", None)
         total     = getattr(factura, "total", 0)
 
-        # Si no tienes subtotal/impuestos guardados, intenta calcular un subtotal
         if subtotal is None:
             try:
                 subtotal = sum([(it.subtotal if it.subtotal is not None else Decimal(str(it.precio))*it.cantidad) for it in items], Decimal("0"))
             except Exception:
-                subtotal = total  # fallback
+                subtotal = total
         if impuestos is None:
             try:
                 impuestos = Decimal(str(total)) - Decimal(str(subtotal))
@@ -2281,17 +2430,15 @@ class FacturaView(viewsets.ModelViewSet):
         ]))
         story.append(t_tot)
         story.append(Spacer(1, 10*mm))
-
         story.append(Paragraph("Gracias por su compra.", styles["smallcenter"]))
 
-        # Render
+        # ------- render -------
         doc.build(story)
         buf.seek(0)
         filename = f"Factura_{getattr(factura, 'numero', None) or factura.pk}.pdf"
         resp = HttpResponse(buf.read(), content_type="application/pdf")
         resp["Content-Disposition"] = f'attachment; filename="{filename}"'
         return resp
-
     @action(detail=True, methods=["get"], url_path="comprobante/pdf", url_name="comprobante_pdf")
     def comprobante_pdf(self, request, pk=None):
         """
