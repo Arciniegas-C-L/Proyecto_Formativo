@@ -196,7 +196,7 @@ export default function ProductoCard({
     <div className="product-card">
       <div className="product-image-container">
         <img
-          src={getImagenUrl(producto.imagen)}
+          src={getImagenUrl(producto.imagen) || noDisponible}
           alt={producto.nombre || "Producto"}
           className="product-image"
           onError={e => {
