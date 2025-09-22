@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <meta charset="UTF-8" />
@@ -8,6 +8,18 @@
     <title>Variedad y  Estilos ZOE</title>
   </head>
   <body>
+    <script>
+      // Si la ruta no es '/' y no hay hash, guarda la ruta y redirige a '/'
+      if (
+        window.location.pathname !== '/' &&
+        !window.location.hash &&
+        !window.sessionStorage.getItem('restoringPath')
+      ) {
+        window.sessionStorage.setItem('originalPath', window.location.pathname + window.location.search + window.location.hash);
+        window.sessionStorage.setItem('restoringPath', '1');
+        window.location.replace('/');
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
