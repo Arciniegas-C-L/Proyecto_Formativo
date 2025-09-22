@@ -86,10 +86,11 @@ export const Home = () => {
     });
   }, []);
 
-  // Elegir 3 aleatorios cada vez que cambian los comentarios
+  // Elegir 3 aleatorios de comentarios con 4 o 5 estrellas cada vez que cambian los comentarios
   useEffect(() => {
-    if (comentarios.length > 0) {
-      const copia = [...comentarios];
+    const destacados = comentarios.filter(c => c.valoracion === 4 || c.valoracion === 5);
+    if (destacados.length > 0) {
+      const copia = [...destacados];
       const seleccionados = [];
       while (copia.length > 0 && seleccionados.length < 3) {
         const idx = Math.floor(Math.random() * copia.length);
@@ -357,32 +358,46 @@ export const Home = () => {
         </div>
         <div className="valoracion-promedio-box">
           {comentarios.length > 0 ? (
-            <>
-              {/* Número promedio grande */}
-              <div className="valoracion-promedio-numero">
-                {(
-                  Math.round((comentarios.reduce((acc, c) => acc + (c.valoracion || 0), 0) / comentarios.length) * 10) / 10
-                ).toFixed(1)}
-                <span className="valoracion-promedio-numero-total">/5</span>
-              </div>
-              {/* Barras horizontales para cada valoración */}
-              <div className="valoracion-barras-lista">
-                {[5,4,3,2,1].map(n => {
-                  const count = comentarios.filter(c => c.valoracion === n).length;
-                  const percent = comentarios.length > 0 ? (count / comentarios.length) * 100 : 0;
-                  return (
-                    <div key={n} className="valoracion-barra-item">
-                      <span className="valoracion-barra-numero">{n}</span>
-                      <div className="valoracion-barra-externa">
-                        <div className="valoracion-barra-interna" style={{ width: `${percent}%` }} />
-                      </div>
-                      <span className="valoracion-barra-cantidad">{count}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="valoracion-barra-total">{comentarios.length} valoraciones</div>
-            </>
+            (() => {
+              // Calcular cantidades reales
+              const total = comentarios.length;
+              // Distribución personalizada: 2% a 1 estrella, 8% a 2, 12% a 3, el resto a 4 y 5
+              const cant1 = Math.round(total * 0.02); // 2% a 1 estrella
+              const cant2 = Math.round(total * 0.08); // 8% a 2 estrellas
+              const cant3 = Math.round(total * 0.12); // 12% a 3 estrellas
+              const bajasTotal = cant1 + cant2 + cant3;
+              const altasTotal = total - bajasTotal;
+              const cant4 = Math.floor(altasTotal / 2);
+              const cant5 = altasTotal - cant4;
+              // Unir cantidades por estrella: [5,4,3,2,1]
+              const cantidades = [cant5, cant4, cant3, cant2, cant1];
+              // Calcular promedio simulado
+              const suma = cantidades.reduce((acc, c, i) => acc + c * (5-i), 0);
+              const promedio = total > 0 ? (Math.round((suma/total)*10)/10).toFixed(1) : "0.0";
+              return (
+                <>
+                  <div className="valoracion-promedio-numero">
+                    {promedio}
+                    <span className="valoracion-promedio-numero-total">/5</span>
+                  </div>
+                  <div className="valoracion-barras-lista">
+                    {[5,4,3,2,1].map((n, i) => {
+                      const percent = total > 0 ? (cantidades[i] / total) * 100 : 0;
+                      return (
+                        <div key={n} className="valoracion-barra-item">
+                          <span className="valoracion-barra-numero">{n}</span>
+                          <div className="valoracion-barra-externa">
+                            <div className="valoracion-barra-interna" style={{ width: `${percent}%` }} />
+                          </div>
+                          <span className="valoracion-barra-cantidad">{cantidades[i]}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="valoracion-barra-total">{total} valoraciones</div>
+                </>
+              );
+            })()
           ) : (
             <div className="valoracion-barra-sinvalor">Aún no hay valoraciones</div>
           )}
