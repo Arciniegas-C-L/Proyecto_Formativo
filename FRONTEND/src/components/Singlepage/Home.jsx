@@ -278,12 +278,12 @@ export const Home = () => {
   // Precargar imagen del hero para carga instantánea
   useEffect(() => {
     const preloadImage = new Image();
-    preloadImage.src = '/fondo2.webp';
-    
+    preloadImage.src = "/fondo2.webp";
+
     preloadImage.onload = () => {
-      console.log('Imagen de hero precargada exitosamente');
+      console.log("Imagen de hero precargada exitosamente");
     };
-    
+
     return () => {
       preloadImage.onload = null;
     };
@@ -439,7 +439,7 @@ export const Home = () => {
             ZOE une variedad, estilo y libertad en cada prenda. Para quienes
             eligen destacar.
           </p>
-          <Link to="/catalogo" className="hero-boton btn btn-lg">
+          <Link to="/catalogo" className="hero-boton">
             <strong>Ver catálogo</strong>
           </Link>
         </div>
