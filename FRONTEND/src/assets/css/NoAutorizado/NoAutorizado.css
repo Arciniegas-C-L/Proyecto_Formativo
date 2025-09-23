@@ -1,0 +1,130 @@
+/* Página de No Autorizado */
+.unauthorized-page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background:  #ffffff;
+}
+
+.unauthorized-card {
+  background: #2d3748;
+  border-radius: 16px;
+  padding: 3.5rem 2.5rem; 
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 480px; 
+  width: 100%;
+  border: 1px solid #4a5568;
+  color: white;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.unauthorized-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+}
+
+/* Icono  */
+.unauthorized-icon {
+  margin-bottom: 2rem; 
+  display: flex;
+  justify-content: center;
+}
+
+.lock-icon {
+  font-size: 3.5rem; 
+  filter: drop-shadow(0 4px 8px rgba(239, 68, 68, 0.3));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Título */
+.unauthorized-title {
+  font-size: 1.9rem; 
+  font-weight: 700;
+  color: #a78bfa;
+  margin-bottom: 1.5rem; 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.2;
+}
+
+/* Descripción  */
+.unauthorized-description {
+  font-size: 1.1rem; /
+  color: #e2e8f0;
+  line-height: 1.7; 
+  margin-bottom: 2.5rem; 
+  opacity: 0.95; 
+  max-width: 400px; 
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Código de error  */
+.error-code {
+  display: inline-block;
+  background: rgba(239, 68, 68, 0.15); 
+  color: #fc8181; 
+  padding: 0.75rem 1.25rem; 
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  letter-spacing: 0.5px; 
+}
+
+/* Responsive mejorado */
+@media (max-width: 768px) {
+  .unauthorized-page {
+    padding: 1.5rem;
+    min-height: 70vh;
+  }
+  
+  .unauthorized-card {
+    padding: 3rem 2rem;
+    margin: 0 1rem;
+    max-width: 420px;
+  }
+  
+  .unauthorized-title {
+    font-size: 1.7rem;
+  }
+  
+  .unauthorized-description {
+    font-size: 1rem;
+  }
+  
+  .lock-icon {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .unauthorized-card {
+    padding: 2.5rem 2rem;
+    margin: 0 0.5rem;
+  }
+  
+  .unauthorized-title {
+    font-size: 1.5rem;
+  }
+  
+  .unauthorized-description {
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+  
+  .lock-icon {
+    font-size: 2.8rem;
+  }
+  
+  .error-code {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+}

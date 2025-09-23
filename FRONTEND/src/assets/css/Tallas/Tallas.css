@@ -4,6 +4,7 @@
   margin: 0 auto;
   padding: 20px;
   font-family: 'Urbanist', sans-serif;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -12,7 +13,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  flex-wrap: wrap;
   gap: 15px;
 }
 
@@ -22,30 +22,33 @@
   font-weight: bold;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
   margin: 0;
+  flex-shrink: 0;
 }
 
 .header-controls {
   display: flex;
   gap: 15px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
-/* Botón nueva talla */
+/* Botón nueva talla  */
 .btn-nueva-talla {
   background-color: #8b3581;
   color: #fff;
   border: none;
-  border-radius: 12px;
-  padding: 10px 20px;
-  font-weight: 700;
+  border-radius: 6px;
+  padding: 8px 15px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   transition: background 0.4s ease, transform 0.2s ease, box-shadow 0.3s ease;
-  min-height: 44px;
+  min-height: 34px;
   white-space: nowrap;
+  font-size: 0.9rem;
+  min-width: 140px;
 }
 
 .btn-nueva-talla:hover {
@@ -57,16 +60,16 @@
   display: inline;
 }
 
-/* Vistas Desktop y Mobile - SIEMPRE mostrar tabla */
+/* Vistas */
 .desktop-view {
   display: block;
 }
 
 .mobile-view {
-  display: none !important;
+  display: none;
 }
 
-/* Contenedor tabla con scroll horizontal */
+/* Contenedor tabla */
 .tabla-container {
   background: #fff;
   border-radius: 12px;
@@ -82,25 +85,25 @@
 .tabla-tallas {
   width: 100%;
   border-collapse: collapse;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #0f0f10;
-  min-width: 600px;
-  /* Para pantallas pequeñas, la tabla puede ser más ancha que el contenedor */
+  min-width: 400px;
   table-layout: auto;
 }
 
 .tabla-tallas th,
 .tabla-tallas td {
-  padding: 1rem;
+  padding: 0.8rem 0.5rem;
   text-align: center;
   vertical-align: middle;
+  word-wrap: break-word;
 }
 
 .tabla-tallas th {
   background-color: #1A1F2E;
   color: #00b0e0;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .tabla-tallas tbody tr:hover td {
@@ -108,11 +111,11 @@
   transition: background-color 0.3s ease;
 }
 
-/* Estados activos / inactivos - Tamaño fijo */
+/* Estados activos / inactivos  */
 .chip-estado {
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: bold;
   display: inline-block;
   background-color: #c3c3c9;
@@ -121,11 +124,8 @@
   cursor: pointer;
   color: #FFFFFF;
   transition: all 0.3s ease;
-  min-width: 70px;
-  width: 70px;
+  min-width: 50px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .chip-estado.on {
@@ -138,22 +138,29 @@
   color: #FFFFFF;
 }
 
-/* Botones acciones */
+/* Botones acciones  */
 .celda-acciones {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
   justify-content: center;
+  align-items: center;
+  padding: 0.3rem;
 }
 
 .btn-editar,
 .btn-eliminar {
   border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: 3px;
+  border-radius: 4px;
+  font-size: 0.7rem;
   cursor: pointer;
   color: white;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition: all 0.2s ease;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-editar {
@@ -162,15 +169,16 @@
 
 .btn-editar:hover {
   transform: scale(1.05);
+  background-color: #0090b0;
 }
 
 .btn-eliminar {
-  background-color: #8b3581 !important;
-  border-color: #8b3581 !important;
+  background-color: #8b3581;
 }
 
 .btn-eliminar:hover {
   transform: scale(1.05);
+  background-color: #7a2e72;
 }
 
 .btn-agregar-productos {
@@ -195,7 +203,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Modales - Solo el modal de crear/editar */
+/* Modales */
 .dialog-talla-modal {
   position: fixed;
   top: 0;
@@ -208,6 +216,7 @@
   align-items: center;
   z-index: 1000;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .form-talla-modal {
@@ -220,6 +229,7 @@
   overflow-y: auto;
   box-shadow: 0 8px 25px rgba(0,0,0,0.2);
   position: relative;
+  box-sizing: border-box;
 }
 
 .form-talla-modal h3 {
@@ -261,6 +271,7 @@
   font-weight: 600;
   border: none;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-talla-modal .btn-primary {
@@ -330,7 +341,7 @@
   margin: 0;
 }
 
-/* RESPONSIVE - Solo ajustes mínimos para mantener tabla con scroll */
+/* RESPONSIVE OPTIMIZADO */
 
 /* Tablets */
 @media (max-width: 1024px) {
@@ -338,28 +349,53 @@
     padding: 15px;
   }
   
+  .header-acciones h2 {
+    font-size: 1.7rem;
+  }
+  
+  .btn-nueva-talla {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-height: 30px;
+  }
+  
   .tabla-tallas th,
   .tabla-tallas td {
-    padding: 0.8rem;
-    font-size: 0.95rem;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-editar,
+  .btn-eliminar {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+  }
+
+  .celda-acciones {
+    gap: 6px;
+  }
+  
+  .chip-estado {
+    font-size: 0.65rem;
+    min-width: 45px;
   }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
   .lista-tallas-container {
-    padding: 12px;
+    padding: 10px;
   }
 
   .header-acciones {
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
 
   .header-acciones h2 {
-    font-size: 1.8rem;
-    text-align: center;
+    font-size: 1.4rem;
   }
 
   .header-controls {
@@ -368,11 +404,45 @@
   }
 
   .btn-nueva-talla {
-    width: 100%;
-    max-width: 200px;
-    justify-content: center;
-    min-height: 44px;
-    font-size: 1rem;
+    width: auto;
+    min-width: 160px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .tabla-container {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow-x: visible;
+  }
+
+  .tabla-tallas {
+    min-width: 100%;
+    font-size: 0.75rem;
+  }
+
+  .tabla-tallas th,
+  .tabla-tallas td {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-editar,
+  .btn-eliminar {
+    width: 16px;
+    height: 16px;
+    font-size: 0.5rem;
+    padding: 2px;
+  }
+
+  .celda-acciones {
+    gap: 8px;
+  }
+
+  .chip-estado {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.4rem;
+    min-width: 40px;
   }
 
   /* Modal responsive */
@@ -382,83 +452,115 @@
 
   .form-talla-modal {
     padding: 20px;
-    margin: 0;
-    max-width: 100%;
+    margin: 10px;
     width: calc(100% - 20px);
-  }
-
-  .form-talla-modal h3 {
-    font-size: 1.4rem;
+    max-width: none;
   }
 
   .form-talla-modal .d-flex.justify-content-end {
     flex-direction: column-reverse;
-    gap: 8px;
+    gap: 10px;
   }
 
   .form-talla-modal .btn {
     width: 100%;
     padding: 12px;
-    min-height: 44px;
     font-size: 1rem;
-  }
-  /* Scroll horizontal visible en móviles */
-  .tabla-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-  }
-  .tabla-tallas {
-    min-width: 500px;
   }
 }
 
+/* Móviles pequeños */
 @media (max-width: 480px) {
   .lista-tallas-container {
     padding: 8px;
   }
 
   .header-acciones h2 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
 
   .btn-nueva-talla {
-    font-size: 0.9rem;
-    padding: 10px 16px;
-    min-height: 44px;
-    max-width: 180px;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    min-width: 140px;
+    min-height: 32px;
   }
 
   .btn-text-desktop {
     display: none;
   }
 
+  .tabla-tallas {
+    font-size: 0.7rem;
+  }
+
+  .tabla-tallas th,
+  .tabla-tallas td {
+    padding: 0.3rem 0.1rem;
+    font-size: 0.65rem;
+  }
+
+  .btn-editar,
+  .btn-eliminar {
+    width: 14px;
+    height: 14px;
+    font-size: 0.45rem;
+    padding: 1px;
+  }
+
+  .celda-acciones {
+    gap: 10px;
+  }
+
+  .chip-estado {
+    font-size: 0.55rem;
+    padding: 0.15rem 0.3rem;
+    min-width: 35px;
+  }
+
   .form-talla-modal {
     padding: 15px;
+    margin: 5px;
+    width: calc(100% - 10px);
   }
 
   .form-talla-modal h3 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+  }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 320px) {
+  .lista-tallas-container {
+    padding: 5px;
   }
 
-  .form-talla-modal .form-control,
-  .form-talla-modal .form-select {
-    padding: 8px 10px;
-    font-size: 0.9rem;
+  .header-acciones h2 {
+    font-size: 1.1rem;
   }
 
-  .form-talla-modal .btn {
-    padding: 10px;
-    font-size: 0.9rem;
-    min-height: 44px;
+  .btn-nueva-talla {
+    font-size: 0.7rem;
+    min-width: 90px;
+    padding: 5px 8px;
+    min-height: 26px;
   }
-  /* Scroll horizontal visible en móviles */
-  .tabla-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+
+  .tabla-tallas th,
+  .tabla-tallas td {
+    padding: 0.2rem 0.05rem;
+    font-size: 0.6rem;
   }
-  .tabla-tallas {
-    min-width: 400px;
+
+  .btn-editar,
+  .btn-eliminar {
+    width: 14px;
+    height: 14px;
+    font-size: 0.5rem;
+  }
+
+  .chip-estado {
+    font-size: 0.5rem;
+    min-width: 30px;
   }
 }

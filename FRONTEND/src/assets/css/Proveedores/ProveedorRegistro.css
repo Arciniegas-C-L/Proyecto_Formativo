@@ -10,37 +10,67 @@
 
 /* Contenedor responsivo */
 .tabla-responsive {
-  width: 100%;
+  background: #fff;
+  border-radius: 12px;
   overflow-x: auto;
-  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #8b3581 #f3f9ff;
 }
 
-/* Tabla proveedores */
+/* Estilos para scrollbar */
+.tabla-responsive::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+.tabla-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+.tabla-responsive::-webkit-scrollbar-thumb {
+  background: #8b3581;
+  border-radius: 6px;
+}
+
+.tabla-responsive::-webkit-scrollbar-thumb:hover {
+  background: #7a2e72;
+}
+
+.tabla-responsive::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Tabla proveedores  */
 .tabla-proveedores {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
-}
-
-.tabla-proveedores tbody tr:hover td {
-  background-color: #f3f9ff;
+  font-size: 0.9rem;
+  min-width: 100%;
+  table-layout: auto;
 }
 
 .tabla-proveedores th,
 .tabla-proveedores td {
-  padding: 1rem;
+  padding: 0.8rem 0.4rem;
   text-align: center;
-  border-bottom: 1px solid #ccc; 
+  vertical-align: middle;
+  word-wrap: break-word;
 }
 
 .tabla-proveedores th {
   background-color: #1A1F2E;
   color: #00b0e0;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
+}
+
+.tabla-proveedores tbody tr:hover td {
+  background-color: #f3f9ff;
+  transition: background-color 0.3s ease;
 }
 
 .tabla-proveedores td {
@@ -56,28 +86,39 @@
   padding: 2rem;
 }
 
-/* Campos de entrada */
+/* Campos de entrada  */
 .input-proveedor {
-  padding: 0.5rem;
+  padding: 0.4rem;
   border: 1px solid #0f0f10;
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: #f4f5f9;
   color: #0f0f10;
   width: 100%;
+  word-wrap: break-word;
+  white-space: normal;
+  resize: vertical;
+  min-height: 32px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
 }
 
-/* Botones */
+/* Botones  */
 .btn-editar,
 .btn-eliminar,
 .btn-cancelar,
 .btn-guardar {
   border: none !important;
-  padding: 0.4rem 0.8rem !important; 
+  padding: 5px 7px !important; 
   border-radius: 6px !important;
-  font-size: 0.9rem !important;
+  font-size: 0.8rem !important;
   cursor: pointer !important;
   color: white !important;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  min-width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Hover botones */
@@ -93,6 +134,10 @@
   background-color: #00b0e0 !important;
 }
 
+.btn-editar:hover {
+  background-color: #0090bb !important;
+}
+
 /* Eliminar */
 .btn-eliminar,
 .botones-acciones .btn-eliminar,
@@ -104,9 +149,17 @@ button.btn-eliminar {
   color: white !important;
 }
 
+.btn-eliminar:hover {
+  background-color: #7a2e72 !important;
+}
+
 /* Cancelar */
 .btn-cancelar {
   background-color: #9AA0A6 !important;
+}
+
+.btn-cancelar:hover {
+  background-color: #8a9096 !important;
 }
 
 /* Guardar */
@@ -114,11 +167,16 @@ button.btn-eliminar {
   background-color: #433c49 !important;
 }
 
-/* Botonos de acciones */
+.btn-guardar:hover {
+  background-color: #3a3240 !important;
+}
+
+/* Botones de acciones  */
 .botones-acciones {
   display: flex;
-  gap: 0.5rem;
+  gap: 5px;
   justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
 }
 
@@ -137,6 +195,7 @@ button.btn-eliminar {
   z-index: 999;
   text-align: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
 }
 
 .alerta-botones {
@@ -155,7 +214,7 @@ button.btn-eliminar {
   color: white !important;
 }
 
-/* Botón eliminar en alerta - máxima especificidad */
+/* Botón eliminar en alerta  */
 .alerta .btn-eliminar,
 .alerta .alerta-botones .btn-eliminar,
 .alerta-botones .btn-eliminar,
@@ -175,9 +234,9 @@ div.alerta button.btn-eliminar,
 
 /* Estados activos / inactivos */
 .badge {
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
   font-weight: bold;
   display: inline-block;
   background-color: #c3c3c9;
@@ -199,79 +258,287 @@ div.alerta button.btn-eliminar,
 
 /* Checkbox estado */
 .checkbox-proveedor {
-  transform: scale(1.3);
+  transform: scale(1.2);
   cursor: pointer;
 }
 
-/* Media queries para responsive */
-@media (max-width: 1024px) {
-  .tabla-proveedores th,
-  .tabla-proveedores td {
-    padding: 0.7rem;
-    font-size: 0.95rem;
-  }
+/* RESPONSIVE  */
 
+/* Tablets */
+@media (max-width: 1024px) {
   .titulo-proveedores {
     font-size: 2rem;
   }
-}
-
-@media (max-width: 768px) {
+  
+  .tabla-proveedores {
+    font-size: 0.85rem;
+  }
+  
   .tabla-proveedores th,
   .tabla-proveedores td {
-    padding: 0.6rem;
-    font-size: 0.9rem;
+    padding: 0.7rem 0.4rem;
+    font-size: 0.85rem;
   }
+  
+  .btn-editar,
+  .btn-eliminar,
+  .btn-cancelar,
+  .btn-guardar {
+    min-width: 24px !important;
+    height: 24px !important;
+    font-size: 0.75rem !important;
+    padding: 4px 6px !important;
+  }
+  
+  .input-proveedor {
+    font-size: 0.8rem;
+    padding: 0.35rem;
+    min-height: 30px;
+  }
+  
+  .checkbox-proveedor {
+    transform: scale(1.1);
+  }
+}
 
+/* Mobile */
+@media (max-width: 768px) {
   .titulo-proveedores {
     font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
   }
 
-  .botones-acciones {
-    flex-direction: column;
-    align-items: center;
+  .tabla-responsive {
+    border-radius: 0;
+    box-shadow: none;
+    overflow-x: visible;
+    margin: 0 -30px;
+    width: calc(100% + 60px);
   }
 
-  .alerta {
-    width: 90%;
-    font-size: 0.9rem;
+  .tabla-proveedores {
+    font-size: 0.7rem;
   }
 
-  .alerta-botones button {
-    font-size: 0.85rem !important;
-  }
-}
-
-@media (max-width: 480px) {
   .tabla-proveedores th,
   .tabla-proveedores td {
-    padding: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .titulo-proveedores {
-    font-size: 1.3rem;
-  }
-
-  .input-proveedor {
-    font-size: 0.9rem;
-    padding: 0.4rem;
+    padding: 0.3rem 0.05rem;
+    font-size: 0.65rem;
   }
 
   .btn-editar,
   .btn-eliminar,
   .btn-cancelar,
   .btn-guardar {
-    font-size: 0.8rem !important;
-    padding: 0.3rem 0.6rem !important;
+    min-width: 12px !important;
+    height: 12px !important;
+    font-size: 0.4rem !important;
+    padding: 0px !important;
   }
 
-  .alerta {
-    top: 20%;
-    padding: 0.8rem;
+  .botones-acciones {
+    gap: 1px;
+    flex-direction: row;
+  }
+
+  .input-proveedor {
+    font-size: 0.65rem;
+    padding: 0.2rem;
+    min-height: 24px;
+  }
+
+  .badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.3rem;
   }
 
   .checkbox-proveedor {
-    transform: scale(1.1);
+    transform: scale(0.8);
+  }
+
+  .alerta {
+    width: 85%;
+    max-width: 320px;
+  }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .titulo-proveedores {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .tabla-proveedores {
+    font-size: 0.75rem;
+  }
+
+  .tabla-proveedores th,
+  .tabla-proveedores td {
+    padding: 0.4rem 0.15rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-editar,
+  .btn-eliminar,
+  .btn-cancelar,
+  .btn-guardar {
+    min-width: 18px !important;
+    height: 18px !important;
+    font-size: 0.6rem !important;
+    padding: 2px !important;
+  }
+
+  .botones-acciones {
+    gap: 2px;
+  }
+
+  .input-proveedor {
+    font-size: 0.7rem;
+    padding: 0.25rem;
+    min-height: 26px;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .checkbox-proveedor {
+    transform: scale(0.9);
+  }
+
+  .alerta {
+    width: 90%;
+    max-width: 300px;
+    top: 20%;
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .alerta-botones {
+    gap: 0.8rem;
+  }
+
+  .alerta-botones button {
+    padding: 0.4rem 1rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 375px) {
+  .titulo-proveedores {
+    font-size: 1.3rem;
+  }
+
+  .tabla-proveedores {
+    font-size: 0.7rem;
+  }
+
+  .tabla-proveedores th,
+  .tabla-proveedores td {
+    padding: 0.35rem 0.08rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-editar,
+  .btn-eliminar,
+  .btn-cancelar,
+  .btn-guardar {
+    min-width: 18px !important;
+    height: 18px !important;
+    font-size: 0.6rem !important;
+    padding: 2px !important;
+  }
+
+  .botones-acciones {
+    gap: 2px;
+  }
+
+  .input-proveedor {
+    font-size: 0.65rem;
+    padding: 0.2rem;
+    min-height: 24px;
+  }
+
+  .badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.3rem;
+  }
+
+  .checkbox-proveedor {
+    transform: scale(0.8);
+  }
+
+  .alerta {
+    width: 92%;
+    max-width: 280px;
+  }
+}
+
+/* Móviles extra pequeños (iPhone SE) */
+@media (max-width: 320px) {
+  .titulo-proveedores {
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .tabla-proveedores {
+    font-size: 0.65rem;
+  }
+
+  .tabla-proveedores th,
+  .tabla-proveedores td {
+    padding: 0.3rem 0.08rem;
+    font-size: 0.65rem;
+  }
+
+  .btn-editar,
+  .btn-eliminar,
+  .btn-cancelar,
+  .btn-guardar {
+    min-width: 14px !important;
+    height: 14px !important;
+    font-size: 0.45rem !important;
+    padding: 1px !important;
+  }
+
+  .botones-acciones {
+    gap: 1px;
+  }
+
+  .input-proveedor {
+    font-size: 0.6rem;
+    padding: 0.15rem;
+    min-height: 22px;
+  }
+
+  .badge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.25rem;
+  }
+
+  .checkbox-proveedor {
+    transform: scale(0.7);
+  }
+
+  .alerta {
+    width: 95%;
+    max-width: 260px;
+    padding: 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  .alerta-botones {
+    gap: 0.6rem;
+    flex-direction: column-reverse;
+  }
+
+  .alerta-botones button {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.75rem !important;
+    width: 100%;
   }
 }

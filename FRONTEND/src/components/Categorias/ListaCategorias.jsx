@@ -20,7 +20,7 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
     setCategoriasEditadas(Array.isArray(categorias) ? categorias : []);
   }, [categorias]);
 
-  // ======== FUNCIONES EDITAR ========
+  //  FUNCIONES EDITAR 
   const abrirModalEditar = (cat) => {
     setCategoriaEditModal(cat);
     setEditModalData({ nombre: cat.nombre, estado: !!cat.estado });
@@ -70,7 +70,7 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
     }
   };
 
-  // ======== FUNCIONES ELIMINAR ========
+  //  FUNCIONES ELIMINAR 
   const eliminarCategoria = async () => {
     const cat = categoriaAEliminar;
     if (!cat) return;
@@ -103,9 +103,9 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
     }
   };
 
-  // ======== RENDER ========
+  //  RENDER
   return (
-    <div className="contenedor-categorias">
+    <>
       {categoriasEditadas.length === 0 ? (
         <p className="mensaje-vacio">No hay categorías registradas</p>
       ) : (
@@ -225,7 +225,7 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
         </div>
       )}
 
-      {/* ===== MODALES ===== */}
+      {/* MODALES  */}
       {categoriaEditModal && (
         <div className="dialog-categoria-modal">
           <div className="form-categoria-modal">
@@ -371,7 +371,7 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
           onConfirmar={eliminarSubConfirmado}
         />
       )}
-    </div>
+    </>
   );
 }
 

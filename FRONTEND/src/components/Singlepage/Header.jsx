@@ -56,6 +56,12 @@ export function Header() {
 
   const toggleDropdown = () => setShowDropdown((prev) => !prev);
 
+  // Función para ir al panel de admin directamente
+  const goToAdminPanel = () => {
+    setShowDropdown(false);
+    navigate("/admin/proveedores");
+  };
+
   // Cerrar dropdown si clic fuera del contenedor
   useEffect(() => {
     const handleClickOutside = (event) => {

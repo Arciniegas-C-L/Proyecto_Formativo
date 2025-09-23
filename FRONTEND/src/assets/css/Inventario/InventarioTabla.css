@@ -1,344 +1,636 @@
-/* Estilos generales para las tablas */
-.table-responsive {
-  border-radius: 0.375rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  overflow: hidden;
+/* InventarioTabla.css - Versión simple y mobile-first */
+
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+.inventario-tabla-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Urbanist', sans-serif;
+  box-sizing: border-box;
 }
 
-.table {
+/*  BREADCRUMBS  */
+.inventario-tabla-container .breadcrumb-nav {
+  margin-bottom: 15px;
+}
+
+.inventario-tabla-container .breadcrumb {
+  background: transparent;
+  padding: 0.5rem 0;
   margin-bottom: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
 }
 
+.inventario-tabla-container .breadcrumb-item {
+  color: #666;
+  font-size: 0.9rem;
+}
 
-/* Encabezado de tabla similar a Bootstrap */
-.table th, .MuiTableHead-root .MuiTableCell-head {
+.inventario-tabla-container .breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+  padding: 0 0.5rem;
+  color: #999;
+}
+
+.inventario-tabla-container .breadcrumb-btn {
+  color: #00b0e0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.inventario-tabla-container .breadcrumb-btn:hover {
+  color: #0090bb;
+  text-decoration: underline;
+}
+
+.inventario-tabla-container .breadcrumb-item.active {
+  color: #666;
+  font-weight: 500;
+}
+
+.inventario-tabla-container .page-title {
+  font-size: 2rem;
+  color: #00b0e0;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/*  TABLA NORMAL (Desktop)  */
+.inventario-tabla-container .tabla-container {
+  background: #fff;
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.inventario-tabla-container .tabla-inventario {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 800px;
+}
+
+.inventario-tabla-container .tabla-inventario th,
+.inventario-tabla-container .tabla-inventario td {
+  padding: 0.8rem 0.6rem;
+  text-align: center;
+  vertical-align: middle;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.inventario-tabla-container .tabla-inventario th {
+  background-color: #1A1F2E;
+  color: #00b0e0;
   font-weight: 600;
-  border-top: none;
-  vertical-align: middle;
-  background-color: #f8f9fa;
-  color: #212529;
-  border-bottom: 2px solid #dee2e6;
-  font-size: 1rem;
-  letter-spacing: 0.02em;
+  border: none;
 }
 
-.table td {
-  vertical-align: middle;
+.inventario-tabla-container .tabla-inventario tbody tr:hover td {
+  background-color: #f3f9ff;
+  transition: background-color 0.3s ease;
 }
 
+.inventario-tabla-container .tabla-inventario td {
+  color: #333;
+}
 
-/* Para tablas oscuras, si se usan */
-.table-dark th, .MuiTableHead-root .MuiTableCell-head.table-dark {
-  background-color: #212529;
+.inventario-tabla-container .tabla-inventario tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/*  RESPONSIVE MÓVILES  */
+@media (max-width: 768px) {
+  .inventario-tabla-container .page-title {
+    font-size: 1.6rem;
+    text-align: center;
+  }
+  
+  .inventario-tabla-container .breadcrumb {
+    justify-content: center;
+    font-size: 0.8rem;
+  }
+  
+  /* Convertir tabla en tarjetas apiladas */
+  .inventario-tabla-container .tabla-inventario {
+    min-width: 100%;
+    display: block;
+  }
+  
+  .inventario-tabla-container .tabla-inventario thead {
+    display: none;
+  }
+  
+  .inventario-tabla-container .tabla-inventario tbody {
+    display: block;
+  }
+  
+  .inventario-tabla-container .tabla-inventario tr {
+    display: block;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .inventario-tabla-container .tabla-inventario tr:hover td {
+    background-color: transparent;
+  }
+  
+  .inventario-tabla-container .tabla-inventario td {
+    display: block;
+    text-align: left !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    position: relative;
+    padding-left: 45% !important;
+  }
+  
+  .inventario-tabla-container .tabla-inventario td:last-child {
+    border-bottom: none !important;
+    text-align: center !important;
+    padding-left: 0 !important;
+    padding-top: 15px !important;
+  }
+  
+  /* Labels para cada campo */
+  .inventario-tabla-container .tabla-inventario td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 40%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #00b0e0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Labels específicos para cada tipo de tabla */
+  /* Categorías */
+  .inventario-tabla-container .tabla-inventario td:nth-child(1):before { content: "Categoría"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(2):before { content: "Subcategorías"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(3):before { content: "Productos"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(4):before { content: "Estado"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(5):before { content: "Acciones"; }
+  
+  /* Productos */
+  .inventario-tabla-container .tabla-inventario td:nth-child(1):before { content: "Producto"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(2):before { content: "Precio"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(3):before { content: "Stock Total"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(4):before { content: "Stock Mínimo"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(5):before { content: "Stock por Tallas"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(6):before { content: "Acciones"; }
+  
+  /* Ajustar imágenes en móvil */
+  .inventario-tabla-container .producto-imagen,
+  .inventario-tabla-container .imagen-placeholder {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .inventario-tabla-container .producto-info {
+    gap: 8px;
+  }
+  
+  .inventario-tabla-container .producto-nombre {
+    font-size: 0.85rem;
+  }
+}
+
+/*  BADGES  */
+.inventario-tabla-container .custom-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.inventario-tabla-container .custom-badge-small {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  display: inline-block;
+  margin: 0.1rem;
+}
+
+.inventario-tabla-container .badge-success,
+.inventario-tabla-container .badge-small-success {
+  background-color: #28a745;
   color: #fff;
-  border-color: #373b3e;
 }
 
-
-/* Rayado de filas como Bootstrap */
-.table-striped tbody tr:nth-of-type(odd) td,
-.MuiTableBody-root .MuiTableRow-root:nth-of-type(odd) .MuiTableCell-root {
-  background-color: #f2f2f2;
+.inventario-tabla-container .badge-error,
+.inventario-tabla-container .badge-small-error {
+  background-color: #dc3545;
+  color: #fff;
 }
 
-
-.table-hover tbody tr:hover td,
-.MuiTableBody-root .MuiTableRow-root:hover .MuiTableCell-root {
-  background-color: #e9ecef;
+.inventario-tabla-container .badge-warning {
+  background-color: #ffc107;
+  color: #333;
 }
 
-/* Estilos para las imágenes de productos */
-.product-image {
-  width: 40px;
-  height: 40px;
+/*  BOTONES  */
+.inventario-tabla-container .btn-action {
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.3s ease;
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.inventario-tabla-container .btn-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.inventario-tabla-container .btn-primary {
+  background: linear-gradient(135deg, #00b0e0 0%, #0090bb 100%);
+}
+
+.inventario-tabla-container .btn-primary:hover {
+  background: linear-gradient(135deg, #0090bb 0%, #007a9a 100%);
+}
+
+.inventario-tabla-container .btn-secondary {
+  background: linear-gradient(135deg, #8b3581 0%, #7a2e72 100%);
+}
+
+.inventario-tabla-container .btn-secondary:hover {
+  background: linear-gradient(135deg, #7a2e72 0%, #692563 100%);
+}
+
+.inventario-tabla-container .btn-action i {
+  font-size: 14px;
+  font-weight: 900;
+  font-family: "Font Awesome 5 Free", "Font Awesome 6 Free";
+}
+
+/* Fallbacks para íconos */
+.inventario-tabla-container .btn-action .fa-eye:not(.fa)::before { content: "👁"; font-family: inherit; }
+.inventario-tabla-container .btn-action .fa-plus:not(.fa)::before { content: "➕"; font-family: inherit; }
+.inventario-tabla-container .btn-action .fa-edit:not(.fa)::before { content: "✏"; font-family: inherit; }
+.inventario-tabla-container .btn-action .fa-save:not(.fa)::before { content: "💾"; font-family: inherit; }
+
+/*  PRODUCTOS  */
+.inventario-tabla-container .producto-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.inventario-tabla-container .producto-imagen {
+  width: 45px;
+  height: 45px;
   object-fit: cover;
-  border-radius: 0.25rem;
-  border: 1px solid #dee2e6;
-  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1px solid #ddd;
 }
 
-.product-image-placeholder {
-  width: 40px;
-  height: 40px;
+.inventario-tabla-container .imagen-placeholder {
+  width: 45px;
+  height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #f8f9fa;
-  border-radius: 0.25rem;
-  border: 1px solid #dee2e6;
-  color: #adb5bd;
-  flex-shrink: 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #6c757d;
+  font-size: 1.2rem;
 }
 
-/* Estilos para badges personalizados */
-.badge, .MuiChip-root {
-  font-size: 0.85em;
+.inventario-tabla-container .producto-nombre {
   font-weight: 500;
-  border-radius: 0.25rem;
-  padding: 0.25em 0.6em;
+  color: #333;
 }
 
-/* Estilos para botones de acción */
-.btn-group .btn {
-  border-radius: 0.25rem;
-  margin-right: 0.25rem;
-}
-
-.btn-group .btn:last-child {
-  margin-right: 0;
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
+/*  SELECT  */
+.inventario-tabla-container .custom-select {
+  border: 2px solid #8b3581;
+  border-radius: 8px;
+  padding: 0.5rem;
   font-size: 0.875rem;
+  background-color: #fff;
+  color: #333;
+  transition: all 0.3s ease;
+  width: 100%;
+  min-width: 150px;
 }
 
-/* Estilos para los breadcrumbs */
-.breadcrumb, .MuiBreadcrumbs-root {
-  background-color: transparent;
-  padding: 0;
+.inventario-tabla-container .custom-select:focus {
+  outline: none;
+  border-color: #8b3581;
+  box-shadow: 0 0 5px rgba(139, 53, 129, 0.3);
+}
+
+/*  ALERTAS */
+.inventario-tabla-container .alert-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  color: #856404;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.inventario-tabla-container .alert-danger {
+  background-color: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  color: #dc3545;
+  border-radius: 6px;
+  padding: 0.75rem;
   margin-bottom: 1rem;
-  font-size: 1rem;
 }
 
-.breadcrumb .btn-link, .MuiBreadcrumbs-root .MuiLink-root {
-  color: #0d6efd;
-  border: none;
-  background: none;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.breadcrumb .btn-link:hover, .MuiBreadcrumbs-root .MuiLink-root:hover {
-  color: #0a58ca;
-  text-decoration: underline;
-}
-
-/* Estilos para los modales */
-.modal.show {
-  display: block;
-}
-
-.modal-backdrop {
+/*  MODAL  */
+.inventario-tabla-container .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
 }
 
-.modal-content {
-  border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+.inventario-tabla-container .modal-content {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-.modal-header {
-  border-bottom: 1px solid #dee2e6;
-  background-color: #f8f9fa;
+.inventario-tabla-container .modal-header {
+  background-color: #1A1F2E;
+  color: #00b0e0;
+  padding: 1.25rem;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.modal-title {
+.inventario-tabla-container .modal-title {
   font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0;
 }
 
-.modal-footer {
+.inventario-tabla-container .modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.8;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inventario-tabla-container .modal-close:hover {
+  opacity: 1;
+}
+
+.inventario-tabla-container .modal-body {
+  padding: 1.25rem;
+}
+
+.inventario-tabla-container .modal-footer {
+  padding: 1rem 1.25rem;
   border-top: 1px solid #dee2e6;
   background-color: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
-/* Estilos para alertas */
-.alert {
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
-
-.alert-warning {
-  background-color: #fff3cd;
-  border-color: #ffecb5;
-  color: #664d03;
-}
-
-.alert-danger {
-  background-color: #f8d7da;
-  border-color: #f5c2c7;
-  color: #721c24;
-}
-
-.alert-success {
-  background-color: #d1e7dd;
-  border-color: #badbcc;
-  color: #0f5132;
-}
-
-.alert-info {
-  background-color: #cff4fc;
-  border-color: #b6effb;
-  color: #055160;
-}
-
-/* Estilos para spinners de carga */
-.spinner-border {
-  width: 2rem;
-  height: 2rem;
-}
-
-/* Estilos para el toast/snackbar */
-.toast {
-  max-width: 350px;
-  font-size: 0.875rem;
-}
-
-.toast-body {
-  padding: 0.75rem;
-}
-
-/* Estilos para formularios en modales */
-.modal-body .form-label {
+.inventario-tabla-container .btn-cancel {
+  background-color: #6c757d;
+  color: #fff;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
   font-weight: 500;
-  margin-bottom: 0.25rem;
 }
 
-.modal-body .form-control-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+.inventario-tabla-container .btn-cancel:hover {
+  background-color: #5a6268;
 }
 
-.modal-body .form-text {
-  font-size: 0.75rem;
-  color: #6c757d;
-  margin-top: 0.25rem;
+.inventario-tabla-container .btn-save {
+  background-color: #00b0e0;
+  color: #fff;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
 }
 
-.form-control.is-invalid {
-  border-color: #dc3545;
+.inventario-tabla-container .btn-save:hover {
+  background-color: #0090bb;
 }
 
-/* Estilos para selects */
-.form-select-sm {
-  padding: 0.25rem 1.75rem 0.25rem 0.5rem;
-  font-size: 0.875rem;
+.inventario-tabla-container .btn-save:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-/* Estilos responsive */
-@media (max-width: 768px) {
-  .table-responsive {
-    font-size: 0.875rem;
-  }
-  
-  .btn-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .btn-group .btn {
-    margin-right: 0;
-    width: 100%;
-  }
-  
-  .product-image,
-  .product-image-placeholder {
-    width: 30px;
-    height: 30px;
-  }
-  
-  .modal-dialog {
-    margin: 0.5rem;
-  }
+/*  FORMULARIOS  */
+.inventario-tabla-container .stock-info {
+  background-color: #f3f9ff;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #00b0e0;
+  margin-bottom: 1rem;
 }
 
-@media (max-width: 576px) {
-  .breadcrumb {
-    flex-wrap: wrap;
-  }
-  
-  .breadcrumb-item {
-    font-size: 0.875rem;
-  }
-  
-  .table td,
-  .table th {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.8rem;
-  }
-  
-  .btn-sm {
-    padding: 0.125rem 0.25rem;
-    font-size: 0.75rem;
-  }
-  
-  .badge {
-    font-size: 0.65em;
-  }
+.inventario-tabla-container .stock-form {
+  max-height: 300px;
+  overflow-y: auto;
 }
 
-/* Estilos para el texto truncado */
-.text-truncate {
-  max-width: 200px;
+/* Bootstrap-like classes */
+.inventario-tabla-container .d-flex { display: flex !important; }
+.inventario-tabla-container .gap-1 { gap: 0.25rem !important; }
+.inventario-tabla-container .gap-2 { gap: 0.5rem !important; }
+.inventario-tabla-container .justify-content-center { justify-content: center !important; }
+.inventario-tabla-container .align-items-center { align-items: center !important; }
+.inventario-tabla-container .flex-wrap { flex-wrap: wrap !important; }
+.inventario-tabla-container .mb-2 { margin-bottom: 0.5rem !important; }
+.inventario-tabla-container .mb-3 { margin-bottom: 1rem !important; }
+.inventario-tabla-container .me-1 { margin-right: 0.25rem !important; }
+.inventario-tabla-container .fw-bold { font-weight: 700 !important; }
+.inventario-tabla-container .text-muted { color: #6c757d !important; }
+
+.inventario-tabla-container .row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -0.75rem;
 }
 
-/* Animaciones suaves */
-.btn, .badge, .alert, .modal-content {
+.inventario-tabla-container .col-2 { flex: 0 0 16.66666667%; width: 16.66666667%; padding: 0 0.75rem; }
+.inventario-tabla-container .col-4 { flex: 0 0 33.33333333%; width: 33.33333333%; padding: 0 0.75rem; }
+.inventario-tabla-container .col-6 { flex: 0 0 50%; width: 50%; padding: 0 0.75rem; }
+
+.inventario-tabla-container .form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #212529;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.inventario-tabla-container .form-control:focus {
+  color: #212529;
+  background-color: #fff;
+  border-color: #8b3581;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(139, 53, 129, 0.25);
+}
+
+.inventario-tabla-container .form-label { margin-bottom: 0.5rem; }
+
+.inventario-tabla-container .btn {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
   transition: all 0.15s ease-in-out;
 }
 
-.table-hover tbody tr {
-  transition: background-color 0.15s ease-in-out;
+.inventario-tabla-container .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; border-radius: 0.25rem; }
+
+.inventario-tabla-container .btn-outline-primary {
+  color: #00b0e0;
+  border-color: #00b0e0;
+  background-color: transparent;
 }
 
-/* Estilos para mejorar la accesibilidad */
-.btn:focus,
-.form-control:focus,
-.form-select:focus {
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+.inventario-tabla-container .btn-outline-primary:hover {
+  color: #fff;
+  background-color: #00b0e0;
+  border-color: #00b0e0;
 }
 
-/* Estilos para estados de loading */
-.btn:disabled {
-  opacity: 0.65;
+/*  LOADING  */
+.inventario-tabla-container .loading {
+  text-align: center;
+  padding: 2rem;
 }
 
-/* Mejoras visuales para las tablas */
-.table th, .MuiTableHead-root .MuiTableCell-head {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+.inventario-tabla-container .spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 0.3rem solid rgba(0, 176, 224, 0.3);
+  border-top: 0.3rem solid #00b0e0;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
 }
 
-/* Espaciado mejorado para elementos flex */
-.d-flex.gap-1 > * {
-  margin-right: 0.25rem;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.d-flex.gap-1 > *:last-child {
-  margin-right: 0;
-}
-
-.d-flex.gap-2 > * {
-  margin-right: 0.5rem;
-}
-
-.d-flex.gap-2 > *:last-child {
-  margin-right: 0;
-}
-
-.d-flex.gap-3 > * {
-  margin-right: 1rem;
-}
-
-.d-flex.gap-3 > *:last-child {
-  margin-right: 0;
-}
-
-/* Estilos para el contenedor principal */
-.container-fluid {
+/*  SNACKBAR  */
+.inventario-tabla-container .snackbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 300px;
+  max-width: 500px;
   padding: 1rem;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* Mejoras para la visualización en pantallas grandes */
-@media (min-width: 1200px) {
-  .table td,
-  .table th {
-    padding: 0.75rem;
-  }
-  
-  .container-fluid {
-    padding: 1.5rem;
-  }
+.inventario-tabla-container .snackbar-success { background-color: #28a745; }
+.inventario-tabla-container .snackbar-error { background-color: #dc3545; }
+.inventario-tabla-container .snackbar-warning { background-color: #ffc107; color: #333; }
+.inventario-tabla-container .snackbar-info { background-color: #17a2b8; }
+
+.inventario-tabla-container .snackbar-close {
+  background: none;
+  border: none;
+  color: currentColor;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.8;
+  margin-left: auto;
+}
+
+.inventario-tabla-container .snackbar-close:hover { opacity: 1; }
+
+/*  RESPONSIVE  */
+@media (max-width: 1024px) {
+  .inventario-tabla-container { padding: 15px; }
+  .inventario-tabla-container .tabla-inventario { font-size: 0.85rem; }
+}
+
+@media (max-width: 480px) {
+  .inventario-tabla-container { padding: 10px; }
+  .inventario-tabla-container .mobile-card { padding: 12px; margin-bottom: 12px; }
+  .inventario-tabla-container .btn-action { min-width: 28px; height: 28px; }
 }

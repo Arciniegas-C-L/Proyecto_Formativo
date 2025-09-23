@@ -1,34 +1,38 @@
 import React, { useEffect, useState } from "react";
-import { getALLProductos } from "../../api/Producto.api"; 
+import { getALLProductos } from "../../api/Producto.api";
 import FiltrosCatalogo from "./FiltrosCatalogo";
 import ProductoCard from "./ProductoCard";
 import { useAuth } from "../../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "../../assets/css/Catalogo/Catalogo.css"; 
+import "../../assets/css/Catalogo/Catalogo.css";
 
 export function Catalogo() {
-  //  HOOKS Y ESTADO 
+  //  HOOKS Y ESTADO
   const { authState } = useAuth();
-  
+
   // Estados para productos y datos
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState({});
-  
+  const [subcategoriasPorCategoria, setSubcategoriasPorCategoria] = useState(
+    {}
+  );
+
   // Estados para filtros
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
-  const [subcategoriasSeleccionadas, setSubcategoriasSeleccionadas] = useState([]);
+  const [subcategoriasSeleccionadas, setSubcategoriasSeleccionadas] = useState(
+    []
+  );
   const [tallaSeleccionada, setTallaSeleccionada] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  
+
   // Estados de UI
   const [errorProductos, setErrorProductos] = useState("");
 
-  //  FUNCIÓN UTILITARIA 
+  //  FUNCIÓN UTILITARIA
   const capitalizar = (texto = "") =>
     texto ? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase() : "";
 
-  //  CARGAR DATOS 
+  //  CARGAR DATOS
   const cargarProductos = async () => {
     try {
       const res = await getALLProductos();
@@ -36,9 +40,12 @@ export function Catalogo() {
 
       // Filtrar solo productos válidos
       const productosValidos = productosData.filter(
-        (p) => p?.categoria_nombre && p?.subcategoria_nombre && Array.isArray(p?.inventario_tallas)
+        (p) =>
+          p?.categoria_nombre &&
+          p?.subcategoria_nombre &&
+          Array.isArray(p?.inventario_tallas)
       );
-      
+
       setProductos(productosValidos);
       setErrorProductos("");
 
@@ -50,7 +57,7 @@ export function Catalogo() {
         if (!subMap[cat]) subMap[cat] = new Set();
         subMap[cat].add(sub);
       });
-      
+
       const subFinal = {};
       Object.keys(subMap).forEach((cat) => {
         subFinal[cat] = Array.from(subMap[cat]).sort();
@@ -58,9 +65,10 @@ export function Catalogo() {
       setSubcategoriasPorCategoria(subFinal);
 
       // Extraer categorías únicas
-      const catSet = new Set(productosValidos.map(p => p.categoria_nombre).filter(Boolean));
+      const catSet = new Set(
+        productosValidos.map((p) => p.categoria_nombre).filter(Boolean)
+      );
       setCategorias(Array.from(catSet).sort());
-
     } catch (error) {
       setErrorProductos("Error al cargar productos.");
       console.error("Error al cargar productos:", error);
@@ -71,7 +79,7 @@ export function Catalogo() {
     cargarProductos();
   }, []);
 
-  //  FUNCIONES DE FILTRADO 
+  //  FUNCIONES DE FILTRADO
   const seleccionarCategoria = (cat) => {
     setCategoriaSeleccionada(cat);
     setSubcategoriasSeleccionadas([]);
@@ -94,7 +102,7 @@ export function Catalogo() {
     setBusqueda("");
   };
 
-  //  FILTRADO DE PRODUCTOS 
+  //  FILTRADO DE PRODUCTOS
   const productosFiltrados = productos.filter((producto) => {
     const nombre = (producto?.nombre ?? "").toLowerCase();
     const descripcion = (producto?.descripcion ?? "").toLowerCase();
@@ -105,31 +113,41 @@ export function Catalogo() {
     // Filtro de búsqueda inteligente
     if (busqueda) {
       // Separar la búsqueda en palabras
-      const palabrasBusqueda = busquedaLower.split(' ').filter(p => p.length > 0);
-      
+      const palabrasBusqueda = busquedaLower
+        .split(" ")
+        .filter((p) => p.length > 0);
+
       // Buscar cada palabra por separado
-      const cumpleBusqueda = palabrasBusqueda.every(palabra => {
-        return nombre.includes(palabra) || 
-               descripcion.includes(palabra) || 
-               categoria.includes(palabra) || 
-               subcategoria.includes(palabra);
+      const cumpleBusqueda = palabrasBusqueda.every((palabra) => {
+        return (
+          nombre.includes(palabra) ||
+          descripcion.includes(palabra) ||
+          categoria.includes(palabra) ||
+          subcategoria.includes(palabra)
+        );
       });
-      
+
       if (!cumpleBusqueda) return false;
     }
 
     // Filtro de categoría
-    if (categoriaSeleccionada && producto.categoria_nombre !== categoriaSeleccionada) 
+    if (
+      categoriaSeleccionada &&
+      producto.categoria_nombre !== categoriaSeleccionada
+    )
       return false;
-    
+
     // Filtro de subcategoría
-    if (subcategoriasSeleccionadas.length > 0 && producto.subcategoria_nombre !== subcategoriasSeleccionadas[0]) 
+    if (
+      subcategoriasSeleccionadas.length > 0 &&
+      producto.subcategoria_nombre !== subcategoriasSeleccionadas[0]
+    )
       return false;
-    
+
     // Filtro de talla
     if (tallaSeleccionada) {
-      const tieneTalla = producto.inventario_tallas.some(inv => 
-        inv.talla === tallaSeleccionada && inv.stock > 0
+      const tieneTalla = producto.inventario_tallas.some(
+        (inv) => inv.talla === tallaSeleccionada && inv.stock > 0
       );
       if (!tieneTalla) return false;
     }
@@ -137,20 +155,20 @@ export function Catalogo() {
     return true;
   });
 
-  //  OBTENER TALLAS DISPONIBLES DINÁMICAMENTE 
+  //  OBTENER TALLAS DISPONIBLES DINÁMICAMENTE
   const obtenerTallasDisponibles = () => {
     const tallasSet = new Set();
-    
-    productosFiltrados.forEach(producto => {
+
+    productosFiltrados.forEach((producto) => {
       if (producto.inventario_tallas) {
-        producto.inventario_tallas.forEach(inv => {
+        producto.inventario_tallas.forEach((inv) => {
           if (inv.stock > 0 && inv.talla) {
             tallasSet.add(inv.talla);
           }
         });
       }
     });
-    
+
     return Array.from(tallasSet).sort();
   };
 
@@ -159,11 +177,12 @@ export function Catalogo() {
   return (
     <div className="catalogo-container container-fluid py-4">
       <div className="catalogo-main-content">
-        
         {/*  HEADER CON TÍTULO Y BUSCADOR  */}
         <div className="catalogo-header d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-          <h2 className="catalogo-titulo mb-3 mb-md-0">Catálogo de Productos</h2>
-          
+          <h2 className="catalogo-titulo mb-3 mb-md-0">
+            Catálogo de Productos
+          </h2>
+
           <div className="catalogo-controles d-flex align-items-center">
             <div className="catalogo-buscador">
               <input
@@ -182,7 +201,7 @@ export function Catalogo() {
             categorias={categorias}
             categoriaSeleccionada={categoriaSeleccionada}
             subcategoriasPorCategoria={subcategoriasPorCategoria}
-            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""} 
+            subcategoriaSeleccionada={subcategoriasSeleccionadas[0] || ""}
             tallasDisponibles={tallasDisponibles}
             tallaSeleccionada={tallaSeleccionada}
             capitalizar={capitalizar}
@@ -208,13 +227,12 @@ export function Catalogo() {
             </div>
           ) : (
             productosFiltrados.map((producto) => (
-              <div key={producto.id} className="producto-item">
-                <ProductoCard
-                  producto={producto}
-                  capitalizar={capitalizar}
-                  mostrarAgregarCarrito={authState?.rol === "cliente"}
-                />
-              </div>
+              <ProductoCard
+                key={producto.id}
+                producto={producto}
+                capitalizar={capitalizar}
+                mostrarAgregarCarrito={authState?.rol === "cliente"}
+              />
             ))
           )}
         </div>

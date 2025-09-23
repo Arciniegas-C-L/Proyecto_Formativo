@@ -25,11 +25,11 @@ export function Tallas() {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingTalla, setEditingTalla] = useState(null);
 
-  // ---- estados para eliminar (una sola vez) ----
+  //  estados para eliminar (una sola vez) 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [tallaToDelete, setTallaToDelete] = useState(null);
 
-  // ---- estados para agregar talla a productos existentes ----
+  //  estados para agregar talla a productos existentes 
   const [openAgregarDialog, setOpenAgregarDialog] = useState(false);
   const [tallaToAdd, setTallaToAdd] = useState(null);
   const [loadingAgregar, setLoadingAgregar] = useState(false);
