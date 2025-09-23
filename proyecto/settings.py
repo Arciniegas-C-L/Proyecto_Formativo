@@ -182,32 +182,14 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# ========== S3 Storage para archivos media ==========
-INSTALLED_APPS += ["storages"]
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME")
-AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com" if AWS_STORAGE_BUCKET_NAME else None
 
-if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME:
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
-else:
-    MEDIA_URL = "/media/"
-    MEDIA_ROOT = BASE_DIR / "media"
+# ========== Almacenamiento local para archivos media ==========
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ========== DEBUG S3 CONFIGURACIÓN ==========
-print("=== S3 CONFIG ===")
-print("AWS_ACCESS_KEY_ID:", AWS_ACCESS_KEY_ID)
-print("AWS_SECRET_ACCESS_KEY:", "SET" if AWS_SECRET_ACCESS_KEY else "NOT SET")
-print("AWS_STORAGE_BUCKET_NAME:", AWS_STORAGE_BUCKET_NAME)
-print("AWS_S3_REGION_NAME:", AWS_S3_REGION_NAME)
-print("DEFAULT_FILE_STORAGE:", globals().get("DEFAULT_FILE_STORAGE", "NO S3"))
-print("MEDIA_URL:", MEDIA_URL)
 
 # ========= CORS =========
 CORS_ALLOWED_ORIGINS = [

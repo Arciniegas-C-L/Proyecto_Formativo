@@ -12,12 +12,12 @@ export function ListaProductos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
-  const navigate = useNavigate();
-
-  // ---- estado para ventana eliminar global ----
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [productoToDelete, setProductoToDelete] = useState(null);
-
+                      <img
+                        src={getImagenUrl(producto.imagen)}
+                        alt={producto.nombre}
+                        onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
+                        tabIndex={0}
+                      />
   useEffect(() => {
       cargarProductos();
   }, []);
@@ -181,12 +181,12 @@ export function ListaProductos() {
                 productosFiltrados.map(producto => (
                   <tr key={`producto-${producto.id}`}>
                     <td className="celda-imagen">
-                      <img
-                        src={getImagenUrl(producto.imagen)}
-                        alt={producto.nombre}
-                        onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
-                        tabIndex={0}
-                      />
+                          <img
+                            src={getImagenUrl(producto.imagen)}
+                            alt={producto.nombre}
+                            onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
+                            tabIndex={0}
+                          />
                     </td>
                     <td>{producto.nombre}</td>
                     <td className="celda-descripcion" title={producto.descripcion}>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getImagenUrl } from '../../utils/getImagenUrl';
 import '../../assets/css/Perfil/PedidosHistorial.css';
 
 const pedidosEjemplo = [
@@ -140,7 +141,7 @@ export default function PedidosHistorial() {
               <div className="pedido-productos">
                 {productosAMostrar.map((prod, idx) => (
                   <div className="producto-item" key={idx}>
-                    <img src={prod.imagen} alt={prod.nombre} className="producto-img" />
+                    <img src={getImagenUrl(prod.imagen)} alt={prod.nombre} className="producto-img" />
                     <div className="producto-info">
                       <span className="producto-nombre">{prod.nombre}</span>
                       <span className="producto-cantidad">Cantidad: {prod.cantidad}</span>

@@ -1,5 +1,15 @@
 {
-  "routes": {
-    "/**": "index.html"
-  }
+  "static": {
+    "media": "../media"
+  },
+  "routes": [
+    {
+      "src": "/media/(.*)",
+      "dest": "../media/$1"
+    },
+    {
+      "src": "/**",
+      "dest": "index.html"
+    }
+  ]
 }
