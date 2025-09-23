@@ -10,10 +10,8 @@ class Command(BaseCommand):
         media_root = settings.MEDIA_ROOT
         static_media_root = os.path.join(settings.STATIC_ROOT or os.path.join(settings.BASE_DIR, 'static'), 'media')
 
-        if not os.path.exists(media_root):
-            self.stdout.write(self.style.ERROR(f'La carpeta media no existe: {media_root}'))
-            return
-
+        # Crear la carpeta media si no existe
+        os.makedirs(media_root, exist_ok=True)
         os.makedirs(static_media_root, exist_ok=True)
 
         archivos_copiados = 0

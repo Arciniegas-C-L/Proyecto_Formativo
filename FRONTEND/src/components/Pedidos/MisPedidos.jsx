@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getImagenUrl } from '../../utils/getImagenUrl';
+
 import { listarPedidos } from "../../api/Pedido.api";
 import { listarItemsDePedido } from "../../api/PedidoProducto.api.js";
 import { Link } from "react-router-dom";
@@ -117,7 +117,7 @@ export function MisPedidos() {
   }, []);
 
 
-  const resolveImg = (src) => getImagenUrl(src);
+
 
   const toggleExpand = async (pedido) => {
     const pid = pedido.idPedido ?? pedido.id;
@@ -247,7 +247,7 @@ export function MisPedidos() {
                           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                             {items.map((it, idx) => {
                               const nombre = it.nombre ?? "Producto";
-                              const urlImg = getImagenUrl(it.imagen);
+                              const urlImg = it.imagen || PLACEHOLDER;
                               const precio = it.precio ?? it.subtotal ?? null;
                               const cantidad = it.cantidad ?? 1;
                               const talla = it.talla ? ` · Talla: ${it.talla}` : "";
@@ -259,7 +259,7 @@ export function MisPedidos() {
                                       src={urlImg}
                                       className="card-img-top"
                                       alt={nombre}
-                                      onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
+                                      onError={e => { e.target.onerror = null; e.target.src = PLACEHOLDER; }}
                                     />
                                     <div className="card-body">
                                       <h6 className="card-title mb-1">{nombre}</h6>

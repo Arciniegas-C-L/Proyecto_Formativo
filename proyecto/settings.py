@@ -1,21 +1,20 @@
+
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
-from datetime import timedelta
-
-
-from dotenv import load_dotenv
 from corsheaders.defaults import default_headers
+from datetime import timedelta
+DJANGO_ENV = os.getenv("DJANGO_ENV", "dev").lower()
+if DJANGO_ENV == "prod":
+    from .settings_prod import *
+else:
+    from .settings_dev import *
 
-load_dotenv()
 
 # ========= Paths base =========
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ========= URLs base (se cargan de .env) =========
-# En tu .env pon, por ejemplo:
-# FRONTEND_URL=https://10aca77b7309.ngrok-free.app
-# BACKEND_URL=https://ed2d28ec0c25.ngrok-free.app
 FRONTEND_URL = (os.getenv("FRONTEND_URL") or "http://localhost:5173").rstrip("/")
 BACKEND_URL  = (os.getenv("BACKEND_URL")  or "http://localhost:8000").rstrip("/")
 

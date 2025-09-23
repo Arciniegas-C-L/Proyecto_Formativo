@@ -49,7 +49,7 @@ import {
 import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
 import { getAllGruposTalla } from "../../api/GrupoTalla.api";
 
-import { getImagenUrl } from '../../utils/getImagenUrl';
+
 
 const InventarioTabla = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
@@ -492,7 +492,7 @@ const InventarioTabla = () => {
                   {producto.imagen ? (
                     <>
                       <img
-                        src={getImagenUrl(producto.imagen)}
+                        src={producto.imagen || "https://via.placeholder.com/100"}
                         alt={producto.nombre}
                         style={{ 
                           width: 40, 
@@ -503,7 +503,7 @@ const InventarioTabla = () => {
                         }}
                         onError={e => {
                           e.target.onerror = null;
-                          e.target.src = getImagenUrl();
+                          e.target.src = "https://via.placeholder.com/100";
                         }}
                         loading="lazy"
                       />

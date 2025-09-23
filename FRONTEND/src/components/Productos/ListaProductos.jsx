@@ -5,7 +5,6 @@ import { toast } from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import "../../assets/css/Productos/ListaProductos.css";
 import { EliminarModal } from  "../EliminarModal/EliminarModal"; 
-import { getImagenUrl } from "../../utils/getImagenUrl";
 
 export function ListaProductos() {
   const navigate = useNavigate();
@@ -178,12 +177,13 @@ export function ListaProductos() {
                 productosFiltrados.map(producto => (
                   <tr key={`producto-${producto.id}`}>
                     <td className="celda-imagen">
-                          <img
-                            src={getImagenUrl(producto.imagen)}
+                      {typeof producto.imagen === 'string' && producto.imagen
+                        ? <img
+                            src={producto.imagen}
                             alt={producto.nombre}
-                            onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
                             tabIndex={0}
                           />
+                        : null}
                     </td>
                     <td>{producto.nombre}</td>
                     <td className="celda-descripcion" title={producto.descripcion}>

@@ -16,7 +16,7 @@ import {
 } from '../../api/CarritoApi';
 import { getALLProductos } from '../../api/Producto.api';
 import '../../assets/css/Carrito/Carrito.css';
-import { getImagenUrl } from '../../utils/getImagenUrl';
+
 
 const API_BASE_URL = "http://127.0.0.1:8000"; // Backend Django
 const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
@@ -290,11 +290,7 @@ export function Carrito() {
     return total.toLocaleString('es-CO', { maximumFractionDigits: 0 });
   };
 
-  const getImagenUrl = (imagenPath) => {
-    if (!imagenPath) return "https://via.placeholder.com/100";
-    if (imagenPath.startsWith('http')) return imagenPath;
-    return `${API_BASE_URL}${imagenPath}`;
-  };
+
 
   const capitalizar = (texto) => {
     if (!texto) return '';
@@ -366,11 +362,11 @@ export function Carrito() {
                   <div key={item.idCarritoItem} className="carrito-item">
                     <div className="item-imagen">
                       <img
-                        src={getImagenUrl(item.producto?.imagen)}
+                        src={item.producto?.imagen || "https://via.placeholder.com/100"}
                         alt={item.producto?.nombre || "Producto"}
                         onError={e => {
                           e.target.onerror = null;
-                          e.target.src = getImagenUrl();
+                          e.target.src = "https://via.placeholder.com/100";
                         }}
                       />
                     </div>
@@ -476,7 +472,6 @@ export function Carrito() {
 
       {showConfirmarCompra && (
         <ConfirmarCompra
-          onConfirmar={handleConfirmarCompra}
           usuario={usuario}
           onCancelar={() => setShowConfirmarCompra(false)}
         />
