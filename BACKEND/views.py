@@ -52,6 +52,8 @@ from BACKEND.permissions import (
     AdminandCliente,
     AllowGuestReadOnly,
     NotGuest,
+    CarritoPermiteInvitadoMenosPago,
+    ComentarioPermission,
 )
 
 # --- MODELOS del proyecto (import explícito)
@@ -151,7 +153,7 @@ sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
 class ComentarioViewSet(viewsets.ModelViewSet):
     queryset = Comentario.objects.select_related('usuario').all().order_by('-fecha')
     serializer_class = ComentarioSerializer
-    permission_classes = [IsAuthenticated, NotGuest, AdminandCliente]
+    permission_classes = [ComentarioPermission]
 
     def perform_create(self, serializer):
         # Asigna el usuario autenticado y guarda snapshot de datos
@@ -475,7 +477,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 #Preparacion para actualizar perfil con token de cliente
 class MiPerfilView(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, AdminandCliente]
+    permission_classes = [IsAuthenticated, AdminandCliente, AllowGuestReadOnly]
 
     def list(self, request):
         serializer = UsuarioSerializer(request.user)
@@ -499,6 +501,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
+    permission_classes = [CarritoPermiteInvitadoMenosPago]
     queryset = Producto.objects.all()
     parser_classes = (MultiPartParser, FormParser)  # Soportar archivos en request
     def get_permissions(self):
@@ -1423,6 +1426,7 @@ class TipoPagoView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
 
 class CarritoView(viewsets.ModelViewSet):
+    permission_classes = [CarritoPermiteInvitadoMenosPago]
     serializer_class = CarritoSerializer
     # dentro de CarritoView
     def _ensure_pedido_from_carrito(self, carrito):
@@ -1465,9 +1469,6 @@ class CarritoView(viewsets.ModelViewSet):
         return pedido
 
     def list(self, request, *args, **kwargs):
-        rol = getattr(getattr(request.user, 'rol', None), 'nombre', '').lower()
-        if rol == 'invitado':
-            return Response({"results": [], "count": 0}, status=status.HTTP_200_OK)
         return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -1813,7 +1814,7 @@ class CarritoView(viewsets.ModelViewSet):
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]  # Permite acceso a admin y cliente
+    permission_classes = [CarritoPermiteInvitadoMenosPago]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:

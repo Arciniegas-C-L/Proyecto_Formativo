@@ -205,65 +205,85 @@ export function Carrito() {
   };
 
   // Crear preferencia y redirigir (SOLO email + direccion)
-  const handlePagar = async () => {
-    try {
-      if (!carrito || items.length === 0) {
-        toast.error("Tu carrito está vacío");
-        return;
-      }
-      if (!mpLoaded || !window.MercadoPago) {
-        toast.error("SDK de Mercado Pago no está disponible");
-        return;
-      }
-      if (!autenticado) {
-        setShowLoginModal(true);
-        setTimeout(() => {
-          setShowLoginModal(false);
-          navigate('/sesion');
-        }, 5000);
-        return;
-      }
-      if (!validar()) {
-        toast.error("Revisa teléfono y dirección");
-        return;
-      }
-
-      setCreatingPreference(true);
-
-      // Respetar max_length=255 en tu modelo
-      const direccionTrimmed = direccion.trim().slice(0, 255);
-
-      const payload = {
-        email: usuario?.correo || usuario?.email,
-        direccion: direccionTrimmed,
-        // (el teléfono NO va a la tabla Direccion; lo usas solo para contacto/notificación)
-      };
-
-      const { data } = await crearPreferenciaPago(carrito.idCarrito, payload);
-
-      if (!data?.init_point) {
-        toast.error("No se pudo crear la preferencia de pago");
-        return;
-      }
-      window.location.href = data.init_point;
-    } catch (err) {
-      console.error("Error al crear preferencia:", err);
-      const detalle = err?.response?.data?.detalle;
-      const msg =
-        detalle?.message ||
-        detalle?.error ||
-        detalle?.cause?.[0]?.description ||
-        err?.response?.data?.error ||
-        "Error al iniciar el pago";
-      toast.error(msg);
-    } finally {
-      setCreatingPreference(false);
+const handlePagar = async () => {
+  try {
+    if (!carrito || items.length === 0) {
+      toast.error("Tu carrito está vacío");
+      return;
     }
-  };
+    if (!mpLoaded || !window.MercadoPago) {
+      toast.error("SDK de Mercado Pago no está disponible");
+      return;
+    }
+    if (!autenticado) {
+      setShowLoginModal(true);
+      setTimeout(() => {
+        setShowLoginModal(false);
+        navigate("/sesion");
+      }, 5000);
+      return;
+    }
+    if (!validar()) {
+      toast.error("Revisa teléfono y dirección");
+      return;
+    }
 
-  const handleFinalizarCompra = async () => {
-    await handlePagar();
-  };
+    setCreatingPreference(true);
+
+    // Respetar max_length=255 en tu modelo
+    const direccionTrimmed = direccion.trim().slice(0, 255);
+
+    const payload = {
+      email: usuario?.correo || usuario?.email,
+      direccion: direccionTrimmed,
+      // (el teléfono NO va a la tabla Direccion; lo usas solo para contacto/notificación)
+    };
+
+    const { data } = await crearPreferenciaPago(carrito.idCarrito, payload);
+
+    if (!data?.init_point) {
+      toast.error("Registrese o iniccie seccion para completar pago");
+      return;
+    }
+
+    window.location.href = data.init_point;
+  } catch (err) {
+  console.error("Error al crear preferencia:", err);
+
+  // Si el backend devuelve 403 mostramos este mensaje y redirigimos
+  if (err?.response?.status === 403) {
+    toast.error("No se puede ordenar hasta iniciar sesión", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+
+    setShowLoginModal(true);
+    setTimeout(() => {
+      setShowLoginModal(false);
+      navigate("/sesion");
+    }, 3000);
+
+    return; // Evitamos seguir con el resto de errores
+  }
+
+  // Si no es 403 usamos el mensaje genérico
+  const detalle = err?.response?.data?.detalle;
+  const msg =
+    detalle?.message ||
+    detalle?.error ||
+    detalle?.cause?.[0]?.description ||
+    err?.response?.data?.error ||
+    "Error al iniciar el pago";
+  toast.error(msg);
+  } finally {
+    setCreatingPreference(false);
+  }
+};
+
+// Método que llama a handlePagar
+const handleFinalizarCompra = async () => {
+  await handlePagar();
+};
 
   const calcularTotal = () => {
     const total = items.reduce((acc, item) => acc + (parseFloat(item.subtotal) || 0), 0);

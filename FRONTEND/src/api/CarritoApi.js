@@ -81,19 +81,25 @@ export const finalizarCompra = (id) => api.post(`carrito/${id}/finalizar_compra/
  *  - crearPreferenciaPago(id, "email@dominio.com")
  *  - crearPreferenciaPago(id, { email, address: {...} })
  */
-export const crearPreferenciaPago = (id, payload) => {
-  const body =
-    typeof payload === 'string'
-      ? { email: payload }
-      : { ...payload };
+export const crearPreferenciaPago = async (id, payload) => {
+  const body = typeof payload === 'string' ? { email: payload } : { ...payload };
 
-  // Compat: si tu backend también espera un único campo "direccion", lo enviamos calculado.
   if (body?.address && !body.direccion) {
     body.direccion = addressToString(body.address);
   }
 
-  return api.post(`carrito/${id}/crear_preferencia_pago/`, body);
+  const res = await api.post(`carrito/${id}/crear_preferencia_pago/`, body);
+
+  // ⬇️ Fuerza rechazo para que llegue al catch del componente
+  if (res.status === 403) {
+    const err = new Error('Forbidden');
+    err.response = res;
+    throw err;
+  }
+
+  return res;
 };
+
 
 /* ─────────────────────────────────────────────────────────────
  *  Operaciones de items del carrito
