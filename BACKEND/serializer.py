@@ -287,7 +287,16 @@ class ProductoSerializer(serializers.ModelSerializer):
     subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
     inventario_tallas = serializers.SerializerMethodField()
-    imagen = serializers.ImageField(use_url=True, allow_null=True, required=False)
+    imagen = serializers.SerializerMethodField()
+
+    def get_imagen(self, obj):
+        if obj.imagen:
+            url = obj.imagen.url.replace('/media/', '/static/')
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(url)
+            return url
+        return None
 
 
     class Meta:
