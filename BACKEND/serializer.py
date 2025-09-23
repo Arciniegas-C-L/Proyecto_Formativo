@@ -282,10 +282,13 @@ class TallaSerializer(serializers.ModelSerializer):
         return data
 
 class ProductoSerializer(serializers.ModelSerializer):
+
     subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all())
     subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
     inventario_tallas = serializers.SerializerMethodField()
+    imagen = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Producto
@@ -301,6 +304,17 @@ class ProductoSerializer(serializers.ModelSerializer):
             'imagen',
             'inventario_tallas'
         ]
+
+    def get_imagen(self, obj):
+        request = self.context.get('request', None)
+        if obj.imagen:
+            if hasattr(obj.imagen, 'url'):
+                url = obj.imagen.url
+                if request is not None:
+                    return request.build_absolute_uri(url)
+                return url
+            return str(obj.imagen)
+        return None
 
     def get_inventario_tallas(self, obj):
         inventarios = Inventario.objects.filter(producto=obj).select_related('talla')
