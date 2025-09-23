@@ -8,16 +8,13 @@ import { EliminarModal } from  "../EliminarModal/EliminarModal";
 import { getImagenUrl } from "../../utils/getImagenUrl";
 
 export function ListaProductos() {
+  const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
-                      <img
-                        src={getImagenUrl(producto.imagen)}
-                        alt={producto.nombre}
-                        onError={e => { e.target.onerror = null; e.target.src = getImagenUrl(); }}
-                        tabIndex={0}
-                      />
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [productoToDelete, setProductoToDelete] = useState(null);
   useEffect(() => {
       cargarProductos();
   }, []);
