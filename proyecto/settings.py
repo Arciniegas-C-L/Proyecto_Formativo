@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlsplit
 from datetime import timedelta
+import sys
 
 from dotenv import load_dotenv
 from corsheaders.defaults import default_headers
@@ -196,7 +197,19 @@ else:
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
 
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ========== DEBUG S3 CONFIGURACIÓN ==========
+
+if "runserver" in sys.argv or "gunicorn" in sys.argv:
+    print("=== S3 CONFIG ===")
+    print("AWS_ACCESS_KEY_ID:", AWS_ACCESS_KEY_ID)
+    print("AWS_SECRET_ACCESS_KEY:", "SET" if AWS_SECRET_ACCESS_KEY else "NOT SET")
+    print("AWS_STORAGE_BUCKET_NAME:", AWS_STORAGE_BUCKET_NAME)
+    print("AWS_S3_REGION_NAME:", AWS_S3_REGION_NAME)
+    print("DEFAULT_FILE_STORAGE:", globals().get("DEFAULT_FILE_STORAGE", "NO S3"))
+    print("MEDIA_URL:", MEDIA_URL)
 
 # ========= CORS =========
 CORS_ALLOWED_ORIGINS = [
