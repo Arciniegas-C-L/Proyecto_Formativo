@@ -152,7 +152,14 @@ export function Facturas() {
             </div>
             <div className="col-6 col-md-2">
               <label className="form-label small text-muted mb-1">Filas</label>
-              <select className="form-select" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+              <select
+                className="form-select"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+              >
                 {[5, 10, 20, 50].map((n) => (
                   <option key={n} value={n}>{n}</option>
                 ))}

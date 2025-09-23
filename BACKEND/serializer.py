@@ -990,11 +990,6 @@ class FacturaItemSerializer(serializers.ModelSerializer):
         p = getattr(obj, "producto", None)
         return getattr(p, "nombre", None) if p else None
 
-
-# serializers.py
-# serializers.py
-
-# serializers.py
 class FacturaSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
     cliente_email = serializers.SerializerMethodField()
@@ -1046,13 +1041,16 @@ class FacturaSerializer(serializers.ModelSerializer):
         return None
 
     def get_fecha(self, obj):
-        dt = getattr(obj, "emitida_en", None) or getattr(obj, "created_at", None)
-        if not dt:
-            return None
-        try:
-            return dt.strftime("%Y-%m-%d %H:%M")
-        except Exception:
-            return str(dt)
+            dt = getattr(obj, "emitida_en", None) or getattr(obj, "created_at", None)
+            if not dt:
+                return None
+            try:
+                # dt llega en UTC si USE_TZ=True; la convertimos a Bogotá
+                local_dt = timezone.localtime(dt, timezone.get_current_timezone())
+                # ISO 8601 con offset, p.ej. 2025-09-22T12:57:00-05:00
+                return local_dt.isoformat(timespec="minutes")
+            except Exception:
+                return str(dt)
 
     # 🆕 Extraer snapshot de envío desde el pedido asociado
     def get_shipping_address(self, obj):

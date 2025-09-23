@@ -124,6 +124,7 @@ WSGI_APPLICATION = "proyecto.wsgi.application"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",  # agrega -0500
 }
 
 SIMPLE_JWT = {
@@ -145,7 +146,7 @@ DATABASES = {
 AUTH_USER_MODEL = "BACKEND.Usuario"
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/Bogota"
 USE_I18N = True
 USE_TZ = True
 

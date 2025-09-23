@@ -141,6 +141,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
 from reportlab.lib import colors
+from django.core.mail import EmailMultiAlternatives
 
 
 # --- SDK Mercado Pago (usa tu token de settings)
@@ -1953,7 +1954,7 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 
 
 # =========================
-# HELPERS (money/fecha/estado)
+# HELPERS (money/fecha/estado) Desde Camila
 # =========================
 def fmt_money(value, currency="COP"):
     """
@@ -1967,23 +1968,38 @@ def fmt_money(value, currency="COP"):
 
 
 def _parse_dt(val):
-    """str ISO/ datetime naive/aware -> datetime aware en tz local"""
+    """
+    Convierte str ISO / datetime naive/aware a datetime aware en TZ local.
+    Regla:
+      - Si trae 'Z' u offset (+hh:mm / -hh:mm): respetar esa zona.
+      - Si NO trae zona: asumir UTC (lo más seguro en APIs y BD).
+    """
     if val in (None, ""):
         return None
     try:
+        # 1) Parse
         if isinstance(val, str):
+            s = val.strip()
+            # Normaliza sufijo Z a +00:00 para fromisoformat
+            if s.endswith("Z"):
+                s = s[:-1] + "+00:00"
             try:
-                dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
+                dt = datetime.fromisoformat(s)
             except Exception:
-                dt = datetime.strptime(val[:19], "%Y-%m-%dT%H:%M:%S")
+                # corta a segundos para strings tipo 'YYYY-MM-DDTHH:MM:SS(.ms)?'
+                base = s[:19]
+                dt = datetime.strptime(base, "%Y-%m-%dT%H:%M:%S")
         else:
             dt = val
+
+        # 2) Si no tiene tzinfo, ASUMIR UTC (no local)
         if timezone.is_naive(dt):
-            dt = timezone.make_aware(dt, timezone.get_current_timezone())
+            dt = timezone.make_aware(dt, timezone.utc)
+
+        # 3) Convertir a la tz local de Django
         return dt.astimezone(timezone.get_current_timezone())
     except Exception:
         return None
-
 
 def fmt_date(value):
     dt = _parse_dt(value)
@@ -2040,7 +2056,6 @@ class FacturaView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=["post"])
-    @transaction.atomic
     def crear_desde_pago(self, request):
         """
         Crea una factura (idempotente) a partir de un pago de Mercado Pago.
@@ -2054,12 +2069,12 @@ class FacturaView(viewsets.ModelViewSet):
         }
         """
         from rest_framework.exceptions import ValidationError as DRFValidationError
-        data = request.data or {}
 
-        payment_id  = str(data.get("payment_id") or "").strip()
+        data         = request.data or {}
+        payment_id   = str(data.get("payment_id") or "").strip()
         external_ref = str(data.get("external_reference") or "").strip()
-        carrito_id  = data.get("carrito_id")
-        address     = data.get("address") or {}  # opcional
+        carrito_id   = data.get("carrito_id")
+        address      = data.get("address") or {}
 
         if not external_ref and not carrito_id and not payment_id:
             return Response(
@@ -2067,15 +2082,11 @@ class FacturaView(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 1) Resolver carrito (con lock cuando sea posible)
+        # -------------------------
+        # 0) Resolver carrito (sin select_for_update para evitar lock en SQLite)
+        # -------------------------
         try:
             qs = Carrito.objects.select_related("usuario").prefetch_related("items")
-            # Para evitar "database is locked" en SQLite con writes simultáneos:
-            try:
-                qs = qs.select_for_update()
-            except Exception:
-                pass
-
             if external_ref:
                 carrito = qs.get(external_reference=external_ref)
             elif carrito_id:
@@ -2090,7 +2101,9 @@ class FacturaView(viewsets.ModelViewSet):
         if carrito.items.count() == 0:
             return Response({"detail": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2) Consultar estado del pago en MP (opcional pero recomendado)
+        # -------------------------
+        # 1) Consultar estado en MP FUERA del atomic (menos tiempo con lock)
+        # -------------------------
         status_mp = None
         if payment_id:
             try:
@@ -2100,21 +2113,16 @@ class FacturaView(viewsets.ModelViewSet):
                     headers={"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"},
                     timeout=15
                 )
-                if resp.status_code != 200:
-                    return Response({"detail": "No se pudo consultar el pago en MP"},
-                                    status=status.HTTP_502_BAD_GATEWAY)
-                data_mp = resp.json()
-                status_mp = data_mp.get("status")  # approved | pending | rejected
-
-                # Guardamos rápido y simple; si hay lock, lo reintentará la transacción
-                carrito.payment_id = payment_id
-                carrito.mp_status = status_mp or carrito.mp_status
-                carrito.save(update_fields=["payment_id", "mp_status"])
-            except Exception as e:
-                # No abortamos toda la operación por un fallo de consulta
+                if resp.status_code == 200:
+                    data_mp = resp.json()
+                    status_mp = data_mp.get("status")  # approved | pending | rejected
+                # si falla, continuamos con None
+            except Exception:
                 pass
 
-        # 3) Idempotencia
+        # -------------------------
+        # 2) Idempotencia (antes de crear nada)
+        # -------------------------
         if payment_id:
             f_exist = Factura.objects.filter(mp_payment_id=payment_id).first()
             if f_exist:
@@ -2124,69 +2132,7 @@ class FacturaView(viewsets.ModelViewSet):
             if f_exist:
                 return Response(FacturaSerializer(f_exist).data, status=status.HTTP_200_OK)
 
-        # 4) Asegurar Pedido asociado al carrito
-        pedido = getattr(carrito, "pedido", None)
-        if not pedido:
-            try:
-                # Si tienes el helper en CarritoView, puedes reutilizarlo;
-                # aquí re-calculamos total de forma segura.
-                total = Decimal("0")
-                for it in carrito.items.all():
-                    pu = Decimal(str(getattr(it, "precio_unitario", 0) or 0))
-                    qty = Decimal(str(getattr(it, "cantidad", 0) or 0))
-                    sub = getattr(it, "subtotal", None)
-                    sub = Decimal(str(sub)) if sub is not None else (pu * qty)
-                    total += sub
-                pedido = Pedido.objects.create(usuario=carrito.usuario, total=total, estado=True)
-            except Exception as e:
-                return Response({"detail": f"No se pudo crear el pedido: {e}"}, status=500)
-
-        # 5) Armar items para la FacturaCreateSerializer
-        items_payload = []
-        for it in carrito.items.all():
-            items_payload.append({
-                "producto_id": it.producto_id,
-                "talla_id": getattr(it.talla, "id", None),
-                "cantidad": int(it.cantidad),
-                "precio": str(Decimal(getattr(it, "precio_unitario", 0) or 0)),
-            })
-
-        numero = external_ref or f"F-{getattr(carrito, 'id', carrito.pk)}-{int(time.time())}"
-        payload = {
-            "numero": numero,
-            "pedido_id": getattr(pedido, 'id', getattr(pedido, 'pk', None)),
-            "usuario_id": getattr(carrito.usuario, 'id', getattr(carrito.usuario, 'pk', None)),
-            "moneda": "COP",
-            "metodo_pago": "mercadopago",
-            "mp_payment_id": payment_id or "",
-            "items": items_payload
-        }
-
-        ser = FacturaCreateSerializer(data=payload)
-        ser.is_valid(raise_exception=True)
-        factura = ser.save()
-
-        # 6) Denormalizar datos del cliente y direccion
-        update_fields = []
-        # nombre / email
-        if hasattr(factura, "cliente_email"):
-            em = getattr(carrito.usuario, "email", "") or getattr(carrito.usuario, "correo", "") or ""
-            if em and em != getattr(factura, "cliente_email", ""):
-                factura.cliente_email = em
-                update_fields.append("cliente_email")
-
-        if hasattr(factura, "cliente_nombre"):
-            nm = (
-                getattr(carrito.usuario, "nombre", None)
-                or getattr(carrito.usuario, "first_name", None)
-                or getattr(carrito.usuario, "username", None)
-                or ""
-            )
-            if nm and nm != getattr(factura, "cliente_nombre", ""):
-                factura.cliente_nombre = nm
-                update_fields.append("cliente_nombre")
-
-        # Dirección en Factura (si el modelo tiene el campo)
+        # Helper local dirección
         def _addr_line(a: dict) -> str:
             if not isinstance(a, dict):
                 return ""
@@ -2200,51 +2146,130 @@ class FacturaView(viewsets.ModelViewSet):
             return txt[:255]
 
         linea_dir = _addr_line(address) if address else ""
-        # si no vino en body, intenta snapshot en Pedido/Carrito
-        if not linea_dir and hasattr(pedido, "shipping_snapshot"):
-            linea_dir = _addr_line(getattr(pedido, "shipping_snapshot", {}) or {})
         if not linea_dir and hasattr(carrito, "shipping_snapshot"):
             linea_dir = _addr_line(getattr(carrito, "shipping_snapshot", {}) or {})
 
-        if linea_dir and hasattr(factura, "direccion"):
-            if linea_dir != (getattr(factura, "direccion", "") or ""):
-                factura.direccion = linea_dir
-                update_fields.append("direccion")
+        # -------------------------
+        # 3) Crear todo dentro de atomic (pero rápido)
+        # -------------------------
+        with transaction.atomic():
+            # Asegurar external_reference en el carrito (si no tenía)
+            if external_ref and carrito.external_reference != external_ref:
+                carrito.external_reference = external_ref
+                try:
+                    carrito.save(update_fields=["external_reference"])
+                except Exception:
+                    pass
 
-        if update_fields:
-            factura.save(update_fields=update_fields)
+            # Persistir payment_id / mp_status rápidamente (si tenemos)
+            if payment_id and (carrito.payment_id != payment_id or carrito.mp_status != status_mp):
+                carrito.payment_id = payment_id
+                carrito.mp_status  = status_mp or carrito.mp_status
+                try:
+                    carrito.save(update_fields=["payment_id", "mp_status"])
+                except Exception:
+                    # si hay lock, no abortamos la factura
+                    pass
 
-        # Guardar también en tabla Direccion (si existe) y manejar validaciones
-        if linea_dir:
-            try:
-                from .models import Direccion
-                Direccion.objects.create(usuario=carrito.usuario, direccion=linea_dir)
-            except DRFValidationError as ve:
-                # devolvemos 200/201 igualmente, pero informamos el warning
-                # (opcional: puedes registrar en logs)
-                pass
-            except Exception:
-                pass
+            # Asegurar Pedido
+            pedido = getattr(carrito, "pedido", None)
+            if not pedido:
+                total = Decimal("0")
+                for it in carrito.items.all():
+                    pu  = Decimal(str(getattr(it, "precio_unitario", 0) or 0))
+                    qty = Decimal(str(getattr(it, "cantidad", 0) or 0))
+                    sub = getattr(it, "subtotal", None)
+                    sub = Decimal(str(sub)) if sub is not None else (pu * qty)
+                    total += sub
+                pedido = Pedido.objects.create(usuario=carrito.usuario, total=total, estado=True)
 
-        # 7) Ajustar estado de la factura según MP
-        if status_mp:
-            try:
+            # Items para la factura
+            items_payload = []
+            for it in carrito.items.all():
+                items_payload.append({
+                    "producto_id": it.producto_id,
+                    "talla_id": getattr(it.talla, "id", None),
+                    "cantidad": int(it.cantidad),
+                    "precio": str(Decimal(getattr(it, "precio_unitario", 0) or 0)),
+                })
+
+            numero = external_ref or f"F-{getattr(carrito, 'id', carrito.pk)}-{int(time.time())}"
+            payload = {
+                "numero": numero,
+                "pedido_id": getattr(pedido, 'id', getattr(pedido, 'pk', None)),
+                "usuario_id": getattr(carrito.usuario, 'id', getattr(carrito.usuario, 'pk', None)),
+                "moneda": "COP",
+                "metodo_pago": "mercadopago",
+                "mp_payment_id": payment_id or "",
+                "items": items_payload
+            }
+
+            ser = FacturaCreateSerializer(data=payload)
+            ser.is_valid(raise_exception=True)
+            factura = ser.save()
+
+            # Denormalizar email/nombre
+            update_fields = []
+            if hasattr(factura, "cliente_email"):
+                em = (getattr(carrito.usuario, "email", "") or getattr(carrito.usuario, "correo", "") or "").strip()
+                if em and em != getattr(factura, "cliente_email", ""):
+                    factura.cliente_email = em
+                    update_fields.append("cliente_email")
+            if hasattr(factura, "cliente_nombre"):
+                nm = (
+                    getattr(carrito.usuario, "nombre", None)
+                    or getattr(carrito.usuario, "first_name", None)
+                    or getattr(carrito.usuario, "username", None)
+                    or ""
+                ).strip()
+                if nm and nm != getattr(factura, "cliente_nombre", ""):
+                    factura.cliente_nombre = nm
+                    update_fields.append("cliente_nombre")
+            if linea_dir and hasattr(factura, "direccion"):
+                if linea_dir != (getattr(factura, "direccion", "") or ""):
+                    factura.direccion = linea_dir
+                    update_fields.append("direccion")
+
+            # Ajustar estado por MP si lo tenemos
+            if status_mp:
                 nuevo_estado = map_mp_to_estado_factura(status_mp)
                 if nuevo_estado != getattr(factura, "estado", "emitida"):
                     factura.estado = nuevo_estado
-                    factura.save(update_fields=["estado"])
+                    if "estado" not in update_fields:
+                        update_fields.append("estado")
+
+            if update_fields:
+                factura.save(update_fields=update_fields)
+
+            # Registrar también en Direccion (sin romper el flujo si falla)
+            if linea_dir:
+                try:
+                    from .models import Direccion
+                    Direccion.objects.create(usuario=carrito.usuario, direccion=linea_dir)
+                except DRFValidationError:
+                    pass
+                except Exception:
+                    pass
+
+            # Cerrar carrito
+            try:
+                carrito.estado = False
+                carrito.save(update_fields=["estado"])
             except Exception:
                 pass
 
-        # 8) Cerrar carrito (como en tu lógica original)
+        # -------------------------
+        # 4) (Opcional) enviar email con comprobante/factura
+        # -------------------------
         try:
-            carrito.estado = False
-            carrito.save(update_fields=["estado"])
+            _send_factura_email(request, factura)
         except Exception:
             pass
 
         return Response(FacturaSerializer(factura).data, status=status.HTTP_201_CREATED)
     
+    #Factura en PDF Camila
+
     @action(detail=True, methods=["get"], url_path="pdf", url_name="pdf")
     def pdf(self, request, pk=None):
         # ------- datos base -------
@@ -2439,6 +2464,9 @@ class FacturaView(viewsets.ModelViewSet):
         resp = HttpResponse(buf.read(), content_type="application/pdf")
         resp["Content-Disposition"] = f'attachment; filename="{filename}"'
         return resp
+    
+    #Comprovande de pago Camila 
+
     @action(detail=True, methods=["get"], url_path="comprobante/pdf", url_name="comprobante_pdf")
     def comprobante_pdf(self, request, pk=None):
         """
@@ -2647,6 +2675,8 @@ class FacturaView(viewsets.ModelViewSet):
             qs = qs.filter(estado=estado)
 
         return qs
+    
+#Hasta aca Camila
 
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
