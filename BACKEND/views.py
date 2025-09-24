@@ -8,6 +8,7 @@ from decimal import Decimal
 import io
 from django.db.models import Prefetch
 
+
 from django.http import FileResponse, HttpResponse
 from rest_framework.decorators import action
 from rest_framework import status
@@ -24,9 +25,10 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
+from rest_framework.pagination import PageNumberPagination
 
 # --- DRF
-from rest_framework import status, viewsets, serializers
+from rest_framework import status, viewsets, serializers, mixins
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -89,7 +91,10 @@ from .models import (
     Comentario,
     PedidoItem,
     Direccion,
+    SalesRangeReport,
+    SalesRangeReportItem,
 )
+from django.db.models import Min
 
 # --- SERIALIZERS del proyecto (import explícito)
 from .serializer import (
@@ -130,7 +135,13 @@ from .serializer import (
     FacturaCreateSerializer,
     ComentarioSerializer,
     CrearPreferenciaPagoSerializer,
+    SalesRangeReportSerializer,
+    SalesRangeReportItemSerializer,
+    GenerarSalesRangeReportSerializer,
+
 )
+from .reportes_rango import build_range_report
+from rest_framework import mixins
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -2867,4 +2878,148 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+def _parse_date(s: str):
+    try:
+        return datetime.fromisoformat(s).date()
+    except Exception:
+        return None
+
+
+class SmallPagePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 200
+
+
+class SalesRangeReportViewSet(mixins.ListModelMixin,
+                              mixins.RetrieveModelMixin,
+                              mixins.DestroyModelMixin,
+                              viewsets.GenericViewSet):
+    """
+    ENDPOINTS:
+    GET  /api/reportes/ventas/rango/                 -> lista cabeceras (KPIs) con filtros (?desde, ?hasta)
+    GET  /api/reportes/ventas/rango/{pk}/            -> detalle cabecera
+    POST /api/reportes/ventas/rango/generar/         -> genera/re-genera un reporte por rango (atomic)
+    GET  /api/reportes/ventas/rango/{pk}/items/      -> detalle por producto del reporte (ordenable, paginado)
+    """
+    queryset = SalesRangeReport.objects.all().order_by("-generado_en", "-fecha_inicio")
+    serializer_class = SalesRangeReportSerializer
+    pagination_class = SmallPagePagination
+
+    # Filtros básicos (?desde=YYYY-MM-DD&hasta=YYYY-MM-DD) sobre la lista
+    def get_queryset(self):
+        qs = super().get_queryset()
+        desde = self.request.query_params.get("desde")
+        hasta = self.request.query_params.get("hasta")
+
+        if desde:
+            d = _parse_date(desde)
+            if d:
+                qs = qs.filter(fecha_inicio__gte=d)
+        if hasta:
+            h = _parse_date(hasta)
+            if h:
+                qs = qs.filter(fecha_fin__lte=h)
+
+        return qs
+
+    @action(detail=False, methods=["post"], url_path="generar")
+    def generar(self, request):
+        """
+        Genera (o re-genera) un reporte por rango en UNA transacción.
+        Body JSON:
+        {
+          "desde": "YYYY-MM-DD",
+          "hasta": "YYYY-MM-DD",
+          "solo_aprobados": true
+        }
+        """
+        s = GenerarSalesRangeReportSerializer(data=request.data or {})
+        s.is_valid(raise_exception=True)
+        desde = s.validated_data["desde"]
+        hasta = s.validated_data["hasta"]
+        solo_aprobados = s.validated_data.get("solo_aprobados", True)
+
+        with transaction.atomic():
+            rep = build_range_report(desde, hasta, incluir_aprobados=solo_aprobados)
+
+        data = SalesRangeReportSerializer(rep).data
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"], url_path="items")
+    def items(self, request, pk=None):
+        """
+        Detalle por producto del reporte {pk}.
+        Params:
+          - ordering: -cantidad|cantidad|-ingresos|ingresos|-tickets|tickets (default: -cantidad)
+          - page / page_size (paginación DRF)
+        """
+        try:
+            rep = SalesRangeReport.objects.get(pk=pk)
+        except SalesRangeReport.DoesNotExist:
+            return Response({"detail": "Reporte no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        ordering = request.query_params.get("ordering", "-cantidad")
+        allowed = {"cantidad", "-cantidad", "ingresos", "-ingresos", "tickets", "-tickets"}
+        if ordering not in allowed:
+            ordering = "-cantidad"
+
+        qs = (SalesRangeReportItem.objects
+              .filter(reporte=rep)
+              .select_related("producto")
+              .order_by(ordering, "-ingresos", "producto_id"))
+
+        page = self.paginate_queryset(qs)
+        ser = SalesRangeReportItemSerializer(page or qs, many=True)
+        if page is not None:
+            return self.get_paginated_response(ser.data)
+        return Response(ser.data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["post"], url_path="generar")
+    def generar(self, request):
+        s = GenerarSalesRangeReportSerializer(data=request.data or {})
+        s.is_valid(raise_exception=True)
+        desde = s.validated_data["desde"]
+        hasta = s.validated_data["hasta"]
+        solo_aprobados = s.validated_data.get("solo_aprobados", True)
+
+        # --- Normalizaciones de fechas ---
+        # 1) rango inclusivo para el usuario -> lo convertimos a [desde, hasta)
+        if desde > hasta:
+            desde, hasta = hasta, desde
+        if desde == hasta:
+            hasta = hasta + timedelta(days=1)
+
+        # 2) tope superior = hoy (exclusivo +1 día)
+        today = timezone.localdate()
+        if hasta > today + timedelta(days=1):
+            hasta = today + timedelta(days=1)
+
+        # 3) tope inferior = primera factura
+        first = (Factura.objects
+                .aggregate(min_fecha=Min(models.F('emitida_en__date')))  # usa __date para SQLite
+                .get('min_fecha'))
+        if first:
+            if desde < first:
+                desde = first
+
+        # 4) ¿hay ventas en el rango ajustado?
+        has_items = FacturaItem.objects.filter(
+            factura__emitida_en__date__gte=desde,
+            factura__emitida_en__date__lt=hasta,
+        ).exists()
+
+        if not has_items:
+            return Response({
+                "detail": "No hay ventas en el rango solicitado.",
+                "rango_ajustado": {"desde": desde, "hasta": hasta - timedelta(days=1)},  # visible inclusivo
+                "sugerencia": "Elige un rango entre la primera venta y hoy."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            rep = build_range_report(desde, hasta, incluir_aprobados=solo_aprobados)
+
+        data = SalesRangeReportSerializer(rep).data
+        return Response(data, status=status.HTTP_201_CREATED)
 

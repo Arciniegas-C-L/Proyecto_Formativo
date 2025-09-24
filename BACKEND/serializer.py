@@ -25,6 +25,8 @@ from .models import (
 
     # facturación
     Factura, FacturaItem, PedidoItem,
+    SalesRangeReport,
+    SalesRangeReportItem,
 )
 
 
@@ -1143,3 +1145,103 @@ class AddressSerializer(serializers.Serializer):
 class CrearPreferenciaPagoSerializer(serializers.Serializer):
     email = serializers.EmailField()
     address = AddressSerializer()
+
+# ─────────────────────────────────────────────────────────────
+# Producto mínimo (anidado)
+# ─────────────────────────────────────────────────────────────
+class ProductoMinSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = ("id", "nombre", "precio")
+        read_only_fields = fields
+
+
+# ─────────────────────────────────────────────────────────────
+# Detalle por producto dentro del reporte
+# ─────────────────────────────────────────────────────────────
+class SalesRangeReportItemSerializer(serializers.ModelSerializer):
+    producto   = ProductoMinSerializer(read_only=True)
+    producto_id = serializers.IntegerField(source="producto.id", read_only=True)
+
+    class Meta:
+        model = SalesRangeReportItem
+        fields = (
+            "id",
+            "reporte",
+            "producto", "producto_id",
+            "cantidad", "ingresos", "tickets",
+        )
+        read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Normaliza decimales a string/number según prefieras
+        # data["ingresos"] = str(data["ingresos"])
+        return data
+
+
+# ─────────────────────────────────────────────────────────────
+# Cabecera del reporte: KPIs + top/bottom
+# ─────────────────────────────────────────────────────────────
+class SalesRangeReportSerializer(serializers.ModelSerializer):
+    top = serializers.SerializerMethodField()
+    bottom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SalesRangeReport
+        fields = (
+            "id",
+            "fecha_inicio", "fecha_fin", "incluir_aprobados",
+            "ventas_netas", "items_totales", "tickets",
+            "top", "bottom",
+            "generado_en",
+        )
+        read_only_fields = fields
+
+    def get_top(self, obj):
+        if not obj.top_producto:
+            return None
+        return {
+            "producto": {
+                "id": obj.top_producto.id,
+                "nombre": obj.top_producto_nombre or obj.top_producto.nombre,
+            },
+            "cantidad": obj.top_cantidad,
+        }
+
+    def get_bottom(self, obj):
+        if not obj.bottom_producto:
+            return None
+        return {
+            "producto": {
+                "id": obj.bottom_producto.id,
+                "nombre": obj.bottom_producto_nombre or obj.bottom_producto.nombre,
+            },
+            "cantidad": obj.bottom_cantidad,
+        }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # ISO limpio
+        data["fecha_inicio"] = instance.fecha_inicio.isoformat()
+        data["fecha_fin"] = instance.fecha_fin.isoformat()
+        data["generado_en"] = instance.generado_en.isoformat().replace("+00:00", "Z")
+        return data
+
+
+# ─────────────────────────────────────────────────────────────
+# Entrada para generar reporte por rango
+# ─────────────────────────────────────────────────────────────
+class GenerarSalesRangeReportSerializer(serializers.Serializer):
+    desde = serializers.DateField(help_text="Fecha inicio (inclusive) en formato YYYY-MM-DD")
+    hasta = serializers.DateField(help_text="Fecha fin (inclusive o exclusiva; el backend normaliza a [desde, hasta))")
+    solo_aprobados = serializers.BooleanField(required=False, default=True)
+
+    def validate(self, attrs):
+        d = attrs.get("desde")
+        h = attrs.get("hasta")
+        if d and h and d > h:
+            # Permitimos invertir, pero advertimos; la view puede normalizar
+            # Aquí solo devolvemos en orden si quieres:
+            attrs["desde"], attrs["hasta"] = h, d
+        return attrs

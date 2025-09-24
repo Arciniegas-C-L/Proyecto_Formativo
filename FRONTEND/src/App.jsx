@@ -33,6 +33,7 @@ import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
 import { ReporteVentasPage } from "./pages/ReporteVentasPage.jsx";
 import { FacturasPage } from "./pages/FacturasPage.jsx";
 import { PedidosPage } from "./pages/PedidosPage.jsx";
+import {ReporteVentasRangoAdminPage} from "./pages/ReporteVentasRangoAdminPage.jsx"
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -130,6 +131,14 @@ function AppContent() {
             element={
               <RutaPrivada role={["administrador"]}>
                 <CategoriasPage />
+              </RutaPrivada>
+            }
+          />
+          <Route
+            path="/Reporte"
+            element={
+              <RutaPrivada role={["administrador"]}>
+                <ReporteVentasRangoAdminPage />
               </RutaPrivada>
             }
           />

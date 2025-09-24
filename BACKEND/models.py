@@ -561,3 +561,61 @@ class FacturaItem(models.Model):
     subtotal   = models.DecimalField(max_digits=12, decimal_places=2)
     class Meta:
         db_table = "BACKEND_facturaitem"
+
+# ----------------------------
+# Reporte de ventas por rango
+# ----------------------------
+class SalesRangeReport(models.Model):
+    """
+    Cabecera del reporte generado para un rango [fecha_inicio, fecha_fin).
+    Guarda KPIs y snapshots del producto top/bottom.
+    """
+    fecha_inicio   = models.DateField()  # inclusiva
+    fecha_fin      = models.DateField()  # exclusiva (convención recomendada)
+    incluir_aprobados = models.BooleanField(default=True)  # por si luego quieres otras condiciones
+
+    ventas_netas   = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    items_totales  = models.PositiveIntegerField(default=0)
+    tickets        = models.PositiveIntegerField(default=0)
+
+    # Top / Bottom producto (FK + snapshot de nombre/cantidad)
+    top_producto        = models.ForeignKey('Producto', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    top_producto_nombre = models.CharField(max_length=160, blank=True, default='')
+    top_cantidad        = models.PositiveIntegerField(default=0)
+
+    bottom_producto        = models.ForeignKey('Producto', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    bottom_producto_nombre = models.CharField(max_length=160, blank=True, default='')
+    bottom_cantidad        = models.PositiveIntegerField(default=0)
+
+    generado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['fecha_inicio', 'fecha_fin']),
+        ]
+        # Si quieres evitar duplicados exactos de criterios:
+        unique_together = ('fecha_inicio', 'fecha_fin', 'incluir_aprobados')
+
+    def __str__(self):
+        return f"Reporte {self.fecha_inicio} → {self.fecha_fin} (aprobados={self.incluir_aprobados})"
+
+
+class SalesRangeReportItem(models.Model):
+    """
+    Detalle agregado por producto dentro del rango.
+    """
+    reporte   = models.ForeignKey('SalesRangeReport', related_name='items', on_delete=models.CASCADE)
+    producto  = models.ForeignKey('Producto', on_delete=models.CASCADE)
+    cantidad  = models.PositiveIntegerField(default=0)
+    ingresos  = models.DecimalField(max_digits=14, decimal_places=2, default=0)  # suma de subtotales
+    tickets   = models.PositiveIntegerField(default=0)  # facturas distintas en que aparece
+
+    class Meta:
+        unique_together = ('reporte', 'producto')
+        indexes = [
+            models.Index(fields=['reporte']),
+            models.Index(fields=['producto']),
+        ]
+
+    def __str__(self):
+        return f"{self.producto_id} [{self.reporte_id}] = {self.cantidad}"
