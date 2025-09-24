@@ -1,3 +1,7 @@
+    def delete(self, *args, **kwargs):
+        if self.imagen:
+            self.imagen.delete(save=False)
+        super().delete(*args, **kwargs)
 # ----------------------------
 # Comentarios de usuarios
 # ----------------------------
@@ -35,6 +39,11 @@ class Rol(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def delete(self, *args, **kwargs):
+        if self.imagen:
+            self.imagen.delete(save=False)
+        super().delete(*args, **kwargs)
 
 
 # ----------------------------
@@ -229,7 +238,7 @@ class Producto(models.Model):
     precio = models.PositiveIntegerField()
     stock = models.PositiveIntegerField(default=0)
     subcategoria = models.ForeignKey(Subcategoria, on_delete=models.CASCADE, related_name='productos')
-    imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
+    imagen = models.ImageField(upload_to='FRONTEND/public/media/productos/', blank=True, null=True)
 
     def __str__(self):
         return self.nombre

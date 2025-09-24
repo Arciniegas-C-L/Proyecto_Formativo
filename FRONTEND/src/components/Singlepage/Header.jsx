@@ -7,34 +7,13 @@ import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-export function Header() {
-  const { autenticado, logout, rol, usuario } = useAuth();
+export function Header({ toggleAdminPanel }) {
+  const { autenticado, rol, logout, usuario } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
-
-  const rolNorm = React.useMemo(() => {
-  // candidatos posibles
-  const candidates = [
-    rol,
-    usuario?.rol,
-    usuario?.role,
-    Array.isArray(rol) ? rol[0] : undefined,
-    Array.isArray(usuario?.roles) ? usuario.roles[0] : undefined,
-  ];
-
-  // toma el primero definido y extrae texto
-  let raw = candidates.find(v => v != null);
-
-  if (typeof raw === "object") {
-    raw = raw?.nombre ?? raw?.role ?? raw?.slug ?? "";
-  }
-  return String(raw ?? "").trim().toLowerCase(); // "cliente", "administrador", etc.
-}, [rol, usuario]);
-
-  const esCliente = rolNorm === "cliente";
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -55,6 +34,12 @@ export function Header() {
   const cancelLogout = () => setShowConfirm(false);
 
   const toggleDropdown = () => setShowDropdown((prev) => !prev);
+
+  // Función para ir al panel de admin directamente
+  const goToAdminPanel = () => {
+    setShowDropdown(false);
+    navigate("/admin/proveedores");
+  };
 
   // Cerrar dropdown si clic fuera del contenedor
   useEffect(() => {
@@ -202,29 +187,21 @@ export function Header() {
                           <i className="bi bi-person-gear"></i> Mi Perfil
                         </Link>
                       </li>
-
-                     {/* Solo CLIENTE: Mis pedidos */}
-                      {esCliente && (
+                      
+                      {/* NUEVA OPCIÓN: Panel de Administración - Solo para administradores */}
+                      {esAdministrador && (
                         <li>
-                          <Link
-                            to="/Mispedidos"
-                            className="dropdown-item-custom"
-                            onClick={() => setShowDropdown(false)}
+                          <button
+                            className="dropdown-item-custom admin-panel-btn"
+                            onClick={goToAdminPanel}
                           >
-                            <i className="bi bi-bag-check"></i> Mis pedidos
-                          </Link>
+                            <i className="bi bi-gear-wide-connected"></i> Panel de Administración
+                          </button>
                         </li>
                       )}
-                      {/* NUEVO: Facturas (ruta privada /Facturas) */}
-                      { esCliente && (
+
                       <li>
-                        <Link
-                          to="/Facturas"
-                          className="dropdown-item-custom"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <i className="bi bi-receipt"></i> Facturas
-                        </Link>
+                        <hr className="dropdown-divider-custom" />
                       </li>
                     )}
                       <li>

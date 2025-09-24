@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
@@ -37,19 +37,16 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { RetornoMPpage } from "./pages/RetornoMPpage";
-import {MisPedidosPage} from "./pages/MisPedidosPage"
-
-
-// Layout y contexto Admin 
-// import AdminLayout from "./components/Admin/AdminLayout.jsx";
+import { MisPedidosPage } from "./pages/MisPedidosPage";
 
 // Contexto y rutas privadas
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
-// --- Componente principal ---
+//  Componente principal 
 function AppContent() {
   const location = useLocation();
   const { autenticado, rol } = useAuth();
+  const [mostrarAdminPanel, setMostrarAdminPanel] = useState(false);
 
   const esAdminAutenticado = autenticado && rol === "administrador";
 
@@ -74,20 +71,33 @@ function AppContent() {
   // Verificar si estamos en rutas de admin
   const esRutaAdmin = location.pathname.startsWith("/admin");
 
-  //useefect para actualizar avatar al ingresar a home
+  // Control automático del AdminDashboard
   useEffect(() => {
-    
-  }, [location]);
+    if (esRutaAdmin) {
+      // Si estamos en ruta admin, no mostrar el dashboard flotante
+      setMostrarAdminPanel(false);
+    } else if (location.pathname === "/" && esAdminAutenticado) {
+      // Si volvemos al home siendo admin, mantener cerrado por defecto
+      setMostrarAdminPanel(false);
+    }
+  }, [location.pathname, esAdminAutenticado, esRutaAdmin]);
+
+  // Función para alternar el panel (desde el header o donde sea necesario)
+  const toggleAdminPanel = () => {
+    setMostrarAdminPanel(prev => !prev);
+  };
 
   return (
     <>
       {/* Solo mostrar Header si NO es una ruta de admin */}
-      {!esRutaAdmin && <Header />}
+      {!esRutaAdmin && <Header toggleAdminPanel={toggleAdminPanel} />}
 
       {/* MAIN AGREGADO - contenido que se expande */}
       <main>
-        {/* Renderiza el dashboard si el usuario es admin y no está en la página de sesión */}
-        {esAdminAutenticado && noEsPaginaDeSesion && !esRutaAdmin && <AdminDashboard />}
+        {/* Renderiza el dashboard solo si se solicita explícitamente y no estamos en admin */}
+        {esAdminAutenticado && noEsPaginaDeSesion && !esRutaAdmin && mostrarAdminPanel && (
+          <AdminDashboard />
+        )}
 
         <Routes>
           {/* Rutas públicas */}
@@ -144,7 +154,6 @@ function AppContent() {
             }
           />
 
-
           {/* Admin con layout */}
           <Route
             path="/admin/*"
@@ -194,7 +203,7 @@ function AppContent() {
   );
 }
 
-//  Envolvemos AppContent con AuthProvider
+// Envolvemos AppContent con AuthProvider
 export function App() {
   return (
     <AuthProvider>

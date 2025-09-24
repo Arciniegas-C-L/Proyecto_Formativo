@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import {
   FaUsers,
@@ -9,18 +9,17 @@ import {
   FaUserShield,
   FaRuler,
   FaSignOutAlt,
-  FaCog,
-  FaHome,
   FaBars,
   FaTimes,
-  FaUserCircle,
+  FaHome,
 } from "react-icons/fa";
 import "../../assets/css/Admin/AdminDashboard.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export const AdminDashboard = () => {
-  const { logout, usuario } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [barraLateralColapsada, setBarraLateralColapsada] = useState(false);
   const [mostrarModalCerrarSesion, setMostrarModalCerrarSesion] =
     useState(false);
@@ -28,11 +27,16 @@ export const AdminDashboard = () => {
   const manejarCerrarSesion = () => setMostrarModalCerrarSesion(true);
   const confirmarCerrarSesion = () => {
     logout();
-    window.location.href = "/sesion";
+    navigate("/", { replace: true });
   };
   const cancelarCerrarSesion = () => setMostrarModalCerrarSesion(false);
   const alternarBarraLateral = () =>
     setBarraLateralColapsada(!barraLateralColapsada);
+
+  // Función para ir al home de forma rápida
+  const irAlInicio = () => {
+    navigate("/", { replace: true });
+  };
 
   const esRutaActiva = (ruta) =>
     location.pathname === ruta || location.pathname.startsWith(ruta + "/");
@@ -106,18 +110,22 @@ export const AdminDashboard = () => {
           barraLateralColapsada ? "colapsada" : ""
         }`}
       >
-        <div className="encabezado-barra-lateral">
-          <div className="contenedor-marca">
-            <div className="icono-marca">
-              <FaCog />
-            </div>
-            <div className="texto-marca">
-              <h4 className="titulo-marca"> Panel de Administración</h4>
-            </div>
+        {/* HEADER */}
+        <div className="encabezado-completo-sidebar">
+          <div className="contenedor-logo-principal">
+            <img 
+              src="/src/assets/images/home/ZOE copy.gif" 
+              alt="Logo ZOE" 
+              className="logo-principal"
+            />
           </div>
-          {/* X siempre visible */}
+          
+          <div className="contenedor-titulo-admin">
+            <h4 className="titulo-panel-admin">Panel de Administración</h4>
+          </div>
+
           <button
-            className="boton-alternar-barra-lateral"
+            className="boton-cerrar-sidebar"
             onClick={alternarBarraLateral}
             aria-label="Cerrar menú"
           >
@@ -125,38 +133,21 @@ export const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* Info usuario */}
-        <div className="info-usuario-barra-lateral">
-          <div className="avatar-usuario">
-            <FaUserCircle />
-          </div>
-          <div className="detalles-usuario">
-            <span className="nombre-usuario">
-              {usuario?.nombre || usuario?.username}
-            </span>
-            <span className="rol-usuario">    Administrador</span>
-          </div>
-        </div>
-
-        {/* Menú */}
-        <nav className="navegacion-barra-lateral">
-          <ul className="menu-navegacion">
+        {/* Menú de navegación */}
+        <nav className="navegacion-principal">
+          <ul className="lista-menu-admin">
             {elementosMenu.map((el, i) => {
               const Icono = el.icono;
               return (
-                <li key={i} className="elemento-navegacion-admin">
+                <li key={i} className="item-menu-admin">
                   <Link
                     to={el.ruta}
-                    className={`enlace-navegacion-admin ${
+                    className={`enlace-menu-admin ${
                       esRutaActiva(el.ruta) ? "activo" : ""
                     }`}
                   >
-                    <div className="contenedor-icono-navegacion">
-                      <Icono className="icono-navegacion-admin" />
-                    </div>
-                    <span className="texto-navegacion-admin">
-                      {el.etiqueta}
-                    </span>
+                    <Icono className="icono-menu-admin" />
+                    <span className="texto-menu-admin">{el.etiqueta}</span>
                   </Link>
                 </li>
               );
@@ -164,22 +155,29 @@ export const AdminDashboard = () => {
           </ul>
         </nav>
 
-        {/* Footer sidebar */}
-          <div className="pie-barra-lateral">
-            <button
-              className="admin-logout-btn"
-              onClick={manejarCerrarSesion}
-              aria-label="Cerrar sesión"
-            >
-              <div className="contenedor-icono-cerrar-sesion">
-                <FaSignOutAlt />
-              </div>
-              <span className="texto-cerrar-sesion">Cerrar Sesión</span>
-            </button>
-          </div>
+        {/* Sección de navegación */}
+        <div className="seccion-navegacion-admin">
+          <button
+            className="boton-volver-inicio"
+            onClick={irAlInicio}
+            aria-label="Volver al inicio"
+          >
+            <FaHome className="icono-volver" />
+            <span className="texto-volver">Volver al Inicio</span>
+          </button>
+          
+          <button
+            className="boton-logout-principal"
+            onClick={manejarCerrarSesion}
+            aria-label="Cerrar sesión"
+          >
+            <FaSignOutAlt className="icono-logout" />
+            <span className="texto-logout">Cerrar Sesión</span>
+          </button>
+        </div>
       </aside>
 
-      {/* Botón hamburguesa - SOLO cuando sidebar colapsado */}
+      {/* Botón hamburguesa */}
       {barraLateralColapsada && (
         <button
           className="boton-hamburguesa"
