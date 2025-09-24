@@ -29,8 +29,8 @@ router.register(r'facturas', views.FacturaView, 'facturas')
 router.register(r'pedidoproductos', views.PedidoProductoView, basename='pedidoproducto')
 router.register(r'comentarios', views.ComentarioViewSet, basename='comentario')
 router.register(r"reportes/ventas/rango", views.SalesRangeReportViewSet, basename="sales-range-report")
-router.register(r'notificaciones', views.NotificacionViewSet, basename='notificaciones')
 router.register(r'notificaciones/activas', views.StockAlertActivoViewSet, basename='notificaciones-activas')
+router.register(r'notificaciones', views.NotificacionViewSet, basename='notificaciones')
 
 urlpatterns = [
     path('api/', include(router.urls)),

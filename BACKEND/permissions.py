@@ -156,3 +156,10 @@ class ComentarioPermission(BasePermission):
         return user_id is not None and obj_user_id is not None and user_id == obj_user_id
 
 
+class IsAdminOrReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        # permite GET a autenticados; y restringe escrituras a admin
+        if request.method in SAFE_METHODS:
+            return request.user and request.user.is_authenticated
+        return request.user and request.user.is_staff
+

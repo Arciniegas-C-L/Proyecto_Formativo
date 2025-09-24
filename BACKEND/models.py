@@ -8,6 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from BACKEND.stock_alerts import upsert_stock_alert_for_inventory
 
 class Comentario(models.Model):
 
@@ -738,3 +739,7 @@ def alerta_stock_bajo(sender, instance: Inventario, **kwargs):
         # Nunca romper el guardado del inventario por una notificación
         print("Error alerta_stock_bajo:", e)
 
+
+@receiver(post_save, sender=Inventario)
+def inventario_post_save_alertas(sender, instance, **kwargs):
+    upsert_stock_alert_for_inventory(instance)

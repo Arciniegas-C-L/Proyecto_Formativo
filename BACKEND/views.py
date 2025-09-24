@@ -56,6 +56,7 @@ from BACKEND.permissions import (
     NotGuest,
     CarritoPermiteInvitadoMenosPago,
     ComentarioPermission,
+    IsAdminOrReadOnly,
 )
 
 # --- MODELOS del proyecto (import explícito)
@@ -3029,17 +3030,11 @@ class SalesRangeReportViewSet(mixins.ListModelMixin,
 class NotificacionViewSet(mixins.ListModelMixin,
                           mixins.DestroyModelMixin,
                           viewsets.GenericViewSet):
-    """
-    Endpoints:
-      GET    /BACKEND/api/notificaciones/?solo_unread=1&tipo=stock_low
-      DELETE /BACKEND/api/notificaciones/{id}/
-      POST   /BACKEND/api/notificaciones/{id}/leer/
-      POST   /BACKEND/api/notificaciones/marcar_todas/
-      GET    /BACKEND/api/notificaciones/resumen/  (conteo rápido)
-    """
+    lookup_value_regex = r'\d+'
+
     queryset = Notificacion.objects.all().order_by('-creado_en')
     serializer_class = NotificacionSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -3112,7 +3107,7 @@ class StockAlertActivoViewSet(mixins.ListModelMixin,
         'inventario', 'inventario__producto', 'inventario__talla'
     ).order_by('-actualizado_en')
     serializer_class = StockAlertActivoSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -3130,4 +3125,5 @@ class StockAlertActivoViewSet(mixins.ListModelMixin,
             qs = qs.filter(inventario__talla_id=talla_id)
 
         return qs
+
 
