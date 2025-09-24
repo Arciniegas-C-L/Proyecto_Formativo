@@ -27,6 +27,8 @@ from .models import (
     Factura, FacturaItem, PedidoItem,
     SalesRangeReport,
     SalesRangeReportItem,
+    Notificacion,
+    StockAlertActivo,
 )
 
 
@@ -1245,3 +1247,34 @@ class GenerarSalesRangeReportSerializer(serializers.Serializer):
             # Aquí solo devolvemos en orden si quieres:
             attrs["desde"], attrs["hasta"] = h, d
         return attrs
+    
+class NotificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notificacion
+        fields = [
+            'id',
+            'titulo',
+            'mensaje',
+            'tipo',
+            'metadata',
+            'creado_en',
+            'leido_en',
+            'resuelto'
+        ]
+
+
+class StockAlertActivoSerializer(serializers.ModelSerializer):
+    producto = serializers.CharField(source='inventario.producto.nombre', read_only=True)
+    talla = serializers.CharField(source='inventario.talla.nombre', read_only=True)
+    class Meta:
+        model = StockAlertActivo
+        fields = [
+            'id',
+            'inventario',
+            'producto',
+            'talla',
+            'tipo',
+            'umbral',
+            'cantidad',
+            'creado_en'
+        ]

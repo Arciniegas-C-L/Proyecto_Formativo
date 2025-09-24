@@ -93,6 +93,8 @@ from .models import (
     Direccion,
     SalesRangeReport,
     SalesRangeReportItem,
+    Notificacion,
+    StockAlertActivo,
 )
 from django.db.models import Min
 
@@ -138,7 +140,8 @@ from .serializer import (
     SalesRangeReportSerializer,
     SalesRangeReportItemSerializer,
     GenerarSalesRangeReportSerializer,
-
+    NotificacionSerializer,
+    StockAlertActivoSerializer,
 )
 from .reportes_rango import build_range_report
 from rest_framework import mixins
@@ -3022,4 +3025,109 @@ class SalesRangeReportViewSet(mixins.ListModelMixin,
 
         data = SalesRangeReportSerializer(rep).data
         return Response(data, status=status.HTTP_201_CREATED)
+
+class NotificacionViewSet(mixins.ListModelMixin,
+                          mixins.DestroyModelMixin,
+                          viewsets.GenericViewSet):
+    """
+    Endpoints:
+      GET    /BACKEND/api/notificaciones/?solo_unread=1&tipo=stock_low
+      DELETE /BACKEND/api/notificaciones/{id}/
+      POST   /BACKEND/api/notificaciones/{id}/leer/
+      POST   /BACKEND/api/notificaciones/marcar_todas/
+      GET    /BACKEND/api/notificaciones/resumen/  (conteo rápido)
+    """
+    queryset = Notificacion.objects.all().order_by('-creado_en')
+    serializer_class = NotificacionSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        # solo no leídas (y no resueltas)
+        solo_unread = self.request.query_params.get('solo_unread')
+        if solo_unread in ('1', 'true', 'True'):
+            qs = qs.filter(leido_en__isnull=True, resuelto=False)
+
+        # por tipo
+        tipo = self.request.query_params.get('tipo')
+        if tipo:
+            qs = qs.filter(tipo=tipo)
+
+        # filtros por producto/talla (usando metadata)
+        producto_id = self.request.query_params.get('producto_id')
+        talla_id    = self.request.query_params.get('talla_id')
+        if producto_id:
+            qs = qs.filter(metadata__producto_id=int(producto_id))
+        if talla_id:
+            qs = qs.filter(metadata__talla_id=int(talla_id))
+
+        # resuelto flag explícito
+        resuelto = self.request.query_params.get('resuelto')
+        if resuelto in ('1', 'true', 'True'):
+            qs = qs.filter(resuelto=True)
+        elif resuelto in ('0', 'false', 'False'):
+            qs = qs.filter(resuelto=False)
+
+        return qs
+
+    @action(detail=True, methods=['post'])
+    def leer(self, request, pk=None):
+        notif = self.get_object()
+        if notif.leido_en is None:
+            notif.leido_en = timezone.now()
+            notif.save(update_fields=['leido_en'])
+        return Response({'ok': True}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def marcar_todas(self, request):
+        updated = Notificacion.objects.filter(leido_en__isnull=True).update(leido_en=timezone.now())
+        return Response({'ok': True, 'marcadas': updated}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def resumen(self, request):
+        """
+        Devuelve conteos para badgets (campana):
+        - unread: no leídas y no resueltas
+        - low:    unread de stock_low
+        - out:    unread de stock_out
+        """
+        base = Notificacion.objects.filter(leido_en__isnull=True, resuelto=False)
+        data = {
+            'unread': base.count(),
+            'low':    base.filter(tipo='stock_low').count(),
+            'out':    base.filter(tipo='stock_out').count(),
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+class StockAlertActivoViewSet(mixins.ListModelMixin,
+                              mixins.RetrieveModelMixin,
+                              viewsets.GenericViewSet):
+    """
+    Endpoints:
+      GET /BACKEND/api/notificaciones/activas/?tipo=stock_low&producto_id=...&talla_id=...
+      GET /BACKEND/api/notificaciones/activas/{pk}/
+    """
+    queryset = StockAlertActivo.objects.select_related(
+        'inventario', 'inventario__producto', 'inventario__talla'
+    ).order_by('-actualizado_en')
+    serializer_class = StockAlertActivoSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        tipo = self.request.query_params.get('tipo')
+        if tipo in ('stock_low', 'stock_out'):
+            qs = qs.filter(tipo=tipo)
+
+        producto_id = self.request.query_params.get('producto_id')
+        if producto_id:
+            qs = qs.filter(inventario__producto_id=producto_id)
+
+        talla_id = self.request.query_params.get('talla_id')
+        if talla_id:
+            qs = qs.filter(inventario__talla_id=talla_id)
+
+        return qs
 
