@@ -1,8 +1,7 @@
-from django.core.management import call_command
 
-@receiver(post_save, sender=Usuario)
-def actualizar_comentarios_avatar_signal(sender, instance, **kwargs):
-    call_command('actualiza_comentarios_avatar')
+from django.core.management import call_command
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from django.db import models
 from rest_framework.exceptions import ValidationError
