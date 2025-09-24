@@ -243,6 +243,11 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
 
+    def delete(self, *args, **kwargs):
+        if self.imagen:
+            self.imagen.delete(save=False)
+        super().delete(*args, **kwargs)
+
 
 class Talla(models.Model):
     nombre = models.CharField(max_length=10)
