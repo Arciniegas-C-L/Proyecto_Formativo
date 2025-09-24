@@ -1,3 +1,8 @@
+from django.core.management import call_command
+
+@receiver(post_save, sender=Usuario)
+def actualizar_comentarios_avatar_signal(sender, instance, **kwargs):
+    call_command('actualiza_comentarios_avatar')
 
 from django.db import models
 from rest_framework.exceptions import ValidationError
@@ -24,8 +29,6 @@ class Comentario(models.Model):
 
     def __str__(self):
         return f"Comentario de {self.usuario.nombre} {self.usuario.apellido} - {self.valoracion} estrellas"
-
-
 
 # ----------------------------
 # Roles
@@ -124,6 +127,14 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
+
+
+    # Señal para actualizar comentarios cuando se guarda el usuario
+
+    from django.core.management import call_command
+    def actualizar_comentarios_avatar_signal(sender, instance, **kwargs):
+        call_command('actualiza_comentarios_avatar')
+    post_save.connect(actualizar_comentarios_avatar_signal, sender='BACKEND.Usuario')
 
 
 # ----------------------------
