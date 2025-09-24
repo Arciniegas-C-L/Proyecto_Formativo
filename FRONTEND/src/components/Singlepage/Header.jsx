@@ -7,8 +7,9 @@ import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-export function Header({ toggleAdminPanel }) {
+export function Header() {
   const { autenticado, rol, logout, usuario } = useAuth();
+  const esAdministrador = rol === "administrador";
   const [showConfirm, setShowConfirm] = useState(false);
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -203,7 +204,6 @@ export function Header({ toggleAdminPanel }) {
                       <li>
                         <hr className="dropdown-divider-custom" />
                       </li>
-                    )}
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión
