@@ -1,7 +1,6 @@
 // src/api/axios.js
 import axios from "axios";
-import { auth } from "../auth/authService"; // ya lo tienes
-import { guest } from "./AuthApi"; // lo crearemos abajo
+import { auth } from "../auth/authService"; // helper de sesión
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000/BACKEND/api/",
@@ -10,31 +9,16 @@ export const api = axios.create({
   },
 });
 
-api.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const status = error?.response?.status;
-
-    // Si aún así llega un 403 de carrito, devuelve un OK vacío
-    if (status === 403 && error?.config?.url?.includes("carrito")) {
-      return Promise.resolve({ data: { results: [], count: 0 } });
-    }
-
-    return Promise.reject(error);
-  }
-);
-
 // ---------- Interceptor de REQUEST: token + rol ----------
 api.interceptors.request.use(
   (config) => {
     try {
-      const token = auth.obtenerToken?.();   // tu helper
-      const rol = auth.obtenerRol?.();       // tu helper
+      const token = auth.obtenerToken?.();
+      const rol = auth.obtenerRol?.();
 
       if (token && token.trim() !== "") {
         config.headers.Authorization = `Bearer ${token}`;
       }
-      // si usas un header para el rol, mantenlo:
       if (rol && rol.trim() !== "") {
         config.headers["X-Rol"] = rol;
       }
@@ -46,37 +30,25 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ---------- Interceptor de RESPONSE: 401 => pedir guest() y reintentar ----------
-let isRefreshing = false;
-
+// ---------- Interceptor de RESPONSE ----------
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const original = error.config;
+    const status = error?.response?.status;
+    const url = error?.config?.url || "";
 
-    // Si vence o no hay token y este request no fue reintentado:
-    if (error?.response?.status === 401 && !original?._retry) {
-      original._retry = true;
+    // Mantienes la lógica: si carrito devuelve 403, responder vacío
+    if (status === 403 && url.includes("carrito")) {
+      return Promise.resolve({ data: { results: [], count: 0 } });
+    }
 
+    // Sin guest: si 401, limpiar sesión y propagar error
+    if (status === 401) {
       try {
-        // Evita múltiples guest() simultáneos
-        if (!isRefreshing) {
-          isRefreshing = true;
-          await guest(); // pide token invitado y lo guarda via authService
-          isRefreshing = false;
-        }
-
-        // reinyecta el nuevo token y reintenta
-        const newToken = auth.obtenerToken?.();
-        if (newToken) {
-          original.headers = original.headers ?? {};
-          original.headers.Authorization = `Bearer ${newToken}`;
-        }
-        return api(original);
-      } catch (e) {
-        isRefreshing = false;
         auth.limpiarSesion?.();
-      }
+      } catch {error}
+      // Opcional: podrías redirigir a /login aquí si usas react-router
+      // window.location.href = "/login";
     }
 
     return Promise.reject(error);

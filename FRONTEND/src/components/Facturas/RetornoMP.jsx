@@ -261,7 +261,7 @@ export function RetornoMP() {
                         <i className="bi bi-file-earmark-pdf me-1"></i>
                         Descargar PDF
                       </button>
-                      <Link className="btn btn-cyan btn-sm" to="/admin/facturas">
+                      <Link className="btn btn-cyan btn-sm" to="/facturas">
                         <i className="bi bi-list-ul me-1"></i>
                         Volver al listado
                       </Link>

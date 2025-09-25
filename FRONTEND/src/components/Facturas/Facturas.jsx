@@ -397,7 +397,7 @@ export function Facturas() {
                         <div className="facturas-actions">
                           <Link
                             className="btn btn-cyan btn-sm"
-                            to={`/admin/facturas/${f.id}`}
+                            to={`/facturas/${f.id}`}
                           >
                             Ver
                           </Link>

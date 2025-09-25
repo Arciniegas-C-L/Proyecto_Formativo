@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     auth.limpiarSesion();
-    setSesion({ token: null, usuario: null, rol: null, autenticado: false });
+    setSesion({ access: null, refresh: null, usuario: null, rol: null, autenticado: false });
   };
 
   // Permite actualizar el usuario en el contexto (por ejemplo, tras editar el perfil)

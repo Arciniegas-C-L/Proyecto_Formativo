@@ -5,38 +5,26 @@ import { auth } from "../auth/authService";
 // LOGIN normal
 export async function login(email, password) {
   try {
-    const response = await api.post("api/usuario/login/", {
-      correo: email,
+    const response = await api.post("usuario/login/", { // <-- sin "api/"
+      correo: email, // si tu backend espera "email", cámbialo aquí
       password,
     });
 
     const data = response.data;
-    // guarda sesión igual que ya haces en tu app
+
     auth.guardarSesion({
       access: data?.token?.access,
       refresh: data?.token?.refresh,
       usuario: data?.usuario,
       rol: data?.rol || data?.usuario?.rol,
-      guest: false,
     });
 
     return data;
   } catch (error) {
+    // Útil para ver el motivo exacto del 400
+    console.error("Login error:", error?.response?.status, error?.response?.data);
     throw error?.response?.data || { error: "Error inesperado al iniciar sesión" };
   }
-}
-
-// NUEVO: token invitado
-export async function guest() {
-  const { data } = await api.post("usuario/guest/"); // ruta de tu @action guest
-  auth.guardarSesion({
-    access: data?.token?.access,
-    refresh: data?.token?.refresh, // si no envías refresh en invitados, omítelo
-    usuario: data?.usuario,
-    rol: data?.rol || data?.usuario?.rol, // "Invitado"
-    guest: true,
-  });
-  return data;
 }
 
 // LOGOUT
