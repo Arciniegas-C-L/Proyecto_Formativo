@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "../../assets/css/Inventario/InventarioTabla.css"; // Importar el CSS
+import "../../assets/css/Inventario/InventarioTabla.css";
+
 import {
   getTablaCategorias,
   getTablaSubcategorias,
   getTablaProductos,
-  actualizarStockTallas
+  actualizarStockTallas,
+  setGrupoTallaSubcategoria, // <<--- NUEVO: sincroniza inventario al cambiar grupo
 } from "../../api/InventarioApi";
 import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
 import { getAllGruposTalla } from "../../api/GrupoTalla.api";
 
-// Constante para la URL base del backend
+// Ajusta si tienes env vars (REACT_APP_API_BASE_URL, etc.)
 const BACKEND_URL = "http://127.0.0.1:8000";
 
 const InventarioTabla = () => {
@@ -25,106 +27,107 @@ const InventarioTabla = () => {
   const [selectedProducto, setSelectedProducto] = useState(null);
   const [stockForm, setStockForm] = useState({});
   const [stockMinimoForm, setStockMinimoForm] = useState({});
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'info'
+    message: "",
+    severity: "info",
   });
-  const navigate = useNavigate();
+
   const [openNoCategoriasDialog, setOpenNoCategoriasDialog] = useState(false);
   const [contador, setContador] = useState(10);
   const [openNoGrupoTallaDialog, setOpenNoGrupoTallaDialog] = useState(false);
   const [contadorGrupoTalla, setContadorGrupoTalla] = useState(5);
 
-  // Cargar categorías y grupos de talla al montar el componente
+  const navigate = useNavigate();
+
+  // Inicializar
   useEffect(() => {
-    const inicializar = async () => {
+    (async () => {
       try {
         setLoading(true);
-        
-        // Primero asignar grupo de tallas por defecto a las subcategorías que no lo tienen
         try {
           await asignarGrupoTallaDefault();
-        } catch (error) {
-          console.error('Error al asignar grupo de tallas por defecto:', error);
-          // Continuar con la carga aunque falle la asignación por defecto
+        } catch (e) {
+          console.error("Asignar grupo por defecto:", e);
         }
-        
-        // Primero cargar grupos de talla, luego categorías
         await cargarGruposTalla();
         await cargarCategorias();
-        
-      } catch (error) {
-        console.error('Error al inicializar:', error);
-        showSnackbar('Error al inicializar el componente', 'error');
+      } catch (e) {
+        console.error("Error al inicializar:", e);
+        showSnackbar("Error al inicializar el componente", "error");
       } finally {
         setLoading(false);
       }
-    };
-    inicializar();
+    })();
   }, []);
 
-  // useEffect para el contador de redirección
+  // Redirección cuando no hay categorías
   useEffect(() => {
     let interval;
     if (openNoCategoriasDialog && contador > 0) {
       interval = setInterval(() => {
-        setContador(prev => {
+        setContador((prev) => {
           if (prev <= 1) {
-            navigate('/categorias');
+            navigate("/categorias");
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
     }
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
+    return () => interval && clearInterval(interval);
   }, [openNoCategoriasDialog, contador, navigate]);
 
-  // useEffect para el contador de redirección de grupos de talla
+  // Redirección cuando no hay grupos de talla
   useEffect(() => {
     let interval;
     if (openNoGrupoTallaDialog && contadorGrupoTalla > 0) {
       interval = setInterval(() => {
-        setContadorGrupoTalla(prev => {
+        setContadorGrupoTalla((prev) => {
           if (prev <= 1) {
-            navigate('/grupo-talla');
+            navigate("/grupo-talla");
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
     }
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
+    return () => interval && clearInterval(interval);
   }, [openNoGrupoTallaDialog, contadorGrupoTalla, navigate]);
+
+  const cargarGruposTalla = async () => {
+    try {
+      const response = await getAllGruposTalla();
+      const gruposData = Array.isArray(response.data) ? response.data : [];
+      const gruposFormateados = gruposData.map((g) => ({
+        idGrupoTalla: Number(g.idGrupoTalla || g.id),
+        nombre: g.nombre,
+        estado: !!g.estado,
+      }));
+      setGruposTalla(gruposFormateados);
+    } catch (e) {
+      console.error("Error al cargar grupos de talla:", e);
+      showSnackbar("Error al cargar grupos de talla", "error");
+      setGruposTalla([]);
+    }
+  };
 
   const cargarCategorias = async () => {
     try {
       setLoading(true);
       const data = await getTablaCategorias();
-      
-      // Verificar si no hay categorías
       if (!data || !data.datos || data.datos.length === 0) {
         setOpenNoCategoriasDialog(true);
         return;
       }
-      
       setCurrentData(data);
       setCurrentView("categorias");
       setBreadcrumbs([{ text: "Categorías", active: true }]);
       setSelectedCategoria(null);
       setSelectedSubcategoria(null);
-    } catch (error) {
-      console.error("Error al cargar las categorías:", error);
+    } catch (e) {
+      console.error("Error al cargar categorías:", e);
       showSnackbar("Error al cargar las categorías", "error");
     } finally {
       setLoading(false);
@@ -134,32 +137,28 @@ const InventarioTabla = () => {
   const cargarSubcategorias = async (categoriaId, categoriaNombre) => {
     try {
       setLoading(true);
-      
       const data = await getTablaSubcategorias(categoriaId);
-      
-      // Verificar si hay grupos de talla disponibles en el sistema
+
       if (!gruposTalla || gruposTalla.length === 0) {
         setOpenNoGrupoTallaDialog(true);
         return;
       }
-      
-      // Verificar si hay subcategorías
       if (!data.datos || data.datos.length === 0) {
-        showSnackbar(`No hay subcategorías en la categoría "${categoriaNombre}"`, 'info');
+        showSnackbar(`No hay subcategorías en "${categoriaNombre}"`, "info");
         return;
       }
-      
+
       setCurrentData(data);
       setCurrentView("subcategorias");
       setSelectedCategoria({ id: categoriaId, nombre: categoriaNombre });
       setBreadcrumbs([
         { text: "Categorías", active: false, onClick: cargarCategorias },
-        { text: categoriaNombre, active: true }
+        { text: categoriaNombre, active: true },
       ]);
       setSelectedSubcategoria(null);
-    } catch (error) {
-      console.error("Error al cargar las subcategorías:", error);
-      showSnackbar("Error al cargar las subcategorías", "error");
+    } catch (e) {
+      console.error("Error al cargar subcategorías:", e);
+      showSnackbar("Error al cargar subcategorías", "error");
     } finally {
       setLoading(false);
     }
@@ -169,49 +168,29 @@ const InventarioTabla = () => {
     try {
       setLoading(true);
       const data = await getTablaProductos(subcategoriaId);
-      
-      // Verificar si hay productos
       if (!data.datos || data.datos.length === 0) {
-        showSnackbar(`No hay productos en la subcategoría "${subcategoriaNombre}"`, 'info');
+        showSnackbar(`No hay productos en "${subcategoriaNombre}"`, "info");
         return;
       }
-      
       setCurrentData(data);
       setCurrentView("productos");
       setSelectedSubcategoria({ id: subcategoriaId, nombre: subcategoriaNombre });
       setBreadcrumbs([
         { text: "Categorías", active: false, onClick: cargarCategorias },
-        { 
-          text: selectedCategoria.nombre, 
-          active: false, 
-          onClick: () => cargarSubcategorias(selectedCategoria.id, selectedCategoria.nombre)
+        {
+          text: selectedCategoria?.nombre || "Categoría",
+          active: false,
+          onClick: () =>
+            selectedCategoria &&
+            cargarSubcategorias(selectedCategoria.id, selectedCategoria.nombre),
         },
-        { text: subcategoriaNombre, active: true }
+        { text: subcategoriaNombre, active: true },
       ]);
-    } catch (error) {
-      console.error("Error al cargar los productos:", error);
-      showSnackbar("Error al cargar los productos", "error");
+    } catch (e) {
+      console.error("Error al cargar productos:", e);
+      showSnackbar("Error al cargar productos", "error");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const cargarGruposTalla = async () => {
-    try {
-      const response = await getAllGruposTalla();
-      const gruposData = response.data;
-      
-      const gruposFormateados = gruposData.map(grupo => ({
-        idGrupoTalla: Number(grupo.idGrupoTalla || grupo.id),
-        nombre: grupo.nombre,
-        estado: grupo.estado
-      }));
-      
-      setGruposTalla(gruposFormateados);
-    } catch (error) {
-      console.error("Error al cargar grupos de talla:", error);
-      showSnackbar("Error al cargar los grupos de talla", "error");
-      setGruposTalla([]);
     }
   };
 
@@ -219,9 +198,9 @@ const InventarioTabla = () => {
     setSelectedProducto(producto);
     const stockInicial = {};
     const stockMinimoInicial = {};
-    Object.entries(producto.stock_por_talla).forEach(([talla, info]) => {
-      stockInicial[talla] = info.stock;
-      stockMinimoInicial[talla] = info.stock_minimo;
+    Object.entries(producto.stock_por_talla || {}).forEach(([talla, info]) => {
+      stockInicial[talla] = info?.stock ?? 0;
+      stockMinimoInicial[talla] = info?.stock_minimo ?? 0;
     });
     setStockForm(stockInicial);
     setStockMinimoForm(stockMinimoInicial);
@@ -233,53 +212,40 @@ const InventarioTabla = () => {
     setSelectedProducto(null);
     setStockForm({});
     setStockMinimoForm({});
-    setError('');
+    setError("");
   };
 
   const handleGrupoTallaChange = async (event, subcategoria) => {
     try {
       const nuevoGrupoId = Number(event.target.value);
-      
-      // Validar que se seleccionó un grupo
-      if (!nuevoGrupoId) {
-        showSnackbar('Debe seleccionar un grupo de tallas', 'error');
-        return;
-      }
+      if (!nuevoGrupoId) return showSnackbar("Seleccione un grupo de tallas", "error");
 
-      // Validar que el grupo existe
-      const grupoExiste = gruposTalla.some(grupo => grupo.idGrupoTalla === nuevoGrupoId);
-      if (!grupoExiste) {
-        showSnackbar('El grupo de talla seleccionado no existe', 'error');
-        return;
-      }
+      const grupoExiste = gruposTalla.some((g) => g.idGrupoTalla === nuevoGrupoId);
+      if (!grupoExiste) return showSnackbar("El grupo seleccionado no existe", "error");
 
-      // Validar que no es el mismo grupo
-      const grupoActualId = Number(subcategoria.grupoTalla?.idGrupoTalla);
-      if (grupoActualId === nuevoGrupoId) {
-        showSnackbar('Ya está seleccionado este grupo de tallas', 'info');
-        return;
-      }
+      const grupoActualId = Number(
+        subcategoria.grupoTalla?.idGrupoTalla || subcategoria.grupoTalla?.id
+      );
+      if (grupoActualId === nuevoGrupoId)
+        return showSnackbar("Ya está seleccionado este grupo", "info");
 
-      // Mostrar indicador de carga
       setLoading(true);
-      
-      try {
-        await updateGrupoTalla(subcategoria.id, nuevoGrupoId);
-        showSnackbar('Grupo de talla actualizado correctamente', 'success');
-        await cargarSubcategorias(selectedCategoria.id, selectedCategoria.nombre); // Recargar datos
-      } catch (error) {
-        // Si el error es porque ya tiene asignado ese grupo, mostrarlo como info
-        if (error.message.includes('ya tiene asignado este grupo de talla')) {
-          showSnackbar('Ya está seleccionado este grupo de tallas', 'info');
-        } else {
-          throw error; // Propagar otros errores
-        }
-      }
-    } catch (error) {
-      console.error('Error al actualizar grupo de talla:', error);
+
+      // 1) Actualiza la FK en Subcategoría
+      await updateGrupoTalla(subcategoria.id, nuevoGrupoId);
+
+      // 2) Sincroniza inventarios (crea los faltantes del nuevo grupo)
+      await setGrupoTallaSubcategoria(subcategoria.id, nuevoGrupoId);
+
+      showSnackbar("Grupo de talla actualizado y sincronizado", "success");
+
+      // 3) Recarga lista
+      await cargarSubcategorias(selectedCategoria.id, selectedCategoria.nombre);
+    } catch (e) {
+      console.error("handleGrupoTallaChange:", e);
       showSnackbar(
-        error.response?.data?.error || error.message || 'Error al actualizar el grupo de talla',
-        'error'
+        e?.response?.data?.error || e.message || "Error al actualizar el grupo de talla",
+        "error"
       );
     } finally {
       setLoading(false);
@@ -287,46 +253,51 @@ const InventarioTabla = () => {
   };
 
   const handleStockChange = (talla, value) => {
-    const newValue = parseInt(value) || 0;
+    const newValue = Number.isNaN(parseInt(value, 10)) ? 0 : parseInt(value, 10);
     const stockTotal = selectedProducto?.stock || 0;
-    const stockActual = Object.values(stockForm).reduce((sum, stock) => sum + (parseInt(stock) || 0), 0);
-    const stockActualSinTalla = stockActual - (parseInt(stockForm[talla]) || 0);
+    const stockActual = Object.values(stockForm).reduce(
+      (sum, s) => sum + (parseInt(s, 10) || 0),
+      0
+    );
+    const stockActualSinTalla =
+      stockActual - (parseInt(stockForm[talla], 10) || 0);
     const stockDisponible = stockTotal - stockActualSinTalla;
 
     if (newValue > stockDisponible) {
-      setError(`No puedes asignar más de ${stockDisponible} unidades a la talla ${talla}`);
+      setError(`No puedes asignar más de ${stockDisponible} unidades a ${talla}`);
       return;
     }
-
-    setStockForm(prev => ({
-      ...prev,
-      [talla]: newValue
-    }));
+    setStockForm((prev) => ({ ...prev, [talla]: newValue }));
     setError(null);
   };
 
   const handleSaveStock = async () => {
     try {
-      const stockTotal = Object.values(stockForm).reduce((sum, stock) => sum + (parseInt(stock) || 0), 0);
-      if (stockTotal > selectedProducto.stock) {
-        setError('La suma de los stocks por talla no puede exceder el stock total del producto');
+      const stockTotal = Object.values(stockForm).reduce(
+        (sum, s) => sum + (parseInt(s, 10) || 0),
+        0
+      );
+      if (stockTotal > (selectedProducto?.stock || 0)) {
+        setError("La suma por talla no puede exceder el stock total del producto");
         return;
       }
-
-      // Preparar los datos para la actualización
-      const tallasData = Object.entries(selectedProducto.stock_por_talla).map(([talla, info]) => ({
-        talla_id: info.talla_id,
-        stock: stockForm[talla] || 0,
-        stock_minimo: stockMinimoForm[talla] || info.stock_minimo
-      }));
+      const tallasData = Object.entries(selectedProducto?.stock_por_talla || {}).map(
+        ([talla, info]) => ({
+          talla_id: info.talla_id,
+          stock: stockForm[talla] || 0,
+          stock_minimo: stockMinimoForm[talla] ?? info.stock_minimo ?? 0,
+        })
+      );
 
       await actualizarStockTallas(selectedProducto.id, tallasData);
-      showSnackbar('Stock por tallas actualizado exitosamente', 'success');
+      showSnackbar("Stock por tallas actualizado", "success");
       handleCloseStockDialog();
-      cargarProductos(selectedSubcategoria.id, selectedSubcategoria.nombre);
-    } catch (error) {
-      console.error('Error al actualizar stock:', error);
-      showSnackbar(error.response?.data?.error || 'Error al distribuir el stock', 'error');
+      if (selectedSubcategoria) {
+        await cargarProductos(selectedSubcategoria.id, selectedSubcategoria.nombre);
+      }
+    } catch (e) {
+      console.error("actualizar stock:", e);
+      showSnackbar(e?.response?.data?.error || "Error al distribuir el stock", "error");
     }
   };
 
@@ -335,26 +306,26 @@ const InventarioTabla = () => {
       <table className="tabla-inventario">
         <thead>
           <tr>
-            {currentData.columnas.map((columna) => (
-              <th key={columna.campo}>{columna.titulo}</th>
+            {currentData.columnas.map((c) => (
+              <th key={c.campo}>{c.titulo}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {currentData.datos.map((categoria) => (
-            <tr key={categoria.id}>
-              <td>{categoria.nombre}</td>
-              <td>{categoria.subcategorias_count}</td>
-              <td>{categoria.productos_count}</td>
+          {currentData.datos.map((cat) => (
+            <tr key={cat.id}>
+              <td>{cat.nombre}</td>
+              <td>{cat.subcategorias_count}</td>
+              <td>{cat.productos_count}</td>
               <td>
-                <span className={`custom-badge ${categoria.estado ? 'badge-success' : 'badge-error'}`}>
-                  {categoria.estado ? "Activo" : "Inactivo"}
+                <span className={`custom-badge ${cat.estado ? "badge-success" : "badge-error"}`}>
+                  {cat.estado ? "Activo" : "Inactivo"}
                 </span>
               </td>
               <td>
                 <button
                   className="btn-action btn-primary"
-                  onClick={() => cargarSubcategorias(categoria.id, categoria.nombre)}
+                  onClick={() => cargarSubcategorias(cat.id, cat.nombre)}
                   title="Ver subcategorías"
                 >
                   <i className="fas fa-eye"></i>
@@ -381,51 +352,74 @@ const InventarioTabla = () => {
         <table className="tabla-inventario">
           <thead>
             <tr>
-              {currentData.columnas.map((columna) => (
-                <th key={columna.campo}>{columna.titulo}</th>
+              {currentData.columnas.map((c) => (
+                <th key={c.campo}>{c.titulo}</th>
               ))}
               <th>Grupo de Talla</th>
             </tr>
           </thead>
           <tbody>
-            {currentData.datos.map((subcategoria) => (
-              <tr key={subcategoria.id}>
-                <td>{subcategoria.nombre}</td>
-                <td>{subcategoria.productos_count}</td>
-                <td>
-                  <span className={`custom-badge ${subcategoria.stock_total <= 5 ? 'badge-error' : 'badge-success'}`}>
-                    {subcategoria.stock_total} unidades
-                  </span>
-                </td>
-                <td>5</td>
-                <td>
-                  <span className={`custom-badge ${subcategoria.estado ? 'badge-success' : 'badge-error'}`}>
-                    {subcategoria.estado ? "Activo" : "Inactivo"}
-                  </span>
-                </td>
-                <td>
-                  <div className="d-flex gap-2 justify-content-center">
-                    <button
-                      className="btn-action btn-primary"
-                      onClick={() => cargarProductos(subcategoria.id, subcategoria.nombre)}
-                      title="Ver productos"
+            {currentData.datos.map((sub) => {
+              const grupoTallaId = Number(
+                sub.grupoTalla?.idGrupoTalla || sub.grupoTalla?.id || 0
+              );
+              return (
+                <tr key={sub.id}>
+                  <td>{sub.nombre}</td>
+                  <td>{sub.productos_count}</td>
+                  <td>
+                    <span
+                      className={`custom-badge ${
+                        sub.stock_total <= 5 ? "badge-error" : "badge-success"
+                      }`}
                     >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                    <button
-                      className="btn-action btn-secondary"
-                      onClick={() => handleCrearProducto(subcategoria)}
-                      title="Crear producto"
+                      {sub.stock_total} unidades
+                    </span>
+                  </td>
+                  <td>5</td>
+                  <td>
+                    <span
+                      className={`custom-badge ${
+                        sub.estado ? "badge-success" : "badge-error"
+                      }`}
                     >
-                      <i className="fas fa-plus"></i>
-                    </button>
-                  </div>
-                </td>
-                <td>
-                  {renderGrupoTallaSelect(subcategoria)}
-                </td>
-              </tr>
-            ))}
+                      {sub.estado ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="d-flex gap-2 justify-content-center">
+                      <button
+                        className="btn-action btn-primary"
+                        onClick={() => cargarProductos(sub.id, sub.nombre)}
+                        title="Ver productos"
+                      >
+                        <i className="fas fa-eye"></i>
+                      </button>
+                      <button
+                        className="btn-action btn-secondary"
+                        onClick={() =>
+                          navigate(
+                            `/producto/crear?subcategoria=${sub.id}&subcategoriaNombre=${encodeURIComponent(
+                              sub.nombre
+                            )}`
+                          )
+                        }
+                        title="Crear producto"
+                      >
+                        <i className="fas fa-plus"></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    {grupoTallaId ? (
+                      renderGrupoTallaSelect(sub)
+                    ) : (
+                      <div className="alert-warning">Se requiere asignar un grupo</div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -446,94 +440,87 @@ const InventarioTabla = () => {
           </tr>
         </thead>
         <tbody>
-          {currentData.datos.map((producto) => (
-            <tr key={producto.id}>
-              {/* Columna de Producto (imagen y nombre) */}
-              <td>
-                <div className="producto-info">
-                  {producto.imagen ? (
-                    <>
-                      <img
-                        src={`${BACKEND_URL}${producto.imagen}`}
-                        alt={producto.nombre}
-                        className="producto-imagen"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                        loading="lazy"
-                      />
-                      <div className="imagen-placeholder" style={{display: 'none'}}>
+          {currentData.datos.map((p) => {
+            const total = Object.values(p.stock_por_talla || {}).reduce(
+              (sum, info) => sum + (info?.stock || 0),
+              0
+            );
+            return (
+              <tr key={p.id}>
+                <td>
+                  <div className="producto-info">
+                    {p.imagen ? (
+                      <>
+                        <img
+                          src={`${BACKEND_URL}${p.imagen}`}
+                          alt={p.nombre}
+                          className="producto-imagen"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.nextSibling.style.display = "flex";
+                          }}
+                          loading="lazy"
+                        />
+                        <div className="imagen-placeholder" style={{ display: "none" }}>
+                          <i className="fas fa-image"></i>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="imagen-placeholder">
                         <i className="fas fa-image"></i>
                       </div>
-                    </>
-                  ) : (
-                    <div className="imagen-placeholder">
-                      <i className="fas fa-image"></i>
-                    </div>
-                  )}
-                  <span className="producto-nombre">{producto.nombre}</span>
-                </div>
-              </td>
+                    )}
+                    <span className="producto-nombre">{p.nombre}</span>
+                  </div>
+                </td>
 
-              {/* Columna de Precio */}
-              <td>
-                ${producto.precio.toLocaleString('es-CO')}
-              </td>
+                <td>${Number(p.precio || 0).toLocaleString("es-CO")}</td>
 
-              {/* Columna de Stock Total */}
-              <td>
-                <span className={`custom-badge ${Object.values(producto.stock_por_talla).reduce((sum, info) => sum + (info.stock || 0), 0) <= 5 ? 'badge-error' : 'badge-success'}`}>
-                  {Object.values(producto.stock_por_talla).reduce((sum, info) => sum + (info.stock || 0), 0)} unidades
-                </span>
-              </td>
+                <td>
+                  <span className={`custom-badge ${total <= 5 ? "badge-error" : "badge-success"}`}>
+                    {total} unidades
+                  </span>
+                </td>
 
-              {/* Columna de Stock Mínimo */}
-              <td>5</td>
+                <td>5</td>
 
-              {/* Columna de Stock por Tallas */}
-              <td>
-                <button
-                  className="btn btn-outline-primary btn-sm mb-2"
-                  onClick={() => handleOpenStockDialog(producto)}
-                  title="Distribuir stock por tallas"
-                >
-                  <i className="fas fa-edit me-1"></i>
-                  Distribuir Stock
-                </button>
-                <div className="d-flex gap-1 flex-wrap justify-content-center">
-                  {Object.entries(producto.stock_por_talla).map(([talla, info]) => (
-                    <span
-                      key={talla}
-                      className={`custom-badge-small ${info.stock <= 5 ? 'badge-small-error' : 'badge-small-success'}`}
+                <td>
+                  <button
+                    className="btn btn-outline-primary btn-sm mb-2"
+                    onClick={() => handleOpenStockDialog(p)}
+                    title="Distribuir stock por tallas"
+                  >
+                    <i className="fas fa-edit me-1"></i>
+                    Distribuir Stock
+                  </button>
+                  <div className="d-flex gap-1 flex-wrap justify-content-center">
+                    {Object.entries(p.stock_por_talla || {}).map(([talla, info]) => (
+                      <span
+                        key={talla}
+                        className={`custom-badge-small ${
+                          (info?.stock || 0) <= 5 ? "badge-small-error" : "badge-small-success"
+                        }`}
+                      >
+                        {talla}: {info?.stock || 0}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+
+                <td>
+                  <div className="d-flex gap-1 justify-content-center">
+                    <button
+                      className="btn-action btn-primary"
+                      onClick={() => (window.location.href = p.acciones.ver_detalle)}
+                      title="Ver detalles del producto"
                     >
-                      {talla}: {info.stock}
-                    </span>
-                  ))}
-                </div>
-              </td>
-
-              {/* Columna de Acciones */}
-              <td>
-                <div className="d-flex gap-1 justify-content-center">
-                  <button 
-                    className="btn-action btn-primary"
-                    onClick={() => handleSaveStock(producto)}
-                    title="Guardar cambios"
-                  >
-                    <i className="fas fa-save"></i>
-                  </button>
-                  <button 
-                    className="btn-action btn-primary"
-                    onClick={() => window.location.href = producto.acciones.ver_detalle}
-                    title="Ver detalles del producto"
-                  >
-                    <i className="fas fa-eye"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                      <i className="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -541,7 +528,10 @@ const InventarioTabla = () => {
 
   const StockDialog = () => {
     const stockTotal = selectedProducto?.stock || 0;
-    const stockDistribuido = Object.values(stockForm).reduce((sum, stock) => sum + (parseInt(stock) || 0), 0);
+    const stockDistribuido = Object.values(stockForm).reduce(
+      (sum, s) => sum + (parseInt(s, 10) || 0),
+      0
+    );
     const stockRestante = stockTotal - stockDistribuido;
 
     if (!openStockDialog) return null;
@@ -554,33 +544,25 @@ const InventarioTabla = () => {
               <i className="fas fa-boxes me-2"></i>
               Distribuir Stock por Talla
             </h5>
-            <button 
-              className="modal-close" 
-              onClick={handleCloseStockDialog}
-              title="Cerrar"
-            >
+            <button className="modal-close" onClick={handleCloseStockDialog} title="Cerrar">
               &times;
             </button>
           </div>
           <div className="modal-body">
-            {error && (
-              <div className="alert-danger">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-danger">{error}</div>}
             <h6 className="mb-3">{selectedProducto?.nombre}</h6>
             <div className="stock-info">
               <div>Stock Total del Producto: {stockTotal} unidades</div>
               <div>Stock Distribuido: {stockDistribuido} unidades</div>
-              <div className={stockRestante < 0 ? 'text-danger fw-bold' : ''}>
+              <div className={stockRestante < 0 ? "text-danger fw-bold" : ""}>
                 Stock Restante: {stockRestante} unidades
               </div>
             </div>
             <div className="stock-form">
               {Object.entries(selectedProducto?.stock_por_talla || {}).map(([talla]) => {
-                const stockActualSinTalla = stockDistribuido - (parseInt(stockForm[talla]) || 0);
+                const stockActualSinTalla =
+                  stockDistribuido - (parseInt(stockForm[talla], 10) || 0);
                 const stockDisponible = stockTotal - stockActualSinTalla;
-
                 return (
                   <div key={talla} className="row mb-3 align-items-center">
                     <div className="col-2">
@@ -597,9 +579,7 @@ const InventarioTabla = () => {
                       />
                     </div>
                     <div className="col-6">
-                      <small className="text-muted">
-                        Máximo disponible: {stockDisponible} unidades
-                      </small>
+                      <small className="text-muted">Máximo disponible: {stockDisponible} unidades</small>
                     </div>
                   </div>
                 );
@@ -607,17 +587,10 @@ const InventarioTabla = () => {
             </div>
           </div>
           <div className="modal-footer">
-            <button 
-              className="btn btn-cancel" 
-              onClick={handleCloseStockDialog}
-            >
+            <button className="btn btn-cancel" onClick={handleCloseStockDialog}>
               Cancelar
             </button>
-            <button 
-              className="btn btn-save"
-              onClick={handleSaveStock}
-              disabled={stockRestante < 0}
-            >
+            <button className="btn btn-save" onClick={handleSaveStock} disabled={stockRestante < 0}>
               Guardar Distribución
             </button>
           </div>
@@ -627,23 +600,13 @@ const InventarioTabla = () => {
   };
 
   const renderGrupoTallaSelect = (subcategoria) => {
-    if (!subcategoria.grupoTalla) {
-      return (
-        <div className="alert-warning">
-          No tiene grupo de tallas asignado
-        </div>
-      );
-    }
+    if (!subcategoria.grupoTalla) return <div className="alert-warning">No tiene grupo de tallas asignado</div>;
 
-    const grupoTallaId = Number(subcategoria.grupoTalla?.idGrupoTalla || subcategoria.grupoTalla?.id);
+    const grupoTallaId = Number(
+      subcategoria.grupoTalla?.idGrupoTalla || subcategoria.grupoTalla?.id || 0
+    );
 
-    if (!grupoTallaId) {
-      return (
-        <div className="alert-warning">
-          Se requiere asignar un grupo de tallas
-        </div>
-      );
-    }
+    if (!grupoTallaId) return <div className="alert-warning">Se requiere asignar un grupo</div>;
 
     return (
       <select
@@ -654,14 +617,10 @@ const InventarioTabla = () => {
       >
         {Array.isArray(gruposTalla) && gruposTalla.length > 0 ? (
           gruposTalla
-            .filter(grupo => grupo.estado)
-            .map((grupo) => (
-              <option 
-                key={grupo.idGrupoTalla} 
-                value={grupo.idGrupoTalla}
-                disabled={grupo.idGrupoTalla === grupoTallaId}
-              >
-                {grupo.nombre}
+            .filter((g) => g.estado)
+            .map((g) => (
+              <option key={g.idGrupoTalla} value={g.idGrupoTalla}>
+                {g.nombre}
               </option>
             ))
         ) : (
@@ -671,39 +630,12 @@ const InventarioTabla = () => {
     );
   };
 
-  const showSnackbar = (message, severity = 'info') => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
+  const showSnackbar = (message, severity = "info") => {
+    setSnackbar({ open: true, message, severity });
   };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
-
-  const handleRedireccionManual = () => {
-    navigate('/categorias');
-  };
-
-  const handleCerrarDialogo = () => {
-    setOpenNoCategoriasDialog(false);
-    setContador(10);
-  };
-
-  const handleRedireccionManualGrupoTalla = () => {
-    navigate('/grupo-talla');
-  };
-
-  const handleCerrarDialogoGrupoTalla = () => {
-    setOpenNoGrupoTallaDialog(false);
-    setContadorGrupoTalla(5);
-  };
-
-  const handleCrearProducto = (subcategoria) => {
-    navigate(`/producto/crear?subcategoria=${subcategoria.id}&subcategoriaNombre=${encodeURIComponent(subcategoria.nombre)}`);
-  };
+  const handleCloseSnackbar = () => setSnackbar((prev) => ({ ...prev, open: false }));
+  const handleRedireccionManual = () => navigate("/categorias");
+  const handleRedireccionManualGrupoTalla = () => navigate("/grupo-talla");
 
   if (loading) {
     return (
@@ -715,11 +647,9 @@ const InventarioTabla = () => {
     );
   }
 
-  // Si el diálogo de no categorías está abierto, solo mostrar el diálogo
   if (openNoCategoriasDialog) {
     return (
       <div className="inventario-tabla-container">
-        {/* Diálogo para cuando no hay categorías */}
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
@@ -729,18 +659,13 @@ const InventarioTabla = () => {
               </h5>
             </div>
             <div className="modal-body">
-              <p>
-                No se encontraron categorías en el sistema. Para continuar, necesitas crear al menos una categoría.
-              </p>
+              <p>No se encontraron categorías en el sistema.</p>
               <p className="text-muted">
                 Serás redirigido automáticamente a la página de categorías en {contador} segundos.
               </p>
             </div>
             <div className="modal-footer">
-              <button 
-                className="btn btn-save"
-                onClick={handleRedireccionManual}
-              >
+              <button className="btn btn-save" onClick={handleRedireccionManual}>
                 Ir a Categorías Ahora
               </button>
             </div>
@@ -750,11 +675,9 @@ const InventarioTabla = () => {
     );
   }
 
-  // Si el diálogo de no grupos de talla está abierto, solo mostrar el diálogo
   if (openNoGrupoTallaDialog) {
     return (
       <div className="inventario-tabla-container">
-        {/* Diálogo para cuando no hay grupos de talla */}
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
@@ -764,18 +687,13 @@ const InventarioTabla = () => {
               </h5>
             </div>
             <div className="modal-body">
-              <p>
-                No se encontraron grupos de talla en el sistema. Para continuar, necesitas crear al menos un grupo de talla antes de poder gestionar las subcategorías.
-              </p>
+              <p>Necesitas crear al menos un grupo de talla para continuar.</p>
               <p className="text-muted">
                 Serás redirigido automáticamente a la página de grupos de talla en {contadorGrupoTalla} segundos.
               </p>
             </div>
             <div className="modal-footer">
-              <button 
-                className="btn btn-save"
-                onClick={handleRedireccionManualGrupoTalla}
-              >
+              <button className="btn btn-save" onClick={handleRedireccionManualGrupoTalla}>
                 Ir a Grupos de Talla Ahora
               </button>
             </div>
@@ -785,7 +703,6 @@ const InventarioTabla = () => {
     );
   }
 
-  // Si no hay datos actuales, mostrar un mensaje de carga
   if (!currentData) {
     return (
       <div className="inventario-tabla-container">
@@ -798,63 +715,52 @@ const InventarioTabla = () => {
 
   return (
     <div className="inventario-tabla-container">
-      {/* Breadcrumbs */}
       <nav className="breadcrumb-nav">
         <ol className="breadcrumb">
           <li className="breadcrumb-item">
-            <button
-              className="breadcrumb-btn"
-              onClick={() => cargarCategorias()}
-            >
+            <button className="breadcrumb-btn" onClick={() => cargarCategorias()}>
               <i className="fas fa-home"></i> Inventario
             </button>
           </li>
-          {breadcrumbs.map((crumb, index) => (
+          {breadcrumbs.map((crumb, i) =>
             crumb.active ? (
-              <li key={index} className="breadcrumb-item active">
+              <li key={i} className="breadcrumb-item active">
                 {crumb.text}
               </li>
             ) : (
-              <li key={index} className="breadcrumb-item">
-                <button
-                  className="breadcrumb-btn"
-                  onClick={crumb.onClick}
-                >
+              <li key={i} className="breadcrumb-item">
+                <button className="breadcrumb-btn" onClick={crumb.onClick}>
                   {crumb.text}
                 </button>
               </li>
             )
-          ))}
+          )}
         </ol>
       </nav>
 
-      {/* Título */}
-      <h2 className="page-title">
-        {currentData.titulo}
-      </h2>
+      <h2 className="page-title">{currentData.titulo}</h2>
 
-      {/* Tablas */}
       {currentView === "categorias" && renderCategoriasTable()}
       {currentView === "subcategorias" && renderSubcategoriasTable()}
       {currentView === "productos" && renderProductosTable()}
-      
-      {/* Modal de Stock */}
+
       <StockDialog />
 
-      {/* Snackbar */}
       {snackbar.open && (
         <div className={`snackbar snackbar-${snackbar.severity}`}>
-          <i className={`fas ${
-            snackbar.severity === 'error' ? 'fa-exclamation-circle' :
-            snackbar.severity === 'warning' ? 'fa-exclamation-triangle' :
-            snackbar.severity === 'success' ? 'fa-check-circle' :
-            'fa-info-circle'
-          }`}></i>
+          <i
+            className={`fas ${
+              snackbar.severity === "error"
+                ? "fa-exclamation-circle"
+                : snackbar.severity === "warning"
+                ? "fa-exclamation-triangle"
+                : snackbar.severity === "success"
+                ? "fa-check-circle"
+                : "fa-info-circle"
+            }`}
+          ></i>
           <span>{snackbar.message}</span>
-          <button 
-            className="snackbar-close" 
-            onClick={handleCloseSnackbar}
-          >
+          <button className="snackbar-close" onClick={handleCloseSnackbar}>
             &times;
           </button>
         </div>

@@ -131,3 +131,17 @@ export const actualizarStockTallas = async (productoId, tallasData) => {
     throw error;
   }
 };
+/* ------------ SINCRONIZAR INVENTARIO AL CAMBIAR GRUPO DE TALLAS ------------ */
+
+export const setGrupoTallaSubcategoria = async (subcategoriaId, grupoTallaId) => {
+  try {
+    const res = await api.post('inventario/set_grupo_talla_subcategoria/', {
+      subcategoria_id: subcategoriaId,
+      grupo_talla_id: grupoTallaId,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error al sincronizar inventario tras cambio de grupo:", error);
+    throw error;
+  }
+};
