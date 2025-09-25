@@ -1,0 +1,755 @@
+/* Contenedor principal */
+.container.py-3 {
+  background: #ffffff !important;
+  min-height: 100vh;
+  padding: 1rem !important;
+}
+
+/* Header principal  */
+.container.py-3 .d-flex.align-items-center.gap-3 {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  margin-bottom: 1rem !important;
+  flex-wrap: wrap !important;
+  justify-content: space-between !important; 
+}
+
+/* Título */
+.container.py-3 h3.m-0 {
+  color: #00bcd4 !important;
+  font-weight: 400 !important;
+  font-size: 1.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Botón morado  */
+.btn-morado {
+  background-color: #9b59b6 !important;
+  border-color: #9b59b6 !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+}
+
+.btn-morado:hover:not(:disabled) {
+  background-color: #8e44ad !important;
+  border-color: #8e44ad !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Tarjeta de filtros */
+.container.py-3 .card {
+  background: #ffffff !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  margin-bottom: 1rem !important;
+}
+
+.container.py-3 .card .card-body {
+  padding: 1.25rem !important;
+}
+
+/* Labels de filtros */
+.container.py-3 .form-label {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.25rem !important;
+  color: #000000 !important;
+}
+
+/* Inputs oscuros  */
+.container.py-3 .form-control,
+.container.py-3 .form-select {
+  background-color: #1A1F2E !important;
+  border: 1px solid #34495e !important;
+  color: #ecf0f1 !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.container.py-3 .form-control:focus,
+.container.py-3 .form-select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25) !important;
+  border-color: #00bcd4 !important;
+  background-color: #1A1F2E !important;
+  color: #ecf0f1 !important;
+}
+
+.container.py-3 .form-control::placeholder {
+  color: #95a5a6 !important;
+}
+
+.container.py-3 .form-select option {
+  background: #2c3e50 !important;
+  color: #ecf0f1 !important;
+}
+
+/* Botón de búsqueda  */
+.container.py-3 .btn.btn-primary.btn-sm {
+  background: #00bcd4 !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border-radius: 0.375rem !important;
+  padding: 0.375rem 0.75rem !important;
+  font-size: 0.8rem !important;
+}
+
+.container.py-3 .btn.btn-primary.btn-sm:hover:not(:disabled) {
+  background: #0097a7 !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Vista desktop/mobile */
+.desktop-view {
+  display: block;
+}
+
+.mobile-view {
+  display: none;
+}
+
+/* Contenedor de tabla  */
+.container.py-3 .table-responsive {
+  background: #ffffff !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #dee2e6 !important;
+  overflow-x: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #00bcd4 #f8f9fa !important;
+  margin-bottom: 1rem !important;
+}
+
+.container.py-3 .table-responsive::-webkit-scrollbar {
+  height: 8px !important;
+}
+
+.container.py-3 .table-responsive::-webkit-scrollbar-track {
+  background: #f8f9fa !important;
+  border-radius: 4px !important;
+}
+
+.container.py-3 .table-responsive::-webkit-scrollbar-thumb {
+  background: #00bcd4 !important;
+  border-radius: 4px !important;
+}
+
+.container.py-3 .table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #0097a7 !important;
+}
+
+/* Tabla  */
+.container.py-3 .table.table-hover {
+  margin-bottom: 0 !important;
+  color: #000000 !important;
+  background: #ffffff !important;
+  width: 100% !important;
+  min-width: 800px !important;
+}
+
+/* Header de tabla  */
+.container.py-3 .table.table-hover thead.table-light th {
+  background-color: #1A1F2E !important;
+  color: #00bcd4 !important;
+  border: none !important;
+  padding: 1rem 0.75rem !important;
+  font-weight: 700 !important;
+  font-size: 0.875rem !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+}
+
+/* Filas de la tabla  */
+.container.py-3 .table.table-hover tbody td {
+  background: #ffffff !important;
+  border-top: 1px solid #dee2e6 !important;
+  padding: 1rem 0.75rem !important;
+  vertical-align: middle !important;
+  color: #000000 !important;
+  font-size: 0.875rem !important;
+}
+
+.container.py-3 .table.table-hover tbody tr:hover td {
+  background: #f8f9fa !important;
+}
+
+/* Número de pedido  */
+.container.py-3 .table.table-hover td:first-child {
+  color: #00bcd4 !important;
+  font-weight: 600 !important;
+}
+
+/* Botón Ver  */
+.container.py-3 .btn.btn-sm.btn-morado {
+  background: #9b59b6 !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  text-align: center !important; 
+  min-width: 80px !important;
+}
+
+.container.py-3 .btn.btn-sm.btn-morado:hover:not(:disabled) {
+  background: #8e44ad !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Badges  */
+.container.py-3 .badge {
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 1rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+}
+
+.container.py-3 .badge.bg-success {
+  background: #27ae60 !important;
+  color: white !important;
+}
+
+.container.py-3 .badge.bg-secondary {
+  background: #95a5a6 !important;
+  color: white !important;
+}
+
+/* Fila expandida  */
+.container.py-3 .bg-light {
+  background: #f1f3f4 !important;
+  border-left: 4px solid #00bcd4 !important;
+}
+
+.container.py-3 .bg-light .p-2 {
+  padding: 1.5rem !important;
+}
+
+.container.py-3 .bg-light strong {
+  color: #00bcd4 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Tabla de productos anidada  */
+.container.py-3 .bg-light .table-responsive {
+  background: #ffffff !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  margin-bottom: 0 !important;
+  margin-top: 0.5rem !important;
+}
+
+.container.py-3 .bg-light .table.table-sm {
+  margin: 0 !important;
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+
+.container.py-3 .bg-light .table.table-sm thead th {
+  background-color: #1A1F2E !important;
+  color: #00bcd4 !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.5px !important;
+  padding: 0.75rem !important;
+  border: none !important;
+}
+
+.container.py-3 .bg-light .table.table-sm tbody td {
+  background: #ffffff !important;
+  border-top: 1px solid #dee2e6 !important;
+  padding: 0.75rem !important;
+  font-size: 0.85rem !important;
+  color: #000000 !important;
+}
+
+.container.py-3 .bg-light .table.table-sm tbody tr:hover td {
+  background: #f8f9fa !important;
+}
+
+.container.py-3 .bg-light .table.table-sm .text-center {
+  color: #00bcd4 !important;
+  font-weight: 600 !important;
+}
+
+.container.py-3 .bg-light .table.table-sm .text-end {
+  color: #27ae60 !important;
+  font-weight: 600 !important;
+}
+
+/* Cards de pedidos para mobile  */
+.pedido-card {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pedido-card:last-child {
+  margin-bottom: 0;
+}
+
+.pedido-card-header {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pedido-numero {
+  color: #00bcd4;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.pedido-card-body {
+  padding: 1rem;
+}
+
+.pedido-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pedido-info-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: #6c757d;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.info-value {
+  color: #000000;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+.total-amount {
+  color: #27ae60 !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+
+.pedido-card-footer {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Productos expandidos en mobile  */
+.pedido-productos-expanded {
+  border-top: 1px solid #dee2e6;
+  background: #f1f3f4;
+}
+
+.productos-header {
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.productos-header strong {
+  color: #00bcd4;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.productos-list {
+  padding: 1rem;
+}
+
+.producto-card {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.producto-card:last-child {
+  margin-bottom: 0;
+}
+
+.producto-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.producto-card-name {
+  font-weight: 600;
+  color: #000000;
+  font-size: 0.9rem;
+}
+
+.producto-card-size {
+  background: #f8f9fa;
+  color: #6c757d;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.producto-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.producto-card-row:last-child {
+  margin-bottom: 0;
+}
+
+.producto-card-label {
+  color: #6c757d;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.producto-card-value {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.producto-card-quantity {
+  color: #00bcd4;
+}
+
+.producto-card-price,
+.producto-card-subtotal {
+  color: #27ae60;
+}
+
+.mobile-empty-state {
+  text-align: center;
+  color: #6c757d;
+  padding: 2rem;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* Mensaje sin contenido */
+.container.py-3 .text-center.text-muted {
+  color: #6c757d !important;
+  font-size: 0.875rem !important;
+  padding: 2rem !important;
+  text-align: center !important;
+}
+
+/* Paginación  */
+.container.py-3 .d-flex.justify-content-between.align-items-center:last-child {
+  background: #f8f9fa !important;
+  border-top: 1px solid #dee2e6 !important;
+  padding: 1rem !important;
+  border-radius: 0 0 0.5rem 0.5rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+}
+
+.container.py-3 .text-muted {
+  color: #000000 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+}
+
+/* Botones de paginación  */
+.container.py-3 .btn-group .btn.btn-outline-secondary {
+  background: #00bcd4 !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+}
+
+.container.py-3 .btn-group .btn.btn-outline-secondary:hover:not(:disabled) {
+  background: #0097a7 !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+}
+
+.container.py-3 .btn-group .btn.btn-outline-secondary:disabled {
+  background: #95a5a6 !important;
+  color: white !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* RESPONSIVE */
+
+/* Tablets - 768px a 991px */
+@media (max-width: 991.98px) {
+  .container.py-3 .d-flex.align-items-center.gap-3 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+  
+  .container.py-3 h3.m-0 {
+    text-align: center !important;
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Mobile - 768px y menos */
+@media (max-width: 767.98px) {
+  .container.py-3 {
+    padding: 0.75rem !important;
+  }
+  
+  /* Cambiar a vista mobile */
+  .desktop-view {
+    display: none !important;
+  }
+  
+  .mobile-view {
+    display: block !important;
+  }
+  
+  .container.py-3 .d-flex.align-items-center.gap-3 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+  
+  .container.py-3 h3.m-0 {
+    text-align: center !important;
+    font-size: 1.25rem !important;
+  }
+  
+  .btn-morado {
+    align-self: center !important;
+    width: 150px !important;
+  }
+  
+  /* Filtros más compactos en mobile */
+  .container.py-3 .row.g-2 .col-12.col-sm-6.col-md-4,
+  .container.py-3 .row.g-2 .col-6.col-md-3,
+  .container.py-3 .row.g-2 .col-12.col-sm-6.col-md-2 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .container.py-3 .btn.btn-primary.btn-sm {
+    width: 120px !important;
+    align-self: center !important;
+  }
+}
+
+/* Mobile pequeño - 575px y menos */
+@media (max-width: 575.98px) {
+  .container.py-3 {
+    padding: 0.5rem !important;
+  }
+  
+  .container.py-3 .card .card-body {
+    padding: 1rem !important;
+  }
+  
+  .container.py-3 h3.m-0 {
+    font-size: 1.125rem !important;
+  }
+  
+  .btn-morado {
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.75rem !important;
+    width: 130px !important;
+  }
+  
+  /* Filtros en columna */
+  .container.py-3 .row.g-2 .col-12,
+  .container.py-3 .row.g-2 .col-6 {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .container.py-3 .btn.btn-primary.btn-sm {
+    width: 100px !important;
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.5rem !important;
+  }
+  
+  /* Cards más compactos */
+  .pedido-card-header,
+  .pedido-card-body,
+  .pedido-card-footer {
+    padding: 0.75rem !important;
+  }
+  
+  .pedido-numero {
+    font-size: 1rem !important;
+  }
+  
+  .info-label,
+  .info-value {
+    font-size: 0.8rem !important;
+  }
+  
+  .total-amount {
+    font-size: 0.9rem !important;
+  }
+  
+  /* Productos más compactos */
+  .producto-card {
+    padding: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .producto-card-name {
+    font-size: 0.85rem !important;
+  }
+  
+  .producto-card-row {
+    margin-bottom: 0.375rem !important;
+  }
+  
+  /* Paginación responsive */
+  .container.py-3 .d-flex.justify-content-between.align-items-center:last-child {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 0.75rem !important;
+  }
+}
+
+/* Mobile muy pequeño - 375px y menos */
+@media (max-width: 375px) {
+  .container.py-3 {
+    padding: 0.375rem !important;
+  }
+  
+  .container.py-3 h3.m-0 {
+    font-size: 1rem !important;
+  }
+  
+  .btn-morado {
+    width: 120px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .pedido-info-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.25rem !important;
+  }
+  
+  .info-value {
+    align-self: flex-end !important;
+  }
+  
+  .producto-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+  
+  .producto-card-row {
+    font-size: 0.75rem !important;
+  }
+  
+  .container.py-3 .btn-group .btn.btn-outline-secondary {
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.75rem !important;
+  }
+}
+
+/* Landscape móvil */
+@media (max-width: 812px) and (orientation: landscape) {
+  .container.py-3 .d-flex.align-items-center.gap-3 {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+  }
+  
+  .container.py-3 h3.m-0 {
+    text-align: left !important;
+    font-size: 1.25rem !important;
+  }
+  
+  .btn-morado {
+    width: auto !important;
+    align-self: auto !important;
+  }
+}
+
+/* Animaciones y transiciones - mantenidas */
+.pedido-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.pedido-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.produto-card {
+  transition: background-color 0.2s ease !important;
+}
+
+.produto-card:hover {
+  background: #f8f9fa !important;
+}
+
+/* Accesibilidad - mantenida */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* Alto contraste - mantenido */
+@media (prefers-contrast: high) {
+  .container.py-3 .form-control,
+  .container.py-3 .form-select {
+    border-width: 2px !important;
+  }
+  
+  .pedido-card,
+  .producto-card {
+    border-width: 2px !important;
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useParams, Link } from "react-router-dom";
 import { crearFacturaDesdePago, getFactura, descargarFacturaPDF } from "../../api/Factura.api.js";
+import "../../assets/css/Facturas/RetornoMp.css";
 
 // Construye el payload y permite pasar una bandera para que el backend no descuente stock.
 function buildBodyFromQuery(q, { skipStock = true } = {}) {
@@ -201,88 +202,100 @@ export function RetornoMP() {
   };
 
   return (
-    <div className="container my-4">
-      <div className="row justify-content-center">
-        <div className="col-12 col-lg-8">
-          <div className="card shadow-sm border-0">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center mb-3">
-                <div
-                  className={`rounded-circle d-inline-flex align-items-center justify-content-center me-3 ${
-                    isApproved ? "bg-success" : "bg-secondary"
-                  }`}
-                  style={{ width: 44, height: 44 }}
-                >
-                  <i className="bi bi-check2 text-white fs-4" />
-                </div>
-                <h1 className="h4 mb-0">
-                  {isViewMode ? "Factura" : "¡Gracias por tu compra!"}
-                </h1>
-              </div>
+    <div className="retorno-mp-page">
+      <div className="retorno-mp-container">
+        <div className="retorno-mp-card">
+          <div className="retorno-mp-header">
+            <div className={`retorno-mp-icon ${isApproved ? 'success' : 'secondary'}`}>
+              <i className="bi bi-check2" />
+            </div>
+            <h1 className="retorno-mp-title">
+              {isViewMode ? "Factura" : "¡Gracias por tu compra!"}
+            </h1>
+          </div>
 
-              {/* Mensajería principal */}
-              {isViewMode ? (
-                <>
-                  {state.loading && (
-                    <div className="alert alert-info d-flex align-items-center" role="alert">
-                      <div className="spinner-border spinner-border-sm me-2" />
-                      Cargando factura…
+          <div className="retorno-mp-content">
+            {/* Mensajería principal */}
+            {isViewMode ? (
+              <>
+                {state.loading && (
+                  <div className="retorno-mp-alert info">
+                    <div className="retorno-mp-loading">
+                      <div className="spinner"></div>
+                      <span>Cargando factura…</span>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {!state.loading && state.ok && state.factura && (
-                    <div className="alert alert-success" role="alert">
-                      <h6 className="alert-heading mb-2">Factura</h6>
-                      <div className="row g-3">
-                        <div className="col-12 col-md-6">
-                          <div className="small text-uppercase text-muted">Número</div>
-                          <div className="fw-semibold">{state.factura.numero}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="small text-uppercase text-muted">Factura ID</div>
-                          <div className="fw-semibold">{state.factura.id}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="small text-uppercase text-muted">Total</div>
-                          <div className="fw-semibold">{state.factura.total}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="small text-uppercase text-muted">Moneda</div>
-                          <div className="fw-semibold">{state.factura.moneda}</div>
-                        </div>
+                {!state.loading && state.ok && state.factura && (
+                  <div className="retorno-mp-alert success">
+                    <div className="retorno-mp-alert-header">
+                      <i className="bi bi-receipt"></i>
+                      <span>Factura</span>
+                    </div>
+                    
+                    <div className="retorno-mp-details">
+                      <div className="retorno-mp-detail-item">
+                        <div className="retorno-mp-detail-label">Número</div>
+                        <div className="retorno-mp-detail-value">{state.factura.numero}</div>
                       </div>
-
-                      <div className="mt-3 d-flex gap-2">
-                        <button
-                          className="btn btn-outline-secondary btn-sm"
-                          onClick={() => onDescargarPDF(state.factura.id, state.factura.numero)}
-                        >
-                          Descargar PDF
-                        </button>
-                        <Link className="btn btn-outline-primary btn-sm" to="/facturas">
-                          Volver al listado
-                        </Link>
+                      <div className="retorno-mp-detail-item">
+                        <div className="retorno-mp-detail-label">Factura ID</div>
+                        <div className="retorno-mp-detail-value">{state.factura.id}</div>
+                      </div>
+                      <div className="retorno-mp-detail-item">
+                        <div className="retorno-mp-detail-label">Total</div>
+                        <div className="retorno-mp-detail-value total">{state.factura.total}</div>
+                      </div>
+                      <div className="retorno-mp-detail-item">
+                        <div className="retorno-mp-detail-label">Moneda</div>
+                        <div className="retorno-mp-detail-value">{state.factura.moneda}</div>
                       </div>
                     </div>
-                  )}
 
-                  {!state.loading && !state.ok && (
-                    <div className="alert alert-warning" role="alert">
-                      <div className="fw-semibold mb-1">
-                        {state.error?.shortMessage || "No pudimos cargar la factura."}
-                      </div>
-                      <ul className="small mb-2">
+                    <div className="retorno-mp-actions">
+                      <button
+                        className="btn btn-purple btn-sm"
+                        onClick={() => onDescargarPDF(state.factura.id, state.factura.numero)}
+                      >
+                        <i className="bi bi-file-earmark-pdf me-1"></i>
+                        Descargar PDF
+                      </button>
+                      <Link className="btn btn-cyan btn-sm" to="/admin/facturas">
+                        <i className="bi bi-list-ul me-1"></i>
+                        Volver al listado
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {!state.loading && !state.ok && (
+                  <div className="retorno-mp-alert warning">
+                    <div className="retorno-mp-alert-header">
+                      <i className="bi bi-exclamation-triangle"></i>
+                      <span>Error al cargar factura</span>
+                    </div>
+                    
+                    <div className="retorno-mp-error-message">
+                      {state.error?.shortMessage || "No pudimos cargar la factura."}
+                    </div>
+                    
+                    {state.error && (
+                      <div className="retorno-mp-error-details">
                         {state.error?.status && (
-                          <li><strong>Status:</strong> {state.error.status} {state.error.statusText || ""}</li>
+                          <div className="retorno-mp-error-item">
+                            <strong>Status:</strong> {state.error.status} {state.error.statusText || ""}
+                          </div>
                         )}
                         {state.error?.url && (
-                          <li><strong>Endpoint:</strong> {state.error.method} {state.error.url}</li>
+                          <div className="retorno-mp-error-item">
+                            <strong>Endpoint:</strong> {state.error.method} {state.error.url}
+                          </div>
                         )}
-                      </ul>
-                      {state.error && (
-                        <details className="mb-2">
+                        
+                        <details className="retorno-mp-error-technical">
                           <summary>Ver detalles técnicos</summary>
-                          <pre className="mt-2 bg-light p-2 rounded" style={{ whiteSpace: "pre-wrap" }}>
+                          <pre className="retorno-mp-error-json">
 {JSON.stringify({
   status: state.error.status,
   statusText: state.error.statusText,
@@ -294,82 +307,104 @@ export function RetornoMP() {
   fieldErrors: state.error.fieldErrors,
 }, null, 2)}
                           </pre>
-                          <button className="btn btn-sm btn-outline-secondary" onClick={copyError}>
+                          <button className="btn btn-outline btn-sm" onClick={copyError}>
+                            <i className="bi bi-clipboard me-1"></i>
                             Copiar detalle
                           </button>
                         </details>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : (
-                // ===== Retorno MP (lo que ya tenías) =====
-                <>
-                  {isApproved ? (
-                    <>
-                      {state.loading && (
-                        <div className="alert alert-info d-flex align-items-center" role="alert">
-                          <div className="spinner-border spinner-border-sm me-2" />
-                          <div>
-                            Creando tu factura… <span className="fw-semibold">Intento {state.intentos}</span>
-                            {debug && <span className="ms-2 badge bg-dark">Debug ON</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              // ===== Retorno MP (lo que ya tenías) =====
+              <>
+                {isApproved ? (
+                  <>
+                    {state.loading && (
+                      <div className="retorno-mp-alert info">
+                        <div className="retorno-mp-loading">
+                          <div className="spinner"></div>
+                          <div className="retorno-mp-loading-text">
+                            <span>Creando tu factura…</span>
+                            <span className="retorno-mp-attempt">Intento {state.intentos}</span>
+                            {debug && <span className="retorno-mp-debug">Debug ON</span>}
                           </div>
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {!state.loading && state.ok && state.factura && (
-                        <div className="alert alert-success" role="alert">
-                          <h6 className="alert-heading mb-2">Factura generada correctamente</h6>
-                          <div className="row g-3">
-                            <div className="col-12 col-md-6">
-                              <div className="small text-uppercase text-muted">Número</div>
-                              <div className="fw-semibold">{state.factura.numero}</div>
-                            </div>
-                            <div className="col-12 col-md-6">
-                              <div className="small text-uppercase text-muted">Factura ID</div>
-                              <div className="fw-semibold">{state.factura.id}</div>
-                            </div>
-                            <div className="col-12 col-md-6">
-                              <div className="small text-uppercase text-muted">Total</div>
-                              <div className="fw-semibold">{state.factura.total}</div>
-                            </div>
-                            <div className="col-12 col-md-6">
-                              <div className="small text-uppercase text-muted">Moneda</div>
-                              <div className="fw-semibold">{state.factura.moneda}</div>
-                            </div>
+                    {!state.loading && state.ok && state.factura && (
+                      <div className="retorno-mp-alert success">
+                        <div className="retorno-mp-alert-header">
+                          <i className="bi bi-check-circle"></i>
+                          <span>Factura generada correctamente</span>
+                        </div>
+                        
+                        <div className="retorno-mp-details">
+                          <div className="retorno-mp-detail-item">
+                            <div className="retorno-mp-detail-label">Número</div>
+                            <div className="retorno-mp-detail-value">{state.factura.numero}</div>
                           </div>
-                          <div className="mt-3 d-flex gap-2">
-                            <button
-                              className="btn btn-outline-secondary btn-sm"
-                              onClick={() => onDescargarPDF(state.factura.id, state.factura.numero)}
-                            >
-                              Descargar PDF
-                            </button>
-                            <Link className="btn btn-outline-primary btn-sm" to={`/facturas/${state.factura.id}`}>
-                              Ver factura
-                            </Link>
+                          <div className="retorno-mp-detail-item">
+                            <div className="retorno-mp-detail-label">Factura ID</div>
+                            <div className="retorno-mp-detail-value">{state.factura.id}</div>
+                          </div>
+                          <div className="retorno-mp-detail-item">
+                            <div className="retorno-mp-detail-label">Total</div>
+                            <div className="retorno-mp-detail-value total">{state.factura.total}</div>
+                          </div>
+                          <div className="retorno-mp-detail-item">
+                            <div className="retorno-mp-detail-label">Moneda</div>
+                            <div className="retorno-mp-detail-value">{state.factura.moneda}</div>
                           </div>
                         </div>
-                      )}
+                        
+                        <div className="retorno-mp-actions">
+                          <button
+                            className="btn btn-purple btn-sm"
+                            onClick={() => onDescargarPDF(state.factura.id, state.factura.numero)}
+                          >
+                            <i className="bi bi-file-earmark-pdf me-1"></i>
+                            Descargar PDF
+                          </button>
+                          <Link className="btn btn-cyan btn-sm" to={`/facturas/${state.factura.id}`}>
+                            <i className="bi bi-eye me-1"></i>
+                            Ver factura
+                          </Link>
+                        </div>
+                      </div>
+                    )}
 
-                      {!state.loading && !state.ok && (
-                        <div className="alert alert-warning" role="alert">
-                          <div className="fw-semibold mb-1">
-                            {state.error?.shortMessage ||
-                              "No pudimos crear la factura automáticamente. Intenta recargar en unos segundos."}
-                          </div>
-                          <ul className="small mb-2">
+                    {!state.loading && !state.ok && (
+                      <div className="retorno-mp-alert warning">
+                        <div className="retorno-mp-alert-header">
+                          <i className="bi bi-exclamation-triangle"></i>
+                          <span>Error al crear factura</span>
+                        </div>
+                        
+                        <div className="retorno-mp-error-message">
+                          {state.error?.shortMessage ||
+                            "No pudimos crear la factura automáticamente. Intenta recargar en unos segundos."}
+                        </div>
+                        
+                        {state.error && (
+                          <div className="retorno-mp-error-details">
                             {state.error?.status && (
-                              <li><strong>Status:</strong> {state.error.status} {state.error.statusText || ""}</li>
+                              <div className="retorno-mp-error-item">
+                                <strong>Status:</strong> {state.error.status} {state.error.statusText || ""}
+                              </div>
                             )}
                             {state.error?.url && (
-                              <li><strong>Endpoint:</strong> {state.error.method} {state.error.url}</li>
+                              <div className="retorno-mp-error-item">
+                                <strong>Endpoint:</strong> {state.error.method} {state.error.url}
+                              </div>
                             )}
-                          </ul>
-                          {state.error && (
-                            <details className="mb-2">
+                            
+                            <details className="retorno-mp-error-technical">
                               <summary>Ver detalles técnicos</summary>
-                              <pre className="mt-2 bg-light p-2 rounded" style={{ whiteSpace: "pre-wrap" }}>
+                              <pre className="retorno-mp-error-json">
 {JSON.stringify({
   status: state.error.status,
   statusText: state.error.statusText,
@@ -381,69 +416,86 @@ export function RetornoMP() {
   fieldErrors: state.error.fieldErrors,
 }, null, 2)}
                               </pre>
-                              <button className="btn btn-sm btn-outline-secondary" onClick={copyError}>
+                              <button className="btn btn-outline btn-sm" onClick={copyError}>
+                                <i className="bi bi-clipboard me-1"></i>
                                 Copiar detalle
                               </button>
                             </details>
-                          )}
-                          <div className="d-flex gap-2">
-                            <button className="btn btn-sm btn-outline-primary" onClick={() => window.location.reload()}>
-                              Reintentar ahora
-                            </button>
-                            <Link className="btn btn-sm btn-outline-secondary" to="/carrito">
-                              Ver carrito
-                            </Link>
                           </div>
+                        )}
+                        
+                        <div className="retorno-mp-actions">
+                          <button className="btn btn-cyan btn-sm" onClick={() => window.location.reload()}>
+                            <i className="bi bi-arrow-clockwise me-1"></i>
+                            Reintentar ahora
+                          </button>
+                          <Link className="btn btn-outline btn-sm" to="/carrito">
+                            <i className="bi bi-cart me-1"></i>
+                            Ver carrito
+                          </Link>
                         </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="alert alert-danger" role="alert">
-                      <div className="fw-semibold">Estado recibido: {q.status || "desconocido"}</div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="retorno-mp-alert error">
+                    <div className="retorno-mp-alert-header">
+                      <i className="bi bi-x-circle"></i>
+                      <span>Pago no aprobado</span>
+                    </div>
+                    <div className="retorno-mp-error-message">
+                      Estado recibido: <strong>{q.status || "desconocido"}</strong><br />
                       No se intentará generar factura.
                     </div>
-                  )}
-                </>
-              )}
+                  </div>
+                )}
+              </>
+            )}
 
-              {/* Panel de detalles del pago solo tiene sentido en retorno MP */}
-              {!isViewMode && (
-                <div className="card mt-3">
-                  <div className="card-header bg-light">Detalles del pago</div>
-                  <div className="card-body">
-                    <div className="row gy-2">
-                      <div className="col-12 col-md-6">
-                        <div className="text-muted small">Referencia</div>
-                        <div className="fw-semibold">{q.external_reference || "—"}</div>
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <div className="text-muted small">Pago (payment_id)</div>
-                        <div className="fw-semibold">{q.payment_id || "—"}</div>
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <div className="text-muted small">Carrito</div>
-                        <div className="fw-semibold">{q.carritoId || "—"}</div>
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <div className="text-muted small">Preference ID</div>
-                        <div className="fw-semibold">{q.preference_id || "—"}</div>
-                      </div>
-                    </div>
+            {/* Panel de detalles del pago solo tiene sentido en retorno MP */}
+            {!isViewMode && (
+              <div className="retorno-mp-payment-details">
+                <div className="retorno-mp-payment-header">
+                  <i className="bi bi-credit-card"></i>
+                  <span>Detalles del pago</span>
+                </div>
+                <div className="retorno-mp-payment-content">
+                  <div className="retorno-mp-payment-item">
+                    <div className="retorno-mp-payment-label">Referencia</div>
+                    <div className="retorno-mp-payment-value">{q.external_reference || "—"}</div>
+                  </div>
+                  <div className="retorno-mp-payment-item">
+                    <div className="retorno-mp-payment-label">Pago (payment_id)</div>
+                    <div className="retorno-mp-payment-value">{q.payment_id || "—"}</div>
+                  </div>
+                  <div className="retorno-mp-payment-item">
+                    <div className="retorno-mp-payment-label">Carrito</div>
+                    <div className="retorno-mp-payment-value">{q.carritoId || "—"}</div>
+                  </div>
+                  <div className="retorno-mp-payment-item">
+                    <div className="retorno-mp-payment-label">Preference ID</div>
+                    <div className="retorno-mp-payment-value">{q.preference_id || "—"}</div>
                   </div>
                 </div>
-              )}
-
-              <div className="d-flex gap-2 mt-4">
-                <Link to="/" className="btn btn-primary">Volver al inicio</Link>
-                <Link to="/carrito" className="btn btn-outline-secondary">Ver carrito</Link>
               </div>
+            )}
+
+            <div className="retorno-mp-navigation">
+              <Link to="/" className="btn btn-cyan">
+                <i className="bi bi-house-door me-1"></i>
+                Volver al inicio
+              </Link>
+              <Link to="/carrito" className="btn btn-outline">
+                <i className="bi bi-cart me-1"></i>
+                Ver carrito
+              </Link>
             </div>
           </div>
-
-          <p className="text-center text-muted small mt-3 mb-0">
-            Si algo no se refleja de inmediato, espera unos segundos y recarga la página.
-          </p>
         </div>
+
+        <p className="retorno-mp-footer">
+          Si algo no se refleja de inmediato, espera unos segundos y recarga la página.
+        </p>
       </div>
     </div>
   );

@@ -30,10 +30,10 @@ import { RolFormPage } from "./pages/RolFormPage.jsx";
 import { AdminDashboard } from "./components/Admin/AdminDashboard.jsx";
 import { AdminLayout } from "./components/Admin/AdminLayout.jsx";
 import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
-import { ReporteVentasPage } from "./pages/ReporteVentasPage.jsx";
 import { FacturasPage } from "./pages/FacturasPage.jsx";
 import { PedidosPage } from "./pages/PedidosPage.jsx";
 import {ReporteVentasRangoAdminPage} from "./pages/ReporteVentasRangoAdminPage.jsx"
+import  AdminHome from "./components/Admin/AdminHome.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -82,8 +82,13 @@ function AppContent() {
 
       {/* MAIN AGREGADO - contenido que se expande */}
       <main>
-        {/* Renderiza el dashboard solo si se solicita explícitamente y no estamos en admin */}
+        {/* Renderiza el dashboard completo solo si se solicita explícitamente y no estamos en admin */}
         {esAdminAutenticado && noEsPaginaDeSesion && !esRutaAdmin && mostrarAdminPanel && (
+          <AdminDashboard />
+        )}
+
+        {/* Siempre mostrar AdminDashboard para admin cuando NO está en rutas admin (para que se vea el botón hamburguesa) */}
+        {esAdminAutenticado && noEsPaginaDeSesion && !esRutaAdmin && !mostrarAdminPanel && (
           <AdminDashboard />
         )}
 
@@ -109,15 +114,15 @@ function AppContent() {
               </RutaPrivada>
             }
           />
-          <Route
+         {/* <Route
           path="/facturas"
           element={
             <RutaPrivada role={["cliente", "administrador"]}>
               <FacturasPage />
             </RutaPrivada>
           }
-          />
-          {/* ✅ Ver factura por ID reutilizando RetornoMPpage */}
+          />*/}
+          {/*  Ver factura por ID reutilizando RetornoMPpage */}
           <Route
             path="/facturas/:id"
             element={
@@ -158,7 +163,7 @@ function AppContent() {
               </RutaPrivada>
             }
           />
-          {/* ✅ Retorno de Mercado Pago (ruta clara) */}
+          {/*  Retorno de Mercado Pago (ruta clara) */}
           <Route
             path="/pago/retorno"
             element={
@@ -167,6 +172,7 @@ function AppContent() {
               </RutaPrivada>
             }
           />
+          
           {/* Admin con layout */}
           <Route
             path="/admin/*"
@@ -176,6 +182,11 @@ function AppContent() {
               </RutaPrivada>
             }
           >
+            {/*  RUTA PRINCIPAL DEL ADMIN - Dashboard Home */}
+            <Route index element={<AdminHome />} />
+            <Route path="home" element={<AdminHome />} />
+            
+            {/*  Resto de rutas admin */}
             <Route path="dashboard" element={<AdminProvedoresPage />} />
             <Route path="proveedores" element={<AdminProvedoresPage />} />
             <Route
@@ -200,8 +211,10 @@ function AppContent() {
             />
             <Route path="tallas" element={<TallasPage />} />
             <Route path="categorias" element={<CategoriasPage />} />
-            <Route path="reporte-ventas" element={<ReporteVentasPage />} />
             <Route path="pedidos" element={<PedidosPage />} />
+            <Route path="facturas" element={<FacturasPage />} />
+            <Route path="facturas/:id" element={<RetornoMPpage />} />
+            <Route path="retornoMP" element={<RetornoMPpage />} />
           </Route>
 
           {/* Redirección por defecto */}

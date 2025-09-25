@@ -1927,7 +1927,7 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 
 
 # =========================
-# HELPERS (money/fecha/estado) Desde Camila
+# HELPERS (money/fecha/estado) Desde 
 # =========================
 def fmt_money(value, currency="COP"):
     """
@@ -2254,7 +2254,7 @@ class FacturaView(viewsets.ModelViewSet):
         from io import BytesIO
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.units import mm
-        from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+        from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
@@ -2282,27 +2282,83 @@ class FacturaView(viewsets.ModelViewSet):
             except Exception:
                 return str(dt)
 
+        # ------- colores del proyecto -------
+        color_primary = colors.HexColor("#1fb2d2")  # Cyan principal
+        color_secondary = colors.HexColor("#2c3e50")  # Azul oscuro
+        color_accent = colors.HexColor("#16a085")  # Verde azulado
+        color_bg_light = colors.HexColor("#f8f9fa")  # Fondo claro
+        color_text_dark = colors.HexColor("#2c3e50")  # Texto oscuro
+        color_text_light = colors.HexColor("#6c757d")  # Texto claro
+
         # ------- documento -------
         buf = BytesIO()
         doc = SimpleDocTemplate(
             buf, pagesize=letter,
-            leftMargin=18*mm, rightMargin=18*mm,
-            topMargin=16*mm, bottomMargin=16*mm,
+            leftMargin=20*mm, rightMargin=20*mm,
+            topMargin=18*mm, bottomMargin=18*mm,
             title=f"Factura {getattr(factura,'numero', factura.pk)}"
         )
 
         styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(name="h1center", parent=styles["Heading1"], alignment=TA_CENTER, spaceAfter=8))
-        styles.add(ParagraphStyle(name="label", fontName="Helvetica", fontSize=9, textColor=colors.grey))
-        styles.add(ParagraphStyle(name="value", fontName="Helvetica-Bold", fontSize=10))
-        styles.add(ParagraphStyle(name="right", parent=styles["Normal"], alignment=TA_RIGHT))
-        styles.add(ParagraphStyle(name="smallcenter", fontName="Helvetica", fontSize=8, textColor=colors.grey, alignment=TA_CENTER))
+        
+        # Estilos personalizados con colores del proyecto
+        styles.add(ParagraphStyle(
+            name="h1center", 
+            parent=styles["Heading1"], 
+            alignment=TA_CENTER, 
+            spaceAfter=12,
+            textColor=color_primary,
+            fontSize=24,
+            fontName="Helvetica-Bold"
+        ))
+        
+        styles.add(ParagraphStyle(
+            name="label", 
+            fontName="Helvetica", 
+            fontSize=9, 
+            textColor=color_text_light,
+            spaceBefore=2,
+            spaceAfter=1
+        ))
+        
+        styles.add(ParagraphStyle(
+            name="value", 
+            fontName="Helvetica-Bold", 
+            fontSize=11,
+            textColor=color_text_dark,
+            spaceAfter=3
+        ))
+        
+        styles.add(ParagraphStyle(
+            name="right", 
+            parent=styles["Normal"], 
+            alignment=TA_RIGHT,
+            textColor=color_text_dark
+        ))
+        
+        styles.add(ParagraphStyle(
+            name="smallcenter", 
+            fontName="Helvetica", 
+            fontSize=8, 
+            textColor=color_text_light, 
+            alignment=TA_CENTER,
+            spaceAfter=6
+        ))
 
         story = []
-        story.append(Paragraph("FACTURA", styles["h1center"]))
-        story.append(Spacer(1, 2*mm))
+        
+        # Header con línea decorativa
+        story.append(Paragraph("FACTURA DE VENTA", styles["h1center"]))
+        # Línea decorativa debajo del título
+        line_table = Table([["", ""]], colWidths=[180*mm, 0])
+        line_table.setStyle(TableStyle([
+            ("LINEBELOW", (0,0), (0,0), 2, color_primary),
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ]))
+        story.append(line_table)
+        story.append(Spacer(1, 4*mm))
 
-        # ------- encabezado (SIN NIT + dirección cliente) -------
+        # ------- encabezado mejorado -------
         emisor_nombre = getattr(settings, "FACTURA_EMISOR_NOMBRE", "Variedad y Estilos ZOE")
         emisor_dir    = getattr(settings, "FACTURA_EMISOR_DIR", "")
 
@@ -2339,33 +2395,72 @@ class FacturaView(viewsets.ModelViewSet):
 
         fecha_fact = getattr(factura, "emitida_en", None) or getattr(factura, "created_at", None)
 
+        # Sección de información con mejor diseño
         meta_left = [
-            [Paragraph("<b>Emisor</b>", styles["label"]), Paragraph(emisor_nombre, styles["value"])],
-            [Paragraph("<b>Dirección</b>", styles["label"]), Paragraph(emisor_dir or "—", styles["value"])],
+            [Paragraph("EMISOR", styles["label"]), ""],
+            [Paragraph(emisor_nombre, styles["value"]), ""],
+            [Paragraph("Dirección:", styles["label"]), ""],
+            [Paragraph(emisor_dir or "—", styles["value"]), ""],
         ]
+        
         meta_mid = [
-            [Paragraph("<b>Factura</b>", styles["label"]), Paragraph(getattr(factura, "numero", "") or str(factura.pk), styles["value"])],
-            [Paragraph("<b>Factura ID</b>", styles["label"]), Paragraph(str(factura.pk), styles["value"])],
-            [Paragraph("<b>Fecha</b>", styles["label"]), Paragraph(dmy_hm(fecha_fact), styles["value"])],
+            [Paragraph("FACTURA", styles["label"]), ""],
+            [Paragraph(getattr(factura, "numero", "") or str(factura.pk), styles["value"]), ""],
+            [Paragraph("ID:", styles["label"]), ""],
+            [Paragraph(str(factura.pk), styles["value"]), ""],
+            [Paragraph("Fecha:", styles["label"]), ""],
+            [Paragraph(dmy_hm(fecha_fact), styles["value"]), ""],
         ]
+        
         meta_right = [
-            [Paragraph("<b>Cliente</b>", styles["label"]), Paragraph(cliente_nombre, styles["value"])],
-            [Paragraph("<b>Email</b>", styles["label"]), Paragraph(cliente_email, styles["value"])],
-            [Paragraph("<b>Dirección</b>", styles["label"]), Paragraph(cliente_dir, styles["value"])],
-            [Paragraph("<b>Moneda</b>", styles["label"]), Paragraph(factura.moneda or "COP", styles["value"])],
+            [Paragraph("CLIENTE", styles["label"]), ""],
+            [Paragraph(cliente_nombre, styles["value"]), ""],
+            [Paragraph("Email:", styles["label"]), ""],
+            [Paragraph(cliente_email, styles["value"]), ""],
+            [Paragraph("Dirección:", styles["label"]), ""],
+            [Paragraph(cliente_dir, styles["value"]), ""],
+            [Paragraph("Moneda:", styles["label"]), ""],
+            [Paragraph(factura.moneda or "COP", styles["value"]), ""],
         ]
 
-        t = Table([[meta_left, meta_mid, meta_right]], colWidths=[64*mm, 40*mm, 56*mm])
-        t.setStyle(TableStyle([
-            ("VALIGN", (0,0), (-1,-1), "TOP"),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
-            ("TOPPADDING", (0,0), (-1,-1), 2),
-        ]))
-        story.append(t)
-        story.append(Spacer(1, 6*mm))
+        # Crear tabla con fondo para las secciones
+        t_left = Table(meta_left, colWidths=[62*mm, 2*mm])
+        t_mid = Table(meta_mid, colWidths=[38*mm, 2*mm])  
+        t_right = Table(meta_right, colWidths=[54*mm, 2*mm])
 
-        # ------- items -------
-        rows = [["Descripción", "Cant.", "P. Unitario", "Importe"]]
+        # Aplicar estilos a cada tabla
+        for t in [t_left, t_mid, t_right]:
+            t.setStyle(TableStyle([
+                ("VALIGN", (0,0), (-1,-1), "TOP"),
+                ("LEFTPADDING", (0,0), (-1,-1), 8),
+                ("RIGHTPADDING", (0,0), (-1,-1), 8),
+                ("TOPPADDING", (0,0), (-1,-1), 4),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                ("BACKGROUND", (0,0), (-1,-1), color_bg_light),
+                ("BOX", (0,0), (-1,-1), 0.5, color_primary),
+            ]))
+
+        # Tabla contenedora
+        main_table = Table([[t_left, t_mid, t_right]], colWidths=[64*mm, 40*mm, 56*mm], hAlign=TA_LEFT)
+        main_table.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("LEFTPADDING", (0,0), (-1,-1), 2),
+            ("RIGHTPADDING", (0,0), (-1,-1), 2),
+        ]))
+        
+        story.append(main_table)
+        story.append(Spacer(1, 8*mm))
+
+        # ------- items con mejor diseño -------
+        story.append(Paragraph("DETALLE DE PRODUCTOS", ParagraphStyle(
+            name="section_header",
+            fontName="Helvetica-Bold",
+            fontSize=12,
+            textColor=color_secondary,
+            spaceAfter=4
+        )))
+
+        rows = [["Descripción", "Cant.", "Precio Unitario", "Subtotal"]]
         items = list(factura.items.all())
         if items:
             for it in items:
@@ -2382,21 +2477,38 @@ class FacturaView(viewsets.ModelViewSet):
         else:
             rows.append(["— Sin ítems —", "", "", ""])
 
-        t_items = Table(rows, colWidths=[90*mm, 18*mm, 32*mm, 32*mm], hAlign="LEFT")
+        t_items = Table(rows, colWidths=[90*mm, 20*mm, 35*mm, 35*mm], hAlign="LEFT")
         t_items.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f2f2f2")),
+            # Header con color primario
+            ("BACKGROUND", (0,0), (-1,0), color_primary),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.white),
             ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-            ("GRID", (0,0), (-1,-1), 0.25, colors.HexColor("#d9d9d9")),
-            ("ALIGN", (1,1), (1,-1), "RIGHT"),
+            ("FONTSIZE", (0,0), (-1,0), 10),
+            
+            # Filas alternadas
+            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, color_bg_light]),
+            
+            # Bordes y grid
+            ("GRID", (0,0), (-1,-1), 0.5, color_primary),
+            ("BOX", (0,0), (-1,-1), 1, color_primary),
+            
+            # Alineación
+            ("ALIGN", (1,1), (1,-1), "CENTER"),
             ("ALIGN", (2,1), (3,-1), "RIGHT"),
-            ("FONTSIZE", (0,0), (-1,-1), 9.5),
-            ("TOPPADDING", (0,0), (-1,-1), 4),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+            ("FONTSIZE", (0,1), (-1,-1), 9),
+            ("FONTNAME", (0,1), (-1,-1), "Helvetica"),
+            ("TEXTCOLOR", (0,1), (-1,-1), color_text_dark),
+            
+            # Padding
+            ("TOPPADDING", (0,0), (-1,-1), 6),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ("LEFTPADDING", (0,0), (-1,-1), 8),
+            ("RIGHTPADDING", (0,0), (-1,-1), 8),
         ]))
         story.append(t_items)
-        story.append(Spacer(1, 6*mm))
+        story.append(Spacer(1, 8*mm))
 
-        # ------- totales -------
+        # ------- totales con mejor diseño -------
         subtotal  = getattr(factura, "subtotal", None)
         impuestos = getattr(factura, "impuestos", None)
         total     = getattr(factura, "total", 0)
@@ -2415,20 +2527,49 @@ class FacturaView(viewsets.ModelViewSet):
         tot_rows = [
             ["Subtotal:",  money(subtotal)],
             ["Impuestos:", money(impuestos)],
-            ["Total:",     money(total)],
+            ["", ""],  # Línea separadora
+            ["TOTAL:",     money(total)],
         ]
-        t_tot = Table(tot_rows, colWidths=[40*mm, 40*mm], hAlign="RIGHT")
+        
+        t_tot = Table(tot_rows, colWidths=[45*mm, 45*mm], hAlign="RIGHT")
         t_tot.setStyle(TableStyle([
             ("ALIGN", (0,0), (-1,-1), "RIGHT"),
-            ("FONTNAME", (0,0), (0,-1), "Helvetica"),
-            ("FONTNAME", (1,0), (1,-1), "Helvetica-Bold"),
-            ("FONTSIZE", (0,0), (-1,-1), 10),
-            ("TOPPADDING", (0,0), (-1,-1), 2),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+            ("FONTNAME", (0,0), (0,1), "Helvetica"),
+            ("FONTNAME", (1,0), (1,1), "Helvetica-Bold"),
+            ("FONTNAME", (0,3), (1,3), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,1), 10),
+            ("FONTSIZE", (0,3), (1,3), 12),
+            ("TEXTCOLOR", (0,0), (-1,1), color_text_dark),
+            ("TEXTCOLOR", (0,3), (1,3), color_primary),
+            ("BACKGROUND", (0,3), (1,3), color_bg_light),
+            ("BOX", (0,3), (1,3), 1, color_primary),
+            ("LINEABOVE", (0,2), (1,2), 1, color_primary),
+            ("TOPPADDING", (0,0), (-1,-1), 4),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+            ("LEFTPADDING", (0,0), (-1,-1), 12),
+            ("RIGHTPADDING", (0,0), (-1,-1), 12),
         ]))
         story.append(t_tot)
-        story.append(Spacer(1, 10*mm))
-        story.append(Paragraph("Gracias por su compra.", styles["smallcenter"]))
+        story.append(Spacer(1, 12*mm))
+
+        # Footer mejorado
+        footer_style = ParagraphStyle(
+            name="footer",
+            fontName="Helvetica-Oblique",
+            fontSize=9,
+            textColor=color_text_light,
+            alignment=TA_CENTER,
+            spaceBefore=6
+        )
+        story.append(Paragraph("Gracias por su compra. Este documento constituye su factura de venta.", footer_style))
+        
+        # Línea decorativa final
+        final_line = Table([["", ""]], colWidths=[180*mm, 0])
+        final_line.setStyle(TableStyle([
+            ("LINEABOVE", (0,0), (0,0), 1, color_primary),
+        ]))
+        story.append(Spacer(1, 3*mm))
+        story.append(final_line)
 
         # ------- render -------
         doc.build(story)
@@ -2438,7 +2579,7 @@ class FacturaView(viewsets.ModelViewSet):
         resp["Content-Disposition"] = f'attachment; filename="{filename}"'
         return resp
     
-    #Comprovande de pago Camila 
+    #Comprobante de pago Camila 
 
     @action(detail=True, methods=["get"], url_path="comprobante/pdf", url_name="comprobante_pdf")
     def comprobante_pdf(self, request, pk=None):
@@ -2505,112 +2646,271 @@ class FacturaView(viewsets.ModelViewSet):
 
         saldo = (factura.total or Decimal("0")) - (total_pagado or Decimal("0"))
 
-        # === PDF ===
+        # === PDF con estilos mejorados ===
+        from io import BytesIO
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.units import mm
+        from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib import colors
+
+        # Colores del proyecto
+        color_primary = colors.HexColor("#1fb2d2")  # Cyan principal
+        color_secondary = colors.HexColor("#2c3e50")  # Azul oscuro
+        color_accent = colors.HexColor("#16a085")  # Verde azulado
+        color_bg_light = colors.HexColor("#f8f9fa")  # Fondo claro
+        color_text_dark = colors.HexColor("#2c3e50")  # Texto oscuro
+        color_text_light = colors.HexColor("#6c757d")  # Texto claro
+
         buf = BytesIO()
         doc = SimpleDocTemplate(
             buf, pagesize=letter,
-            leftMargin=18*mm, rightMargin=18*mm,
-            topMargin=16*mm, bottomMargin=16*mm,
+            leftMargin=20*mm, rightMargin=20*mm,
+            topMargin=18*mm, bottomMargin=18*mm,
         )
 
         styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(name="h1center", parent=styles["Heading1"], alignment=TA_CENTER, spaceAfter=8))
-        styles.add(ParagraphStyle(name="label", fontName="Helvetica", fontSize=9, textColor=colors.grey))
-        styles.add(ParagraphStyle(name="value", fontName="Helvetica-Bold", fontSize=10))
-        styles.add(ParagraphStyle(name="small", fontName="Helvetica", fontSize=8, textColor=colors.grey, alignment=TA_CENTER))
+        
+        # Estilos personalizados
+        styles.add(ParagraphStyle(
+            name="h1center", 
+            parent=styles["Heading1"], 
+            alignment=TA_CENTER, 
+            spaceAfter=12,
+            textColor=color_primary,
+            fontSize=24,
+            fontName="Helvetica-Bold"
+        ))
+        
+        styles.add(ParagraphStyle(
+            name="label", 
+            fontName="Helvetica", 
+            fontSize=9, 
+            textColor=color_text_light,
+            spaceBefore=2,
+            spaceAfter=1
+        ))
+        
+        styles.add(ParagraphStyle(
+            name="value", 
+            fontName="Helvetica-Bold", 
+            fontSize=11,
+            textColor=color_text_dark,
+            spaceAfter=3
+        ))
+        
+        styles.add(ParagraphStyle(
+            name="small", 
+            fontName="Helvetica", 
+            fontSize=8, 
+            textColor=color_text_light, 
+            alignment=TA_CENTER,
+            spaceAfter=6
+        ))
 
         story = []
+        
+        # Header con línea decorativa
         story.append(Paragraph("COMPROBANTE DE PAGO", styles["h1center"]))
-        story.append(Spacer(1, 2*mm))
+        # Línea decorativa debajo del título
+        line_table = Table([["", ""]], colWidths=[180*mm, 0])
+        line_table.setStyle(TableStyle([
+            ("LINEBELOW", (0,0), (0,0), 2, color_primary),
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ]))
+        story.append(line_table)
+        story.append(Spacer(1, 4*mm))
 
+        # Información del comprobante
         meta_left = [
-            [Paragraph("<b>Factura</b>", styles["label"]), Paragraph(f"{getattr(factura, 'numero', '') or factura.pk}", styles["value"])],
-            [Paragraph("<b>Factura ID</b>", styles["label"]), Paragraph(str(factura.pk), styles["value"])],
-            [Paragraph("<b>Fecha factura</b>", styles["label"]), Paragraph(fmt_date(fecha_fact), styles["value"])],
+            [Paragraph("FACTURA", styles["label"]), ""],
+            [Paragraph(f"{getattr(factura, 'numero', '') or factura.pk}", styles["value"]), ""],
+            [Paragraph("ID:", styles["label"]), ""],
+            [Paragraph(str(factura.pk), styles["value"]), ""],
+            [Paragraph("Fecha factura:", styles["label"]), ""],
+            [Paragraph(fmt_date(fecha_fact), styles["value"]), ""],
         ]
+        
         meta_right = [
-            [Paragraph("<b>Cliente</b>", styles["label"]), Paragraph(cliente_nombre, styles["value"])],
-            [Paragraph("<b>Email</b>", styles["label"]), Paragraph(cliente_email, styles["value"])],
-            [Paragraph("<b>Moneda</b>", styles["label"]), Paragraph(factura.moneda or "COP", styles["value"])],
+            [Paragraph("CLIENTE", styles["label"]), ""],
+            [Paragraph(cliente_nombre, styles["value"]), ""],
+            [Paragraph("Email:", styles["label"]), ""],
+            [Paragraph(cliente_email, styles["value"]), ""],
+            [Paragraph("Moneda:", styles["label"]), ""],
+            [Paragraph(factura.moneda or "COP", styles["value"]), ""],
         ]
 
-        t_meta_left  = Table(meta_left,  colWidths=[32*mm, 58*mm])
-        t_meta_right = Table(meta_right, colWidths=[22*mm, 68*mm])
+        # Crear tablas con fondo
+        t_meta_left = Table(meta_left, colWidths=[60*mm, 2*mm])
+        t_meta_right = Table(meta_right, colWidths=[60*mm, 2*mm])
+
+        # Aplicar estilos
+        for t in [t_meta_left, t_meta_right]:
+            t.setStyle(TableStyle([
+                ("VALIGN", (0,0), (-1,-1), "TOP"),
+                ("LEFTPADDING", (0,0), (-1,-1), 8),
+                ("RIGHTPADDING", (0,0), (-1,-1), 8),
+                ("TOPPADDING", (0,0), (-1,-1), 4),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                ("BACKGROUND", (0,0), (-1,-1), color_bg_light),
+                ("BOX", (0,0), (-1,-1), 0.5, color_primary),
+            ]))
+
         t_meta = Table([[t_meta_left, t_meta_right]], colWidths=[90*mm, 90*mm])
         t_meta.setStyle(TableStyle([
             ("VALIGN", (0,0), (-1,-1), "TOP"),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
-            ("TOPPADDING", (0,0), (-1,-1), 2),
+            ("LEFTPADDING", (0,0), (-1,-1), 2),
+            ("RIGHTPADDING", (0,0), (-1,-1), 2),
         ]))
         story.append(t_meta)
-        story.append(Spacer(1, 3*mm))
+        story.append(Spacer(1, 6*mm))
 
-        # --- Badge de estado (usa MP si factura está 'emitida' o vacía)
+        # --- Badge de estado con mejor diseño ---
         estado_para_badge = (getattr(factura, "estado", "") or "").lower()
         if estado_para_badge in ("", "emitida"):
             mp_estado = (pagos_list and pagos_list[0].get("estado")) or None
             if mp_estado:
-                estado_para_badge = mp_estado  # o map_mp_to_estado_factura(mp_estado)
+                estado_para_badge = mp_estado
 
         badge_text, badge_fg, badge_bg = estado_badge(estado_para_badge)
+        badge_style = ParagraphStyle(
+            name="badge",
+            textColor=badge_fg,
+            alignment=TA_CENTER,
+            fontName="Helvetica-Bold",
+            fontSize=10
+        )
+        
         badge_tbl = Table(
-            [[Paragraph(badge_text, ParagraphStyle(name="badge", textColor=badge_fg, alignment=TA_CENTER,
-                                                   fontName="Helvetica-Bold", fontSize=9))]],
-            colWidths=[30*mm], rowHeights=[8*mm]
+            [[Paragraph(badge_text, badge_style)]],
+            colWidths=[35*mm], rowHeights=[10*mm]
         )
         badge_tbl.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,-1), badge_bg),
             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("BOX", (0,0), (-1,-1), 1, badge_bg),
+            ("ROUNDEDCORNERS", (0,0), (-1,-1), 2),
         ]))
-        story.append(Table([[badge_tbl, ""]], colWidths=[32*mm, 148*mm]))
-        story.append(Spacer(1, 4*mm))
+        
+        # Centrar el badge
+        badge_container = Table([[badge_tbl]], colWidths=[180*mm])
+        badge_container.setStyle(TableStyle([
+            ("ALIGN", (0,0), (-1,-1), "CENTER"),
+        ]))
+        story.append(badge_container)
+        story.append(Spacer(1, 8*mm))
 
-        # Resumen
+        # Resumen financiero mejorado
+        story.append(Paragraph("RESUMEN FINANCIERO", ParagraphStyle(
+            name="section_header",
+            fontName="Helvetica-Bold",
+            fontSize=12,
+            textColor=color_secondary,
+            spaceAfter=4
+        )))
+
         resumen = [
             ["Total factura:", fmt_money(factura.total, factura.moneda or "COP")],
             ["Total pagado:",  fmt_money(total_pagado, factura.moneda or "COP")],
-            ["Saldo:",         fmt_money(saldo, factura.moneda or "COP")],
+            ["", ""],  # Línea separadora
+            ["SALDO PENDIENTE:", fmt_money(saldo, factura.moneda or "COP")],
         ]
-        t_resumen = Table(resumen, colWidths=[40*mm, 40*mm], hAlign="RIGHT")
+        
+        t_resumen = Table(resumen, colWidths=[50*mm, 50*mm], hAlign="RIGHT")
         t_resumen.setStyle(TableStyle([
             ("ALIGN", (0,0), (-1,-1), "RIGHT"),
-            ("FONTNAME", (0,0), (0,-1), "Helvetica"),
-            ("FONTNAME", (1,0), (1,-1), "Helvetica-Bold"),
-            ("FONTSIZE", (0,0), (-1,-1), 10),
-            ("TOPPADDING", (0,0), (-1,-1), 2),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+            ("FONTNAME", (0,0), (0,1), "Helvetica"),
+            ("FONTNAME", (1,0), (1,1), "Helvetica-Bold"),
+            ("FONTNAME", (0,3), (1,3), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,1), 11),
+            ("FONTSIZE", (0,3), (1,3), 12),
+            ("TEXTCOLOR", (0,0), (-1,1), color_text_dark),
+            ("TEXTCOLOR", (0,3), (1,3), color_primary if saldo > 0 else color_accent),
+            ("BACKGROUND", (0,3), (1,3), color_bg_light),
+            ("BOX", (0,3), (1,3), 1, color_primary if saldo > 0 else color_accent),
+            ("LINEABOVE", (0,2), (1,2), 1, color_primary),
+            ("TOPPADDING", (0,0), (-1,-1), 4),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+            ("LEFTPADDING", (0,0), (-1,-1), 12),
+            ("RIGHTPADDING", (0,0), (-1,-1), 12),
         ]))
         story.append(t_resumen)
-        story.append(Spacer(1, 6*mm))
+        story.append(Spacer(1, 8*mm))
 
-        # Tabla de pagos
-        story.append(Paragraph("Pagos aplicados", styles["Heading3"]))
+        # Tabla de pagos mejorada
+        story.append(Paragraph("HISTORIAL DE PAGOS", ParagraphStyle(
+            name="section_header",
+            fontName="Helvetica-Bold",
+            fontSize=12,
+            textColor=color_secondary,
+            spaceAfter=4
+        )))
+        
         pagos_rows = [["Fecha", "Método", "Monto", "Estado", "Referencia"]]
         if pagos_list:
             for pg in pagos_list:
                 fecha_pg = pg.get("created_at") or pg.get("fecha") or ""
                 pagos_rows.append([
                     fmt_date(fecha_pg),
-                    (pg.get("metodo") or pg.get("gateway") or "—"),
+                    (pg.get("metodo") or pg.get("gateway") or "—").upper(),
                     fmt_money(pg.get("monto") or 0, pg.get("moneda") or (factura.moneda or "COP")),
-                    (pg.get("estado") or pg.get("estado_gateway") or "—"),
+                    (pg.get("estado") or pg.get("estado_gateway") or "—").upper(),
                     (pg.get("payment_id") or "—"),
                 ])
         else:
-            pagos_rows.append(["—", "—", "—", "—", "—"])
+            pagos_rows.append(["—", "Sin pagos registrados", "—", "—", "—"])
 
-        t_pagos = Table(pagos_rows, colWidths=[34*mm, 34*mm, 28*mm, 28*mm, 36*mm])
+        t_pagos = Table(pagos_rows, colWidths=[32*mm, 32*mm, 30*mm, 26*mm, 40*mm])
         t_pagos.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f2f2f2")),
-            ("GRID", (0,0), (-1,-1), 0.25, colors.HexColor("#d9d9d9")),
+            # Header
+            ("BACKGROUND", (0,0), (-1,0), color_primary),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.white),
             ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,0), 10),
+            
+            # Filas alternadas
+            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, color_bg_light]),
+            
+            # Bordes
+            ("GRID", (0,0), (-1,-1), 0.5, color_primary),
+            ("BOX", (0,0), (-1,-1), 1, color_primary),
+            
+            # Contenido
             ("FONTNAME", (0,1), (-1,-1), "Helvetica"),
+            ("FONTSIZE", (0,1), (-1,-1), 9),
+            ("TEXTCOLOR", (0,1), (-1,-1), color_text_dark),
             ("ALIGN", (2,1), (2,-1), "RIGHT"),
-            ("FONTSIZE", (0,0), (-1,-1), 9.5),
+            ("ALIGN", (3,1), (3,-1), "CENTER"),
+            
+            # Padding
+            ("TOPPADDING", (0,0), (-1,-1), 6),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ("LEFTPADDING", (0,0), (-1,-1), 6),
+            ("RIGHTPADDING", (0,0), (-1,-1), 6),
         ]))
         story.append(t_pagos)
-        story.append(Spacer(1, 10*mm))
-        story.append(Paragraph("Este documento certifica los pagos recibidos para la factura indicada.", styles["small"]))
+        story.append(Spacer(1, 12*mm))
+
+        # Footer mejorado
+        footer_style = ParagraphStyle(
+            name="footer",
+            fontName="Helvetica-Oblique",
+            fontSize=9,
+            textColor=color_text_light,
+            alignment=TA_CENTER,
+            spaceBefore=6
+        )
+        story.append(Paragraph("Este documento certifica los pagos recibidos para la factura indicada.", footer_style))
+        story.append(Paragraph("Documento generado automáticamente - Variedad y Estilos ZOE", footer_style))
+        
+        # Línea decorativa final
+        final_line = Table([["", ""]], colWidths=[180*mm, 0])
+        final_line.setStyle(TableStyle([
+            ("LINEABOVE", (0,0), (0,0), 1, color_primary),
+        ]))
+        story.append(Spacer(1, 3*mm))
+        story.append(final_line)
 
         doc.build(story)
         buf.seek(0)
@@ -2619,7 +2919,7 @@ class FacturaView(viewsets.ModelViewSet):
         resp["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
         return resp
 
-    # Listado con filtros
+        # Listado con filtros
     def get_queryset(self):
         qs = super().get_queryset()
 
@@ -2649,7 +2949,7 @@ class FacturaView(viewsets.ModelViewSet):
 
         return qs
     
-#Hasta aca Camila
+#Hasta 
 
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
