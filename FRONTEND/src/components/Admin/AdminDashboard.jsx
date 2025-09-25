@@ -13,6 +13,11 @@ import {
   FaTimes,
   FaHome,
   FaTachometerAlt,
+  FaPlus,
+  FaList,
+  FaShoppingCart,
+  FaFileInvoice,
+  FaUserCircle,
 } from "react-icons/fa";
 import "../../assets/css/Admin/AdminDashboard.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -21,9 +26,20 @@ export const AdminDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [barraLateralColapsada, setBarraLateralColapsada] = useState(false);
+  
+  // Estado que persiste en localStorage
+  const [barraLateralColapsada, setBarraLateralColapsada] = useState(() => {
+    const saved = localStorage.getItem('adminSidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
+  
   const [mostrarModalCerrarSesion, setMostrarModalCerrarSesion] =
     useState(false);
+
+  // Guardar el estado en localStorage cuando cambie
+  React.useEffect(() => {
+    localStorage.setItem('adminSidebarCollapsed', JSON.stringify(barraLateralColapsada));
+  }, [barraLateralColapsada]);
 
   const manejarCerrarSesion = () => setMostrarModalCerrarSesion(true);
   const confirmarCerrarSesion = () => {
@@ -36,44 +52,125 @@ export const AdminDashboard = () => {
 
   // Función para ir al home de forma rápida
   const irAlInicio = () => {
+    setBarraLateralColapsada(true); // Cierra el panel
     navigate("/", { replace: true });
   };
+
+  // Determinar el texto y acción del botón según la ruta actual
+  const esRutaAdmin = location.pathname.startsWith("/admin");
+  const textoBoton = esRutaAdmin ? "Volver al Inicio" : "Volver al Panel";
+  const accionBoton = esRutaAdmin 
+    ? irAlInicio 
+    : () => navigate("/admin", { replace: true });
 
   const esRutaActiva = (ruta) =>
     location.pathname === ruta || location.pathname.startsWith(ruta + "/");
 
   const elementosMenu = [
-    // Dashboard Principal
-    { ruta: "/admin", icono: FaTachometerAlt, etiqueta: "Dashboard" },
-
-    // Proveedores
+    // PERFIL ADMIN
     {
-      ruta: "/admin/proveedores/registrados",
-      icono: FaUsers,
-      etiqueta: "Prov. Registrados",
+      ruta: "/admin/perfil",
+      icono: FaUserCircle,
+      etiqueta: "Perfil",
+      seccion: "principal",
     },
-    { ruta: "/admin/proveedores", icono: FaUsers, etiqueta: "Proveedores" },
+    //  DASHBOARD PRINCIPAL - Vista general del sistema
+    { 
+      ruta: "/admin", 
+      icono: FaTachometerAlt, 
+      etiqueta: "Dashboard",
+      seccion: "principal"
+    },
 
-    // Productos
-    { ruta: "/admin/productos", icono: FaBoxOpen, etiqueta: "Productos" },
-    {
-      ruta: "/admin/productos/crear",
-      icono: FaBoxOpen,
+    //  GESTIÓN DE CATEGORÍAS - Base para la organización de productos
+    { 
+      ruta: "/admin/categorias", 
+      icono: FaTags, 
+      etiqueta: "Categorías",
+      seccion: "catalogo"
+    },
+
+    //  GESTIÓN DE TALLAS - Sistema de tallas antes de crear productos
+    { 
+      ruta: "/admin/tallas/grupo", 
+      icono: FaRuler, 
+      etiqueta: "Grupos de Tallas",
+      seccion: "catalogo"
+    },
+    { 
+      ruta: "/admin/tallas", 
+      icono: FaRuler, 
+      etiqueta: "Gestionar Tallas",
+      seccion: "catalogo"
+    },
+
+    //  GESTIÓN DE PRODUCTOS - Crear y administrar productos
+    { 
+      ruta: "/admin/productos/crear", 
+      icono: FaPlus, 
       etiqueta: "Crear Producto",
+      seccion: "productos"
+    },
+    { 
+      ruta: "/admin/productos", 
+      icono: FaBoxOpen, 
+      etiqueta: "Listar Productos",
+      seccion: "productos"
     },
 
-    // Inventario y categorías
-    { ruta: "/admin/inventario", icono: FaWarehouse, etiqueta: "Inventario" },
-    { ruta: "/admin/categorias", icono: FaTags, etiqueta: "Categorías" },
+    //  INVENTARIO - Gestión de stock
+    { 
+      ruta: "/admin/inventario", 
+      icono: FaWarehouse, 
+      etiqueta: "Inventario",
+      seccion: "inventario"
+    },
 
-    // Tallas
-    { ruta: "/admin/tallas", icono: FaRuler, etiqueta: "Tallas" },
-    { ruta: "/admin/tallas/grupo", icono: FaRuler, etiqueta: "Grupo Tallas" },
+    //  GESTIÓN DE PROVEEDORES - Administración de proveedores
+    { 
+      ruta: "/admin/proveedores", 
+      icono: FaUsers, 
+      etiqueta: "Gestionar Proveedores",
+      seccion: "proveedores"
+    },
+    { 
+      ruta: "/admin/proveedores/registrados", 
+      icono: FaList, 
+      etiqueta: "Proveedores Registrados",
+      seccion: "proveedores"
+    },
 
-    // Pedidos y facturas
-    { ruta: "/admin/pedidos", icono: FaTags, etiqueta: "Pedidos" },
-     { ruta: "/admin/facturas", icono: FaUserShield, etiqueta: "Facturas" },
+    //  PEDIDOS Y VENTAS - Gestión comercial
+    { 
+      ruta: "/admin/pedidos", 
+      icono: FaShoppingCart, 
+      etiqueta: "Pedidos",
+      seccion: "ventas"
+    },
+    { 
+      ruta: "/admin/facturas", 
+      icono: FaFileInvoice, 
+      etiqueta: "Facturas",
+      seccion: "ventas"
+    },
   ];
+
+  // Agrupar elementos por sección 
+  const seccionesMenu = {
+    principal: { titulo: "Dashboard", elementos: [] },
+    catalogo: { titulo: "Configuración del Catálogo", elementos: [] },
+    productos: { titulo: "Gestión de Productos", elementos: [] },
+    inventario: { titulo: "Control de Inventario", elementos: [] },
+    proveedores: { titulo: "Gestión de Proveedores", elementos: [] },
+    ventas: { titulo: "Pedidos y Facturación", elementos: [] },
+  };
+
+  // Clasificar elementos por sección
+  elementosMenu.forEach(elemento => {
+    if (seccionesMenu[elemento.seccion]) {
+      seccionesMenu[elemento.seccion].elementos.push(elemento);
+    }
+  });
 
   return (
     <>
@@ -142,37 +239,52 @@ export const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* Menú de navegación */}
+        {/* Menú de navegación organizado por secciones */}
         <nav className="navegacion-principal">
-          <ul className="lista-menu-admin">
-            {elementosMenu.map((el, i) => {
-              const Icono = el.icono;
-              return (
-                <li key={i} className="item-menu-admin">
-                  <Link
-                    to={el.ruta}
-                    className={`enlace-menu-admin ${
-                      esRutaActiva(el.ruta) ? "activo" : ""
-                    }`}
-                  >
-                    <Icono className="icono-menu-admin" />
-                    <span className="texto-menu-admin">{el.etiqueta}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          {Object.entries(seccionesMenu).map(([clavSeccion, seccion]) => {
+            if (seccion.elementos.length === 0) return null;
+            
+            return (
+              <div key={clavSeccion} className="grupo-menu-admin">
+                {/* Título de la sección (solo visible cuando no está colapsada) */}
+                <div className="titulo-seccion-menu">
+                  <h6 className="texto-titulo-seccion">{seccion.titulo}</h6>
+                  <hr className="separador-seccion" />
+                </div>
+
+                {/* Lista de elementos de la sección */}
+                <ul className="lista-menu-admin">
+                  {seccion.elementos.map((el, i) => {
+                    const Icono = el.icono;
+                    return (
+                      <li key={`${clavSeccion}-${i}`} className="item-menu-admin">
+                        <Link
+                          to={el.ruta}
+                          className={`enlace-menu-admin ${
+                            esRutaActiva(el.ruta) ? "activo" : ""
+                          }`}
+                        >
+                          <Icono className="icono-menu-admin" />
+                          <span className="texto-menu-admin">{el.etiqueta}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </nav>
 
         {/* Sección de navegación */}
         <div className="seccion-navegacion-admin">
           <button
             className="boton-volver-inicio"
-            onClick={irAlInicio}
-            aria-label="Volver al inicio"
+            onClick={accionBoton}
+            aria-label={textoBoton}
           >
             <FaHome className="icono-volver" />
-            <span className="texto-volver">Volver al Inicio</span>
+            <span className="texto-volver">{textoBoton}</span>
           </button>
 
           <button
@@ -186,14 +298,16 @@ export const AdminDashboard = () => {
         </div>
       </aside>
 
-      {/* Botón hamburguesa */}
-      <button
-        className="boton-hamburguesa"
-        onClick={alternarBarraLateral}
-        aria-label="Abrir menú"
-      >
-        <FaBars />
-      </button>
+      {/* Botón hamburguesa - */}
+      {barraLateralColapsada && (
+        <button
+          className="boton-hamburguesa"
+          onClick={alternarBarraLateral}
+          aria-label="Abrir menú"
+        >
+          <FaBars />
+        </button>
+      )}
     </>
   );
 };

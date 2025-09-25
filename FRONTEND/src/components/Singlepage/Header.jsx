@@ -175,15 +175,18 @@ export function Header() {
                 </Link>
               </li>
 
-              <li className="nav-item-custom">
-                <Link to="/carrito" className="nav-link-custom cart-link">
-                  <i className="bi bi-cart3 nav-icon"></i>
-                  <span className="nav-text">Carrito</span>
-                  {autenticado && cantidadCarrito > 0 && (
-                    <span className="cart-badge">{cantidadCarrito}</span>
-                  )}
-                </Link>
-              </li>
+              {/* Mostrar carrito solo si NO es admin */}
+              {rolNorm !== "admin" && rolNorm !== "administrador" && (
+                <li className="nav-item-custom">
+                  <Link to="/carrito" className="nav-link-custom cart-link">
+                    <i className="bi bi-cart3 nav-icon"></i>
+                    <span className="nav-text">Carrito</span>
+                    {autenticado && cantidadCarrito > 0 && (
+                      <span className="cart-badge">{cantidadCarrito}</span>
+                    )}
+                  </Link>
+                </li>
+              )}
 
               {autenticado ? (
                 <li className="nav-item-custom dropdown-custom" ref={dropdownRef}>

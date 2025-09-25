@@ -32,7 +32,7 @@ import { AdminLayout } from "./components/Admin/AdminLayout.jsx";
 import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
 import { FacturasPage } from "./pages/FacturasPage.jsx";
 import { PedidosPage } from "./pages/PedidosPage.jsx";
-import  AdminHome from "./components/Admin/AdminHome.jsx";
+import AdminHome from "./components/Admin/AdminHome.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -42,7 +42,7 @@ import { MisPedidosPage } from "./pages/MisPedidosPage";
 // Contexto y rutas privadas
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
-//  Componente principal 
+//  Componente principal
 function AppContent() {
   const location = useLocation();
   const { autenticado, rol } = useAuth();
@@ -71,7 +71,7 @@ function AppContent() {
 
   // Función para alternar el panel (desde el header o donde sea necesario)
   const toggleAdminPanel = () => {
-    setMostrarAdminPanel(prev => !prev);
+    setMostrarAdminPanel((prev) => !prev);
   };
 
   return (
@@ -82,14 +82,16 @@ function AppContent() {
       {/* MAIN AGREGADO - contenido que se expande */}
       <main>
         {/* Renderiza el dashboard completo solo si se solicita explícitamente y no estamos en admin */}
-        {esAdminAutenticado && noEsPaginaDeSesion && !esRutaAdmin && mostrarAdminPanel && (
-          <AdminDashboard />
-        )}
+        {esAdminAutenticado &&
+          noEsPaginaDeSesion &&
+          !esRutaAdmin &&
+          mostrarAdminPanel && <AdminDashboard />}
 
         {/* Siempre mostrar AdminDashboard para admin cuando NO está en rutas admin (para que se vea el botón hamburguesa) */}
-        {esAdminAutenticado && noEsPaginaDeSesion && !esRutaAdmin && !mostrarAdminPanel && (
-          <AdminDashboard />
-        )}
+        {esAdminAutenticado &&
+          noEsPaginaDeSesion &&
+          !esRutaAdmin &&
+          !mostrarAdminPanel && <AdminDashboard />}
 
         <Routes>
           {/* Rutas públicas */}
@@ -113,7 +115,7 @@ function AppContent() {
               </RutaPrivada>
             }
           />
-         {/* <Route
+          {/* <Route
           path="/facturas"
           element={
             <RutaPrivada role={["cliente", "administrador"]}>
@@ -141,7 +143,7 @@ function AppContent() {
           <Route
             path="/Mispedidos"
             element={
-              <RutaPrivada role={[ "cliente"]}>
+              <RutaPrivada role={["cliente"]}>
                 <MisPedidosPage />
               </RutaPrivada>
             }
@@ -163,7 +165,7 @@ function AppContent() {
               </RutaPrivada>
             }
           />
-          
+
           {/* Admin con layout */}
           <Route
             path="/admin/*"
@@ -176,7 +178,7 @@ function AppContent() {
             {/*  RUTA PRINCIPAL DEL ADMIN - Dashboard Home */}
             <Route index element={<AdminHome />} />
             <Route path="home" element={<AdminHome />} />
-            
+
             {/*  Resto de rutas admin */}
             <Route path="dashboard" element={<AdminProvedoresPage />} />
             <Route path="proveedores" element={<AdminProvedoresPage />} />
@@ -206,6 +208,8 @@ function AppContent() {
             <Route path="facturas" element={<FacturasPage />} />
             <Route path="facturas/:id" element={<RetornoMPpage />} />
             <Route path="retornoMP" element={<RetornoMPpage />} />
+            {/* PERFIL ADMIN EN LAYOUT */}
+            <Route path="perfil" element={<PerfilPage />} />
           </Route>
 
           {/* Redirección por defecto */}
