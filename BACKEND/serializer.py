@@ -293,7 +293,10 @@ class ProductoSerializer(serializers.ModelSerializer):
         rep = super().to_representation(instance)
         # Mostrar la URL pública de la imagen
         if instance.imagen:
-            url = instance.imagen.url.replace('/FRONTEND/public', '')
+            # Solo dejar la ruta a partir de /media/productos/...
+            url = instance.imagen.url
+            if '/media/productos/' in url:
+                url = url[url.find('/media/productos/'):]
             request = self.context.get('request')
             if request is not None:
                 rep['imagen'] = request.build_absolute_uri(url)
