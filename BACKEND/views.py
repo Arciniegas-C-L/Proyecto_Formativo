@@ -716,6 +716,18 @@ class TallaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+from django.db import models, transaction
+from django.shortcuts import get_object_or_404
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+# Asumo que ya tienes estos modelos/serializers/permissions importados en tu archivo:
+# from .models import Categoria, Subcategoria, Producto, Inventario, GrupoTalla
+# from .serializers import InventarioSerializer, InventarioAgrupadoSerializer
+# from .permissions import IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly
+
+
 class InventarioView(viewsets.ModelViewSet):
     serializer_class = InventarioSerializer
     queryset = Inventario.objects.all().select_related(
@@ -754,35 +766,30 @@ class InventarioView(viewsets.ModelViewSet):
 
         return queryset
 
+    # ==============================
+    # Consultas por agrupación
+    # ==============================
     @action(detail=False, methods=['get'])
     def por_categoria(self, request):
         categoria_id = request.query_params.get('categoria_id')
         if not categoria_id:
-            return Response(
-                {"error": "Se requiere el ID de la categoría"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Se requiere el ID de la categoría"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verificar si la categoría existe
             categoria = Categoria.objects.filter(idCategoria=categoria_id).first()
             if not categoria:
-                return Response(
-                    {"error": f"No existe la categoría con ID {categoria_id}"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+                return Response({"error": f"No existe la categoría con ID {categoria_id}"}, status=status.HTTP_404_NOT_FOUND)
 
-            # Obtener subcategorías de la categoría
             subcategorias = Subcategoria.objects.filter(categoria_id=categoria_id)
             subcategorias_ids = list(subcategorias.values_list('idSubcategoria', flat=True))
-            
-            # Obtener productos de las subcategorías
+
             productos = Producto.objects.filter(subcategoria__in=subcategorias_ids)
             productos_ids = list(productos.values_list('id', flat=True))
 
-            # Filtrar inventario y organizar por subcategorías
+            # Traer inventario solo de tallas que pertenecen al grupo actual de cada subcategoría
             inventario = self.queryset.filter(
-                producto__in=productos_ids
+                producto__in=productos_ids,
+                talla__grupo=models.F('producto__subcategoria__grupoTalla')
             ).select_related(
                 'producto',
                 'producto__subcategoria',
@@ -790,20 +797,13 @@ class InventarioView(viewsets.ModelViewSet):
                 'talla'
             )
 
-            # Organizar el inventario por subcategorías
             inventario_por_subcategoria = {}
             for inv in inventario:
-                subcategoria_id = inv.producto.subcategoria.idSubcategoria
-                if subcategoria_id not in inventario_por_subcategoria:
-                    inventario_por_subcategoria[subcategoria_id] = []
-                inventario_por_subcategoria[subcategoria_id].append(inv)
+                sid = inv.producto.subcategoria.idSubcategoria
+                inventario_por_subcategoria.setdefault(sid, []).append(inv)
 
-            # Preparar respuesta con información organizada
             response_data = {
-                "categoria": {
-                    "id": categoria.idCategoria,
-                    "nombre": categoria.nombre
-                },
+                "categoria": {"id": categoria.idCategoria, "nombre": categoria.nombre},
                 "subcategorias": [
                     {
                         "id": sub.idSubcategoria,
@@ -822,43 +822,32 @@ class InventarioView(viewsets.ModelViewSet):
                     "inventario_count": inventario.count()
                 }
             }
-            
             return Response(response_data)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def por_subcategoria(self, request):
         subcategoria_id = request.query_params.get('subcategoria_id')
         if not subcategoria_id:
-            return Response(
-                {"error": "Se requiere el ID de la subcategoría"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Se requiere el ID de la subcategoría"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verificar si la subcategoría existe
             subcategoria = Subcategoria.objects.filter(idSubcategoria=subcategoria_id).first()
             if not subcategoria:
-                return Response(
-                    {"error": f"No existe la subcategoría con ID {subcategoria_id}"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+                return Response({"error": f"No existe la subcategoría con ID {subcategoria_id}"},
+                                status=status.HTTP_404_NOT_FOUND)
 
-            # Filtrar inventario por productos que pertenecen a la subcategoría
             inventario = self.queryset.filter(
-                producto__subcategoria_id=subcategoria_id
+                producto__subcategoria_id=subcategoria_id,
+                talla__grupo=subcategoria.grupoTalla  # clave: solo tallas del grupo actual
             ).select_related(
                 'producto',
                 'producto__subcategoria',
                 'producto__subcategoria__categoria',
                 'talla'
             )
-            
-            # Preparar respuesta con información organizada
+
             response_data = {
                 "subcategoria": {
                     "id": subcategoria.idSubcategoria,
@@ -875,24 +864,25 @@ class InventarioView(viewsets.ModelViewSet):
                     "inventario_count": inventario.count()
                 }
             }
-            
             return Response(response_data)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    # ==============================
+    # Utilitarios
+    # ==============================
     @action(detail=False, methods=['get'])
     def stock_producto(self, request):
         producto_id = request.query_params.get('producto', None)
         if not producto_id:
-            return Response(
-                {"error": "Se requiere el ID del producto"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Se requiere el ID del producto"}, status=status.HTTP_400_BAD_REQUEST)
 
-        inventarios = self.queryset.filter(producto_id=producto_id)
+        # Asegura coherencia con grupo de la subcategoría del producto
+        producto = get_object_or_404(Producto.objects.select_related('subcategoria'), pk=producto_id)
+        inventarios = self.queryset.filter(
+            producto_id=producto_id,
+            talla__grupo=producto.subcategoria.grupoTalla
+        )
         stock_por_talla = [{
             'talla': inv.talla.nombre,
             'stock': inv.stock_talla,
@@ -907,23 +897,21 @@ class InventarioView(viewsets.ModelViewSet):
         talla_id = request.data.get('talla_id')
         cantidad = request.data.get('cantidad')
 
-        if not all([producto_id, talla_id, cantidad]):
-            return Response(
-                {"error": "Se requieren producto_id, talla_id y cantidad"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        if not all([producto_id, talla_id, cantidad is not None]):
+            return Response({"error": "Se requieren producto_id, talla_id y cantidad"},
+                            status=status.HTTP_400_BAD_REQUEST)
         try:
             inventario = self.queryset.get(producto_id=producto_id, talla_id=talla_id)
             inventario.stock_talla = cantidad
-            inventario.save()
+            inventario.save(update_fields=['stock_talla'])
             return Response(self.get_serializer(inventario).data)
         except Inventario.DoesNotExist:
-            return Response(
-                {"error": "No se encontró el inventario para el producto y talla especificados"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "No se encontró el inventario para el producto y talla especificados"},
+                            status=status.HTTP_404_NOT_FOUND)
 
+    # ==============================
+    # Agregados / Tablas
+    # ==============================
     @action(detail=False, methods=['get'])
     def inventario_agrupado(self, request):
         categorias = Inventario.objects.values(
@@ -937,15 +925,11 @@ class InventarioView(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def categorias(self, request):
-        """
-        Devuelve todas las categorías con sus subcategorías.
-        """
         categorias = Categoria.objects.filter(estado=True).prefetch_related('subcategorias')
         response_data = []
-        
         for categoria in categorias:
             subcategorias = categoria.subcategorias.filter(estado=True)
-            categoria_data = {
+            response_data.append({
                 'id': categoria.idCategoria,
                 'nombre': categoria.nombre,
                 'estado': categoria.estado,
@@ -955,39 +939,28 @@ class InventarioView(viewsets.ModelViewSet):
                     'estado': sub.estado,
                     'stockMinimo': sub.stockMinimo
                 } for sub in subcategorias]
-            }
-            response_data.append(categoria_data)
-        
+            })
         return Response(response_data)
 
     @action(detail=False, methods=['get'])
     def productos_por_subcategoria(self, request):
-        """
-        Devuelve todos los productos de una subcategoría específica.
-        """
         subcategoria_id = request.query_params.get('subcategoria_id')
         if not subcategoria_id:
-            return Response(
-                {"error": "Se requiere el ID de la subcategoría"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({"error": "Se requiere el ID de la subcategoría"},
+                            status=status.HTTP_400_BAD_REQUEST)
         try:
             subcategoria = Subcategoria.objects.select_related('categoria').get(
                 idSubcategoria=subcategoria_id,
                 estado=True
             )
-            
             productos = Producto.objects.filter(
                 subcategoria=subcategoria,
                 subcategoria__estado=True
-            ).prefetch_related(
-                'inventarios__talla'
-            )
+            ).prefetch_related('inventarios__talla')
 
             productos_data = []
             for producto in productos:
-                inventarios = producto.inventarios.all()
+                inventarios = producto.inventarios.filter(talla__grupo=subcategoria.grupoTalla)
                 tallas_stock = [{
                     'talla': inv.talla.nombre,
                     'stock': inv.stock_talla,
@@ -1025,41 +998,24 @@ class InventarioView(viewsets.ModelViewSet):
                 },
                 'productos': productos_data
             }
-
             return Response(response_data)
 
         except Subcategoria.DoesNotExist:
-            return Response(
-                {"error": "Subcategoría no encontrada o inactiva"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Subcategoría no encontrada o inactiva"},
+                            status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def subcategorias_por_categoria(self, request):
-        """
-        Devuelve todas las subcategorías de una categoría específica.
-        """
         categoria_id = request.query_params.get('categoria_id')
         if not categoria_id:
-            return Response(
-                {"error": "Se requiere el ID de la categoría"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({"error": "Se requiere el ID de la categoría"},
+                            status=status.HTTP_400_BAD_REQUEST)
         try:
-            categoria = Categoria.objects.get(
-                idCategoria=categoria_id,
-                estado=True
-            )
-            
+            categoria = Categoria.objects.get(idCategoria=categoria_id, estado=True)
             subcategorias = Subcategoria.objects.filter(
-                categoria=categoria,
-                estado=True
+                categoria=categoria, estado=True
             ).select_related('categoria')
 
             subcategorias_data = [{
@@ -1081,28 +1037,17 @@ class InventarioView(viewsets.ModelViewSet):
                 },
                 'subcategorias': subcategorias_data
             }
-
             return Response(response_data)
 
         except Categoria.DoesNotExist:
-            return Response(
-                {"error": "Categoría no encontrada o inactiva"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Categoría no encontrada o inactiva"},
+                            status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def tabla_categorias(self, request):
-        """
-        Devuelve las categorías en formato de tabla con información de navegación.
-        """
         categorias = Categoria.objects.filter(estado=True).prefetch_related('subcategorias')
-        
-        # Obtener conteos para cada categoría
         categorias_data = []
         for categoria in categorias:
             subcategorias_count = categoria.subcategorias.filter(estado=True).count()
@@ -1110,7 +1055,6 @@ class InventarioView(viewsets.ModelViewSet):
                 subcategoria__categoria=categoria,
                 subcategoria__estado=True
             ).count()
-            
             categorias_data.append({
                 'id': categoria.idCategoria,
                 'nombre': categoria.nombre,
@@ -1121,7 +1065,7 @@ class InventarioView(viewsets.ModelViewSet):
                     'ver_subcategorias': f'/inventario/tabla_subcategorias/?categoria_id={categoria.idCategoria}'
                 }
             })
-        
+
         return Response({
             'titulo': 'Categorías',
             'columnas': [
@@ -1137,38 +1081,24 @@ class InventarioView(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def tabla_subcategorias(self, request):
-        """
-        Devuelve las subcategorías de una categoría en formato de tabla.
-        """
         categoria_id = request.query_params.get('categoria_id')
         if not categoria_id:
-            return Response(
-                {"error": "Se requiere el ID de la categoría"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({"error": "Se requiere el ID de la categoría"},
+                            status=status.HTTP_400_BAD_REQUEST)
         try:
-            categoria = Categoria.objects.get(
-                idCategoria=categoria_id,
-                estado=True
-            )
-            
+            categoria = Categoria.objects.get(idCategoria=categoria_id, estado=True)
             subcategorias = Subcategoria.objects.filter(
-                categoria=categoria,
-                estado=True
+                categoria=categoria, estado=True
             ).select_related('categoria', 'grupoTalla')
 
             subcategorias_data = []
             for subcategoria in subcategorias:
-                productos_count = Producto.objects.filter(
-                    subcategoria=subcategoria
-                ).count()
-                
+                productos_count = Producto.objects.filter(subcategoria=subcategoria).count()
+                # clave: contar solo stock de tallas del grupo actual
                 stock_total = Inventario.objects.filter(
-                    producto__subcategoria=subcategoria
-                ).aggregate(
-                    total_stock=models.Sum('stock_talla')
-                )['total_stock'] or 0
+                    producto__subcategoria=subcategoria,
+                    talla__grupo=subcategoria.grupoTalla
+                ).aggregate(total_stock=models.Sum('stock_talla'))['total_stock'] or 0
 
                 subcategorias_data.append({
                     'id': subcategoria.idSubcategoria,
@@ -1203,59 +1133,49 @@ class InventarioView(viewsets.ModelViewSet):
                     {'nombre': categoria.nombre, 'url': f'/inventario/tabla_subcategorias/?categoria_id={categoria.idCategoria}'}
                 ]
             })
-
         except Categoria.DoesNotExist:
-            return Response(
-                {"error": "Categoría no encontrada o inactiva"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Categoría no encontrada o inactiva"},
+                            status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['get'])
     def tabla_productos(self, request):
-        """
-        Devuelve los productos de una subcategoría en formato de tabla.
-        """
         subcategoria_id = request.query_params.get('subcategoria_id')
         if not subcategoria_id:
-            return Response(
-                {"error": "Se requiere el ID de la subcategoría"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({"error": "Se requiere el ID de la subcategoría"},
+                            status=status.HTTP_400_BAD_REQUEST)
         try:
             subcategoria = Subcategoria.objects.select_related('categoria').get(
                 idSubcategoria=subcategoria_id,
                 estado=True
             )
-            
             productos = Producto.objects.filter(
                 subcategoria=subcategoria
-            ).prefetch_related(
-                'inventarios__talla'
-            )
+            ).prefetch_related('inventarios__talla')
 
             productos_data = []
             for producto in productos:
-                inventarios = producto.inventarios.all()
+                # Solo inventarios cuyas tallas pertenezcan al grupo actual
+                inventarios = producto.inventarios.filter(talla__grupo=subcategoria.grupoTalla)
+
                 stock_por_talla = {
                     inv.talla.nombre: {
                         'talla_id': inv.talla.id,
                         'stock': inv.stock_talla,
                         'stock_minimo': inv.stockMinimo,
-                        'stock_inicial': inv.cantidad  # Agregamos el stock inicial
+                        'stock_inicial': inv.cantidad
                     } for inv in inventarios
                 }
-                
+
                 stock_total = sum(inv.stock_talla for inv in inventarios)
                 stock_minimo_total = sum(inv.stockMinimo for inv in inventarios)
-                stock_inicial_total = sum(inv.cantidad for inv in inventarios)  # Sumamos el stock inicial total
+                stock_inicial_total = sum(inv.cantidad for inv in inventarios)
 
                 productos_data.append({
                     'id': producto.id,
                     'nombre': producto.nombre,
                     'descripcion': producto.descripcion,
                     'precio': producto.precio,
-                    'stock': producto.stock,  # Agregamos el stock del modelo producto
+                    'stock': producto.stock,
                     'stock_total': stock_total,
                     'stock_inicial_total': stock_inicial_total,
                     'stock_minimo_total': stock_minimo_total,
@@ -1287,23 +1207,20 @@ class InventarioView(viewsets.ModelViewSet):
                     {'nombre': subcategoria.nombre, 'url': f'/inventario/tabla_productos/?subcategoria_id={subcategoria.idSubcategoria}'}
                 ]
             })
-
         except Subcategoria.DoesNotExist:
-            return Response(
-                {"error": "Subcategoría no encontrada o inactiva"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Subcategoría no encontrada o inactiva"},
+                            status=status.HTTP_404_NOT_FOUND)
 
+    # ==============================
+    # Actualización de stock por tallas (modal)
+    # ==============================
     @action(detail=False, methods=['post'])
     def actualizar_stock_tallas(self, request):
         producto_id = request.data.get('producto_id')
         tallas_data = request.data.get('tallas', [])
 
         if not producto_id or not tallas_data:
-            return Response(
-                {"error": "Se requieren producto_id y tallas"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Se requieren producto_id y tallas"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             producto = Producto.objects.get(id=producto_id)
@@ -1316,23 +1233,16 @@ class InventarioView(viewsets.ModelViewSet):
                 stock_minimo = talla_info.get('stock_minimo', 0)
 
                 if stock < 0 or stock_minimo < 0:
-                    return Response(
-                        {"error": "El stock y stock mínimo no pueden ser negativos"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    return Response({"error": "El stock y stock mínimo no pueden ser negativos"},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
-                try:
-                    inventario = self.queryset.get(producto_id=producto_id, talla_id=talla_id)
-                    inventario.stock_talla = stock
-                    inventario.stockMinimo = stock_minimo
-                    inventario.save()
-                    inventarios_actualizados.append(inventario)
-                    stock_total += stock
-                except Inventario.DoesNotExist:
-                    return Response(
-                        {"error": f"No se encontró el inventario para la talla {talla_id}"},
-                        status=status.HTTP_404_NOT_FOUND
-                    )
+                inv = self.queryset.get(producto_id=producto_id, talla_id=talla_id)
+                inv.stock_talla = stock
+                inv.stockMinimo = stock_minimo
+                inv.save(update_fields=['stock_talla', 'stockMinimo'])
+
+                inventarios_actualizados.append(inv)
+                stock_total += stock
 
             return Response({
                 "mensaje": "Stock por tallas actualizado exitosamente",
@@ -1340,16 +1250,67 @@ class InventarioView(viewsets.ModelViewSet):
                 "stock_total": stock_total
             })
 
+        except Inventario.DoesNotExist:
+            return Response({"error": "No se encontró el inventario para una talla especificada"},
+                            status=status.HTTP_404_NOT_FOUND)
         except Producto.DoesNotExist:
-            return Response(
-                {"error": "Producto no encontrado"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Producto no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    # ==============================
+    # Cambiar grupo de talla y sincronizar inventario
+    # ==============================
+    @action(detail=False, methods=['post'])
+    def set_grupo_talla_subcategoria(self, request):
+        """
+        Cambia el grupo de tallas de la subcategoría y sincroniza inventarios de todos sus productos:
+        - Crea inventarios faltantes para tallas del nuevo grupo.
+        - No borra inventarios viejos; las vistas ya filtran por el grupo vigente.
+        """
+        subcategoria_id = request.data.get('subcategoria_id')
+        grupo_talla_id = request.data.get('grupo_talla_id')
+
+        if not subcategoria_id or not grupo_talla_id:
+            return Response({"error": "Se requieren subcategoria_id y grupo_talla_id"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        sub = get_object_or_404(Subcategoria, idSubcategoria=subcategoria_id, estado=True)
+        nuevo = get_object_or_404(GrupoTalla, idGrupoTalla=grupo_talla_id, estado=True)
+
+        with transaction.atomic():
+            # Actualizar el grupo en la subcategoría
+            sub.grupoTalla = nuevo
+            sub.save(update_fields=['grupoTalla'])
+
+            # Tallas válidas del nuevo grupo
+            tallas_validas_ids = list(nuevo.tallas.filter(estado=True).values_list('id', flat=True))
+
+            # Crear inventarios que falten para cada producto de la subcategoría
+            productos = Producto.objects.filter(subcategoria=sub)
+            to_create = []
+            for p in productos:
+                existentes = set(
+                    Inventario.objects.filter(producto=p).values_list('talla_id', flat=True)
+                )
+                for tid in tallas_validas_ids:
+                    if tid not in existentes:
+                        to_create.append(Inventario(
+                            producto=p,
+                            talla_id=tid,
+                            cantidad=0,
+                            stockMinimo=sub.stockMinimo,
+                            stock_talla=0
+                        ))
+            if to_create:
+                Inventario.objects.bulk_create(to_create, ignore_conflicts=True)
+
+        return Response({
+            "mensaje": "Grupo de talla actualizado y inventario sincronizado.",
+            "subcategoria": {"id": sub.idSubcategoria, "nombre": sub.nombre},
+            "grupo_talla": {"id": nuevo.idGrupoTalla, "nombre": nuevo.nombre},
+            "creados": len(to_create)
+        }, status=status.HTTP_200_OK)
 
 class MovimientoView(viewsets.ModelViewSet):
     serializer_class = MovimientoSerializer

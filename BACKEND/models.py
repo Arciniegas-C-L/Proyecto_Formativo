@@ -8,7 +8,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from BACKEND.stock_alerts import upsert_stock_alert_for_inventory
 
 class Comentario(models.Model):
 
@@ -162,7 +161,7 @@ class Proveedor(models.Model):
 class Categoria(models.Model):
     idCategoria = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45, unique=True)
-    estado = models.BooleanField()
+    estado = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nombre
@@ -185,7 +184,7 @@ class GrupoTalla(models.Model):
 class Subcategoria(models.Model):
     idSubcategoria = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=45)
-    estado = models.BooleanField()
+    estado = models.BooleanField(default=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='subcategorias')
     stockMinimo = models.PositiveIntegerField(default=0)
     grupoTalla = models.ForeignKey('GrupoTalla', on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategorias')
@@ -197,20 +196,6 @@ class Subcategoria(models.Model):
 
     def __str__(self):
         return f"{self.nombre} (de {self.categoria.nombre})"
-
-
-class Producto(models.Model):
-    nombre = models.CharField(max_length=45)
-    descripcion = models.TextField(max_length=200)
-    precio = models.PositiveIntegerField()
-    stock = models.PositiveIntegerField(default=0)
-    subcategoria = models.ForeignKey(Subcategoria, on_delete=models.CASCADE, related_name='productos')
-    imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
-
-    def __str__(self):
-        return self.nombre
-
-
 class Talla(models.Model):
     nombre = models.CharField(max_length=10)
     grupo = models.ForeignKey(GrupoTalla, on_delete=models.CASCADE, related_name='tallas')
@@ -223,7 +208,16 @@ class Talla(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.grupo.nombre})"
+class Producto(models.Model):
+    nombre = models.CharField(max_length=45)
+    descripcion = models.TextField(max_length=200)
+    precio = models.PositiveIntegerField()
+    stock = models.PositiveIntegerField(default=0)
+    subcategoria = models.ForeignKey(Subcategoria, on_delete=models.CASCADE, related_name='productos')
+    imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
 
+    def __str__(self):
+        return self.nombre
 
 # ----------------------------
 # Inventario y movimiento
@@ -740,6 +734,3 @@ def alerta_stock_bajo(sender, instance: Inventario, **kwargs):
         print("Error alerta_stock_bajo:", e)
 
 
-@receiver(post_save, sender=Inventario)
-def inventario_post_save_alertas(sender, instance, **kwargs):
-    upsert_stock_alert_for_inventory(instance)
