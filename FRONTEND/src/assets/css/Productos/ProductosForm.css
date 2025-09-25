@@ -16,56 +16,95 @@
 
 /* Caja del formulario */
 .producto-form {
-    padding: 25px;
-    border-radius: 14px;
-    animation: fadeIn 0.3s ease-out;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 176, 224, 0.1);
+    border: 1px solid rgba(0, 176, 224, 0.2);
+    animation: fadeIn 0.4s ease-out;
 }
 
 /* Estructura de columnas */
 .form-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 20px;
 }
 
 /* Grupo de campos */
 .form-group {
-    margin-bottom: 18px;
+    margin-bottom: 22px;
 }
 
 .form-group label {
     font-weight: 600;
-    color: #00b0e0;
-    margin-bottom: 6px;
+    color: #2c3e50;
+    margin-bottom: 8px;
     display: block;
+    font-size: 1rem;
 }
 
-/* Inputs y selects */
+/* Inputs, textarea y selects */
 .form-group input,
 .form-group textarea,
 .form-group select {
     width: 100%;
     max-width: 100%;
-    padding: 10px;
-    border: 1px solid #9adcef; 
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: all 0.25s ease;
-    background: #fafafa;
+    padding: 12px 16px;
+    border: 2px solid #e0f2fe; 
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #ffffff;
     box-sizing: border-box;
+    color: #2c3e50;
+    font-family: inherit;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
     border-color: #00b0e0;
-    box-shadow: 0 0 0 2px rgba(69, 221, 248, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 176, 224, 0.15);
     outline: none;
+    transform: translateY(-1px);
 }
 
 .form-group textarea {
     resize: vertical;
-    min-height: 90px;
+    min-height: 100px;
+    line-height: 1.5;
+}
+
+/* Select específico  */
+.form-group select {
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+/* Eliminar estilos nativos del select */
+.form-group select::-ms-expand {
+    display: none;
+}
+
+.form-group select option {
+    background: #ffffff;
+    color: #2c3e50;
+    padding: 8px 12px;
+}
+
+.form-group select:disabled {
+    background-color: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* Campos con error */
@@ -73,99 +112,254 @@
 .form-group textarea.error,
 .form-group select.error {
     border-color: #e53935 !important;
-    box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.1);
+    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+    animation: shake 0.4s ease-in-out;
 }
 
 .error-message {
     color: #e53935;
-    font-size: 0.85rem;
-    margin-top: 2px;
+    font-size: 0.875rem;
+    margin-top: 6px;
     background: none;
     box-shadow: none;
     border-radius: 0;
     padding: 0;
     display: block;
     position: static;
+    font-weight: 500;
 }
 
-/* Imagen */
+/* Input file */
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ccc;   
+    border-radius: 4px;      
+    background: #ffffff;
+    color: #2c3e50;
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.form-group input[type="file"]:hover {
+    background: #f0f9ff;
+    border-color: #0090bd;
+}
+
+/* Preview de imagen */
 .image-preview {
-    margin-top: 10px;
+    margin-top: 15px;
     text-align: center;
+    padding: 15px;
+    background: #f8fcff;
+    border-radius: 10px;
+    border: 1px solid #e0f2fe;
 }
 
 .image-preview img {
-    max-width: 120px;
-    border-radius: 6px;
-    border: 2px solid #f3e5f5;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    max-width: 140px;
+    max-height: 140px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 176, 224, 0.2);
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-preview img:hover {
+    transform: scale(1.05);
 }
 
 /* Botones */
 .form-actions {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 35px;
+    padding-top: 25px;
+    border-top: 1px solid #e0f2fe;
 }
 
 .btn-guardar {
-    padding: 20px 64px;   
-    min-width: 220px;     
-    font-size: 1.3rem;    
+    padding: 16px 48px;   
+    min-width: 200px;     
+    font-size: 1.1rem;    
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
-    background: #00b0e0 !important;
+    background: linear-gradient(135deg, #00b0e0 0%, #0090bd 100%) !important;
     color: white !important;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 176, 224, 0.18);
+    box-shadow: 0 4px 20px rgba(0, 176, 224, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-guardar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s ease;
 }
 
 .btn-guardar:hover:not(:disabled) {
-    background: #0090bd;
-    filter: brightness(1.08);
+    background: linear-gradient(135deg, #0090bd 0%, #007a91 100%) !important;
     transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 176, 224, 0.35);
+}
+
+.btn-guardar:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.btn-guardar:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .btn-guardar:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background: #94a3b8 !important;
+    box-shadow: none;
+    transform: none;
 }
 
-/* Animación */
+/* Animaciones */
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(20px) scale(0.95);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
-/* Responsive */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Responsive para tablets grandes */
+@media (max-width: 1024px) {
+    .form-container {
+        padding: 15px;
+    }
+    
+    .producto-form {
+        padding: 25px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+/* Responsive para tablets */
 @media (max-width: 768px) {
     .form-title {
         font-size: 2rem;
         margin-bottom: 1.5rem;
     }
+    
+    .producto-form {
+        padding: 20px;
+        border-radius: 12px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 12px 14px;
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+    
+    .btn-guardar {
+        width: 100%;
+        padding: 14px 24px;
+        font-size: 1rem;
+        min-width: unset;
+    }
+    
+    .image-preview img {
+        max-width: 120px;
+        max-height: 120px;
+    }
 }
 
+/* Responsive para móviles */
 @media (max-width: 480px) {
     .form-container {
+        padding: 10px;
+    }
+    
+    .producto-form {
         padding: 15px;
     }
 
     .form-group input,
     .form-group textarea,
     .form-group select {
-        padding: 8px;
-        font-size: 0.9rem;
+        padding: 10px 12px;
+        font-size: 16px;
     }
 
     .btn-guardar {
         width: 100%;
-        padding: 12px 0;
+        padding: 12px 20px;
+        font-size: 0.95rem;
+    }
+    
+    .form-actions {
+        margin-top: 25px;
+        padding-top: 20px;
+    }
+    
+    .image-preview img {
+        max-width: 100px;
+        max-height: 100px;
+    }
+}
+
+/* Responsive muy pequeño */
+@media (max-width: 320px) {
+    .form-container {
+        padding: 8px;
+    }
+    
+    .producto-form {
+        padding: 12px;
+    }
+    
+    .form-title {
+        font-size: 1.6rem;
+    }
+    
+    .form-row {
+        gap: 15px;
+    }
+    
+    .form-group {
+        margin-bottom: 18px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+    
+    .btn-guardar {
+        font-size: 0.9rem;
+        padding: 10px 16px;
     }
 }

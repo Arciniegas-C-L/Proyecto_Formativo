@@ -12,6 +12,7 @@ import {
   FaBars,
   FaTimes,
   FaHome,
+  FaTachometerAlt,
 } from "react-icons/fa";
 import "../../assets/css/Admin/AdminDashboard.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -42,28 +43,36 @@ export const AdminDashboard = () => {
     location.pathname === ruta || location.pathname.startsWith(ruta + "/");
 
   const elementosMenu = [
-    { ruta: "/admin/proveedores", icono: FaUsers, etiqueta: "Proveedores" },
+    // Dashboard Principal
+    { ruta: "/admin", icono: FaTachometerAlt, etiqueta: "Dashboard" },
+
+    // Proveedores
     {
       ruta: "/admin/proveedores/registrados",
       icono: FaUsers,
       etiqueta: "Prov. Registrados",
     },
+    { ruta: "/admin/proveedores", icono: FaUsers, etiqueta: "Proveedores" },
+
+    // Productos
     { ruta: "/admin/productos", icono: FaBoxOpen, etiqueta: "Productos" },
     {
       ruta: "/admin/productos/crear",
       icono: FaBoxOpen,
       etiqueta: "Crear Producto",
     },
+
+    // Inventario y categorías
     { ruta: "/admin/inventario", icono: FaWarehouse, etiqueta: "Inventario" },
     { ruta: "/admin/categorias", icono: FaTags, etiqueta: "Categorías" },
-    //{ ruta: "/admin/usuarios", icono: FaUserShield, etiqueta: "Usuarios" },
+
+    // Tallas
     { ruta: "/admin/tallas", icono: FaRuler, etiqueta: "Tallas" },
     { ruta: "/admin/tallas/grupo", icono: FaRuler, etiqueta: "Grupo Tallas" },
-    { ruta: "/admin/reporte-ventas", icono: FaTags, etiqueta: "Reporte Ventas" },
-    { ruta: "/", icono: FaHome, etiqueta: "Inicio" },
-    { ruta: "/admin/dashboard", icono: FaHome, etiqueta: "Dashboard" },
-    { ruta: "/Facturas", icono: FaUserShield, etiqueta: "Facturas" },
+
+    // Pedidos y facturas
     { ruta: "/admin/pedidos", icono: FaTags, etiqueta: "Pedidos" },
+     { ruta: "/admin/facturas", icono: FaUserShield, etiqueta: "Facturas" },
   ];
 
   return (
@@ -113,13 +122,13 @@ export const AdminDashboard = () => {
         {/* HEADER */}
         <div className="encabezado-completo-sidebar">
           <div className="contenedor-logo-principal">
-            <img 
-              src="/src/assets/images/home/ZOE copy.gif" 
-              alt="Logo ZOE" 
+            <img
+              src="/src/assets/images/home/ZOE copy.gif"
+              alt="Logo ZOE"
               className="logo-principal"
             />
           </div>
-          
+
           <div className="contenedor-titulo-admin">
             <h4 className="titulo-panel-admin">Panel de Administración</h4>
           </div>
@@ -165,7 +174,7 @@ export const AdminDashboard = () => {
             <FaHome className="icono-volver" />
             <span className="texto-volver">Volver al Inicio</span>
           </button>
-          
+
           <button
             className="boton-logout-principal"
             onClick={manejarCerrarSesion}
@@ -178,15 +187,13 @@ export const AdminDashboard = () => {
       </aside>
 
       {/* Botón hamburguesa */}
-      {barraLateralColapsada && (
-        <button
-          className="boton-hamburguesa"
-          onClick={alternarBarraLateral}
-          aria-label="Abrir menú"
-        >
-          <FaBars />
-        </button>
-      )}
+      <button
+        className="boton-hamburguesa"
+        onClick={alternarBarraLateral}
+        aria-label="Abrir menú"
+      >
+        <FaBars />
+      </button>
     </>
   );
 };

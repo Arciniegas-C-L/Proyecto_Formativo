@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { listarPedidos } from "../../api/Pedido.api";
 import { listarItemsDePedido } from "../../api/PedidoProducto.api.js";
 import { Link } from "react-router-dom";
+import "../../assets/css/Pedidos/MisPedidos.css";
 
 const PAGE_SIZE = 5;
 
@@ -30,7 +31,7 @@ function fmtFecha(iso) {
 function EstadoBadge({ estado }) {
   const ok = !!estado;
   return (
-    <span className={`badge ${ok ? "bg-success" : "bg-secondary"}`} title={ok ? "Completado" : "Pendiente"}>
+    <span className={`mis-pedidos-badge ${ok ? "mis-pedidos-badge-success" : "mis-pedidos-badge-secondary"}`} title={ok ? "Completado" : "Pendiente"}>
       {ok ? "Completado" : "Pendiente"}
     </span>
   );
@@ -165,48 +166,70 @@ export function MisPedidos() {
 
   if (loading) {
     return (
-      <div className="container py-4">
-        <h1 className="h4 mb-3">Mis pedidos</h1>
-        <div className="alert alert-info">Cargando tus pedidos…</div>
+      <div className="mis-pedidos-container">
+        <div className="mis-pedidos-header">
+          <h1 className="mis-pedidos-titulo">Mis pedidos</h1>
+        </div>
+        <div className="mis-pedidos-alert mis-pedidos-alert-info">
+          <i className="fas fa-spinner fa-spin"></i>
+          Cargando tus pedidos…
+        </div>
       </div>
     );
   }
 
   if (err) {
     return (
-      <div className="container py-4">
-        <h1 className="h4 mb-3">Mis pedidos</h1>
-        <div className="alert alert-danger">{err}</div>
+      <div className="mis-pedidos-container">
+        <div className="mis-pedidos-header">
+          <h1 className="mis-pedidos-titulo">Mis pedidos</h1>
+        </div>
+        <div className="mis-pedidos-alert mis-pedidos-alert-danger">
+          <i className="fas fa-exclamation-triangle"></i>
+          {err}
+        </div>
       </div>
     );
   }
 
   if (!ordered.length) {
     return (
-      <div className="container py-4">
-        <h1 className="h4 mb-3">Mis pedidos</h1>
-        <div className="text-center p-5 bg-light rounded">
-          <p className="mb-3">Aún no tienes pedidos.</p>
-          <Link to="/catalogo" className="btn btn-primary">Ir al catálogo</Link>
+      <div className="mis-pedidos-container">
+        <div className="mis-pedidos-header">
+          <h1 className="mis-pedidos-titulo">Mis pedidos</h1>
+        </div>
+        <div className="mis-pedidos-empty">
+          <div className="mis-pedidos-empty-icon">
+            <i className="fas fa-shopping-bag"></i>
+          </div>
+          <h3>Aún no tienes pedidos</h3>
+          <p>Explora nuestro catálogo y realiza tu primer pedido</p>
+          <Link to="/catalogo" className="mis-pedidos-btn mis-pedidos-btn-primary">
+            <i className="fas fa-store"></i>
+            Ir al catálogo
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4">
-      <h1 className="h4 mb-3">Mis pedidos</h1>
-
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div className="text-muted small">
-          {ordered.length} {ordered.length === 1 ? "pedido" : "pedidos"}
-        </div>
-        <div className="text-muted small">
-          Página {safePage} de {totalPages}
+    <div className="mis-pedidos-container">
+      <div className="mis-pedidos-header">
+        <h1 className="mis-pedidos-titulo">Mis pedidos</h1>
+        <div className="mis-pedidos-stats">
+          <div className="mis-pedidos-stat">
+            <span className="mis-pedidos-stat-number">{ordered.length}</span>
+            <span className="mis-pedidos-stat-label">{ordered.length === 1 ? "pedido" : "pedidos"}</span>
+          </div>
+          <div className="mis-pedidos-stat">
+            <span className="mis-pedidos-stat-number">{safePage}</span>
+            <span className="mis-pedidos-stat-label">de {totalPages}</span>
+          </div>
         </div>
       </div>
 
-      <div className="vstack gap-3">
+      <div className="mis-pedidos-list">
         {pageSlice.map((p) => {
           const pid = p.idPedido ?? p.id;
           const abierto = !!expanded[pid];
@@ -216,98 +239,146 @@ export function MisPedidos() {
           const cargandoItems = !!loadingItems[pid];
 
           return (
-            <div className="card shadow-sm border-0" key={pid}>
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <div className="d-flex align-items-center gap-2">
-                      <h2 className="h6 mb-0">Pedido #{pid}</h2>
-                      <EstadoBadge estado={p.estado} />
-                    </div>
-
-                    <div className="text-muted small mt-1">
-                      {p.created_at && <span className="me-3">Fecha: {fmtFecha(p.created_at)}</span>}
-                      <span>Total: </span>
-                      <strong>${fmtMoney(p.total)}</strong>
-                    </div>
+            <div className="mis-pedidos-card" key={pid}>
+              <div className="mis-pedidos-card-header">
+                <div className="mis-pedidos-card-info">
+                  <div className="mis-pedidos-card-title-row">
+                    <h2 className="mis-pedidos-card-title">Pedido #{pid}</h2>
+                    <EstadoBadge estado={p.estado} />
                   </div>
-
-                  <button className="btn btn-sm btn-outline-primary" onClick={() => toggleExpand(p)}>
-                    {abierto ? "Ocultar productos" : "Ver productos"}
-                  </button>
+                  <div className="mis-pedidos-card-meta">
+                    {p.created_at && (
+                      <span className="mis-pedidos-meta-item">
+                        <i className="fas fa-calendar-alt"></i>
+                        {fmtFecha(p.created_at)}
+                      </span>
+                    )}
+                    <span className="mis-pedidos-meta-item mis-pedidos-total">
+                      <i className="fas fa-dollar-sign"></i>
+                      <strong>{fmtMoney(p.total)}</strong>
+                    </span>
+                  </div>
                 </div>
+                <button 
+                  className="mis-pedidos-toggle-btn" 
+                  onClick={() => toggleExpand(p)}
+                  aria-expanded={abierto}
+                >
+                  <i className={`fas ${abierto ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                  {abierto ? "Ocultar productos" : "Ver productos"}
+                </button>
+              </div>
 
-                {abierto && (
-                  <div className="mt-3">
-                    {cargandoItems && <div className="alert alert-info py-2">Cargando productos del pedido…</div>}
-                    {tieneError && <div className="alert alert-warning py-2">{itemsState._error}</div>}
+              {abierto && (
+                <div className="mis-pedidos-card-body">
+                  {cargandoItems && (
+                    <div className="mis-pedidos-loading">
+                      <i className="fas fa-spinner fa-spin"></i>
+                      Cargando productos del pedido…
+                    </div>
+                  )}
+                  
+                  {tieneError && (
+                    <div className="mis-pedidos-error">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      {itemsState._error}
+                    </div>
+                  )}
 
-                    {!cargandoItems && !tieneError && (
-                      <>
-                        {!items.length ? (
-                          <div className="text-muted small">Sin productos para mostrar.</div>
-                        ) : (
-                          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-                            {items.map((it, idx) => {
-                              const nombre = it.nombre ?? "Producto";
-                              const urlImg = resolveImg(it.imagen);
-                              const precio = it.precio ?? it.subtotal ?? null;
-                              const cantidad = it.cantidad ?? 1;
-                              const talla = it.talla ? ` · Talla: ${it.talla}` : "";
+                  {!cargandoItems && !tieneError && (
+                    <>
+                      {!items.length ? (
+                        <div className="mis-pedidos-no-items">
+                          <i className="fas fa-box-open"></i>
+                          Sin productos para mostrar
+                        </div>
+                      ) : (
+                        <div className="mis-pedidos-productos">
+                          {items.map((it, idx) => {
+                            const nombre = it.nombre ?? "Producto";
+                            const urlImg = resolveImg(it.imagen);
+                            const precio = it.precio ?? it.subtotal ?? null;
+                            const cantidad = it.cantidad ?? 1;
+                            const talla = it.talla ? ` · Talla: ${it.talla}` : "";
 
-                              return (
-                                <div className="col" key={idx}>
-                                  <div className="card h-100">
-                                    <img
-                                      src={urlImg}
-                                      className="card-img-top"
-                                      alt={nombre}
-                                      onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
-                                    />
-                                    <div className="card-body">
-                                      <h6 className="card-title mb-1">{nombre}</h6>
-                                      <div className="small text-muted">
-                                        {cantidad > 1 ? `Cantidad: ${cantidad} · ` : ""}
-                                        Precio: ${fmtMoney(precio)}
-                                        {talla}
-                                      </div>
-                                    </div>
+                            return (
+                              <div className="mis-pedidos-producto" key={idx}>
+                                <div className="mis-pedidos-producto-imagen">
+                                  <img
+                                    src={urlImg}
+                                    alt={nombre}
+                                    onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                                  />
+                                </div>
+                                <div className="mis-pedidos-producto-info">
+                                  <h6 className="mis-pedidos-producto-nombre">{nombre}</h6>
+                                  <div className="mis-pedidos-producto-detalles">
+                                    {cantidad > 1 && (
+                                      <span className="mis-pedidos-detalle">
+                                        <i className="fas fa-times"></i>
+                                        {cantidad}
+                                      </span>
+                                    )}
+                                    <span className="mis-pedidos-detalle mis-pedidos-precio">
+                                      <i className="fas fa-tag"></i>
+                                      ${fmtMoney(precio)}
+                                    </span>
+                                    {talla && (
+                                      <span className="mis-pedidos-detalle">
+                                        <i className="fas fa-ruler"></i>
+                                        {it.talla}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
       {/* Controles de paginación */}
-      <nav className="mt-4 d-flex justify-content-center">
-        <ul className="pagination mb-0">
-          <li className={`page-item ${safePage === 1 ? "disabled" : ""}`}>
-            <button className="page-link" onClick={() => changePage(safePage - 1)}>Anterior</button>
-          </li>
+      <nav className="mis-pedidos-pagination">
+        <button 
+          className={`mis-pedidos-page-btn ${safePage === 1 ? "disabled" : ""}`}
+          onClick={() => changePage(safePage - 1)}
+          disabled={safePage === 1}
+        >
+          <i className="fas fa-chevron-left"></i>
+          Anterior
+        </button>
 
+        <div className="mis-pedidos-page-numbers">
           {Array.from({ length: totalPages }).map((_, i) => {
             const pnum = i + 1;
             return (
-              <li key={pnum} className={`page-item ${pnum === safePage ? "active" : ""}`}>
-                <button className="page-link" onClick={() => changePage(pnum)}>{pnum}</button>
-              </li>
+              <button 
+                key={pnum} 
+                className={`mis-pedidos-page-num ${pnum === safePage ? "active" : ""}`}
+                onClick={() => changePage(pnum)}
+              >
+                {pnum}
+              </button>
             );
           })}
+        </div>
 
-          <li className={`page-item ${safePage === totalPages ? "disabled" : ""}`}>
-            <button className="page-link" onClick={() => changePage(safePage + 1)}>Siguiente</button>
-          </li>
-        </ul>
+        <button 
+          className={`mis-pedidos-page-btn ${safePage === totalPages ? "disabled" : ""}`}
+          onClick={() => changePage(safePage + 1)}
+          disabled={safePage === totalPages}
+        >
+          Siguiente
+          <i className="fas fa-chevron-right"></i>
+        </button>
       </nav>
     </div>
   );

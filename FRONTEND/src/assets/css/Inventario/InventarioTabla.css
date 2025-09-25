@@ -178,6 +178,10 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
+  .error-message:empty {
+  display: none;
+  }
+
   
   /* Labels específicos para cada tipo de tabla */
   /* Categorías */
