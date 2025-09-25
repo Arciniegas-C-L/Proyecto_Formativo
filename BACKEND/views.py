@@ -7,6 +7,7 @@ from datetime import timedelta, datetime
 from decimal import Decimal
 import io
 from django.db.models import Prefetch
+from django.core.mail import EmailMessage
 
 
 from django.http import FileResponse, HttpResponse
@@ -48,15 +49,18 @@ import mercadopago
 
 # --- Permisos del proyecto
 from BACKEND.permissions import (
-    IsAdmin,
-    IsCliente,
     IsAdminWriteClienteRead,
     AdminandCliente,
-    AllowGuestReadOnly,
-    NotGuest,
-    CarritoPermiteInvitadoMenosPago,
+    ComentarioPermission,
+    IsAdmin,
+    IsCliente,
+    AdminandCliente,
+    OpenReadOnly,
+    CarritoAnonimoMenosPago,
+    IsAdminWriteClienteRead,
     ComentarioPermission,
     IsAdminOrReadOnly,
+
 )
 
 # --- MODELOS del proyecto (import explícito)
@@ -201,7 +205,7 @@ class Rolview(viewsets.ModelViewSet):
 
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
-    permission_classes = [IsAdminWriteClienteRead, AllowGuestReadOnly]
+    permission_classes = [IsAdminWriteClienteRead]
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='me')
@@ -211,6 +215,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
     permission_classes = [AllowAny]
@@ -223,60 +228,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='guest')
-    def guest(self, request):
-        """
-        Emite un JWT para un usuario técnico con rol 'Invitado'.
-        - NO crea el rol (debe existir en la tabla Rol).
-        - Devuelve la misma estructura que 'login' para reutilizar el frontend.
-        """
-        # 1) Buscar rol 'Invitado' existente (no lo crea) – acepta mayúsc/minúsc
-        try:
-            rol_invitado = Rol.objects.get(nombre__iexact='Invitado')
-        except Rol.DoesNotExist:
-            return Response(
-                {"error": "El rol 'Invitado' no existe. Créalo previamente en la tabla de roles."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
-        # 2) Obtener o crear (una sola vez) un usuario técnico para invitados
-        #    Ajusta estos campos a tu modelo real. Si 'correo' es único, úsalo.
-        guest, created = Usuario.objects.get_or_create(
-            correo='guest@local',  # si en tu modelo el único es username, usa username='guest_user'
-            defaults={
-                'nombre': 'Invitado',
-                'is_active': True,
-                'rol': rol_invitado,
-            }
-        )
-
-        # Asegura que el usuario técnico tenga siempre el rol 'Invitado'
-        # Usa .pk para no depender del nombre de la PK de Rol
-        if getattr(guest, 'rol_id', None) != rol_invitado.pk:
-            guest.rol = rol_invitado
-            guest.save(update_fields=['rol'])
-
-        # Evita login por password en el usuario técnico (si tu modelo lo soporta)
-        if created and hasattr(guest, 'set_unusable_password'):
-            guest.set_unusable_password()
-            guest.save()
-
-        # 3) Generar tokens (igual que en login)
-        refresh = RefreshToken.for_user(guest)
-        token = {
-            'refresh': str(refresh),               # si NO quieres refresh para invitados, puedes omitirlo
-            'access': str(refresh.access_token),
-        }
-
-        usuario_serializado = UsuarioSerializer(guest).data
-
-        return Response({
-            "mensaje": "Token de invitado generado",
-            "usuario": usuario_serializado,
-            "rol": rol_invitado.nombre,
-            "token": token
-        }, status=status.HTTP_200_OK)
-    # ------------------ FIN INVITADO ------------------
+    # >>> Eliminado el action 'guest' que emitía tokens para el rol 'Invitado'.
+    #     No se modificó nada más en el ViewSet.
 
     # --- REGISTRO ---
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='register')
@@ -435,60 +389,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         except (Usuario.DoesNotExist, CodigoRecuperacion.DoesNotExist):
             return Response({"error": "Datos inválidos"}, status=status.HTTP_404_NOT_FOUND)
 
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """
-    Permite autenticación con 'correo' + 'password' y agrega 'rol' al JWT.
-    - Usa 'correo' como campo de usuario (si tu modelo tiene USERNAME_FIELD='correo', mejor).
-    - Devuelve payload alineado con tu 'login' action.
-    """
-    # Indica a SimpleJWT que el 'username' esperado es 'correo'
-    username_field = 'correo'
-    # Define el campo explícitamente para validación DRF
-    correo = serializers.EmailField()
-
-    @classmethod
-    def get_token(cls, user):
-        """
-        Agrega claims al token (access/refresh).
-        """
-        token = super().get_token(user)
-        # Reclamos útiles
-        token['rol'] = getattr(getattr(user, 'rol', None), 'nombre', None)
-        token['guest'] = False
-        return token
-
-    def validate(self, attrs):
-        """
-        Delega la autenticación a la implementación base (usa username_field='correo'),
-        valida activo, y retorna el mismo shape que tu login.
-        """
-        # Esto hará la autenticación con correo/password si tu backend lo soporta
-        data = super().validate(attrs)
-        user = self.user
-
-        if not user.is_active:
-            raise AuthenticationFailed("Cuenta inactiva.")
-
-        # Refresca tokens ya generados por la clase base
-        refresh = self.get_token(user)
-
-        data['refresh'] = str(refresh)
-        data['access'] = str(refresh.access_token)
-        data['usuario'] = {
-            'id': getattr(user, 'idUsuario', getattr(user, 'id', None)),
-            'nombre': getattr(user, 'nombre', None),
-            'rol': getattr(getattr(user, 'rol', None), 'nombre', None),
-        }
-        return data
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    permission_classes = [AllowAny]
-    serializer_class = CustomTokenObtainPairSerializer
-
-
 #Preparacion para actualizar perfil con token de cliente
 class MiPerfilView(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, AdminandCliente, AllowGuestReadOnly]
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def list(self, request):
         serializer = UsuarioSerializer(request.user)
@@ -503,16 +406,16 @@ class MiPerfilView(viewsets.ViewSet):
 class ProveedorView(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer
     queryset = Proveedor.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
 class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
-    permission_classes = [CarritoPermiteInvitadoMenosPago]
+    permission_classes = [CarritoAnonimoMenosPago]
     queryset = Producto.objects.all()
     parser_classes = (MultiPartParser, FormParser)  # Soportar archivos en request
     def get_permissions(self):
@@ -552,7 +455,7 @@ class ProductoView(viewsets.ModelViewSet):
 class GrupoTallaViewSet(viewsets.ModelViewSet):
     serializer_class = GrupoTallaSerializer
     queryset = GrupoTalla.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -588,7 +491,7 @@ class GrupoTallaViewSet(viewsets.ModelViewSet):
 class TallaViewSet(viewsets.ModelViewSet):
     serializer_class = TallaSerializer
     queryset = Talla.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -737,7 +640,7 @@ class InventarioView(viewsets.ModelViewSet):
         'producto__nombre',
         'talla__nombre'
     )
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_serializer_class(self):
         if self.action == 'inventario_agrupado':
@@ -1311,12 +1214,12 @@ class InventarioView(viewsets.ModelViewSet):
 class MovimientoView(viewsets.ModelViewSet):
     serializer_class = MovimientoSerializer
     queryset = Movimiento.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
 
 # views.py (solo si NO agregas campos al modelo)
 class PedidoView(viewsets.ModelViewSet):
     serializer_class = PedidoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def get_queryset(self):
         qs = (Pedido.objects
@@ -1341,7 +1244,7 @@ class PedidoProductoView(viewsets.ModelViewSet):
     - Filtro por querystring: ?pedido=<id>
     """
     serializer_class = PedidoProductoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def get_queryset(self):
         qs = (
@@ -1390,15 +1293,15 @@ class PedidoProductoView(viewsets.ModelViewSet):
 class PagoView(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
     queryset = Pago.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
 
 class TipoPagoView(viewsets.ModelViewSet):
     serializer_class = TipoPagoSerializer
     queryset = TipoPago.objects.all()
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest] #Por definir
+    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
 
 class CarritoView(viewsets.ModelViewSet):
-    permission_classes = [CarritoPermiteInvitadoMenosPago]
+    permission_classes = [CarritoAnonimoMenosPago]
     serializer_class = CarritoSerializer
     # dentro de CarritoView
     def _ensure_pedido_from_carrito(self, carrito):
@@ -1786,7 +1689,7 @@ class CarritoView(viewsets.ModelViewSet):
 
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
-    permission_classes = [CarritoPermiteInvitadoMenosPago]  # Permite acceso a admin y cliente
+    permission_classes = [CarritoAnonimoMenosPago]  # Permite acceso a admin y cliente
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -1798,7 +1701,7 @@ class CarritoItemView(viewsets.ModelViewSet):
 
 class EstadoCarritoView(viewsets.ModelViewSet):
     serializer_class = EstadoCarritoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente, NotGuest]
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -2019,6 +1922,129 @@ def _addr_from_snapshot(snap: dict) -> str:
     txt = ", ".join([p for p in partes if p])
     return txt[:255]
 
+
+def _factura_pdf_bytes(factura):
+    """
+    Construye un PDF MUY breve de la factura y retorna (filename, bytes).
+    Usa ReportLab para evitar tocar tu endpoint PDF largo.
+    """
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    story = []
+
+    titulo = f"Factura {getattr(factura, 'numero', None) or factura.pk}"
+    story.append(Paragraph(titulo, styles["Heading1"]))
+    story.append(Spacer(1, 6))
+
+    # Encabezado
+    cliente = (
+        getattr(factura, "cliente_nombre", None)
+        or getattr(getattr(factura, "usuario", None), "nombre", None)
+        or getattr(getattr(factura, "usuario", None), "first_name", None)
+        or getattr(getattr(factura, "usuario", None), "username", None)
+        or "—"
+    )
+    fecha = getattr(factura, "emitida_en", None) or getattr(factura, "created_at", None)
+    datos = [
+        ["Cliente:", cliente],
+        ["Fecha:", fmt_date(fecha)],
+        ["Moneda:", getattr(factura, "moneda", None) or "COP"],
+        ["Estado:", getattr(factura, "estado", "") or "emitida"],
+    ]
+    t_meta = Table(datos, colWidths=[80, 400])
+    t_meta.setStyle(TableStyle([
+        ("FONTNAME", (0,0), (-1,-1), "Helvetica"),
+        ("FONTSIZE", (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+    ]))
+    story.append(t_meta)
+    story.append(Spacer(1, 6))
+
+    # Items
+    rows = [["Descripción", "Cant.", "P. Unit", "Subtotal"]]
+    items = list(factura.items.all())
+    for it in items:
+        desc = getattr(it, "descripcion", None) or (getattr(it, "producto", None) and getattr(it.producto, "nombre", None)) or "-"
+        qty  = int(getattr(it, "cantidad", 0) or 0)
+        unit = getattr(it, "precio", 0)
+        sub  = getattr(it, "subtotal", None)
+        if sub is None:
+            try:
+                sub = Decimal(str(unit)) * Decimal(str(qty))
+            except Exception:
+                sub = 0
+        rows.append([desc, str(qty), fmt_money(unit, factura.moneda or "COP"), fmt_money(sub, factura.moneda or "COP")])
+
+    t_items = Table(rows, colWidths=[300, 60, 90, 90])
+    t_items.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1fb2d2")),
+        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+        ("GRID", (0,0), (-1,-1), 0.5, colors.HexColor("#1fb2d2")),
+        ("ALIGN", (1,1), (1,-1), "CENTER"),
+        ("ALIGN", (2,1), (3,-1), "RIGHT"),
+        ("FONTSIZE", (0,0), (-1,-1), 9),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, colors.whitesmoke]),
+    ]))
+    story.append(t_items)
+    story.append(Spacer(1, 8))
+
+    # Totales
+    total = getattr(factura, "total", 0)
+    tot_tbl = Table([["TOTAL:", fmt_money(total, factura.moneda or "COP")]], colWidths=[350, 100])
+    tot_tbl.setStyle(TableStyle([
+        ("FONTNAME", (0,0), (-1,-1), "Helvetica-Bold"),
+        ("FONTSIZE", (0,0), (-1,-1), 12),
+        ("ALIGN", (1,0), (1,0), TA_RIGHT),
+    ]))
+    story.append(tot_tbl)
+
+    doc.build(story)
+    buf.seek(0)
+    filename = f"Factura_{getattr(factura, 'numero', None) or factura.pk}.pdf"
+    return filename, buf.read()
+
+def _get_email_destino_factura(factura):
+    # 1) Campos denormalizados de factura
+    for attr in ("cliente_email", "usuario_email", "email"):
+        val = getattr(factura, attr, None)
+        if val:
+            return val
+    # 2) Del usuario asociado
+    u = getattr(factura, "usuario", None)
+    if u:
+        for attr in ("email", "correo", "correo_electronico"):
+            val = getattr(u, attr, None)
+            if val:
+                return val
+    return None
+
+def _send_factura_email(request, factura):
+    """
+    Envía por correo la factura con PDF adjunto.
+    Retorna True si al menos intenta enviar; False si no hay correo.
+    """
+    to_email = _get_email_destino_factura(factura)
+    if not to_email:
+        return False  # sin correo, no se envía
+
+    subject = f"Tu factura {getattr(factura, 'numero', None) or factura.pk}"
+    body = (
+        "Hola,\n\n"
+        "Adjuntamos tu factura de compra. Gracias por preferirnos.\n\n"
+        "— Variedad y Estilos ZOE"
+    )
+
+    # Construir PDF adjunto
+    filename, pdf_bytes = _factura_pdf_bytes(factura)
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or getattr(settings, "EMAIL_HOST_USER", None)
+    email = EmailMessage(subject=subject, body=body, from_email=from_email, to=[to_email])
+    email.attach(filename, pdf_bytes, "application/pdf")
+    # Si tienes logo u otros adjuntos, puedes añadirlos aquí.
+    email.send(fail_silently=True)
+    return True
 
 # =========================
 # VISTA
@@ -2954,7 +2980,7 @@ class FacturaView(viewsets.ModelViewSet):
 class SubcategoriaViewSet(viewsets.ModelViewSet):
     queryset = Subcategoria.objects.all()
     serializer_class = SubcategoriaSerializer
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead, AllowGuestReadOnly]  # Por definir
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]  # Por definir
 
     def perform_create(self, serializer):
         try:

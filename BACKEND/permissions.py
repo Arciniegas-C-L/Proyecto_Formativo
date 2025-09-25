@@ -1,119 +1,104 @@
+# permissions.py
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
+# ─────────────────────────────────────────────────────────────
+# Roles básicos (por si los sigues usando en otros módulos)
+# ─────────────────────────────────────────────────────────────
 class IsAdmin(BasePermission):
-    """
-    Permiso para verificar si el usuario tiene el rol de administrador.
-    """
+    """Permite solo a usuarios autenticados con rol 'administrador'."""
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and 
-            getattr(request.user.rol, 'nombre', '').strip().lower() == 'administrador'
+            getattr(getattr(request.user, 'rol', None), 'nombre', '').strip().lower() == 'administrador'
         )
 
 class IsCliente(BasePermission):
-    """
-    Permiso para verificar si el usuario tiene el rol de cliente.
-    """
+    """Permite solo a usuarios autenticados con rol 'cliente'."""
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and 
-            getattr(request.user.rol, 'nombre', '').strip().lower() == 'cliente'
+            getattr(getattr(request.user, 'rol', None), 'nombre', '').strip().lower() == 'cliente'
         )
+
+class AdminandCliente(BasePermission):
+    """Permite solo a usuarios autenticados con rol 'administrador' o 'cliente'."""
+    def has_permission(self, request, view):
+        rol = (getattr(getattr(request.user, 'rol', None), 'nombre', '') or '').strip().lower()
+        return bool(request.user.is_authenticated and rol in ['administrador', 'cliente'])
+
+
+# ─────────────────────────────────────────────────────────────
+# Aperturas sin autenticación
+# ─────────────────────────────────────────────────────────────
+class OpenReadOnly(BasePermission):
+    """
+    Permite acceso de lectura (GET/HEAD/OPTIONS) a *cualquiera* (sin token).
+    Útil para Catálogo público.
+    """
+    def has_permission(self, request, view):
+        return request.method in SAFE_METHODS
+
+
+class CarritoAnonimoMenosPago(BasePermission):
+    """
+    Carrito abierto SIN token para todo excepto flujos de pago.
+    - Cualquiera (autenticado o no) puede: crear carrito, listar, agregar/actualizar/eliminar items, vaciar, etc.
+    - Para endpoints/acciones de PAGO se exige usuario autenticado con rol 'cliente' o 'administrador'.
     
+    Para detectar pagos:
+      - Define en el ViewSet la acción `crear_preferencia_pago` (o similar) y/o
+      - Usa coincidencia defensiva por path con palabras clave ('pago', 'checkout', 'mercado', 'preferencia').
+    """
+    PAGO_ACTIONS = {'crear_preferencia_pago', 'iniciar_pago', 'confirmar_pago'}
+
+    def has_permission(self, request, view):
+        # 1) Detecta si la acción/URL es de pago
+        action = (getattr(view, 'action', '') or '').lower()
+        path = (getattr(request, 'path', '') or '').lower()
+        is_pago = (action in self.PAGO_ACTIONS) or any(k in path for k in ('pago', 'checkout', 'mercado', 'preferencia'))
+
+        if not is_pago:
+            # Cualquier método/usuario permitido para operaciones NO-PAGO (incluye POST/PUT/PATCH/DELETE)
+            return True
+
+        # 2) Para PAGO: requiere autenticación y rol válido
+        if not request.user or not request.user.is_authenticated:
+            return False
+        rol = (getattr(getattr(request.user, 'rol', None), 'nombre', '') or '').strip().lower()
+        return rol in ('cliente', 'administrador')
+
+
+# ─────────────────────────────────────────────────────────────
+# Permisos mixtos comunes
+# ─────────────────────────────────────────────────────────────
 class IsAdminWriteClienteRead(BasePermission):
+    """
+    - Lecturas: admin o cliente
+    - POST: admin o cliente
+    - Escrituras fuertes (PUT/PATCH/DELETE): solo admin
+    """
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
 
-        rol = getattr(request.user.rol, 'nombre', '').strip().lower()
+        rol = (getattr(getattr(request.user, 'rol', None), 'nombre', '') or '').strip().lower()
 
-        # Permitir GET, HEAD, OPTIONS y POST para administrador y cliente
         if request.method in SAFE_METHODS or request.method == 'POST':
             return rol in ['administrador', 'cliente']
-        # Otros métodos (PUT, PATCH, DELETE) solo para administrador
         return rol == 'administrador'
-class AdminandCliente(BasePermission):
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            getattr(request.user.rol, 'nombre', '').strip().lower() in ['administrador', 'cliente']
-        )
 
-class AllowGuestReadOnly(BasePermission):
-    """
-    Permite GET/HEAD/OPTIONS a cualquiera que llegue con token (usuario real o invitado).
-    Para métodos de escritura, requiere usuario autenticado con rol != 'Invitado'.
-    """
-    def has_permission(self, request, view):
-        if request.method in SAFE_METHODS:
-            return True
-
-        user = getattr(request, 'user', None)
-        role_name = getattr(getattr(user, 'rol', None), 'nombre', None)
-        return bool(user and user.is_authenticated and str(role_name).lower() != 'invitado')
-    
-
-# permissions.py
-from rest_framework.permissions import BasePermission
-
-class NotGuest(BasePermission):
-    """Permite solo a usuarios autenticados cuyo rol != 'Invitado'."""
-    def has_permission(self, request, view):
-        user = getattr(request, 'user', None)
-        role = getattr(getattr(user, 'rol', None), 'nombre', '') or ''
-        return bool(user and user.is_authenticated and role.lower() != 'invitado')
-    
-class CarritoPermiteInvitadoMenosPago(BasePermission):
-    """
-    - administrador/cliente: acceso total
-    - invitado: TODO excepto acciones de pago (crear_preferencia_pago / rutas de pago)
-    Requiere usuario autenticado (incluye token de invitado).
-    """
-
-    def has_permission(self, request, view):
-        user = getattr(request, 'user', None)
-        if not (user and getattr(user, 'is_authenticated', False)):
-            return False
-
-        rol = (getattr(getattr(user, 'rol', None), 'nombre', '') or '').strip().lower()
-
-        # Admin y Cliente: todo permitido
-        if rol in ('administrador', 'cliente'):
-            return True
-
-        # Invitado: todo excepto PAGO
-        if rol == 'invitado':
-            action = (getattr(view, 'action', '') or '').lower()
-            path = (getattr(request, 'path', '') or '').lower()
-
-            # Bloquea explícitamente la acción de pago
-            if action in {'crear_preferencia_pago'}:
-                return False
-
-            # Fallback defensivo por URL (por si invocan por otra ruta)
-            # Evita endpoints que contengan "pago/mercado/checkout/preferencia"
-            if any(k in path for k in ('pago', 'mercado', 'checkout', 'preferencia')):
-                return False
-
-            # Todo lo demás permitido (listar, agregar, actualizar, eliminar, limpiar, finalizar_compra)
-            return True
-
-        # Otro rol desconocido
-        return False
 
 class ComentarioPermission(BasePermission):
     """
-    Lectura libre.
+    Comentarios:
+    - Lectura: libre (sin token)
     - POST: solo 'cliente' o 'administrador'
     - PUT/PATCH/DELETE: autor del comentario o 'administrador'
-    - 'invitado': solo lectura
     """
-
     def _role(self, user):
         return (getattr(getattr(user, 'rol', None), 'nombre', '') or '').strip().lower()
 
     def has_permission(self, request, view):
-        # GET/HEAD/OPTIONS -> permitido para todos (incluye invitado/no autenticado)
         if request.method in SAFE_METHODS:
             return True
 
@@ -121,18 +106,13 @@ class ComentarioPermission(BasePermission):
         if not (user and user.is_authenticated):
             return False
 
-        role = self._role(user)
-
-        # Crear comentario: solo cliente o admin
         if request.method == 'POST':
-            return role in ('cliente', 'administrador')
+            return self._role(user) in ('cliente', 'administrador')
 
-        # Para UPDATE/DELETE dejamos el chequeo fino al object-level (autor o admin),
-        # pero exigimos que esté autenticado.
+        # Para UPDATE/DELETE: se valida a nivel de objeto
         return True
 
     def has_object_permission(self, request, view, obj):
-        # Lectura del objeto -> libre
         if request.method in SAFE_METHODS:
             return True
 
@@ -140,11 +120,10 @@ class ComentarioPermission(BasePermission):
         if not (user and user.is_authenticated):
             return False
 
-        role = self._role(user)
-        if role == 'administrador':
+        if self._role(user) == 'administrador':
             return True
 
-        # Autor del comentario puede editar/eliminar
+        # Autor del comentario
         try:
             user_id = getattr(user, 'idUsuario', getattr(user, 'id', None))
             obj_user_id = getattr(getattr(obj, 'usuario', None), 'idUsuario',
@@ -157,9 +136,14 @@ class ComentarioPermission(BasePermission):
 
 
 class IsAdminOrReadOnly(BasePermission):
+    """
+    Lectura libre para todos; escrituras solo para admin (por 'rol' o 'is_staff').
+    """
     def has_permission(self, request, view):
-        # permite GET a autenticados; y restringe escrituras a admin
         if request.method in SAFE_METHODS:
-            return request.user and request.user.is_authenticated
-        return request.user and request.user.is_staff
-
+            return True
+        # Acepta cualquiera de las dos convenciones de "admin"
+        if request.user and request.user.is_authenticated:
+            rol = (getattr(getattr(request.user, 'rol', None), 'nombre', '') or '').strip().lower()
+            return bool(rol == 'administrador' or getattr(request.user, 'is_staff', False))
+        return False
