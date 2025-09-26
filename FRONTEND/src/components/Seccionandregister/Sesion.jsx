@@ -44,7 +44,7 @@ export function Sesion() {
       toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
 
       if (data?.rol === 'administrador') {
-        navigate('/admin/dashboard', { replace: true });
+        navigate('/admin', { replace: true }); // Redirige al dashboard principal del admin (AdminHome)
       } else {
         navigate('/', { replace: true });
       }

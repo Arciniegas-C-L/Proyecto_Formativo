@@ -25,7 +25,7 @@
 }
 
 .barra-lateral-admin.colapsada {
-  transform: translateX(-100%);
+  display: none;
 }
 
 /* HEADER COMPLETO DEL SIDEBAR */
@@ -88,8 +88,6 @@
   letter-spacing: 0.3px;
 }
 
-
-
 /* NAVEGACIÓN PRINCIPAL */
 .navegacion-principal {
   flex: 1;
@@ -116,6 +114,44 @@
   background-color: rgba(255, 255, 255, 0.3);
 }
 
+/* ESTILOS PARA LAS SECCIONES DEL MENÚ */
+
+/* Grupo de menú - Contenedor de cada sección */
+.grupo-menu-admin {
+  margin-bottom: 1.5rem;
+}
+
+.grupo-menu-admin:last-child {
+  margin-bottom: 0;
+}
+
+/* Título de sección */
+.titulo-seccion-menu {
+  padding: 0 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.texto-titulo-seccion {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primario);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.separador-seccion {
+  margin: 0.5rem 0 0 0;
+  border: none;
+  height: 1px;
+  background: rgba(0, 176, 224, 0.2);
+}
+
+/* Ocultar títulos de sección cuando el sidebar esté colapsado */
+.barra-lateral-admin.colapsada .titulo-seccion-menu {
+  display: none;
+}
+
 .lista-menu-admin {
   list-style: none;
   padding: 0;
@@ -140,16 +176,25 @@
   transition: var(--transicion-suave);
 }
 
-.enlace-menu-admin:hover {
+/* Mejora del hover para que no compita con el estado activo */
+.enlace-menu-admin:hover:not(.activo) {
   color: var(--texto-primario);
   background: var(--color-hover);
   text-decoration: none;
 }
 
+/* Estado activo  */
 .enlace-menu-admin.activo {
-  background: var(--color-activo);
-  color: var(--color-primario);
+  background: rgba(167, 139, 250, 0.15);
+  color: #ffffff;
   font-weight: 500;
+  border-left: 3px solid var(--color-primario);
+}
+
+/* El elemento activo no cambia en hover */
+.enlace-menu-admin.activo:hover {
+  background: rgba(167, 139, 250, 0.2);
+  color: #ffffff;
 }
 
 .icono-menu-admin {
@@ -228,7 +273,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border: none;
-  background: var(--color-primario);
+  background: rgba(26, 31, 46, 0.95);
   color: white;
   border-radius: 4px;
   cursor: pointer;
