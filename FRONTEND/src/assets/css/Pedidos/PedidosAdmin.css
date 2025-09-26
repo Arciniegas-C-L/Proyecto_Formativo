@@ -518,7 +518,6 @@
   color: white !important;
   opacity: 0.6 !important;
   cursor: not-allowed !important;
-  transform: none !important;
 }
 
 /* RESPONSIVE */
@@ -734,12 +733,6 @@
 }
 
 /* Accesibilidad - mantenida */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    transform: none !important;
-  }
-}
 
 /* Alto contraste - mantenido */
 @media (prefers-contrast: high) {
