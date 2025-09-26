@@ -1,15 +1,13 @@
 // src/api/axios.js
 import axios from "axios";
-import { auth } from "../auth/authService"; // helper de sesión
+import { auth } from "../auth/authService";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000/BACKEND/api/",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: import.meta.env.VITE_API_URL_PROTECTED ?? "http://localhost:8000/BACKEND/api/",
+  headers: { "Content-Type": "application/json" },
 });
 
-// ---------- Interceptor de REQUEST: token + rol ----------
+// REQUEST (token + rol)
 api.interceptors.request.use(
   (config) => {
     try {
@@ -30,25 +28,26 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ---------- Interceptor de RESPONSE ----------
+// RESPONSE
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error?.response?.status;
     const url = error?.config?.url || "";
 
-    // Mantienes la lógica: si carrito devuelve 403, responder vacío
-    if (status === 403 && url.includes("carrito")) {
+    // SOLO para GET de carrito (evita comerte 403 en POST/PUT)
+    if (
+      status === 403 &&
+      url.includes("carrito") &&
+      (error?.config?.method || "").toLowerCase() === "get"
+    ) {
       return Promise.resolve({ data: { results: [], count: 0 } });
     }
 
-    // Sin guest: si 401, limpiar sesión y propagar error
     if (status === 401) {
       try {
         auth.limpiarSesion?.();
-      } catch {error}
-      // Opcional: podrías redirigir a /login aquí si usas react-router
-      // window.location.href = "/login";
+      } catch (e) {}
     }
 
     return Promise.reject(error);

@@ -1,46 +1,31 @@
 // src/api/Producto.api.js
-import { api } from "./axios";              // cliente protegido (/BACKEND/api/…)
-import { publicApi } from "./publicClient"; // cliente público   (/BACKEND/…)
-import { auth } from "../auth/authService";
+import { clientForResource } from "./clientSelector";
 
-// ───────────── Helpers de rol/token (sin selector) ─────────────
-const getRol = () => (auth.obtenerRol?.() || "").toLowerCase();
-const hasToken = () => {
-  const t = auth.obtenerToken?.();
-  return !!(t && t.trim() !== "");
-};
+// helpers de cliente (lecturas pueden ir públicas; escrituras protegidas)
+const cProdRead  = () => clientForResource("producto").client;
+const cProdWrite = () => clientForResource("producto", { force: "protected" }).client;
+const cUser      = () => clientForResource("usuario",  { force: "protected" }).client;
 
-// Lecturas: público si no hay token o rol invitado/viewer; si hay token (admin/cliente/moderador) → protegido
-const readClient = () => {
-  const rol = getRol();
-  const logged = hasToken();
-  const publicRoles = new Set(["", "invitado", "viewer", "guest", null, undefined]);
-  return logged && !publicRoles.has(rol) ? api : publicApi;
-};
-
-// Escrituras: SIEMPRE protegido
-const writeClient = () => api;
-
-// ───────────────── Usuarios (router 'usuario' singular) ─────────────────
-export const getUsuarios = () => api.get("usuario/");
-export const updateUsuario = (id, payload) => api.put(`usuario/${id}/`, payload);
+// Usuarios (si aplica en este módulo) — router 'usuario' (singular)
+export const getUsuarios = () => cUser().get("usuario/");
+export const updateUsuario = (id, payload) => cUser().put(`usuario/${id}/`, payload);
 
 /* ----------------------------- PRODUCTOS ----------------------------- */
 
-// Obtener todos los productos (lectura: público/protegido según rol/token)
+// Obtener todos los productos (PÚBLICO si no hay token; protegido si hay token)
 export const getALLProductos = async () => {
   try {
-    const response = await readClient().get("producto/");
+    const response = await cProdRead().get("producto/");
     return response;
   } catch (error) {
     handleProductoError(error);
   }
 };
 
-// Crear un nuevo producto (protegido)
+// Crear un nuevo producto (PROTEGIDO)
 export const createProducto = async (formData) => {
   try {
-    return await writeClient().post("producto/", formData, {
+    return await cProdWrite().post("producto/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   } catch (error) {
@@ -50,32 +35,28 @@ export const createProducto = async (formData) => {
   }
 };
 
-// Eliminar un producto por ID (protegido)
+// Eliminar un producto por ID (PROTEGIDO)
 export const deleteProducto = async (id) => {
   try {
-    return await writeClient().delete(`producto/${id}/`);
+    return await cProdWrite().delete(`producto/${id}/`);
   } catch (error) {
     console.error("Error en deleteProducto:", error);
     handleProductoError(error);
   }
 };
 
-// Actualizar un producto por ID (protegido)
+// Actualizar un producto por ID (PROTEGIDO)
 export const updateProducto = async (id, producto) => {
   try {
-    let formData;
-    if (producto instanceof FormData) {
-      formData = producto;
-    } else {
-      formData = new FormData();
+    let formData = producto instanceof FormData ? producto : new FormData();
+    if (!(producto instanceof FormData)) {
       for (const key in producto) {
         if (producto[key] !== undefined && producto[key] !== null) {
           formData.append(key, producto[key]);
         }
       }
     }
-
-    return await writeClient().put(`producto/${id}/`, formData, {
+    return await cProdWrite().put(`producto/${id}/`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   } catch (error) {
@@ -87,10 +68,12 @@ export const updateProducto = async (id, producto) => {
 
 /* ----------------------------- CATEGORÍAS ----------------------------- */
 
-// Obtener todas las categorías (lectura: público/protegido según rol/token)
+const cCategoriaRead = () => clientForResource("categoria").client;
+
+// Obtener todas las categorías (público si no hay token)
 export const getCategorias = async () => {
   try {
-    return await readClient().get("categoria/");
+    return await cCategoriaRead().get("categoria/");
   } catch (error) {
     console.error("Error al obtener categorías:", error);
     throw error;
@@ -99,10 +82,12 @@ export const getCategorias = async () => {
 
 /* ----------------------------- SUBCATEGORÍAS ----------------------------- */
 
-// Obtener subcategorías por ID de categoría (lectura: público/protegido según rol/token)
+const cSubcatRead = () => clientForResource("subcategoria").client;
+
+// Obtener subcategorías por ID de categoría (público si no hay token)
 export const getSubcategoriasPorCategoria = async (idCategoria) => {
   try {
-    return await readClient().get("subcategoria/", {
+    return await cSubcatRead().get("subcategoria/", {
       params: { categoria: idCategoria },
     });
   } catch (error) {

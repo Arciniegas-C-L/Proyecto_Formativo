@@ -1,9 +1,12 @@
+// src/components/Catalogo/ProductoCard.jsx
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import {
-  agregarProducto,
-  fetchCarritos,
-  createCarrito,
+  agregarProducto,        // protegido → /BACKEND/api/...
+  agregarProductoAnon,    // público   → /BACKEND/...
+  fetchCarritos,          // protegido
+  createCarrito,          // protegido
+  createCarritoAnon,      // público
 } from "../../api/CarritoApi";
 import { useAuth } from "../../context/AuthContext";
 import "../../assets/css/Catalogo/ProductoCard.css";
@@ -19,157 +22,152 @@ export default function ProductoCard({
   const [agregando, setAgregando] = useState(false);
   const { usuario } = useAuth();
 
-  // Validar que el producto tenga todos los datos necesarios
+  // Validar datos mínimos del producto
   if (!producto || !producto.nombre || !producto.imagen) {
     console.warn("Producto con datos incompletos:", producto);
-    return null; // No renderizar si faltan datos esenciales
+    return null;
   }
 
   const aumentarCantidad = () => {
     if (tallaSeleccionada) {
       const stock = tallaSeleccionada.stock || 0;
-      if (cantidad < stock) {
-        const nuevaCantidad = cantidad + 1;
-        console.log('Aumentando cantidad de', cantidad, 'a', nuevaCantidad);
-        setCantidad(nuevaCantidad);
-      }
+      if (cantidad < stock) setCantidad(cantidad + 1);
     } else {
-      const nuevaCantidad = cantidad + 1;
-      console.log('Aumentando cantidad (sin talla) de', cantidad, 'a', nuevaCantidad);
-      setCantidad(nuevaCantidad);
+      setCantidad(cantidad + 1);
     }
   };
 
   const disminuirCantidad = () => {
-    if (cantidad > 0) {
-      const nuevaCantidad = cantidad - 1;
-      console.log('Disminuyendo cantidad de', cantidad, 'a', nuevaCantidad);
-      setCantidad(nuevaCantidad);
-    }
+    if (cantidad > 0) setCantidad(cantidad - 1);
   };
 
-  const mostrarStock = (productoId, idTalla, stock, inventarioCompleto) => {
+  const mostrarStock = (_productoId, _idTalla, _stock, inventarioCompleto) => {
     setTallaSeleccionada(inventarioCompleto);
     setCantidad(0);
   };
 
-  const agregarAlCarrito = async () => {
-    // AGREGAR DEBUG LOGGING
-    console.log('=== INICIO agregarAlCarrito ===');
-    console.log('Usuario:', usuario?.idUsuario);
-    console.log('Producto ID:', producto.id);
-    console.log('Cantidad seleccionada:', cantidad);
-    console.log('Talla seleccionada:', tallaSeleccionada);
-    console.log('Estado agregando:', agregando);
+  // Obtiene o crea un carrito; soporta usuario autenticado y anónimo
+  const obtenerOCrearCarrito = async () => {
+    // ——— Autenticado: usa endpoints protegidos
+    if (usuario?.idUsuario) {
+      const carritosResponse = await fetchCarritos();
+      const data = carritosResponse?.data;
+      const rows = Array.isArray(data) ? data : (data?.results ?? []);
+      const carritosActivos = rows.filter((c) => c.estado === true);
 
-    if (!usuario) {
-      toast.error("Debes iniciar sesión para agregar productos al carrito");
-      return;
+      if (carritosActivos.length > 0) {
+        return carritosActivos[0]; // ya hay carrito activo
+      }
+
+      // Crear nuevo carrito ligado al usuario
+      const nuevoCarritoResponse = await createCarrito({
+        usuario: usuario.idUsuario,
+        estado: true,
+      });
+      return nuevoCarritoResponse.data;
     }
 
+    // ——— Anónimo: usa localStorage + endpoints públicos
+    let cartId = localStorage.getItem("cartId");
+    if (cartId) {
+      return { idCarrito: cartId, estado: true };
+    }
+
+    // Crear carrito anónimo (sin usuario) en router público
+    const nuevoCarritoAnon = await createCarritoAnon({ estado: true });
+    const nuevoId =
+      nuevoCarritoAnon?.data?.idCarrito ??
+      nuevoCarritoAnon?.data?.id ??
+      null;
+
+    if (nuevoId) {
+      localStorage.setItem("cartId", String(nuevoId));
+      // normaliza forma esperada
+      return { ...(nuevoCarritoAnon.data || {}), idCarrito: nuevoId, estado: true };
+    }
+
+    throw new Error("No fue posible crear el carrito anónimo");
+  };
+
+  // Agregar con reintento si 404 (carrito expirado/no existe)
+  const agregarConRetrySi404 = async (carritoId, datos) => {
+    // Elige endpoint según si hay usuario
+    const addFn = usuario?.idUsuario ? agregarProducto : agregarProductoAnon;
+
+    try {
+      return await addFn(carritoId, datos);
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        console.warn("Carrito no encontrado. Se creará uno nuevo y se reintentará.");
+        localStorage.removeItem("cartId");
+        const nuevoCarrito = await obtenerOCrearCarrito();
+        return await addFn(nuevoCarrito.idCarrito, datos);
+      }
+      throw err;
+    }
+  };
+
+  const agregarAlCarrito = async () => {
     if (!tallaSeleccionada) {
       toast.error("Debes seleccionar una talla");
       return;
     }
-
     if (cantidad <= 0) {
       toast.error("Debes seleccionar al menos una unidad");
       return;
     }
-
-    if (cantidad > tallaSeleccionada.stock) {
+    if (cantidad > (tallaSeleccionada?.stock || 0)) {
       toast.error("La cantidad excede el stock disponible");
       return;
     }
-
-    // PREVENIR MÚLTIPLES EJECUCIONES
-    if (agregando) {
-      console.log('Ya está agregando, saliendo...');
-      return;
-    }
+    if (agregando) return;
 
     try {
-      console.log('Iniciando proceso de agregar...');
       setAgregando(true);
 
-      // Obtener o crear carrito
-      let carrito = null;
+      // 1) Obtener/crear carrito (auth o anónimo)
+      let carrito;
       try {
-        console.log('Obteniendo carritos...');
-        const carritosResponse = await fetchCarritos();
-        console.log('Carritos obtenidos:', carritosResponse.data);
-        
-        const carritosActivos = carritosResponse.data.filter(
-          (c) => c.estado === true
-        );
-
-        if (carritosActivos.length > 0) {
-          carrito = carritosActivos[0];
-          console.log('Carrito activo encontrado:', carrito.idCarrito);
-        } else {
-          // Crear nuevo carrito si no existe uno activo
-          console.log('Creando nuevo carrito...');
-          const nuevoCarritoResponse = await createCarrito({
-            usuario: usuario.idUsuario,
-            estado: true,
-          });
-          carrito = nuevoCarritoResponse.data;
-          console.log('Nuevo carrito creado:', carrito.idCarrito);
-        }
+        carrito = await obtenerOCrearCarrito();
       } catch (error) {
         console.error("Error al obtener/crear carrito:", error);
         toast.error("Error al acceder al carrito");
         return;
       }
 
-      // Preparar datos para enviar
+      // 2) Datos para agregar
       const datosParaEnviar = {
         producto: producto.id,
-        cantidad: parseInt(cantidad),
+        cantidad: parseInt(cantidad, 10),
         talla: tallaSeleccionada.idTalla,
       };
 
-      console.log('Datos a enviar:', datosParaEnviar);
-      console.log('ID del carrito:', carrito.idCarrito);
+      // 3) Agregar usando endpoint correcto (según auth)
+      const response = await agregarConRetrySi404(carrito.idCarrito, datosParaEnviar);
 
-      // Agregar producto al carrito
-      console.log('Llamando a agregarProducto...');
-      const response = await agregarProducto(carrito.idCarrito, datosParaEnviar);
-      
-      console.log('Respuesta de agregarProducto:', response);
-
-      if (response.data) {
-        console.log('Producto agregado exitosamente');
-        toast.success(`${cantidad} ${producto.nombre} agregado al carrito`);
-        setCantidad(0);
-        setTallaSeleccionada(null);
-
-        // Disparar evento personalizado para actualizar el header
-        window.dispatchEvent(new CustomEvent("carritoActualizado"));
-
-        // Notificar al componente padre que se agregó un producto
-        if (onProductoAgregado) {
-          console.log('Llamando a onProductoAgregado...');
-          onProductoAgregado();
-        }
+      // 4) Si soy anónimo, persistir id por si el backend devolvió otro
+      if (!usuario?.idUsuario) {
+        const idPersistente =
+          response?.data?.idCarrito ??
+          response?.data?.id ??
+          carrito.idCarrito;
+        if (idPersistente) localStorage.setItem("cartId", String(idPersistente));
       }
+
+      toast.success(`${cantidad} ${producto.nombre} agregado al carrito`);
+      setCantidad(0);
+      setTallaSeleccionada(null);
+
+      // Actualizar header/notificadores
+      window.dispatchEvent(new CustomEvent("carritoActualizado"));
+      if (onProductoAgregado) onProductoAgregado();
     } catch (error) {
       console.error("Error completo al agregar al carrito:", error);
-      
-      // Log detallado de la respuesta del servidor
-      if (error.response) {
-        console.error("Respuesta del servidor:", error.response.data);
-        console.error("Status:", error.response.status);
-        console.error("Headers:", error.response.headers);
-      }
-      
       let mensajeError = "Error al agregar al carrito";
-
-      if (error.response) {
+      if (error?.response) {
         switch (error.response.status) {
           case 400:
-            mensajeError = error.response.data.error || "Datos inválidos";
-            console.error("Mensaje específico del servidor:", error.response.data);
+            mensajeError = error.response.data?.error || "Datos inválidos";
             break;
           case 404:
             mensajeError = "Producto o carrito no encontrado";
@@ -181,12 +179,9 @@ export default function ProductoCard({
             mensajeError = "Error al agregar al carrito";
         }
       }
-
       toast.error(mensajeError);
     } finally {
-      console.log('Finalizando proceso de agregar...');
       setAgregando(false);
-      console.log('=== FIN agregarAlCarrito ===');
     }
   };
 
@@ -245,7 +240,7 @@ export default function ProductoCard({
             </div>
           )}
 
-        {/* Cantidad solo se muestra si hay talla seleccionada */}
+        {/* Cantidad solo si hay talla seleccionada */}
         {tallaSeleccionada && (
           <div className="quantity-controls">
             <div className="quantity-selector">

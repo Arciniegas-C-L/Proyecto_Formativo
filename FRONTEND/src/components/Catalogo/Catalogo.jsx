@@ -174,6 +174,10 @@ export function Catalogo() {
 
   const tallasDisponibles = obtenerTallasDisponibles();
 
+  // --- CAMBIO MINIMO: permitir anónimo y 'invitado' ---
+  const rol = authState?.rol?.toLowerCase?.() ?? "";
+  const puedeAgregar = !rol || rol === "cliente" || rol === "invitado";
+
   return (
     <div className="catalogo-container container-fluid py-4">
       <div className="catalogo-main-content">
@@ -231,7 +235,8 @@ export function Catalogo() {
                 key={producto.id}
                 producto={producto}
                 capitalizar={capitalizar}
-                mostrarAgregarCarrito={authState?.rol === "cliente"}
+                // aquí está el ajuste para permitir anónimo/invitado
+                mostrarAgregarCarrito={puedeAgregar}
               />
             ))
           )}

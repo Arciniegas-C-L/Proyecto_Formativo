@@ -1,43 +1,84 @@
+// src/api/TallaApi.js
+import { api } from "./axios";              // PROTEGIDO → /BACKEND/api/...
+import { publicApi } from "./publicClient"; // PÚBLICO   → /BACKEND/...
+import { auth } from "../auth/authService";
 
-import { api } from './axios';
+/* ---------------- Helpers de selección ---------------- */
 
-// Usuarios (si aplica en este módulo)
-export const getUsuarios = () => api.get('usuarios/');
-export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
+// Para lecturas (endpoints públicos disponibles): usa público por defecto.
+// Si hay token y es admin/empleado, igual puedes usar público; pero si prefieres
+// forzar protegido para panel interno, cambia el retorno a `api`.
+function clientForRead() {
+  const token = auth.obtenerToken?.();
+  const rol   = auth.obtenerRol?.();
+  // puedes forzar protegido para staff si lo prefieres:
+  // return token && (rol === "admin" || rol === "empleado") ? api : publicApi;
+  return publicApi;
+}
+
+// Para escrituras/acciones protegidas con control de rol en front
+function clientForWrite(rolesPermitidos = ["admin", "empleado"]) {
+  const token = auth.obtenerToken?.();
+  const rol   = auth.obtenerRol?.();
+
+  if (!token) {
+    const err = new Error("NO_AUTORIZADO");
+    err.status = 401;
+    err.detail = "Debe iniciar sesión";
+    throw err;
+  }
+  if (rolesPermitidos.length > 0 && (!rol || !rolesPermitidos.includes(rol))) {
+    const err = new Error("NO_PERMISOS");
+    err.status = 403;
+    err.detail = "No tiene permisos para realizar esta acción";
+    throw err;
+  }
+  return api;
+}
+
+/* ---------------- Usuarios (protegido) ---------------- */
+// (corrijo el endpoint a singular 'usuario/')
+export const getUsuarios     = () => clientForWrite(["admin", "empleado"]).get("usuario/");
+export const updateUsuario   = (id, payload) =>
+  clientForWrite(["admin"]).put(`usuario/${id}/`, payload);
 
 /* =================== FUNCIONES PARA LA API DE TALLA =================== */
+/* ------ LECTURAS → públicas (sin token). Escrituras → protegidas ------ */
 
-// Obtener todas las tallas
-export const getAllTallas = () => api.get('talla/');
+// Obtener todas las tallas (PÚBLICO)
+export const getAllTallas = () => clientForRead().get("talla/");
 
-// Obtener una talla específica por su ID
-export const getTallaById = (id) => api.get(`talla/${id}/`);
+// Obtener una talla específica por su ID (PÚBLICO)
+export const getTallaById = (id) => clientForRead().get(`talla/${id}/`);
 
-// Crear una nueva talla
-export const createTalla = (data) => api.post('talla/', data);
+// Crear una nueva talla (PROTEGIDO)
+export const createTalla = (data) => clientForWrite().post("talla/", data);
 
-// Actualizar una talla existente por su ID
-export const updateTalla = (id, data) => api.put(`talla/${id}/`, data);
+// Actualizar una talla existente por su ID (PROTEGIDO)
+export const updateTalla = (id, data) => clientForWrite().put(`talla/${id}/`, data);
 
-// Eliminar una talla por su ID
-export const deleteTalla = (id) => api.delete(`talla/${id}/`);
+// Eliminar una talla por su ID (PROTEGIDO)
+export const deleteTalla = (id) => clientForWrite().delete(`talla/${id}/`);
 
-// Cambiar el estado (activo/inactivo) de una talla
+// Cambiar el estado (activo/inactivo) de una talla (PROTEGIDO)
 export const cambiarEstadoTalla = (id, estado) =>
-  api.patch(`talla/${id}/cambiar_estado/`, { estado });
+  clientForWrite().patch(`talla/${id}/cambiar_estado/`, { estado });
 
-// Obtener todas las tallas que pertenecen a un grupo específico
-export const getTallasByGrupo = (grupoId) => api.get(`talla/?grupo=${grupoId}`);
+// Obtener todas las tallas que pertenecen a un grupo específico (PÚBLICO)
+export const getTallasByGrupo = (grupoId) =>
+  clientForRead().get(`talla/`, { params: { grupo: grupoId } });
 
-// Obtener solo las tallas que están activas
-export const getTallasActivas = () => api.get('talla/?estado=true');
+// Obtener solo las tallas que están activas (PÚBLICO)
+export const getTallasActivas = () =>
+  clientForRead().get("talla/", { params: { estado: true } });
 
-// Agregar una talla nueva a todos los productos existentes que usen el mismo grupo de tallas
+// Agregar una talla nueva a todos los productos existentes que usen el mismo grupo (PROTEGIDO)
 export const agregarTallaAProductosExistentes = async (tallaId) => {
   try {
-    const res = await api.post('talla/agregar_talla_a_productos_existentes/', {
-      talla_id: tallaId
-    });
+    const res = await clientForWrite().post(
+      "talla/agregar_talla_a_productos_existentes/",
+      { talla_id: tallaId }
+    );
     return res.data;
   } catch (error) {
     console.error("Error al agregar talla a productos existentes:", error);
