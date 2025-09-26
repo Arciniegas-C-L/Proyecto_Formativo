@@ -1,21 +1,21 @@
 // src/api/Producto.api.js
 import { api } from "./axios";              // PROTEGIDO → /BACKEND/api/...
 import { publicApi } from "./publicClient"; // PÚBLICO   → /BACKEND/...
-import { auth } from "../auth/authService"; // ← para decidir según token/rol
+import { auth } from "../auth/authService"; // para decidir según token/rol
 
-// Helpers de selección (no cambian firmas públicas)
+// ===== Helpers de selección (no cambian firmas públicas) =====
 const hasToken = () => {
   const t = auth.obtenerToken?.();
   return !!(t && String(t).trim() !== "");
 };
-const getRol = () => auth.obtenerRol?.() || null;
-const isPublicRole = () => !hasToken() || ["Invitado", "guest"].includes(getRol());
+const getRol = () => (auth.obtenerRol?.() ?? "").toString().toLowerCase();
+const isPublicRole = () => !hasToken() || ["invitado", "viewer", "guest", ""].includes(getRol());
 
-// Lecturas de catálogo (producto/categoría/subcategoría) → público si invitado, protegido si autenticado
+// Lecturas de catálogo → público si invitado, protegido si autenticado
 const clientCatalogRead = () => (isPublicRole() ? publicApi : api);
 const clientTaxonomyRead = () => (isPublicRole() ? publicApi : api);
 
-// Usuarios (si aplica en este módulo) — router es 'usuario' (singular)
+// ===== Usuarios (si aplica en este módulo) — router 'usuario' (singular) =====
 export const getUsuarios = () => api.get("usuario/");
 export const updateUsuario = (id, payload) => api.put(`usuario/${id}/`, payload);
 
@@ -25,7 +25,7 @@ export const updateUsuario = (id, payload) => api.put(`usuario/${id}/`, payload)
 export const getALLProductos = async () => {
   try {
     const response = await clientCatalogRead().get("producto/");
-    return response; // ← respetamos tu firma original (devuelve el AxiosResponse)
+    return response; // Conserva tu firma: devuelve AxiosResponse
   } catch (error) {
     handleProductoError(error);
   }
@@ -91,12 +91,6 @@ export const getCategorias = async () => {
   }
 };
 
-export const listarItemsDePedido = (pedidoId, params = {}) => {
-  return api.get("pedidoproductos/", {
-    params: { pedido: pedidoId, ...params },
-  });
-};
-
 /* ----------------------------- SUBCATEGORÍAS ----------------------------- */
 
 // Obtener subcategorías por ID de categoría (dinámico)
@@ -111,15 +105,20 @@ export const getSubcategoriasPorCategoria = async (idCategoria) => {
   }
 };
 
-/* ----------------------------- MANEJO DE ERRORES ----------------------------- */
+/* ----------------------------- PEDIDO ITEMS ----------------------------- */
+/* OJO: Si mantienes esta función aquí, cambia el import en MisPedidos.jsx a:
+   import { listarItemsDePedido } from "../../api/Producto.api.js";
+   Si prefieres dejar el import antiguo, usa la opción B de abajo y borra esta función de aquí. */
+export const listarItemsDePedido = (pedidoId, params = {}) => {
+  return api.get("pedidoproductos/", { params: { pedido: pedidoId, ...params } });
+};
 
+/* ----------------------------- MANEJO DE ERRORES ----------------------------- */
 function handleProductoError(error) {
   if (error?.response) {
     const status = error.response.status;
     if (status === 404) {
-      throw new Error(
-        "El producto no fue encontrado (revisa la baseURL y si este endpoint es público o protegido)"
-      );
+      throw new Error("El recurso no fue encontrado (revisa baseURL y si el endpoint es público o protegido)");
     }
     if (status === 500) {
       throw new Error("Error interno del servidor. Por favor, intente más tarde");

@@ -1,3 +1,4 @@
+// src/components/Carrito/Carrito.jsx
 import ProductoCard from '../Catalogo/ProductoCard';
 import { useAuth } from '../../context/AuthContext';
 import React, { useState, useEffect } from 'react';
@@ -7,6 +8,7 @@ import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaEye, FaMapMarkerAlt, FaPhon
 
 import {
   fetchCarritos,
+  getCarrito,            // <<<<<<<<<<<<<< NUEVO
   actualizarCantidad,
   eliminarProducto,
   limpiarCarrito,
@@ -70,6 +72,11 @@ export function Carrito() {
   useEffect(() => {
     cargarCarrito();
     cargarProductosRecomendados();
+
+    // refrescar cuando el catálogo agregue algo
+    const onCarritoActualizado = () => cargarCarrito();
+    window.addEventListener("carritoActualizado", onCarritoActualizado);
+    return () => window.removeEventListener("carritoActualizado", onCarritoActualizado);
   }, []);
 
   // Normaliza response.data (array | {results: []} | objeto)
@@ -78,8 +85,36 @@ export function Carrito() {
       setLoading(true);
       setError(null);
 
-      const response = await fetchCarritos();
-      const data = response?.data;
+      let data;
+
+      if (!autenticado) {
+        // Anónimo → usar SIEMPRE el id guardado en localStorage
+        const lsId = localStorage.getItem("cartId");
+        if (!lsId) {
+          setCarrito(null);
+          setItems([]);
+          setLoading(false);
+          return;
+        }
+        try {
+          const resp = await getCarrito(lsId);
+          data = resp?.data;
+        } catch (e) {
+          if (e?.response?.status === 404) {
+            // El carrito ya no existe en backend
+            localStorage.removeItem("cartId");
+            setCarrito(null);
+            setItems([]);
+            setLoading(false);
+            return;
+          }
+          throw e;
+        }
+      } else {
+        // Autenticado → la lista ya viene filtrada por user en backend
+        const response = await fetchCarritos();
+        data = response?.data;
+      }
 
       const carritos = Array.isArray(data)
         ? data
@@ -205,85 +240,82 @@ export function Carrito() {
   };
 
   // Crear preferencia y redirigir (SOLO email + direccion)
-const handlePagar = async () => {
-  try {
-    if (!carrito || items.length === 0) {
-      toast.error("Tu carrito está vacío");
-      return;
+  const handlePagar = async () => {
+    try {
+      if (!carrito || items.length === 0) {
+        toast.error("Tu carrito está vacío");
+        return;
+      }
+      if (!mpLoaded || !window.MercadoPago) {
+        toast.error("SDK de Mercado Pago no está disponible");
+        return;
+      }
+      if (!autenticado) {
+        setShowLoginModal(true);
+        setTimeout(() => {
+          setShowLoginModal(false);
+          navigate("/sesion");
+        }, 5000);
+        return;
+      }
+      if (!validar()) {
+        toast.error("Revisa teléfono y dirección");
+        return;
+      }
+
+      setCreatingPreference(true);
+
+      // Respetar max_length=255 en tu modelo
+      const direccionTrimmed = direccion.trim().slice(0, 255);
+
+      const payload = {
+        email: usuario?.correo || usuario?.email,
+        direccion: direccionTrimmed,
+      };
+
+      const { data } = await crearPreferenciaPago(carrito.idCarrito, payload);
+
+      if (!data?.init_point) {
+        toast.error("Registrese o iniccie seccion para completar pago");
+        return;
+      }
+
+      window.location.href = data.init_point;
+    } catch (err) {
+      console.error("Error al crear preferencia:", err);
+
+      if (err?.response?.status === 403) {
+        toast.error("No se puede ordenar hasta iniciar sesión", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+
+        setShowLoginModal(true);
+        setTimeout(() => {
+          setShowLoginModal(false);
+          navigate("/sesion");
+        }, 3000);
+
+        return;
+      }
+
+      const detalle = err?.response?.data?.detalle;
+      const msg =
+        detalle?.message ||
+        detalle?.error ||
+        detalle?.cause?.[0]?.description ||
+        err?.response?.data?.error ||
+        "Error al iniciar el pago";
+      toast.error(msg);
+    } finally {
+      setCreatingPreference(false);
     }
-    if (!mpLoaded || !window.MercadoPago) {
-      toast.error("SDK de Mercado Pago no está disponible");
-      return;
-    }
-    if (!autenticado) {
-      setShowLoginModal(true);
-      setTimeout(() => {
-        setShowLoginModal(false);
-        navigate("/sesion");
-      }, 5000);
-      return;
-    }
-    if (!validar()) {
-      toast.error("Revisa teléfono y dirección");
-      return;
-    }
+  };
 
-    setCreatingPreference(true);
-
-    // Respetar max_length=255 en tu modelo
-    const direccionTrimmed = direccion.trim().slice(0, 255);
-
-    const payload = {
-      email: usuario?.correo || usuario?.email,
-      direccion: direccionTrimmed,
-      // (el teléfono NO va a la tabla Direccion; lo usas solo para contacto/notificación)
-    };
-
-    const { data } = await crearPreferenciaPago(carrito.idCarrito, payload);
-
-    if (!data?.init_point) {
-      toast.error("Registrese o iniccie seccion para completar pago");
-      return;
-    }
-
-    window.location.href = data.init_point;
-  } catch (err) {
-  console.error("Error al crear preferencia:", err);
-
-  // Si el backend devuelve 403 mostramos este mensaje y redirigimos
-  if (err?.response?.status === 403) {
-    toast.error("No se puede ordenar hasta iniciar sesión", {
-      position: "top-right",
-      autoClose: 3000,
-    });
-
-    setShowLoginModal(true);
-    setTimeout(() => {
-      setShowLoginModal(false);
-      navigate("/sesion");
-    }, 3000);
-
-    return; // Evitamos seguir con el resto de errores
-  }
-
-  // Si no es 403 usamos el mensaje genérico
-  const detalle = err?.response?.data?.detalle;
-  const msg =
-    detalle?.message ||
-    detalle?.error ||
-    detalle?.cause?.[0]?.description ||
-    err?.response?.data?.error ||
-    "Error al iniciar el pago";
-  toast.error(msg);
-  } finally {
-    setCreatingPreference(false);
-  }
-};
-
-// Método que llama a handlePagar
-const handleFinalizarCompra = async () => {
-  await handlePagar();
-};
+  // Método que llama a handlePagar
+  const handleFinalizarCompra = async () => {
+    await handlePagar();
+  };
 
   const calcularTotal = () => {
     const total = items.reduce((acc, item) => acc + (parseFloat(item.subtotal) || 0), 0);

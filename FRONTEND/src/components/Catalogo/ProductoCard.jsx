@@ -2,27 +2,20 @@
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import {
-  agregarProducto,        // protegido → /BACKEND/api/...
-  agregarProductoAnon,    // público   → /BACKEND/...
-  fetchCarritos,          // protegido
-  createCarrito,          // protegido
-  createCarritoAnon,      // público
+  agregarProducto,
+  fetchCarritos,
+  createCarrito,
 } from "../../api/CarritoApi";
 import { useAuth } from "../../context/AuthContext";
 import "../../assets/css/Catalogo/ProductoCard.css";
 import TallasDisponibles from "./TallasDisponibles";
 
-export default function ProductoCard({
-  producto,
-  capitalizar,
-  onProductoAgregado,
-}) {
+export default function ProductoCard({ producto, capitalizar, onProductoAgregado }) {
   const [cantidad, setCantidad] = useState(0);
   const [tallaSeleccionada, setTallaSeleccionada] = useState(null);
   const [agregando, setAgregando] = useState(false);
   const { usuario } = useAuth();
 
-  // Validar datos mínimos del producto
   if (!producto || !producto.nombre || !producto.imagen) {
     console.warn("Producto con datos incompletos:", producto);
     return null;
@@ -46,20 +39,17 @@ export default function ProductoCard({
     setCantidad(0);
   };
 
-  // Obtiene o crea un carrito; soporta usuario autenticado y anónimo
+  // Obtiene o crea carrito (protegido si hay sesión; público si no)
   const obtenerOCrearCarrito = async () => {
-    // ——— Autenticado: usa endpoints protegidos
+    // autenticado
     if (usuario?.idUsuario) {
       const carritosResponse = await fetchCarritos();
-      const data = carritosResponse?.data;
-      const rows = Array.isArray(data) ? data : (data?.results ?? []);
-      const carritosActivos = rows.filter((c) => c.estado === true);
+      const rows = Array.isArray(carritosResponse?.data)
+        ? carritosResponse.data
+        : carritosResponse?.data?.results ?? [];
+      const carritosActivos = rows.filter((c) => c.estado === true || c.estado === "activo");
+      if (carritosActivos.length > 0) return carritosActivos[0];
 
-      if (carritosActivos.length > 0) {
-        return carritosActivos[0]; // ya hay carrito activo
-      }
-
-      // Crear nuevo carrito ligado al usuario
       const nuevoCarritoResponse = await createCarrito({
         usuario: usuario.idUsuario,
         estado: true,
@@ -67,119 +57,79 @@ export default function ProductoCard({
       return nuevoCarritoResponse.data;
     }
 
-    // ——— Anónimo: usa localStorage + endpoints públicos
+    // anónimo
     let cartId = localStorage.getItem("cartId");
-    if (cartId) {
-      return { idCarrito: cartId, estado: true };
-    }
+    if (cartId) return { idCarrito: cartId, estado: true };
 
-    // Crear carrito anónimo (sin usuario) en router público
-    const nuevoCarritoAnon = await createCarritoAnon({ estado: true });
+    // `createCarrito` ya usa el cliente público cuando no hay token/rol
+    const nuevoCarrito = await createCarrito({ estado: true });
     const nuevoId =
-      nuevoCarritoAnon?.data?.idCarrito ??
-      nuevoCarritoAnon?.data?.id ??
+      nuevoCarrito?.data?.idCarrito ??
+      nuevoCarrito?.data?.id ??
+      nuevoCarrito?.data?.pk ??
       null;
 
     if (nuevoId) {
       localStorage.setItem("cartId", String(nuevoId));
-      // normaliza forma esperada
-      return { ...(nuevoCarritoAnon.data || {}), idCarrito: nuevoId, estado: true };
+      return { ...(nuevoCarrito.data || {}), idCarrito: nuevoId, estado: true };
     }
 
     throw new Error("No fue posible crear el carrito anónimo");
   };
 
-  // Agregar con reintento si 404 (carrito expirado/no existe)
+  // Agrega con retry si el carrito fue borrado (404)
   const agregarConRetrySi404 = async (carritoId, datos) => {
-    // Elige endpoint según si hay usuario
-    const addFn = usuario?.idUsuario ? agregarProducto : agregarProductoAnon;
-
     try {
-      return await addFn(carritoId, datos);
+      // `agregarProducto` ya decide público/protegido internamente
+      return await agregarProducto(carritoId, datos);
     } catch (err) {
       if (err?.response?.status === 404) {
-        console.warn("Carrito no encontrado. Se creará uno nuevo y se reintentará.");
         localStorage.removeItem("cartId");
-        const nuevoCarrito = await obtenerOCrearCarrito();
-        return await addFn(nuevoCarrito.idCarrito, datos);
+        const nuevo = await obtenerOCrearCarrito();
+        return await agregarProducto(nuevo.idCarrito, datos);
       }
       throw err;
     }
   };
 
   const agregarAlCarrito = async () => {
-    if (!tallaSeleccionada) {
-      toast.error("Debes seleccionar una talla");
-      return;
-    }
-    if (cantidad <= 0) {
-      toast.error("Debes seleccionar al menos una unidad");
-      return;
-    }
-    if (cantidad > (tallaSeleccionada?.stock || 0)) {
-      toast.error("La cantidad excede el stock disponible");
-      return;
-    }
+    if (!tallaSeleccionada) return toast.error("Debes seleccionar una talla");
+    if (cantidad <= 0)      return toast.error("Debes seleccionar al menos una unidad");
+    if (cantidad > (tallaSeleccionada?.stock || 0))
+      return toast.error("La cantidad excede el stock disponible");
     if (agregando) return;
 
     try {
       setAgregando(true);
+      const carrito = await obtenerOCrearCarrito();
 
-      // 1) Obtener/crear carrito (auth o anónimo)
-      let carrito;
-      try {
-        carrito = await obtenerOCrearCarrito();
-      } catch (error) {
-        console.error("Error al obtener/crear carrito:", error);
-        toast.error("Error al acceder al carrito");
-        return;
-      }
-
-      // 2) Datos para agregar
       const datosParaEnviar = {
         producto: producto.id,
         cantidad: parseInt(cantidad, 10),
         talla: tallaSeleccionada.idTalla,
       };
 
-      // 3) Agregar usando endpoint correcto (según auth)
       const response = await agregarConRetrySi404(carrito.idCarrito, datosParaEnviar);
 
-      // 4) Si soy anónimo, persistir id por si el backend devolvió otro
-      if (!usuario?.idUsuario) {
-        const idPersistente =
-          response?.data?.idCarrito ??
-          response?.data?.id ??
-          carrito.idCarrito;
-        if (idPersistente) localStorage.setItem("cartId", String(idPersistente));
+      // persiste id de carrito anónimo si backend lo devuelve diferente
+      if (response?.data && !usuario?.idUsuario) {
+        const persistId = response?.data?.idCarrito || carrito.idCarrito;
+        if (persistId) localStorage.setItem("cartId", String(persistId));
       }
 
       toast.success(`${cantidad} ${producto.nombre} agregado al carrito`);
       setCantidad(0);
       setTallaSeleccionada(null);
-
-      // Actualizar header/notificadores
       window.dispatchEvent(new CustomEvent("carritoActualizado"));
-      if (onProductoAgregado) onProductoAgregado();
+      onProductoAgregado?.();
     } catch (error) {
-      console.error("Error completo al agregar al carrito:", error);
-      let mensajeError = "Error al agregar al carrito";
-      if (error?.response) {
-        switch (error.response.status) {
-          case 400:
-            mensajeError = error.response.data?.error || "Datos inválidos";
-            break;
-          case 404:
-            mensajeError = "Producto o carrito no encontrado";
-            break;
-          case 409:
-            mensajeError = "El producto ya está en el carrito";
-            break;
-          default:
-            mensajeError = "Error al agregar al carrito";
-        }
-      }
-      toast.error(mensajeError);
+      let mensaje = "Error al agregar al carrito";
+      const st = error?.response?.status;
+      if (st === 400) mensaje = error.response?.data?.error || "Datos inválidos";
+      else if (st === 404) mensaje = "Producto o carrito no encontrado";
+      else if (st === 409) mensaje = "El producto ya está en el carrito";
+      toast.error(mensaje);
+      console.error("Agregar carrito error:", error);
     } finally {
       setAgregando(false);
     }
@@ -189,68 +139,43 @@ export default function ProductoCard({
     <div className="product-card">
       <div className="product-image-container">
         <img
-          src={
-            producto.imagen ||
-            "https://via.placeholder.com/250x350?text=Imagen+no+disponible"
-          }
+          src={producto.imagen || "https://via.placeholder.com/250x350?text=Imagen+no+disponible"}
           alt={producto.nombre || "Producto"}
           className="product-image"
           onError={(e) => {
-            e.target.onerror = null;
-            e.target.src =
-              "https://via.placeholder.com/250x350?text=Imagen+no+disponible";
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "https://via.placeholder.com/250x350?text=Imagen+no+disponible";
           }}
         />
       </div>
 
       <div className="product-info">
-        <h3 className="product-title">
-          {capitalizar(producto.nombre || "Sin nombre")}
-        </h3>
-
-        <p className="product-description">
-          {producto.descripcion || "Sin descripción"}
-        </p>
-
+        <h3 className="product-title">{capitalizar(producto.nombre || "Sin nombre")}</h3>
+        <p className="product-description">{producto.descripcion || "Sin descripción"}</p>
         <div className="product-category">
-          <span>
-            {capitalizar(producto.subcategoria_nombre || "Sin categoría")}
-          </span>
+          <span>{capitalizar(producto.subcategoria_nombre || "Sin categoría")}</span>
         </div>
-
         <div className="product-price">
           <span className="current-price">
-            $
-            {parseFloat(producto.precio || 0).toLocaleString("es-CO", {
-              maximumFractionDigits: 0,
-            })}
+            ${parseFloat(producto.precio || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 })}
           </span>
         </div>
 
-        {/* Tallas */}
-        {producto.inventario_tallas &&
-          producto.inventario_tallas.length > 0 && (
-            <div className="product-sizes">
-              <TallasDisponibles
-                productoId={producto.id}
-                inventarioTallas={producto.inventario_tallas}
-                tallaSeleccionada={tallaSeleccionada}
-                mostrarStock={mostrarStock}
-              />
-            </div>
-          )}
+        {producto.inventario_tallas?.length > 0 && (
+          <div className="product-sizes">
+            <TallasDisponibles
+              productoId={producto.id}
+              inventarioTallas={producto.inventario_tallas}
+              tallaSeleccionada={tallaSeleccionada}
+              mostrarStock={mostrarStock}
+            />
+          </div>
+        )}
 
-        {/* Cantidad solo si hay talla seleccionada */}
         {tallaSeleccionada && (
           <div className="quantity-controls">
             <div className="quantity-selector">
-              <button
-                onClick={disminuirCantidad}
-                className="quantity-btn"
-                disabled={cantidad <= 0}
-              >
-                −
-              </button>
+              <button onClick={disminuirCantidad} className="quantity-btn" disabled={cantidad <= 0}>−</button>
               <span className="quantity-display">{cantidad}</span>
               <button
                 onClick={aumentarCantidad}
@@ -260,7 +185,6 @@ export default function ProductoCard({
                 +
               </button>
             </div>
-
             <div className="stock-indicator">
               <small>Stock disponible: {tallaSeleccionada.stock || 0}</small>
             </div>
@@ -268,9 +192,7 @@ export default function ProductoCard({
         )}
 
         <button
-          className={`add-to-cart-btn ${
-            !tallaSeleccionada || cantidad <= 0 ? "disabled" : "active"
-          }`}
+          className={`add-to-cart-btn ${!tallaSeleccionada || cantidad <= 0 ? "disabled" : "active"}`}
           onClick={agregarAlCarrito}
           disabled={!tallaSeleccionada || cantidad <= 0 || agregando}
         >

@@ -585,43 +585,98 @@ class TipoPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoPago
         fields = ['idtipoPago', 'nombre', 'monto', 'pago']
+# serializers.py
 class CarritoItemSerializer(serializers.ModelSerializer):
-
-    producto = ProductoSerializer(read_only=True)  # Solo lectura para mostrar detalles del producto
-    producto_id = serializers.PrimaryKeyRelatedField(
-        queryset=Producto.objects.all(),
-        source='producto',
-        write_only=True
-    )
-    talla = TallaSerializer(read_only=True)
+    producto = ProductoSerializer(read_only=True)
+    talla    = TallaSerializer(read_only=True)
 
     class Meta:
-        model = CarritoItem
+        model  = CarritoItem
         fields = [
             'idCarritoItem',
             'producto',
-            'producto_id',
             'cantidad',
             'talla',
             'precio_unitario',
             'subtotal',
-            'fechaAgregado'
+            'fechaAgregado',
         ]
         read_only_fields = ['precio_unitario', 'subtotal', 'fechaAgregado']
 
-class EstadoCarritoSerializer(serializers.ModelSerializer):
+
+class CarritoItemCreateSerializer(serializers.ModelSerializer):
+    """Serializer SOLO para crear/actualizar items desde la acción agregar_producto."""
     class Meta:
-        model = EstadoCarrito
-        fields = ['idEstado', 'estado', 'fechaCambio', 'observacion']
-        read_only_fields = ['fechaCambio']
+        model  = CarritoItem
+        fields = ['carrito', 'producto', 'cantidad', 'talla']  # IDs (PK) simples
+
+    def validate(self, data):
+        cant   = int(data.get('cantidad') or 0)
+        if cant <= 0:
+            raise serializers.ValidationError({"cantidad": "La cantidad debe ser mayor a 0"})
+
+        producto = data['producto']
+        talla    = data.get('talla')
+
+        # Busca inventario (con o sin talla)
+        inv = (
+            Inventario.objects.filter(producto=producto, talla=talla).first()
+            if talla else
+            Inventario.objects.filter(producto=producto).first()
+        )
+
+        if not inv:
+            return data  # sin registro de inventario: no limitamos
+
+        # stock (prefiere stock_talla si existe)
+        stock = getattr(inv, 'stock_talla', None)
+        if stock is None:
+            stock = getattr(inv, 'cantidad', 0)
+        stock = int(stock or 0)
+
+        # cantidad total (si ya hay item igual en el carrito)
+        filtro = {'carrito': data['carrito'], 'producto': producto}
+        if talla:
+            filtro['talla'] = talla
+        existente = CarritoItem.objects.filter(**filtro).first()
+
+        total_solicitado = cant + (existente.cantidad if existente else 0)
+        if total_solicitado > stock:
+            raise serializers.ValidationError({
+                "cantidad": f"Stock insuficiente. Stock: {stock}, "
+                            f"en carrito: {existente.cantidad if existente else 0}, "
+                            f"solicitado ahora: {cant}"
+            })
+        return data
+
+    def create(self, v):
+        """Suma cantidad si existe; si no, crea y fija precio_unitario."""
+        filtro = {'carrito': v['carrito'], 'producto': v['producto']}
+        if v.get('talla'):
+            filtro['talla'] = v['talla']
+
+        item, creado = CarritoItem.objects.get_or_create(
+            defaults={
+                'cantidad': 0,
+                'precio_unitario': getattr(v['producto'], 'precio', 0),
+            },
+            **filtro
+        )
+        item.cantidad += int(v['cantidad'])
+        # Por si el default no se usó (ya existía sin precio):
+        if not item.precio_unitario:
+            item.precio_unitario = getattr(v['producto'], 'precio', 0)
+        item.save()
+        return item
+
 
 class CarritoSerializer(serializers.ModelSerializer):
-    items = serializers.SerializerMethodField()
-    estado_actual = serializers.SerializerMethodField()
-    total = serializers.SerializerMethodField()
+    items          = serializers.SerializerMethodField()
+    estado_actual  = serializers.SerializerMethodField()
+    total          = serializers.SerializerMethodField()
 
     class Meta:
-        model = Carrito
+        model  = Carrito
         fields = [
             'idCarrito',
             'usuario',
@@ -630,135 +685,58 @@ class CarritoSerializer(serializers.ModelSerializer):
             'estado',
             'items',
             'estado_actual',
-            'total'
+            'total',
         ]
         read_only_fields = ['fechaCreacion', 'fechaActualizacion']
 
     def get_items(self, obj):
-        items = obj.items.select_related('producto').all()
-        return CarritoItemSerializer(items, many=True).data
+        qs = obj.items.select_related('producto', 'talla').all()
+        return CarritoItemSerializer(qs, many=True).data
 
     def get_estado_actual(self, obj):
-        estado = obj.estadocarrito_set.first()
-        if estado:
-            return EstadoCarritoSerializer(estado).data
-        return None
+        est = obj.estadocarrito_set.first()
+        return EstadoCarritoSerializer(est).data if est else None
 
     def get_total(self, obj):
-        return obj.calcular_total()
+        # Usa el método del modelo si existe; si falla, calcula aquí
+        try:
+            return obj.calcular_total()
+        except Exception:
+            tot = Decimal('0')
+            for it in obj.items.all():
+                precio = it.precio_unitario or getattr(it.producto, 'precio', 0)
+                tot += Decimal(str(precio)) * Decimal(it.cantidad or 0)
+            return tot
+
+
+class EstadoCarritoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = EstadoCarrito
+        fields = ['idEstado', 'estado', 'fechaCambio', 'observacion']
+        read_only_fields = ['fechaCambio']
+
 
 class CarritoCreateSerializer(serializers.ModelSerializer):
+    idCarrito = serializers.IntegerField(read_only=True)
+
     class Meta:
-        model = Carrito
-        fields = ['usuario']  # El usuario es opcional
+        model  = Carrito
+        fields = ['idCarrito', 'usuario', 'estado']   # usuario opcional, estado opcional
 
     def create(self, validated_data):
+        if 'estado' not in validated_data:
+            validated_data['estado'] = True
         carrito = Carrito.objects.create(**validated_data)
-        # Crear el estado inicial del carrito
-        EstadoCarrito.objects.create(
-            carrito=carrito,
-            estado='activo',
-            observacion='Carrito creado'
-        )
+        EstadoCarrito.objects.create(carrito=carrito, estado='activo', observacion='Carrito creado')
         return carrito
 
-class CarritoItemCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CarritoItem
-        fields = ['carrito', 'producto', 'cantidad', 'talla']
-
-    def validate(self, data):
-        # Validar que la cantidad sea positiva
-        if data['cantidad'] <= 0:
-            raise serializers.ValidationError("La cantidad debe ser mayor a 0")
-        
-        # Validar que haya suficiente stock
-        producto = data['producto']
-        talla = data.get('talla')
-        
-        # Buscar inventario por producto y talla
-        if talla:
-            inventario = Inventario.objects.filter(producto=producto, talla=talla).first()
-        else:
-            inventario = Inventario.objects.filter(producto=producto).first()
-        
-        # Si no hay registro de inventario, asumimos que hay stock disponible
-        if not inventario:
-            return data
-            
-        # Si hay registro de inventario, validamos el stock
-        # Verificar si ya existe el producto en el carrito (con la misma talla si se especifica)
-        filtro_existente = {
-            'carrito': data['carrito'],
-            'producto': producto
-        }
-        
-        # Si se especifica talla, incluirla en el filtro
-        if talla:
-            filtro_existente['talla'] = talla
-        
-        carrito_item_existente = CarritoItem.objects.filter(**filtro_existente).first()
-        
-        cantidad_total = data['cantidad']
-        if carrito_item_existente:
-            cantidad_total += carrito_item_existente.cantidad
-            
-        # Usar stock_talla en lugar de cantidad
-        stock_disponible = inventario.stock_talla if hasattr(inventario, 'stock_talla') else inventario.cantidad
-        
-        if cantidad_total > stock_disponible:
-            raise serializers.ValidationError(
-                f"No hay suficiente stock disponible. Stock actual: {stock_disponible}, " +
-                f"Cantidad en carrito: {carrito_item_existente.cantidad if carrito_item_existente else 0}, " +
-                f"Cantidad solicitada: {data['cantidad']}"
-            )
-        
-        return data
-
-    def create(self, validated_data):
-        try:
-            # Intentar obtener el item existente (con la misma talla si se especifica)
-            filtro_existente = {
-                'carrito': validated_data['carrito'],
-                'producto': validated_data['producto']
-            }
-            
-            # Si se especifica talla, incluirla en el filtro
-            if validated_data.get('talla'):
-                filtro_existente['talla'] = validated_data['talla']
-            
-            carrito_item = CarritoItem.objects.filter(**filtro_existente).first()
-            
-            if carrito_item:
-                # Si existe, actualizar la cantidad
-                carrito_item.cantidad += validated_data['cantidad']
-                carrito_item.save()
-                return carrito_item
-            else:
-                # Si no existe, crear uno nuevo
-                return CarritoItem.objects.create(**validated_data)
-                
-        except Exception as e:
-            raise serializers.ValidationError(f"Error al agregar el producto al carrito: {str(e)}")
 
 class CarritoUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Carrito
-        fields = ['estado']
+    idCarrito = serializers.IntegerField(read_only=True)
 
-    def update(self, instance, validated_data):
-        # Actualizar el estado del carrito
-        instance.estado = validated_data.get('estado', instance.estado)
-        instance.save()
-        
-        # Crear un nuevo registro de estado
-        EstadoCarrito.objects.create(
-            carrito=instance,
-            estado='pendiente' if not instance.estado else 'activo',
-            observacion='Estado actualizado'
-        )
-        
-        return instance
+    class Meta:
+        model  = Carrito
+        fields = ['idCarrito', 'usuario', 'estado']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

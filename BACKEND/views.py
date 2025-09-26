@@ -1357,107 +1357,112 @@ class CarritoView(viewsets.ModelViewSet):
         elif self.action in ['update', 'partial_update']:
             return CarritoUpdateSerializer
         return CarritoSerializer
+    
+    def _get_stock_disponible(self, producto_id, talla_id=None):
+            from .models import Inventario
+            inv = (
+                Inventario.objects.filter(producto_id=producto_id, talla_id=talla_id).first()
+                if talla_id
+                else Inventario.objects.filter(producto_id=producto_id).first()
+            )
+            if not inv:
+                return None  # sin registro de inventario -> no limitamos
+            stock = getattr(inv, "stock_talla", None)
+            if stock is None:
+                stock = getattr(inv, "cantidad", 0)
+            try:
+                return int(stock or 0)
+            except Exception:
+                return 0
 
     @action(detail=True, methods=['post'])
     def agregar_producto(self, request, pk=None):
         """
-        Agrega un producto al carrito. Solo VALIDA stock; NO descuenta.
-        El descuento real se hace al facturar (FacturaCreateSerializer).
+        Agrega un producto al carrito. Valida stock y, si se pide más de lo disponible,
+        ajusta a lo máximo posible en lugar de devolver 400.
         """
         try:
             carrito = self.get_object()
+
             if 'producto' not in request.data:
                 return Response({"error": "El campo 'producto' es requerido"}, status=400)
             if 'cantidad' not in request.data:
                 return Response({"error": "El campo 'cantidad' es requerido"}, status=400)
 
-            producto_id = request.data.get('producto')
-            talla_id = request.data.get('talla')
-            cantidad = int(request.data.get('cantidad', 1))
+            producto_id = int(request.data.get('producto'))
+            talla_id    = request.data.get('talla')
+            cantidad_req = int(request.data.get('cantidad', 1))
 
-            from .models import Inventario, CarritoItem
+            from .models import CarritoItem
 
-            inventario = (
-                Inventario.objects.filter(producto_id=producto_id, talla_id=talla_id).first()
-                if talla_id else
-                Inventario.objects.filter(producto_id=producto_id).first()
-            )
-
+            # Item existente (misma talla si aplica)
             filtro_item = {'carrito': carrito, 'producto_id': producto_id}
             if talla_id:
                 filtro_item['talla_id'] = talla_id
             item_existente = CarritoItem.objects.filter(**filtro_item).first()
 
-            cantidad_total = cantidad + (item_existente.cantidad if item_existente else 0)
+            en_carrito = item_existente.cantidad if item_existente else 0
 
-            # Validar stock (NO modificar inventario aquí)
-            if inventario:
-                stock_disponible = getattr(inventario, 'stock_talla', inventario.cantidad)
-                if cantidad_total > stock_disponible:
+            # Stock disponible para esa combinación
+            stock_disponible = self._get_stock_disponible(producto_id, talla_id)
+            ajustada = False
+
+            if stock_disponible is not None:
+                restantes = max(0, stock_disponible - en_carrito)
+                if restantes <= 0:
                     return Response(
-                        {"error": f"No hay suficiente stock disponible. "
-                                f"Stock actual: {stock_disponible}, Cantidad solicitada: {cantidad_total}"},
+                        {"error": "No hay stock disponible para agregar más."},
                         status=400
                     )
+                # Si pidió más de lo que queda, ajustamos
+                if cantidad_req > restantes:
+                    cantidad_req = restantes
+                    ajustada = True
 
+            # Persistimos
             if item_existente:
-                item_existente.cantidad += cantidad
+                item_existente.cantidad = en_carrito + cantidad_req
                 item_existente.save()
             else:
-                serializer = CarritoItemCreateSerializer(data={
-                    'carrito': carrito.idCarrito,
-                    'producto': producto_id,
-                    'cantidad': cantidad,
-                    'talla': talla_id
-                })
-                if not serializer.is_valid():
-                    return Response(serializer.errors, status=400)
-                serializer.save()
+                CarritoItem.objects.create(
+                    carrito=carrito,
+                    producto_id=producto_id,
+                    talla_id=talla_id,
+                    cantidad=cantidad_req
+                )
 
-            return Response(CarritoSerializer(carrito).data, status=200)
+            data = CarritoSerializer(carrito).data
+            if ajustada:
+                data["nota"] = "Se agregó el máximo disponible en stock."
+            return Response(data, status=200)
 
         except Exception as e:
             print("Error al agregar producto:", str(e))
             return Response({"error": f"Error al agregar el producto: {str(e)}"}, status=400)
-
+            
     @action(detail=True, methods=['post'])
     def actualizar_cantidad(self, request, pk=None):
         """
-        Actualiza la cantidad de un item. Solo VALIDA stock; NO descuenta.
-        Acepta flags del front: skip_stock / reserve
+        Actualiza la cantidad de un item respetando stock.
+        Si se intenta poner más que el stock, ajusta al máximo posible.
         """
-        skip_stock = bool(request.data.get('skip_stock', False))
-        reserve    = bool(request.data.get('reserve', False))
-
         try:
             carrito = Carrito.objects.prefetch_related('items__producto', 'items__talla').get(pk=pk)
             item_id = request.data.get('item_id')
-            nueva_cantidad = int(request.data.get('cantidad'))
+            nueva_cantidad = int(request.data.get('cantidad', 0))
 
             item = carrito.items.select_related('producto', 'talla').get(idCarritoItem=item_id)
 
-            from .models import Inventario
-            inventario = (
-                Inventario.objects.filter(producto=item.producto, talla=item.talla).first()
-                if item.talla else
-                Inventario.objects.filter(producto=item.producto).first()
-            )
-
-            # Validación de stock (NO tocar inventario)
-            if inventario and nueva_cantidad > 0:
-                stock_disponible = getattr(inventario, 'stock_talla', inventario.cantidad)
-                if nueva_cantidad > stock_disponible:
-                    return Response(
-                        {"error": f"No hay suficiente stock para la talla seleccionada. "
-                                f"Stock actual: {stock_disponible}, solicitado: {nueva_cantidad}"},
-                        status=400
-                    )
-
             if nueva_cantidad <= 0:
                 item.delete()
-            else:
-                item.cantidad = nueva_cantidad
-                item.save()
+                return Response(CarritoSerializer(carrito).data, status=200)
+
+            stock_disponible = self._get_stock_disponible(item.producto_id, item.talla_id)
+            if stock_disponible is not None and nueva_cantidad > stock_disponible:
+                nueva_cantidad = stock_disponible  # clamp
+
+            item.cantidad = nueva_cantidad
+            item.save()
 
             return Response(CarritoSerializer(carrito).data, status=200)
 
@@ -1465,6 +1470,16 @@ class CarritoView(viewsets.ModelViewSet):
             return Response({"error": "Item no encontrado en el carrito"}, status=404)
         except Exception as e:
             return Response({"error": f"Error al actualizar la cantidad: {str(e)}"}, status=400)
+
+
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)  # CarritoCreateSerializer por get_serializer_class
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        out = CarritoSerializer(instance, context=self.get_serializer_context())
+        headers = self.get_success_headers(out.data)
+        return Response(out.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(detail=True, methods=['post'])
     def eliminar_producto(self, request, pk=None):
@@ -1686,7 +1701,6 @@ class CarritoView(viewsets.ModelViewSet):
             {"id": preference.get("id"), "init_point": preference.get("init_point")},
             status=status.HTTP_201_CREATED
         )
-
 class CarritoItemView(viewsets.ModelViewSet):
     serializer_class = CarritoItemSerializer
     permission_classes = [CarritoAnonimoMenosPago]  # Permite acceso a admin y cliente
