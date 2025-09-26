@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import AutoAvatarInitializer from './components/Perfil/AutoAvatarInitializer.jsx';
 
 // Layout público
 import { Header } from "./components/Singlepage/Header.jsx";
@@ -237,6 +238,7 @@ function AppContent() {
 export function App() {
   return (
     <AuthProvider>
+      <AutoAvatarInitializer />
       <AppContent />
     </AuthProvider>
   );
