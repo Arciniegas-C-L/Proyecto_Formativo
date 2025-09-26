@@ -1,42 +1,17 @@
 // src/api/InventarioApi.js
-import { api } from "./axios";              // PROTEGIDO → /BACKEND/api/...
-import { publicApi } from "./publicClient";  // (no se usa aquí, todo inventario es protegido)
-import { auth } from "../auth/authService";
+import { api } from "./axios"; // cliente principal hacia /BACKEND/api/
 
-/* ---------------- Helper: cliente protegido con chequeo de rol ---------------- */
-function getProtectedClient(rolesPermitidos = []) {
-  const token = auth.obtenerToken?.();
-  const rol   = auth.obtenerRol?.();
-
-  // Siempre usamos el cliente protegido
-  const client = api;
-
-  // Si se especifican roles, validamos en front para evitar 404/403 innecesarios
-  if (rolesPermitidos.length > 0 && rol && !rolesPermitidos.includes(rol)) {
-    const err = new Error("NO_PERMISOS");
-    err.status = 403;
-    err.detail = "No tiene permisos para realizar esta acción";
-    throw err;
-  }
-
-  // Si no hay token, el backend devolverá 401 (interceptor ya limpia sesión)
-  return client;
-}
-
-/* ---------------- Usuarios (protegido) ---------------- */
+/* ---------------- Usuarios ---------------- */
 export const getUsuarios = () =>
-  getProtectedClient(["admin", "empleado"]).get("usuario/"); // <- singular
+  api.get("usuario/"); // <- endpoint singular
 
 export const updateUsuario = (id, payload) =>
-  getProtectedClient(["admin"]).put(`usuario/${id}/`, payload);
+  api.put(`usuario/${id}/`, payload);
 
-/* ---------------- CRUD Inventario (protegido) ---------------- */
-// Por defecto: admin/empleado
-const INV_ROLES = ["admin", "empleado"];
-
+/* ---------------- CRUD Inventario ---------------- */
 export const getAllInventario = async () => {
   try {
-    const res = await getProtectedClient(INV_ROLES).get("inventario/");
+    const res = await api.get("inventario/");
     return res.data;
   } catch (error) {
     console.error("Error al obtener inventario:", error);
@@ -46,7 +21,7 @@ export const getAllInventario = async () => {
 
 export const createInventario = async (inventario) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).post("inventario/", inventario);
+    const res = await api.post("inventario/", inventario);
     return res.data;
   } catch (error) {
     console.error("Error al crear inventario:", error);
@@ -56,7 +31,7 @@ export const createInventario = async (inventario) => {
 
 export const updateInventario = async (id, inventario) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).put(`inventario/${id}/`, inventario);
+    const res = await api.put(`inventario/${id}/`, inventario);
     return res.data;
   } catch (error) {
     console.error("Error al actualizar inventario:", error);
@@ -66,7 +41,7 @@ export const updateInventario = async (id, inventario) => {
 
 export const deleteInventario = async (id) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).delete(`inventario/${id}/`);
+    const res = await api.delete(`inventario/${id}/`);
     return res.data;
   } catch (error) {
     console.error("Error al eliminar inventario:", error);
@@ -74,12 +49,12 @@ export const deleteInventario = async (id) => {
   }
 };
 
-/* -------- Stock mínimo y filtros (protegido) -------- */
+/* -------- Stock mínimo y filtros -------- */
 export const updateStockMinimoSubcategoria = async (subcategoriaId, stockMinimo) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).put(
+    const res = await api.put(
       `inventario/subcategoria/${subcategoriaId}/stock-minimo/`,
-      { stockMinimo: parseInt(stockMinimo) }
+      { stockMinimo: parseInt(stockMinimo, 10) }
     );
     return res.data;
   } catch (error) {
@@ -90,7 +65,7 @@ export const updateStockMinimoSubcategoria = async (subcategoriaId, stockMinimo)
 
 export const getInventarioPorCategoria = async (categoriaId) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).get("inventario/por_categoria/", {
+    const res = await api.get("inventario/por_categoria/", {
       params: { categoria_id: categoriaId },
     });
     return res.data;
@@ -102,7 +77,7 @@ export const getInventarioPorCategoria = async (categoriaId) => {
 
 export const getInventarioPorSubcategoria = async (subcategoriaId) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).get("inventario/por_subcategoria/", {
+    const res = await api.get("inventario/por_subcategoria/", {
       params: { subcategoria_id: subcategoriaId },
     });
     return res.data;
@@ -112,10 +87,10 @@ export const getInventarioPorSubcategoria = async (subcategoriaId) => {
   }
 };
 
-/* ---------------- Tablas asociadas (protegido) ---------------- */
+/* ---------------- Tablas asociadas ---------------- */
 export const getTablaCategorias = async () => {
   try {
-    const res = await getProtectedClient(INV_ROLES).get("inventario/tabla_categorias/");
+    const res = await api.get("inventario/tabla_categorias/");
     return res.data;
   } catch (error) {
     console.error("Error al obtener tabla de categorías:", error);
@@ -125,7 +100,7 @@ export const getTablaCategorias = async () => {
 
 export const getTablaSubcategorias = async (categoriaId) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).get("inventario/tabla_subcategorias/", {
+    const res = await api.get("inventario/tabla_subcategorias/", {
       params: { categoria_id: categoriaId },
     });
     return res.data;
@@ -137,7 +112,7 @@ export const getTablaSubcategorias = async (categoriaId) => {
 
 export const getTablaProductos = async (subcategoriaId) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).get("inventario/tabla_productos/", {
+    const res = await api.get("inventario/tabla_productos/", {
       params: { subcategoria_id: subcategoriaId },
     });
     return res.data;
@@ -147,15 +122,15 @@ export const getTablaProductos = async (subcategoriaId) => {
   }
 };
 
-/* ------------ Actualizar stock por tallas (protegido) ------------ */
+/* ------------ Actualizar stock por tallas ------------ */
 export const actualizarStockTallas = async (productoId, tallasData) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).post("inventario/actualizar_stock_tallas/", {
+    const res = await api.post("inventario/actualizar_stock_tallas/", {
       producto_id: productoId,
-      tallas: tallasData.map(({ talla_id, stock, stock_minimo }) => ({
+      tallas: (tallasData || []).map(({ talla_id, stock, stock_minimo }) => ({
         talla_id,
-        stock: parseInt(stock),
-        stock_minimo: parseInt(stock_minimo),
+        stock: parseInt(stock, 10),
+        stock_minimo: parseInt(stock_minimo, 10),
       })),
     });
     return res.data;
@@ -165,10 +140,10 @@ export const actualizarStockTallas = async (productoId, tallasData) => {
   }
 };
 
-/* ------------ Sincronizar inventario al cambiar grupo de tallas (protegido) ------------ */
+/* ------------ Sincronizar inventario al cambiar grupo de tallas ------------ */
 export const setGrupoTallaSubcategoria = async (subcategoriaId, grupoTallaId) => {
   try {
-    const res = await getProtectedClient(INV_ROLES).post("inventario/set_grupo_talla_subcategoria/", {
+    const res = await api.post("inventario/set_grupo_talla_subcategoria/", {
       subcategoria_id: subcategoriaId,
       grupo_talla_id: grupoTallaId,
     });
@@ -178,3 +153,4 @@ export const setGrupoTallaSubcategoria = async (subcategoriaId, grupoTallaId) =>
     throw error;
   }
 };
+

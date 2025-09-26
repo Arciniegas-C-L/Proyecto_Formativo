@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // ⚠️ cambia esto por tu subdominio real:
-const NGROK_HOST = 'brighton-dom-uniprotkb-deutschland.trycloudflare.com'
+const NGROK_HOST = 'naturals-liz-flashing-infants.trycloudflare.com'
 
 export default defineConfig({
   plugins: [react()],

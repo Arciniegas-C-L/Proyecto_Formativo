@@ -628,6 +628,7 @@ from rest_framework.response import Response
 
 
 class InventarioView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
     serializer_class = InventarioSerializer
     queryset = Inventario.objects.all().select_related(
         'producto',
@@ -640,7 +641,6 @@ class InventarioView(viewsets.ModelViewSet):
         'producto__nombre',
         'talla__nombre'
     )
-    permission_classes = [IsAuthenticated, IsAdminWriteClienteRead]
 
     def get_serializer_class(self):
         if self.action == 'inventario_agrupado':
