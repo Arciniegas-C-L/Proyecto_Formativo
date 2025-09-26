@@ -1,44 +1,22 @@
 // src/api/Notificaciones.api.js
 import { api } from "./axios";
-import { auth } from "../auth/authService";
 
-const BASE = "notificaciones/";
-
-const isGuest = () => {
-  const rol = (auth.obtenerRol?.() || "").toLowerCase();
-  const token = auth.obtenerToken?.();
-  return !token || rol === "invitado";
-};
-
-// 📩 Listar notificaciones (protegido; invitados -> vacío)
-export const listarNotificaciones = (params = {}) => {
-  if (isGuest()) {
-    // si usas paginación DRF, respeta el shape
-    return Promise.resolve({ data: { results: [], count: 0 } });
-  }
-  return api.get(BASE, { params });
-};
+// 📩 Listar notificaciones
+export const listarNotificaciones = (params = {}) =>
+  api.get("notificaciones/", { params });
 
 // 📩 Marcar notificación como leída
-export const marcarNotificacionLeida = (id) => {
-  if (isGuest()) return Promise.resolve({ data: { ok: true } });
-  return api.post(`${BASE}${id}/leer/`);
-};
+export const marcarNotificacionLeida = (id) =>
+  api.post(`notificaciones/${id}/leer/`);
 
 // 📩 Marcar todas como leídas
-export const marcarTodasNotificaciones = () => {
-  if (isGuest()) return Promise.resolve({ data: { ok: true } });
-  return api.post(`${BASE}marcar_todas/`);
-};
+export const marcarTodasNotificaciones = () =>
+  api.post("notificaciones/marcar_todas/");
 
 // 📩 Eliminar una notificación
-export const eliminarNotificacion = (id) => {
-  if (isGuest()) return Promise.resolve({ data: { ok: true } });
-  return api.delete(`${BASE}${id}/`);
-};
+export const eliminarNotificacion = (id) =>
+  api.delete(`notificaciones/${id}/`);
 
-// 📩 Resumen (badge)
-export const resumenNotificaciones = () => {
-  if (isGuest()) return Promise.resolve({ data: { total: 0, no_leidas: 0 } });
-  return api.get(`${BASE}resumen/`);
-};
+// 📩 Obtener resumen (conteos de badge campana)
+export const resumenNotificaciones = () =>
+  api.get("notificaciones/resumen/");

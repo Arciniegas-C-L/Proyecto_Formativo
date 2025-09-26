@@ -1,69 +1,54 @@
-// src/api/Producto.api.js
-import { api } from "./axios";              // cliente protegido (/BACKEND/api/…)
-import { publicApi } from "./publicClient"; // cliente público   (/BACKEND/…)
-import { auth } from "../auth/authService";
 
-// ───────────── Helpers de rol/token (sin selector) ─────────────
-const getRol = () => (auth.obtenerRol?.() || "").toLowerCase();
-const hasToken = () => {
-  const t = auth.obtenerToken?.();
-  return !!(t && t.trim() !== "");
-};
+import { api } from './axios';
 
-// Lecturas: público si no hay token o rol invitado/viewer; si hay token (admin/cliente/moderador) → protegido
-const readClient = () => {
-  const rol = getRol();
-  const logged = hasToken();
-  const publicRoles = new Set(["", "invitado", "viewer", "guest", null, undefined]);
-  return logged && !publicRoles.has(rol) ? api : publicApi;
-};
-
-// Escrituras: SIEMPRE protegido
-const writeClient = () => api;
-
-// ───────────────── Usuarios (router 'usuario' singular) ─────────────────
-export const getUsuarios = () => api.get("usuario/");
-export const updateUsuario = (id, payload) => api.put(`usuario/${id}/`, payload);
+// Usuarios (si aplica en este módulo)
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
 
 /* ----------------------------- PRODUCTOS ----------------------------- */
 
-// Obtener todos los productos (lectura: público/protegido según rol/token)
+// Obtener todos los productos
 export const getALLProductos = async () => {
   try {
-    const response = await readClient().get("producto/");
+    const response = await api.get('producto/');
     return response;
   } catch (error) {
     handleProductoError(error);
   }
 };
 
-// Crear un nuevo producto (protegido)
+// Crear un nuevo producto
 export const createProducto = async (formData) => {
   try {
-    return await writeClient().post("producto/", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    return await api.post('producto/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
   } catch (error) {
-    console.error(" Backend respondió:", error?.response?.data);
+    console.error(' Backend respondió:', error.response?.data); 
     handleProductoError(error);
     throw error;
   }
 };
 
-// Eliminar un producto por ID (protegido)
+
+// Eliminar un producto por ID
 export const deleteProducto = async (id) => {
   try {
-    return await writeClient().delete(`producto/${id}/`);
+    return await api.delete(`producto/${id}/`);
   } catch (error) {
-    console.error("Error en deleteProducto:", error);
+    console.error('Error en deleteProducto:', error);
     handleProductoError(error);
   }
 };
 
-// Actualizar un producto por ID (protegido)
+// Actualizar un producto por ID
 export const updateProducto = async (id, producto) => {
   try {
     let formData;
+
+    // Si ya viene como FormData
     if (producto instanceof FormData) {
       formData = producto;
     } else {
@@ -75,11 +60,13 @@ export const updateProducto = async (id, producto) => {
       }
     }
 
-    return await writeClient().put(`producto/${id}/`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    return await api.put(`producto/${id}/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
   } catch (error) {
-    console.error(" Backend al actualizar:", error?.response?.data);
+    console.error(' Backend al actualizar:', error.response?.data);
     handleProductoError(error);
     throw error;
   }
@@ -87,50 +74,47 @@ export const updateProducto = async (id, producto) => {
 
 /* ----------------------------- CATEGORÍAS ----------------------------- */
 
-// Obtener todas las categorías (lectura: público/protegido según rol/token)
+// Obtener todas las categorías
 export const getCategorias = async () => {
   try {
-    return await readClient().get("categoria/");
+    return await api.get('categoria/');
   } catch (error) {
-    console.error("Error al obtener categorías:", error);
+    console.error('Error al obtener categorías:', error);
     throw error;
   }
 };
 
 /* ----------------------------- SUBCATEGORÍAS ----------------------------- */
 
-// Obtener subcategorías por ID de categoría (lectura: público/protegido según rol/token)
+// Obtener las subcategorías filtradas por ID de categoría
 export const getSubcategoriasPorCategoria = async (idCategoria) => {
   try {
-    return await readClient().get("subcategoria/", {
-      params: { categoria: idCategoria },
-    });
+    return await api.get(`subcategoria/?categoria=${idCategoria}`);
   } catch (error) {
-    console.error("Error al obtener subcategorías:", error);
+    console.error('Error al obtener subcategorías:', error);
     throw error;
   }
 };
 
 /* ----------------------------- MANEJO DE ERRORES ----------------------------- */
+
 function handleProductoError(error) {
-  if (error?.response) {
-    const status = error.response.status;
-    if (status === 404) {
-      throw new Error(
-        "El producto no fue encontrado (revisa la baseURL y si este endpoint es público o protegido)"
-      );
+  if (error.response) {
+    switch (error.response.status) {
+      case 404:
+        throw new Error('El producto no fue encontrado');
+      case 500:
+        throw new Error('Error interno del servidor. Por favor, intente más tarde');
+      default:
+        throw new Error(
+          error.response.data?.detail ||
+          error.response.data?.message ||
+          'Error al procesar la solicitud'
+        );
     }
-    if (status === 500) {
-      throw new Error("Error interno del servidor. Por favor, intente más tarde");
-    }
-    throw new Error(
-      error.response.data?.detail ||
-        error.response.data?.message ||
-        "Error al procesar la solicitud"
-    );
-  } else if (error?.request) {
-    throw new Error("No se pudo conectar con el servidor");
+  } else if (error.request) {
+    throw new Error('No se pudo conectar con el servidor');
   } else {
-    throw new Error("Error al procesar la solicitud");
+    throw new Error('Error al procesar la solicitud');
   }
 }

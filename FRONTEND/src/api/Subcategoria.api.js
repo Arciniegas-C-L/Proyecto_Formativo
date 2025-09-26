@@ -1,142 +1,118 @@
-// src/api/SubcategoriaApi.js
-import { api } from "./axios";              // PROTEGIDO → /BACKEND/api/...
-import { publicApi } from "./publicClient"; // PÚBLICO   → /BACKEND/...
-import { auth } from "../auth/authService";
 
-/* ---------------- Selector de cliente ---------------- */
-// - Si pasas { force: "public" | "protected" } fuerza ese cliente
-// - Si no, elige por token (logueado → api; no logueado → publicApi)
-function getClient(options = {}) {
-  const token = auth.obtenerToken?.();
-  if (options.force === "public")    return publicApi;
-  if (options.force === "protected") return api;
-  return token ? api : publicApi;
-}
+import { api } from './axios';
 
-/* ---------------- Usuarios (protegido) ---------------- */
-// OJO: si tu backend usa 'usuarios/' en plural, cambia aquí.
-export const getUsuarios = () =>
-  getClient({ force: "protected" }).get("usuario/").then(r => r.data);
-
-export const updateUsuario = (id, payload) =>
-  getClient({ force: "protected" }).put(`usuario/${id}/`, payload).then(r => r.data);
+// Usuarios (si aplica en este módulo)
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
 
 /* ---------------------- SUBCATEGORÍAS ---------------------- */
 
-// Obtener todas las subcategorías (PÚBLICO)
+// Obtener todas las subcategorías
 export const getAllSubcategorias = async () => {
   try {
-    const res = await getClient({ force: "public" }).get("subcategoria/");
+    const res = await api.get('subcategoria/');
     return res.data;
   } catch (error) {
-    console.error("Error al obtener subcategorías:", error?.response?.data || error);
+    console.error("Error al obtener subcategorías:", error);
     throw error;
   }
 };
 
-// Obtener subcategorías por categoría (PÚBLICO) con fallback
-// 1) /subcategoria/por_categoria/?categoria=ID
-// 2) si 404 → /subcategoria/?categoria=ID
+// Obtener subcategorías filtradas por categoría
 export const getSubcategoriasByCategoria = async (categoriaId) => {
   try {
-    const res = await getClient({ force: "public" }).get("subcategoria/por_categoria/", {
+    const res = await api.get('subcategoria/por_categoria/', {
       params: { categoria: categoriaId },
     });
     return res.data;
   } catch (error) {
-    if (error?.response?.status === 404) {
-      try {
-        const res2 = await getClient({ force: "public" }).get("subcategoria/", {
-          params: { categoria: categoriaId },
-        });
-        return res2.data;
-      } catch (e2) {
-        console.error("Fallback subcategoria/?categoria=... también falló:", e2?.response?.data || e2);
-        throw e2;
-      }
-    }
-    console.error("Error al obtener subcategorías por categoría:", error?.response?.data || error);
+    console.error("Error al obtener subcategorías por categoría:", error);
     throw error;
   }
 };
 
-// Crear una nueva subcategoría (PROTEGIDO)
+// Crear una nueva subcategoría
 export const createSubcategoria = async (subcategoria) => {
   try {
-    const res = await getClient({ force: "protected" }).post("subcategoria/", subcategoria);
+    console.log("Datos a enviar para crear subcategoría:", subcategoria);
+    const res = await api.post('subcategoria/', subcategoria);
+    console.log("Respuesta exitosa:", res.data);
     return res.data;
   } catch (error) {
-    console.error("Error al crear subcategoría:", error?.response?.data || error);
+    console.error("Error al crear subcategoría:", error);
+    if (error.response) {
+      console.error("Respuesta del servidor:", error.response.data);
+      console.error("Status del servidor:", error.response.status);
+    }
     throw error;
   }
 };
 
-// Actualizar una subcategoría (PROTEGIDO)
+// Actualizar una subcategoría existente
 export const updateSubcategoria = async (id, subcategoria) => {
   try {
-    const res = await getClient({ force: "protected" }).put(`subcategoria/${id}/`, subcategoria);
+    const res = await api.put(`subcategoria/${id}/`, subcategoria);
     return res.data;
   } catch (error) {
-    console.error("Error al actualizar subcategoría:", error?.response?.data || error);
+    console.error("Error al actualizar subcategoría:", error);
     throw error;
   }
 };
 
-// Eliminar una subcategoría (PROTEGIDO)
+// Eliminar una subcategoría por ID
 export const deleteSubcategoria = async (id) => {
   try {
-    const res = await getClient({ force: "protected" }).delete(`subcategoria/${id}/`);
-    return res.data;
+    await api.delete(`subcategoria/${id}/`);
   } catch (error) {
-    console.error("Error al eliminar subcategoría:", error?.response?.data || error);
+    console.error("Error al eliminar subcategoría:", error);
     throw error;
   }
 };
 
-// Actualizar el grupo de talla de una subcategoría (PROTEGIDO)
+// Actualizar el grupo de talla asignado a una subcategoría
 export const updateGrupoTalla = async (subcategoriaId, grupoTallaId) => {
   if (!subcategoriaId || !grupoTallaId) {
-    throw new Error("Se requieren tanto el ID de la subcategoría como el ID del grupo de talla");
+    throw new Error('Se requieren tanto el ID de la subcategoría como el ID del grupo de talla');
   }
 
   const grupoTallaIdNum = Number(grupoTallaId);
-  if (Number.isNaN(grupoTallaIdNum)) {
-    throw new Error("El ID del grupo de talla debe ser un número válido");
-    }
+  if (isNaN(grupoTallaIdNum)) {
+    throw new Error('El ID del grupo de talla debe ser un número válido');
+  }
 
   try {
-    const res = await getClient({ force: "protected" }).put(
-      `subcategoria/${subcategoriaId}/actualizar_grupo_talla/`,
-      { grupoTalla: grupoTallaIdNum }
-    );
-    return res.data;
+    const response = await api.put(`subcategoria/${subcategoriaId}/actualizar_grupo_talla/`, {
+      grupoTalla: grupoTallaIdNum,
+    });
+    return response.data;
   } catch (error) {
-    const resp = error?.response;
-    if (resp?.data?.error) throw new Error(resp.data.error);
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    }
 
-    switch (resp?.status) {
+    switch (error.response?.status) {
       case 400:
-        if (resp.data?.error?.includes("ya tiene asignado")) {
-          throw new Error("La subcategoría ya tiene asignado este grupo de talla");
+        if (error.response.data?.error?.includes('ya tiene asignado')) {
+          throw new Error('La subcategoría ya tiene asignado este grupo de talla');
         }
-        throw new Error(resp.data?.error || "Datos inválidos para la actualización");
+        throw new Error(error.response.data?.error || 'Datos inválidos para la actualización');
       case 404:
-        throw new Error("No se encontró la subcategoría o el grupo de talla");
+        throw new Error('No se encontró la subcategoría o el grupo de talla');
       case 500:
-        throw new Error("Error interno del servidor al actualizar el grupo de talla");
+        throw new Error('Error interno del servidor al actualizar el grupo de talla');
       default:
-        throw new Error("Error al actualizar el grupo de talla: " + (error.message || "Error desconocido"));
+        throw new Error('Error al actualizar el grupo de talla: ' + (error.message || 'Error desconocido'));
     }
   }
 };
 
-// Asignar grupo de talla por defecto a las subcategorías sin grupo (PROTEGIDO)
+// Asignar automáticamente un grupo de talla por defecto a todas las subcategorías que no lo tengan
 export const asignarGrupoTallaDefault = async () => {
   try {
-    const res = await getClient({ force: "protected" }).post("subcategoria/asignar_grupo_talla_default/");
-    return res.data;
+    const response = await api.post('subcategoria/asignar_grupo_talla_default/');
+    return response.data;
   } catch (error) {
-    console.error("Error al asignar grupo de tallas por defecto:", error?.response?.data || error.message);
+    console.error('Error al asignar grupo de tallas por defecto:', error.response?.data || error.message);
     throw error;
   }
 };

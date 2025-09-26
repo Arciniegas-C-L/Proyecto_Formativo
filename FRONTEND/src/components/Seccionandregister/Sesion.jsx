@@ -65,21 +65,20 @@ export function Sesion() {
   const handleRegister = async (e) => {
   e.preventDefault();
   setIsSubmitting(true);
+
   const form = e.target.elements;
   const nombre = form.nombre.value;
   const apellido = form.apellido.value;
   const telefono = form.telefono.value;
   const correo = form.correo.value;
   const password = form.password.value.trim();
-
-  // NUEVO: confirmar contraseña
   const password2 = form.password2.value.trim();
+
   if (password !== password2) {
     toast.error('Las contraseñas no coinciden.');
     setIsSubmitting(false);
     return;
   }
-
   if (password.length < 6) {
     toast.error('La contraseña debe tener al menos 6 caracteres.');
     setIsSubmitting(false);
@@ -91,11 +90,51 @@ export function Sesion() {
     toast.success('Registro exitoso. Ahora inicia sesión.');
     containerRef.current?.classList.remove('toggle');
   } catch (error) {
-    const backend = error?.response?.data;
     const status = error?.response?.status;
+    const data = error?.response?.data;
+
+    // 1) Detección directa por status 409 (Conflict)
+    if (status === 409) {
+      toast.error('El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.');
+      form.correo?.focus();
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2) DRF/Django: errores por campo: { correo: ["..."], email: ["..."] }
+    const correoMsg =
+      (Array.isArray(data?.correo) && data.correo[0]) ||
+      (Array.isArray(data?.email) && data.email[0]) ||
+      (typeof data?.correo === 'string' && data.correo) ||
+      (typeof data?.email === 'string' && data.email);
+
+    if (correoMsg) {
+      // Normaliza el mensaje si es el típico "already exists"
+      const lower = String(correoMsg).toLowerCase();
+      if (lower.includes('existe') || lower.includes('exists') || lower.includes('taken') || lower.includes('registrad')) {
+        toast.error('El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.');
+      } else {
+        toast.error(correoMsg);
+      }
+      form.correo?.focus();
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 3) Otros formatos comunes:
+    // {code: 'EMAIL_TAKEN'} o {error: 'EMAIL_TAKEN'}
+    const code = data?.code || data?.error || data?.mensaje || data?.message;
+    if (typeof code === 'string' && code.toUpperCase().includes('EMAIL') && code.toUpperCase().includes('TAKEN')) {
+      toast.error('El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.');
+      form.correo?.focus();
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 4) Fallback genérico
     const errorMsg =
-      backend?.mensaje ||
-      backend?.error ||
+      data?.mensaje ||
+      data?.error ||
       (status === 400 && 'Datos inválidos') ||
       (status === 401 && 'No autorizado') ||
       (status === 500 && 'Error interno del servidor') ||

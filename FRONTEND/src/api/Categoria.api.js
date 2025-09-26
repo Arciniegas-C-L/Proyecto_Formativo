@@ -1,58 +1,47 @@
-import { api } from "./axios";              // PROTEGIDO → /BACKEND/api/...
-import { publicApi } from "./publicClient";  // PÚBLICO   → /BACKEND/...
-import { auth } from "../auth/authService";
+import { api } from './axios';
 
-/* ---------- helpers locales ---------- */
-function getClient(options = {}) {
-  const token = auth.obtenerToken?.();
-  if (options.force === "public") return publicApi;
-  if (options.force === "protected") return api;
-  return token ? api : publicApi; // auto
-}
-
-function assertRole(roles = []) {
-  if (!roles?.length) return;
-  const rol = auth.obtenerRol?.();
-  if (!rol || !roles.map(String).includes(String(rol))) {
-    const e = new Error("No autorizado: rol insuficiente");
-    e.code = "ROLE_FORBIDDEN";
-    throw e;
-  }
-}
-
-/* ---------------- CATEGORÍAS ----------------
-   - Listar: público
-   - Crear/Actualizar/Eliminar: protegido (p. ej. admin)
-----------------------------------------------*/
-
-// Obtener todas las categorías (PÚBLICO)
+// Función para obtener todas las categorías
 export const getAllCategorias = async () => {
-  const res = await getClient({ force: "public" }).get("categoria/");
-  return res.data;
+  try {
+    const res = await api.get('categoria/');
+    return res.data;
+  } catch (error) {
+    console.error("Error al obtener categorías:", error);
+    throw error;
+  }
 };
 
-// Crear una nueva categoría (PROTEGIDO)
+// Función para crear una nueva categoría
 export const createCategoria = async (categoria) => {
-  // si quieres validar rol desde el front:
-  // assertRole(["admin"]);
-  const res = await getClient({ force: "protected" }).post("categoria/", categoria);
-  return res.data;
+  try {
+    const res = await api.post('categoria/', categoria);
+    return res.data;
+  } catch (error) {
+    console.error("Error al crear categoría:", error);
+    throw error;
+  }
 };
 
-// Actualizar categoría (PROTEGIDO)
+// Función para actualizar una categoría existente
 export const updateCategoria = async (id, categoria) => {
-  // assertRole(["admin"]);
-  const res = await getClient({ force: "protected" }).put(`categoria/${id}/`, categoria);
-  return res.data;
+  try {
+    const res = await api.put(`categoria/${id}/`, categoria);
+    return res.data;
+  } catch (error) {
+    console.error("Error al actualizar categoría:", error);
+    throw error;
+  }
 };
 
-// Eliminar categoría (PROTEGIDO)
+// Función para eliminar una categoría por su ID
 export const deleteCategoria = async (id) => {
-  // assertRole(["admin"]);
-  await getClient({ force: "protected" }).delete(`categoria/${id}/`);
+  try {
+    await api.delete(`categoria/${id}/`);
+  } catch (error) {
+    console.error("Error al eliminar categoría:", error);
+    throw error;
+  }
 };
 
-/* -------------- Extra: usuarios -------------- */
-// (normalmente protegido)
-export const getUsuarios = () =>
-  getClient({ force: "protected" }).get("usuarios/"); // 👀 OJO: en tu backend suele ser "usuario/"
+// Extra: usuarios (si aplica en este módulo)
+export const getUsuarios = () => api.get('usuarios/');

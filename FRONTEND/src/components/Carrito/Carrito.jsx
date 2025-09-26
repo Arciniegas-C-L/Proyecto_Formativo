@@ -1,7 +1,7 @@
 // src/components/Carrito/Carrito.jsx
 import ProductoCard from '../Catalogo/ProductoCard';
 import { useAuth } from '../../context/AuthContext';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaEye, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
@@ -42,6 +42,7 @@ function useMercadoPagoLoader(publicKey) {
     };
     document.head.appendChild(script);
   }, []);
+  
 
   useEffect(() => {
     if (loaded && window.MercadoPago && publicKey) {
@@ -67,6 +68,7 @@ export function Carrito() {
   const [telefono, setTelefono] = useState(usuario?.telefono || "");
   const [direccion, setDireccion] = useState(usuario?.direccion || "");
   const [formErrors, setFormErrors] = useState({});
+  const didTryAdopt = useRef(false);
 
   const mpLoaded = useMercadoPagoLoader(MP_PUBLIC_KEY_TEST);
 
@@ -80,24 +82,23 @@ export function Carrito() {
     return () => window.removeEventListener("carritoActualizado", onCarritoActualizado);
   }, []);
 
-  
+
   useEffect(() => {
   const tryAdopt = async () => {
     if (!autenticado) return;
+    if (didTryAdopt.current) return;          // ⛔ evita el doble efecto en dev
+    didTryAdopt.current = true;
+
     const cartId = localStorage.getItem("cartId");
     if (!cartId) return;
-
     try {
       await adoptarCarritoAnon(cartId);
       localStorage.removeItem("cartId");
       window.dispatchEvent(new CustomEvent("carritoActualizado"));
       toast.success("Se migró tu carrito a tu cuenta");
     } catch (e) {
-      console.error("No se pudo adoptar el carrito:", e?.response?.data || e);
-      // Opcional: mantener el cartId para reintentar luego
-      toast.error(
-        e?.response?.data?.error || "No se pudo migrar el carrito. Inténtalo más tarde."
-      );
+      // Silenciar (no console.error, no toast)
+      // Opcional: reintentar silenciosamente más tarde
     }
   };
 

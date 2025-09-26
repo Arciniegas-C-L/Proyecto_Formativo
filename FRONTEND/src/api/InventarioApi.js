@@ -1,17 +1,15 @@
-// src/api/InventarioApi.js
-import { api } from "./axios"; // cliente principal hacia /BACKEND/api/
 
-/* ---------------- Usuarios ---------------- */
-export const getUsuarios = () =>
-  api.get("usuario/"); // <- endpoint singular
+import { api } from './axios';
 
-export const updateUsuario = (id, payload) =>
-  api.put(`usuario/${id}/`, payload);
+// Usuarios (si aplica en este módulo)
+export const getUsuarios = () => api.get('usuarios/');
+export const updateUsuario = (id, payload) => api.put(`usuarios/${id}/`, payload);
 
-/* ---------------- CRUD Inventario ---------------- */
+/* ---------------- FUNCIONES CRUD PARA INVENTARIO ---------------- */
+
 export const getAllInventario = async () => {
   try {
-    const res = await api.get("inventario/");
+    const res = await api.get('inventario/');
     return res.data;
   } catch (error) {
     console.error("Error al obtener inventario:", error);
@@ -21,7 +19,7 @@ export const getAllInventario = async () => {
 
 export const createInventario = async (inventario) => {
   try {
-    const res = await api.post("inventario/", inventario);
+    const res = await api.post('inventario/', inventario);
     return res.data;
   } catch (error) {
     console.error("Error al crear inventario:", error);
@@ -49,13 +47,13 @@ export const deleteInventario = async (id) => {
   }
 };
 
-/* -------- Stock mínimo y filtros -------- */
+/* -------- FUNCIONES ESPECÍFICAS PARA STOCK MÍNIMO Y FILTROS -------- */
+
 export const updateStockMinimoSubcategoria = async (subcategoriaId, stockMinimo) => {
   try {
-    const res = await api.put(
-      `inventario/subcategoria/${subcategoriaId}/stock-minimo/`,
-      { stockMinimo: parseInt(stockMinimo, 10) }
-    );
+    const res = await api.put(`inventario/subcategoria/${subcategoriaId}/stock-minimo/`, {
+      stockMinimo: parseInt(stockMinimo),
+    });
     return res.data;
   } catch (error) {
     console.error("Error al actualizar stock mínimo:", error);
@@ -65,9 +63,7 @@ export const updateStockMinimoSubcategoria = async (subcategoriaId, stockMinimo)
 
 export const getInventarioPorCategoria = async (categoriaId) => {
   try {
-    const res = await api.get("inventario/por_categoria/", {
-      params: { categoria_id: categoriaId },
-    });
+    const res = await api.get(`inventario/por_categoria/?categoria_id=${categoriaId}`);
     return res.data;
   } catch (error) {
     console.error("Error al obtener inventario por categoría:", error);
@@ -77,9 +73,7 @@ export const getInventarioPorCategoria = async (categoriaId) => {
 
 export const getInventarioPorSubcategoria = async (subcategoriaId) => {
   try {
-    const res = await api.get("inventario/por_subcategoria/", {
-      params: { subcategoria_id: subcategoriaId },
-    });
+    const res = await api.get(`inventario/por_subcategoria/?subcategoria_id=${subcategoriaId}`);
     return res.data;
   } catch (error) {
     console.error("Error al obtener inventario por subcategoría:", error);
@@ -87,10 +81,11 @@ export const getInventarioPorSubcategoria = async (subcategoriaId) => {
   }
 };
 
-/* ---------------- Tablas asociadas ---------------- */
+/* ---------------- FUNCIONES PARA TABLAS ASOCIADAS ---------------- */
+
 export const getTablaCategorias = async () => {
   try {
-    const res = await api.get("inventario/tabla_categorias/");
+    const res = await api.get('inventario/tabla_categorias/');
     return res.data;
   } catch (error) {
     console.error("Error al obtener tabla de categorías:", error);
@@ -100,9 +95,7 @@ export const getTablaCategorias = async () => {
 
 export const getTablaSubcategorias = async (categoriaId) => {
   try {
-    const res = await api.get("inventario/tabla_subcategorias/", {
-      params: { categoria_id: categoriaId },
-    });
+    const res = await api.get(`inventario/tabla_subcategorias/?categoria_id=${categoriaId}`);
     return res.data;
   } catch (error) {
     console.error("Error al obtener tabla de subcategorías:", error);
@@ -112,9 +105,7 @@ export const getTablaSubcategorias = async (categoriaId) => {
 
 export const getTablaProductos = async (subcategoriaId) => {
   try {
-    const res = await api.get("inventario/tabla_productos/", {
-      params: { subcategoria_id: subcategoriaId },
-    });
+    const res = await api.get(`inventario/tabla_productos/?subcategoria_id=${subcategoriaId}`);
     return res.data;
   } catch (error) {
     console.error("Error al obtener tabla de productos:", error);
@@ -122,15 +113,16 @@ export const getTablaProductos = async (subcategoriaId) => {
   }
 };
 
-/* ------------ Actualizar stock por tallas ------------ */
+/* ------------ FUNCIONES PARA ACTUALIZAR STOCK POR TALLAS ------------ */
+
 export const actualizarStockTallas = async (productoId, tallasData) => {
   try {
-    const res = await api.post("inventario/actualizar_stock_tallas/", {
+    const res = await api.post('inventario/actualizar_stock_tallas/', {
       producto_id: productoId,
-      tallas: (tallasData || []).map(({ talla_id, stock, stock_minimo }) => ({
+      tallas: tallasData.map(({ talla_id, stock, stock_minimo }) => ({
         talla_id,
-        stock: parseInt(stock, 10),
-        stock_minimo: parseInt(stock_minimo, 10),
+        stock: parseInt(stock),
+        stock_minimo: parseInt(stock_minimo),
       })),
     });
     return res.data;
@@ -139,11 +131,11 @@ export const actualizarStockTallas = async (productoId, tallasData) => {
     throw error;
   }
 };
+/* ------------ SINCRONIZAR INVENTARIO AL CAMBIAR GRUPO DE TALLAS ------------ */
 
-/* ------------ Sincronizar inventario al cambiar grupo de tallas ------------ */
 export const setGrupoTallaSubcategoria = async (subcategoriaId, grupoTallaId) => {
   try {
-    const res = await api.post("inventario/set_grupo_talla_subcategoria/", {
+    const res = await api.post('inventario/set_grupo_talla_subcategoria/', {
       subcategoria_id: subcategoriaId,
       grupo_talla_id: grupoTallaId,
     });
@@ -153,4 +145,3 @@ export const setGrupoTallaSubcategoria = async (subcategoriaId, grupoTallaId) =>
     throw error;
   }
 };
-
