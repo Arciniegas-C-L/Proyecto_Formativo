@@ -1217,79 +1217,6 @@ class MovimientoView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
 
 # views.py (solo si NO agregas campos al modelo)
-class PedidoView(viewsets.ModelViewSet):
-    serializer_class = PedidoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente]
-
-    def get_queryset(self):
-        qs = (Pedido.objects
-                .select_related("usuario")
-                .prefetch_related(
-                    Prefetch("items", queryset=PedidoItem.objects.select_related("producto","talla"), to_attr="_pref_items"),
-                    Prefetch("pedidoproducto_set", queryset=PedidoProducto.objects.select_related("producto"), to_attr="_pref_pp"),
-                ))
-
-        user = self.request.user
-        es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
-        if not es_admin:
-            qs = qs.filter(usuario=user)
-
-        return qs.order_by("-idPedido")
-
-class PedidoProductoView(viewsets.ModelViewSet):
-    """
-    CRUD de ítems de pedido.
-    - Admin: ve todos los registros.
-    - Cliente: solo puede ver ítems de sus propios pedidos.
-    - Filtro por querystring: ?pedido=<id>
-    """
-    serializer_class = PedidoProductoSerializer
-    permission_classes = [IsAuthenticated, AdminandCliente]
-
-    def get_queryset(self):
-        qs = (
-            PedidoProducto.objects
-            .select_related(
-                "pedido",
-                "pedido__usuario",
-                "producto",
-                "producto__subcategoria",
-                "producto__subcategoria__categoria",
-            )
-            .all()
-            .order_by("-pedido__idPedido", "producto__nombre")
-        )
-
-        # Si NO es admin, limitar a los pedidos del usuario autenticado
-        user = self.request.user
-        es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
-        if not es_admin:
-            qs = qs.filter(pedido__usuario=user)
-
-        # Filtro opcional por pedido
-        pedido_id = self.request.query_params.get("pedido")
-        if pedido_id:
-            qs = qs.filter(pedido_id=pedido_id)
-
-        return qs
-
-    # Si no quieres permitir crear/actualizar/borrar desde API pública comenta/borra estos métodos
-    # y cambia el ViewSet por ReadOnlyModelViewSet. Por ahora dejamos ModelViewSet.
-
-    @action(detail=False, methods=["get"])
-    def por_pedido(self, request):
-        """
-        GET /BACKEND/api/pedidoproductos/por_pedido/?pedido=<id>
-        Devuelve los ítems de un pedido específico (respetando visibilidad por usuario).
-        """
-        pedido_id = request.query_params.get("pedido")
-        if not pedido_id:
-            return Response({"detail": "Falta parámetro 'pedido'."}, status=status.HTTP_400_BAD_REQUEST)
-
-        qs = self.get_queryset().filter(pedido_id=pedido_id)
-        data = self.get_serializer(qs, many=True).data
-        return Response(data, status=status.HTTP_200_OK)
-
 class PagoView(viewsets.ModelViewSet):
     serializer_class = PagoSerializer
     queryset = Pago.objects.all()
@@ -1304,44 +1231,87 @@ class CarritoView(viewsets.ModelViewSet):
     permission_classes = [CarritoAnonimoMenosPago]
     serializer_class = CarritoSerializer
     # dentro de CarritoView
+
+    def _pedido_items_qs(self, pedido):
+        """
+        Compatibilidad: si tu modelo PedidoItem tiene related_name='items' úsalo,
+        si no, usa el reverso por defecto (pedidoitem_set).
+        """
+        return getattr(pedido, "items", None) or pedido.pedidoitem_set
+
+    # --- NUEVO: copia líneas del carrito al pedido (una sola vez) ---
+    def _move_items_carrito_a_pedido(self, carrito, pedido):
+        from .models import PedidoItem  # 👈 ya no importes PedidoProducto
+
+        total = Decimal("0")
+        items = carrito.items.select_related("producto", "talla")
+
+        for it in items:
+            precio = getattr(it, "precio_unitario", None)
+            if precio is None:
+                precio = getattr(it.producto, "precio", 0)
+            precio = Decimal(str(precio or 0))
+
+            qty = int(it.cantidad or 0)
+            if qty <= 0:
+                continue
+
+            subtotal = precio * Decimal(qty)
+
+            # Línea oficial del pedido
+            PedidoItem.objects.create(
+                pedido=pedido,
+                producto=it.producto,
+                talla=it.talla,
+                cantidad=qty,
+                precio=precio,
+                subtotal=subtotal,
+            )
+
+            total += subtotal
+
+        pedido.total = total
+        pedido.save(update_fields=["total"])
     def _ensure_pedido_from_carrito(self, carrito):
         """
-        Garantiza que exista un Pedido asociado al carrito.
-        Si ya existe, lo retorna; si no, lo crea con el total del carrito.
+        Crea/enlaza un único Pedido para el carrito (idempotente con lock).
         """
-        # Si ya tienes relación Carrito->Pedido:
-        pedido = getattr(carrito, "pedido", None)
-        if pedido:
-            return pedido
-
-        # Calcula total del carrito sin romper por campos faltantes
-        total = Decimal("0")
-        try:
-            # si tu modelo Carrito ya tiene método calcular_total():
-            t = carrito.calcular_total()
-            total = Decimal(str(t))
-        except Exception:
-            # fallback: sumar item a item
-            for it in carrito.items.all():
-                precio = Decimal(str(getattr(it, "precio_unitario", 0) or 0))
-                cantidad = Decimal(str(getattr(it, "cantidad", 0) or 0))
-                sub = getattr(it, "subtotal", None)
-                sub = Decimal(str(sub)) if sub is not None else (precio * cantidad)
-                total += sub
-
         from .models import Pedido
-        pedido = Pedido.objects.create(
-            usuario=carrito.usuario,
-            total=total,
-            estado=True
-        )
 
-        # Si Carrito tiene campo para enlazarlo, persiste el vínculo:
-        if hasattr(carrito, "pedido"):
-            carrito.pedido = pedido
-            carrito.save(update_fields=["pedido"])
+        with transaction.atomic():
+            # bloquea el carrito para evitar procesos concurrentes
+            c = Carrito.objects.select_for_update().get(pk=carrito.pk)
 
-        return pedido
+            # si ya está enlazado, reutiliza
+            pedido = getattr(c, "pedido", None)
+            if pedido:
+                return pedido
+
+            # calcula total del carrito (sin romper si faltan campos)
+            total = Decimal("0")
+            try:
+                t = c.calcular_total()
+                total = Decimal(str(t))
+            except Exception:
+                for it in c.items.all():
+                    precio = Decimal(str(getattr(it, "precio_unitario", 0) or 0))
+                    cantidad = Decimal(str(getattr(it, "cantidad", 0) or 0))
+                    sub = getattr(it, "subtotal", None)
+                    sub = Decimal(str(sub)) if sub is not None else (precio * cantidad)
+                    total += sub
+
+            pedido = Pedido.objects.create(
+                usuario=c.usuario,
+                total=total,
+                estado=True
+            )
+
+            # enlaza carrito ↔ pedido si existe el campo
+            if hasattr(c, "pedido"):
+                c.pedido = pedido
+                c.save(update_fields=["pedido"])
+
+            return pedido
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -1581,65 +1551,30 @@ class CarritoView(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def finalizar_compra(self, request, pk=None):
         """
-        Convierte el carrito en pedido.
+        Convierte el carrito en pedido sin duplicar pedidos ni líneas.
         NO descuenta stock aquí (eso se hace al facturar).
         """
         carrito = self.get_object()
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=400)
 
-        # Creamos el pedido (total lo recalculamos abajo)
-        pedido = Pedido.objects.create(
-            usuario=carrito.usuario,
-            total=0,
-            estado=True
-        )
+        with transaction.atomic():
+            # Reutiliza (o crea) un único Pedido asociado al carrito
+            pedido = self._ensure_pedido_from_carrito(carrito)
 
-        from decimal import Decimal
-        from .models import PedidoItem, PedidoProducto  # mantenemos ambos para compatibilidad
+            # Copia líneas SOLO si aún no existen en el pedido
+            if not self._pedido_items_qs(pedido).exists():
+                self._move_items_carrito_a_pedido(carrito, pedido)
 
-        total = Decimal('0.00')
-        # Menos queries:
-        items = carrito.items.select_related('producto', 'talla').all()
+            # Cierra carrito
+            carrito.estado = False
+            carrito.save(update_fields=['estado'])
 
-        for it in items:
-            # precio unitario: usa el guardado en el carrito; si no, el del producto
-            precio = getattr(it, 'precio_unitario', None)
-            if precio is None:
-                precio = getattr(it.producto, 'precio', 0)
-
-            precio = Decimal(str(precio))
-            cantidad = int(it.cantidad or 1)
-            subtotal = precio * Decimal(cantidad)
-
-            # 1) Línea "oficial" del pedido (esto es lo que lee tu serializer como items)
-            PedidoItem.objects.create(
-                pedido=pedido,
-                producto=it.producto,
-                talla=it.talla,
-                cantidad=cantidad,
-                precio=precio,
-                subtotal=subtotal,
+            EstadoCarrito.objects.create(
+                carrito=carrito,
+                estado='entregado',
+                observacion='Carrito convertido en pedido'
             )
-
-            # 2) Mantén PedidoProducto si ya lo usas en otros lados (compatibilidad)
-            PedidoProducto.objects.create(pedido=pedido, producto=it.producto)
-
-            total += subtotal
-
-        # Guardar total calculado
-        pedido.total = total
-        pedido.save(update_fields=['total'])
-
-        # Cerrar carrito (sin tocar inventario)
-        carrito.estado = False
-        carrito.save(update_fields=['estado'])
-
-        EstadoCarrito.objects.create(
-            carrito=carrito,
-            estado='entregado',
-            observacion='Carrito convertido en pedido'
-        )
 
         return Response(
             {"mensaje": "Compra finalizada exitosamente", "pedido_id": pedido.idPedido},
@@ -1676,12 +1611,6 @@ class CarritoView(viewsets.ModelViewSet):
 
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # ---- 1) Asegurar Pedido (usa tu helper) ----
-        try:
-            pedido = self._ensure_pedido_from_carrito(carrito)
-        except Exception as e:
-            return Response({"error": f"No se pudo preparar el pedido: {str(e)}"}, status=500)
 
         # ---- 2) Construir ítems para MP ----
         items_mp, total = [], 0.0
@@ -1790,7 +1719,8 @@ class EstadoCarritoView(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def webhook(self, request):
         """
-        Webhook de Mercado Pago para notificaciones de pago
+        Webhook de Mercado Pago para notificaciones de pago.
+        Si el pago queda 'approved', asegura el Pedido del carrito y copia líneas una sola vez.
         """
         try:
             body = request.data if isinstance(request.data, dict) else json.loads(request.body)
@@ -1799,9 +1729,9 @@ class EstadoCarritoView(viewsets.ModelViewSet):
             payment_id = str(data.get("id", ""))
 
             if event_type != "payment" or not payment_id:
-                return Response({"ok": True})  # ignoramos otros eventos
+                return Response({"ok": True})
 
-            # Consultar pago en Mercado Pago
+            # Consulta a MP
             url = f"https://api.mercadopago.com/v1/payments/{payment_id}"
             resp = requests.get(
                 url,
@@ -1820,17 +1750,31 @@ class EstadoCarritoView(viewsets.ModelViewSet):
             except Carrito.DoesNotExist:
                 return Response({"error": "Carrito no encontrado"}, status=404)
 
-            # Actualizar carrito
             carrito.payment_id = payment_id
             carrito.mp_status = status_pago
-            carrito.save()
+            carrito.save(update_fields=["payment_id", "mp_status"])
 
-            # Crear estado
+            # Registrar estado
             EstadoCarrito.objects.create(
                 carrito=carrito,
                 estado="pagado" if status_pago == "approved" else "pendiente",
                 observacion=f"Webhook recibido. Estado: {status_pago}"
             )
+
+            # Si está aprobado, asegurar pedido y copiar líneas SOLO una vez
+            if status_pago == "approved":
+                from .views import CarritoView  # o importa CarritoView arriba
+                cv = CarritoView()
+                cv.request = request  # para serializers context, por si acaso
+
+                with transaction.atomic():
+                    pedido = cv._ensure_pedido_from_carrito(carrito)
+                    if not cv._pedido_items_qs(pedido).exists():
+                        cv._move_items_carrito_a_pedido(carrito, pedido)
+
+                    # Cierra carrito (opcional si prefieres cerrarlo solo en 'finalizar_compra')
+                    carrito.estado = False
+                    carrito.save(update_fields=['estado'])
 
             return Response({"ok": True})
         except Exception as e:
@@ -1906,6 +1850,79 @@ class EstadoCarritoView(viewsets.ModelViewSet):
 </body>
 </html>"""
         return HttpResponse(html)
+
+class PedidoView(viewsets.ModelViewSet):
+    serializer_class = PedidoSerializer
+    permission_classes = [IsAuthenticated, AdminandCliente]
+
+    def get_queryset(self):
+        qs = (Pedido.objects
+                .select_related("usuario")
+                .prefetch_related(
+                    Prefetch("items", queryset=PedidoItem.objects.select_related("producto","talla"), to_attr="_pref_items"),
+                    Prefetch("pedidoproducto_set", queryset=PedidoProducto.objects.select_related("producto"), to_attr="_pref_pp"),
+                ))
+
+        user = self.request.user
+        es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
+        if not es_admin:
+            qs = qs.filter(usuario=user)
+
+        return qs.order_by("-idPedido")
+
+class PedidoProductoView(viewsets.ModelViewSet):
+    """
+    CRUD de ítems de pedido.
+    - Admin: ve todos los registros.
+    - Cliente: solo puede ver ítems de sus propios pedidos.
+    - Filtro por querystring: ?pedido=<id>
+    """
+    serializer_class = PedidoProductoSerializer
+    permission_classes = [IsAuthenticated, AdminandCliente]
+
+    def get_queryset(self):
+        qs = (
+            PedidoProducto.objects
+            .select_related(
+                "pedido",
+                "pedido__usuario",
+                "producto",
+                "producto__subcategoria",
+                "producto__subcategoria__categoria",
+            )
+            .all()
+            .order_by("-pedido__idPedido", "producto__nombre")
+        )
+
+        # Si NO es admin, limitar a los pedidos del usuario autenticado
+        user = self.request.user
+        es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
+        if not es_admin:
+            qs = qs.filter(pedido__usuario=user)
+
+        # Filtro opcional por pedido
+        pedido_id = self.request.query_params.get("pedido")
+        if pedido_id:
+            qs = qs.filter(pedido_id=pedido_id)
+
+        return qs
+
+    # Si no quieres permitir crear/actualizar/borrar desde API pública comenta/borra estos métodos
+    # y cambia el ViewSet por ReadOnlyModelViewSet. Por ahora dejamos ModelViewSet.
+
+    @action(detail=False, methods=["get"])
+    def por_pedido(self, request):
+        """
+        GET /BACKEND/api/pedidoproductos/por_pedido/?pedido=<id>
+        Devuelve los ítems de un pedido específico (respetando visibilidad por usuario).
+        """
+        pedido_id = request.query_params.get("pedido")
+        if not pedido_id:
+            return Response({"detail": "Falta parámetro 'pedido'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        qs = self.get_queryset().filter(pedido_id=pedido_id)
+        data = self.get_serializer(qs, many=True).data
+        return Response(data, status=status.HTTP_200_OK)
 
 
 # =========================
