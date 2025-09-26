@@ -8,7 +8,7 @@ from decimal import Decimal
 import io
 from django.db.models import Prefetch
 from django.core.mail import EmailMessage
-
+from django.db import transaction, IntegrityError
 
 from django.http import FileResponse, HttpResponse
 from rest_framework.decorators import action
@@ -1470,9 +1470,74 @@ class CarritoView(viewsets.ModelViewSet):
             return Response({"error": "Item no encontrado en el carrito"}, status=404)
         except Exception as e:
             return Response({"error": f"Error al actualizar la cantidad: {str(e)}"}, status=400)
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def adoptar(self, request):
+        """
+        Adopta (mergea) un carrito anónimo al carrito activo del usuario.
+        Body: { "anon_cart_id": <int> }  # o "carrito_id" / "id"
+        """
+        anon_id = (
+            request.data.get("anon_cart_id")
+            or request.data.get("carrito_id")
+            or request.data.get("id")
+        )
+        if not anon_id:
+            return Response({"error": "Falta anon_cart_id"}, status=400)
 
+        # buscar carrito anónimo
+        try:
+            anon = (Carrito.objects
+                    .prefetch_related('items__producto', 'items__talla')
+                    .get(idCarrito=anon_id, usuario__isnull=True))
+        except Carrito.DoesNotExist:
+            return Response({"error": "carrito_anónimo_no_encontrado"}, status=404)
 
+        # obtener o crear carrito activo del usuario
+        user = request.user
+        user_cart, _ = Carrito.objects.get_or_create(usuario=user, estado=True)
 
+        try:
+            with transaction.atomic():
+                # bloqueamos items del user_cart para evitar condiciones de carrera
+                for it in list(anon.items.select_related('producto', 'talla').all()):
+                    # ¿ya existe ese (producto,talla) en el carrito del usuario?
+                    existente = (user_cart.items
+                                 .select_for_update()
+                                 .filter(producto_id=it.producto_id, talla_id=it.talla_id)
+                                 .first())
+
+                    if existente:
+                        nueva_cant = int(existente.cantidad) + int(it.cantidad)
+
+                        # valida stock (si lo manejas)
+                        stock = self._get_stock_disponible(it.producto_id, it.talla_id)
+                        if stock is not None and nueva_cant > stock:
+                            # puedes elegir: 1) cap al stock o 2) devolver 400
+                            nueva_cant = stock  # opción: cap
+                            # return Response({"error": "Stock insuficiente al adoptar"}, status=400)
+
+                        existente.cantidad = nueva_cant
+                        existente.save(update_fields=["cantidad"])
+
+                        # borra el item del anónimo (ya se fusionó)
+                        it.delete()
+                    else:
+                        # mover el item al carrito del usuario
+                        it.carrito = user_cart
+                        it.save()
+
+                # opcional: cerrar el carrito anónimo
+                anon.estado = False
+                anon.save(update_fields=["estado"])
+
+        except IntegrityError as e:
+            return Response({"error": "conflicto_unicidad", "detalle": str(e)}, status=409)
+
+        # devuelve el carrito del usuario ya fusionado
+        data = CarritoSerializer(user_cart).data
+        return Response(data, status=200)
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)  # CarritoCreateSerializer por get_serializer_class
         serializer.is_valid(raise_exception=True)

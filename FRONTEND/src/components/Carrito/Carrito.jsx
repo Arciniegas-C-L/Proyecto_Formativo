@@ -12,7 +12,8 @@ import {
   actualizarCantidad,
   eliminarProducto,
   limpiarCarrito,
-  crearPreferenciaPago
+  crearPreferenciaPago,
+  adoptarCarritoAnon,
 } from '../../api/CarritoApi';
 import { getALLProductos } from '../../api/Producto.api';
 import '../../assets/css/Carrito/Carrito.css';
@@ -78,6 +79,30 @@ export function Carrito() {
     window.addEventListener("carritoActualizado", onCarritoActualizado);
     return () => window.removeEventListener("carritoActualizado", onCarritoActualizado);
   }, []);
+
+  
+  useEffect(() => {
+  const tryAdopt = async () => {
+    if (!autenticado) return;
+    const cartId = localStorage.getItem("cartId");
+    if (!cartId) return;
+
+    try {
+      await adoptarCarritoAnon(cartId);
+      localStorage.removeItem("cartId");
+      window.dispatchEvent(new CustomEvent("carritoActualizado"));
+      toast.success("Se migró tu carrito a tu cuenta");
+    } catch (e) {
+      console.error("No se pudo adoptar el carrito:", e?.response?.data || e);
+      // Opcional: mantener el cartId para reintentar luego
+      toast.error(
+        e?.response?.data?.error || "No se pudo migrar el carrito. Inténtalo más tarde."
+      );
+    }
+  };
+
+  tryAdopt();
+}, [autenticado]);
 
   // Normaliza response.data (array | {results: []} | objeto)
   const cargarCarrito = async () => {

@@ -73,5 +73,13 @@ export const crearPreferenciaPago = async (id, payload) => {
   if (res.status === 403) { const err = new Error("Forbidden"); err.response = res; throw err; }
   return res;
 };
-
-// (resto igual)
+export const adoptarCarritoAnon = (anonCartId) => {
+  const id = Number(anonCartId);
+  if (!Number.isInteger(id) || id <= 0) {
+    const err = new Error("ANON_ID_INVALIDO");
+    err.detail = { anonCartId };
+    throw err;
+  }
+  // El backend espera exactamente { anon_cart_id: <int> }
+  return api.post("carrito/adoptar/", { anon_cart_id: id });
+};
