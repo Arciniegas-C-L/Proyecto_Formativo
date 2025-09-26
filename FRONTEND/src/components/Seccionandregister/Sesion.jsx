@@ -15,6 +15,7 @@ export function Sesion() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordLogin, setShowPasswordLogin] = useState(false); 
   const [showPasswordRegister, setShowPasswordRegister] = useState(false); 
+  const [showPasswordRegister2, setShowPasswordRegister2] = useState(false);
   const navigate = useNavigate();
 
   const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
@@ -62,41 +63,49 @@ export function Sesion() {
   };
 
   const handleRegister = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    const form = e.target.elements;
-    const nombre = form.nombre.value;
-    const apellido = form.apellido.value;
-    const telefono = form.telefono.value;
-    const correo = form.correo.value;
-    const password = form.password.value.trim();
+  e.preventDefault();
+  setIsSubmitting(true);
+  const form = e.target.elements;
+  const nombre = form.nombre.value;
+  const apellido = form.apellido.value;
+  const telefono = form.telefono.value;
+  const correo = form.correo.value;
+  const password = form.password.value.trim();
 
-    if (password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres.');
-      setIsSubmitting(false);
-      return;
-    }
+  // NUEVO: confirmar contraseña
+  const password2 = form.password2.value.trim();
+  if (password !== password2) {
+    toast.error('Las contraseñas no coinciden.');
+    setIsSubmitting(false);
+    return;
+  }
 
-    try {
-      await registerUsuario({ nombre, apellido, correo, password, telefono });
-      toast.success('Registro exitoso. Ahora inicia sesión.');
-      containerRef.current?.classList.remove('toggle');
-    } catch (error) {
-      const backend = error?.response?.data;
-      const status = error?.response?.status;
-      const errorMsg =
-        backend?.mensaje ||
-        backend?.error ||
-        (status === 400 && 'Datos inválidos') ||
-        (status === 401 && 'No autorizado') ||
-        (status === 500 && 'Error interno del servidor') ||
-        error.message ||
-        'No se pudo registrar el usuario';
-      toast.error(errorMsg);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (password.length < 6) {
+    toast.error('La contraseña debe tener al menos 6 caracteres.');
+    setIsSubmitting(false);
+    return;
+  }
+
+  try {
+    await registerUsuario({ nombre, apellido, correo, password, telefono });
+    toast.success('Registro exitoso. Ahora inicia sesión.');
+    containerRef.current?.classList.remove('toggle');
+  } catch (error) {
+    const backend = error?.response?.data;
+    const status = error?.response?.status;
+    const errorMsg =
+      backend?.mensaje ||
+      backend?.error ||
+      (status === 400 && 'Datos inválidos') ||
+      (status === 401 && 'No autorizado') ||
+      (status === 500 && 'Error interno del servidor') ||
+      error.message ||
+      'No se pudo registrar el usuario';
+    toast.error(errorMsg);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="container-sesion">
@@ -147,18 +156,39 @@ export function Sesion() {
             <div className="container-input">
               <input type="email" name="correo" placeholder="Correo" required />
             </div>
+            {/* Contraseña */}
             <div className="container-input">
               <input
                 type={showPasswordRegister ? "text" : "password"}
                 name="password"
                 placeholder="Contraseña"
+                autoComplete="new-password"
                 required
               />
               <i
                 className={`bi ${showPasswordRegister ? "bi-eye-slash" : "bi-eye"}`}
                 onClick={() => setShowPasswordRegister(!showPasswordRegister)}
+                role="button"
+                aria-label={showPasswordRegister ? "Ocultar contraseña" : "Mostrar contraseña"}
               ></i>
             </div>
+
+            {/* Confirmar contraseña — NUEVO */}
+            <div className="container-input">
+              <input
+                type={showPasswordRegister2 ? "text" : "password"}
+                name="password2"
+                placeholder="Confirmar contraseña"
+                autoComplete="new-password"
+                required
+              />
+              <i
+                className={`bi ${showPasswordRegister2 ? "bi-eye-slash" : "bi-eye"}`}
+                onClick={() => setShowPasswordRegister2(!showPasswordRegister2)}
+                role="button"
+                aria-label={showPasswordRegister2 ? "Ocultar confirmación" : "Mostrar confirmación"}
+              ></i>
+</div>
             <button type="submit" className="button" disabled={isSubmitting}>
               {isSubmitting ? 'Procesando...' : 'Registrarse'}
             </button>

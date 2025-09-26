@@ -58,19 +58,31 @@ function parseHttpError(err) {
   };
 }
 
+// <<< helpers de recarga dura (page reload)
+const RELOAD_MAX = 3;
+const RELOAD_DELAY_MS = 2000;
+const TRANSIENT_STATUSES = [404, 409, 429, 500, 502, 503];
+
+function getReloadKey({ isViewMode, facturaIdParam, q }) {
+  if (isViewMode) return `factura:view:reload:${facturaIdParam || "unknown"}`;
+  const key = q.external_reference || q.payment_id || "unknown";
+  return `retorno_mp:reload:${key}`;
+}
+function readReloads(key) {
+  try { return Number(sessionStorage.getItem(key) || "0") || 0; } catch { return 0; }
+}
+function writeReloads(key, n) {
+  try { sessionStorage.setItem(key, String(n)); } catch {}
+}
+function resetReloads(key) {
+  try { sessionStorage.removeItem(key); } catch {}
+}
+// >>>
+
 export function RetornoMP() {
   const [params] = useSearchParams();
   const { id: facturaIdParam } = useParams(); // <-- si existe, estamos en modo "ver factura"
 
-  const [state, setState] = useState({
-    loading: true,
-    ok: false,
-    error: null,
-    factura: null,
-    intentos: 0,
-  });
-
-  // --- MODO DETECCIÓN ---
   const isViewMode = !!facturaIdParam;  // true si /facturas/:id
   const debug = (params.get("debug") || "") === "1";
 
@@ -94,6 +106,18 @@ export function RetornoMP() {
     return key ? `retorno_mp:fired:${key}` : null;
   }, [isViewMode, q.external_reference, q.payment_id]);
 
+  // <<< estado: agrega reloads
+  const reloadKey = useMemo(() => getReloadKey({ isViewMode, facturaIdParam, q }), [isViewMode, facturaIdParam, q]);
+  const [state, setState] = useState(() => ({
+    loading: true,
+    ok: false,
+    error: null,
+    factura: null,
+    intentos: 0,
+    reloads: readReloads(reloadKey),
+  }));
+  // >>>
+
   // Descargar PDF (sirve en ambos modos)
   const onDescargarPDF = async (id, numero) => {
     try {
@@ -113,23 +137,50 @@ export function RetornoMP() {
   useEffect(() => {
     let cancel = false;
 
+    // util para cerrar con éxito y resetear recargas
+    const finishSuccess = (data, tries) => {
+      if (cancel) return;
+      resetReloads(reloadKey); // <<< reset recargas
+      setState({ loading: false, ok: true, error: null, factura: data, intentos: tries ?? state.intentos, reloads: 0 });
+    };
+
+    // util para manejar falla final y decidir recarga
+    const finishFailure = (parsedError, tries) => {
+      if (cancel) return;
+
+      const isTransient = TRANSIENT_STATUSES.includes(parsedError?.status || 0);
+      const currentReloads = readReloads(reloadKey);
+      const canReload = isTransient && currentReloads < RELOAD_MAX;
+
+      if (debug) {
+        console.error("[RetornoMP] Falla final:", parsedError, { isTransient, currentReloads, canReload });
+      }
+
+      if (canReload) {
+        const next = currentReloads + 1;
+        writeReloads(reloadKey, next);
+        setState({ loading: false, ok: false, error: parsedError, factura: null, intentos: tries ?? state.intentos, reloads: next });
+        // recarga dura tras breve delay
+        setTimeout(() => {
+          if (!cancel) window.location.reload();
+        }, RELOAD_DELAY_MS);
+        return;
+      }
+
+      // sin recarga (o agotado)
+      setState({ loading: false, ok: false, error: parsedError, factura: null, intentos: tries ?? state.intentos, reloads: currentReloads });
+    };
+
     // ====== MODO B: VER FACTURA /facturas/:id ======
     if (isViewMode) {
       (async () => {
         setState((s) => ({ ...s, loading: true, error: null }));
         try {
           const { data } = await getFactura(facturaIdParam);
-          if (cancel) return;
-          setState({ loading: false, ok: true, error: null, factura: data, intentos: 0 });
+          finishSuccess(data, 0);
         } catch (err) {
-          if (cancel) return;
-          setState({
-            loading: false,
-            ok: false,
-            error: parseHttpError(err),
-            factura: null,
-            intentos: 0,
-          });
+          const parsed = parseHttpError(err);
+          finishFailure(parsed, 0);
         }
       })();
       return () => { cancel = true; };
@@ -138,6 +189,7 @@ export function RetornoMP() {
     // ====== MODO A: RETORNO MP (sin :id) ======
     const isApproved = (q.status || "").toLowerCase() === "approved";
     if (!isApproved) {
+      resetReloads(reloadKey); // <<< no recargar si no aprobado
       setState((s) => ({
         ...s,
         loading: false,
@@ -149,7 +201,7 @@ export function RetornoMP() {
     }
 
     let tries = 0;
-    const MAX_TRIES = 4;
+    const MAX_TRIES = 4;  // ya tenías 4 intentos de API
     const DELAY_MS = 1500;
 
     const intentarPost = async () => {
@@ -161,23 +213,24 @@ export function RetornoMP() {
       try {
         if (debug) console.log("[RetornoMP] POST crear_factura payload:", body);
         const { data } = await crearFacturaDesdePago(body);
-        if (cancel) return;
         if (idemKey) localStorage.setItem(idemKey, "1");
-        setState({ loading: false, ok: true, error: null, factura: data, intentos: tries });
+        finishSuccess(data, tries);
       } catch (err) {
-        if (cancel) return;
         const parsed = parseHttpError(err);
         if (debug) console.error("[RetornoMP] Error POST:", parsed);
 
-        if (tries < MAX_TRIES && [404, 409, 429, 500, 502, 503].includes(parsed.status || 0)) {
+        if (tries < MAX_TRIES && TRANSIENT_STATUSES.includes(parsed.status || 0)) {
           setTimeout(intentarPost, DELAY_MS);
           return;
         }
-        setState({ loading: false, ok: false, error: parsed, factura: null, intentos: tries });
+        // agotados los reintentos de API → decidir recarga de página
+        finishFailure(parsed, tries);
       }
     };
 
     const intentarSoloLectura = async () => {
+      // Aquí podrías intentar GET a una ruta de consulta por external_reference si existe en tu API.
+      // Por ahora, solo salimos del loading.
       setState((s) => ({ ...s, loading: false }));
     };
 
@@ -189,7 +242,8 @@ export function RetornoMP() {
 
     intentarPost();
     return () => { cancel = true; };
-  }, [isViewMode, facturaIdParam, q, debug, idemKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isViewMode, facturaIdParam, q, debug, idemKey, reloadKey]); // <<< incluye reloadKey
 
   // Para pintar iconos y títulos coherentes en ambos modos:
   const isApproved = isViewMode ? true : (q.status || "").toLowerCase() === "approved";
@@ -279,6 +333,19 @@ export function RetornoMP() {
                     <div className="retorno-mp-error-message">
                       {state.error?.shortMessage || "No pudimos cargar la factura."}
                     </div>
+
+                    {/* <<< indicador de recarga programada */}
+                    {state.reloads > 0 && state.reloads < RELOAD_MAX && (
+                      <div className="retorno-mp-reload-hint">
+                        Reintentando recargar la página… ({state.reloads}/{RELOAD_MAX})
+                      </div>
+                    )}
+                    {state.reloads >= RELOAD_MAX && (
+                      <div className="retorno-mp-reload-hint">
+                        Se alcanzó el máximo de recargas automáticas ({RELOAD_MAX}). Intenta nuevamente más tarde.
+                      </div>
+                    )}
+                    {/* >>> */}
                     
                     {state.error && (
                       <div className="retorno-mp-error-details">
@@ -318,7 +385,7 @@ export function RetornoMP() {
                 )}
               </>
             ) : (
-              // ===== Retorno MP (lo que ya tenías) =====
+              // ===== Retorno MP =====
               <>
                 {isApproved ? (
                   <>
@@ -388,6 +455,19 @@ export function RetornoMP() {
                           {state.error?.shortMessage ||
                             "No pudimos crear la factura automáticamente. Intenta recargar en unos segundos."}
                         </div>
+
+                        {/* <<< indicador de recarga programada */}
+                        {state.reloads > 0 && state.reloads < RELOAD_MAX && (
+                          <div className="retorno-mp-reload-hint">
+                            Reintentando recargar la página… ({state.reloads}/{RELOAD_MAX})
+                          </div>
+                        )}
+                        {state.reloads >= RELOAD_MAX && (
+                          <div className="retorno-mp-reload-hint">
+                            Se alcanzó el máximo de recargas automáticas ({RELOAD_MAX}). Intenta nuevamente más tarde.
+                          </div>
+                        )}
+                        {/* >>> */}
                         
                         {state.error && (
                           <div className="retorno-mp-error-details">
