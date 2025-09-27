@@ -171,3 +171,23 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+#Esto permitira enviar la alerta por stock 
+# ======== Cache (para cooldown de alertas) ========
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "low-stock-alert-cache",
+        "TIMEOUT": None,  # manejamos el TTL por clave
+    }
+}
+
+# ======== Email: extras seguros ========
+# Si no hay admins con correo válido, usa este fallback (opcional)
+ALERT_FALLBACK_EMAIL = os.getenv("ALERT_FALLBACK_EMAIL", "juandavidmi100@gmail.com")  # e.g. soporte@tu-dominio.com
+
+# Evita cuelgues si el SMTP tarda
+EMAIL_TIMEOUT = 15
+EMAIL_SUBJECT_PREFIX = "[E-Commerce] "
+SERVER_EMAIL = DEFAULT_FROM_EMAIL  # para errores del sistema, coincide con from

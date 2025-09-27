@@ -1,55 +1,74 @@
+# BACKEND/services/stock_alerts_core.py
 from django.core.cache import cache
-from BACKEND.models import Usuario, Rol, Inventario
+from BACKEND.models import Inventario, Usuario, Rol
 from BACKEND.utils_email import send_email_raw
 
 LOW_STOCK_UMBRAL = 5
-LOW_STOCK_CACHE_TTL = 90 * 60  # 90 min
+DIGEST_TOP_N = 10
+LOW_STOCK_CACHE_TTL = 90 * 60
 
 def _admin_emails():
     try:
         rol_admin = Rol.objects.get(nombre__iexact='administrador')
     except Rol.DoesNotExist:
         return []
-    qs = (Usuario.objects
-          .filter(rol=rol_admin, estado=True, is_active=True)
-          .exclude(correo__isnull=True)
-          .exclude(correo=''))
-    return list(qs.values_list('correo', flat=True))
+    emails = (Usuario.objects
+              .filter(rol=rol_admin, estado=True, is_active=True)
+              .exclude(correo__isnull=True).exclude(correo='')
+              .values_list('correo', flat=True))
+    clean = sorted({e.strip() for e in emails if e and e.strip()})
+    return clean
 
 def _stock_of(inv: Inventario) -> int:
     s = inv.stock_talla if inv.stock_talla is not None else inv.cantidad
-    try:
-        return int(s or 0)
-    except:
-        return 0
+    try: return int(s or 0)
+    except: return 0
 
-def _row(inv: Inventario):
-    return (f"<tr><td>{inv.producto.subcategoria.categoria.nombre}</td>"
-            f"<td>{inv.producto.subcategoria.nombre}</td>"
-            f"<td>{inv.producto.nombre}</td>"
-            f"<td>{inv.talla.grupo.nombre}</td>"
-            f"<td>{inv.talla.nombre}</td>"
-            f"<td><strong>{_stock_of(inv)}</strong></td></tr>")
+def _item_ctx(inv: Inventario):
+    return {
+        "categoria": inv.producto.subcategoria.categoria.nombre,
+        "subcategoria": inv.producto.subcategoria.nombre,
+        "producto": inv.producto.nombre,
+        "grupo_talla": inv.talla.grupo.nombre,
+        "talla": inv.talla.nombre,
+        "stock": _stock_of(inv),
+    }
 
-def _table_single(inv: Inventario, umbral: int):
-    head = ("<h2>Alerta de bajo stock por talla</h2>"
-            f"<p>Umbral: <strong>{umbral}</strong></p>"
-            "<table border='1' cellpadding='6' cellspacing='0'>"
+def _table_html(rows, title, umbral=None):
+    header = f"<h2>{title}</h2>"
+    if umbral is not None:
+        header += f"<p>Umbral: <strong>{umbral}</strong></p>"
+    head = ("<table border='1' cellpadding='6' cellspacing='0'>"
             "<thead><tr><th>Categoría</th><th>Subcategoría</th><th>Producto</th>"
             "<th>Grupo Talla</th><th>Talla</th><th>Stock</th></tr></thead><tbody>")
-    return head + _row(inv) + "</tbody></table>"
+    body = "".join(
+        f"<tr><td>{r['categoria']}</td><td>{r['subcategoria']}</td>"
+        f"<td>{r['producto']}</td><td>{r['grupo_talla']}</td>"
+        f"<td>{r['talla']}</td><td><strong>{r['stock']}</strong></td></tr>"
+        for r in rows
+    )
+    return header + head + body + "</tbody></table>"
+
+def _send_low_stock_email_single(inv: Inventario, umbral: int):
+    html = _table_html([_item_ctx(inv)], title="Alerta de bajo stock por talla", umbral=umbral)
+    send_email_raw(
+        subject=f"[ALERTA] Bajo stock: {inv.producto.nombre} / Talla {inv.talla.nombre}",
+        to_emails=_admin_emails(),
+        html_body=html,
+        text_body=None
+    )
 
 def low_stock_event_check(inv: Inventario, umbral: int = LOW_STOCK_UMBRAL):
     stock = _stock_of(inv)
     key = f"lowstock:inv:{inv.pk}:u{umbral}"
     if stock < umbral:
-        if not cache.get(key):  # cooldown
-            html = _table_single(inv, umbral)
-            send_email_raw(
-                subject=f"[ALERTA] Bajo stock: {inv.producto.nombre} / Talla {inv.talla.nombre}",
-                to_emails=_admin_emails(),
-                html_body=html
-            )
+        if not cache.get(key):
+            _send_low_stock_email_single(inv, umbral=umbral)
             cache.set(key, True, timeout=LOW_STOCK_CACHE_TTL)
     else:
         cache.delete(key)
+
+def build_digest_html(umbral: int, items):
+    rows = [_item_ctx(i) for i in items]
+    title = "Resumen diario: Ítems bajo stock" if items else "Resumen diario"
+    return _table_html(rows, title=title, umbral=umbral), rows
