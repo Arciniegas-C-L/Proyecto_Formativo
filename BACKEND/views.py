@@ -178,6 +178,11 @@ from django.core.mail import EmailMultiAlternatives
 # --- SDK Mercado Pago (usa tu token de settings)
 sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10                          # default
+    page_size_query_param = "page_size"     # <<-- tu frontend ya envía esto
+    max_page_size = 100
+
 
 class ComentarioViewSet(viewsets.ModelViewSet):
     queryset = Comentario.objects.select_related('usuario').all().order_by('-fecha')
@@ -2202,6 +2207,7 @@ def _send_factura_email(request, factura):
 class FacturaView(viewsets.ModelViewSet):
     queryset = Factura.objects.select_related("usuario", "pedido").all()
     serializer_class = FacturaSerializer
+    pagination_class = StandardResultsSetPagination 
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=["post"])
@@ -2754,6 +2760,38 @@ class FacturaView(viewsets.ModelViewSet):
         resp = HttpResponse(buf.read(), content_type="application/pdf")
         resp["Content-Disposition"] = f'attachment; filename="{filename}"'
         return resp
+    
+    # Listado con filtros (el tuyo, con un par de correcciones de lookups)
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        user = self.request.user
+        if not (getattr(user, "is_superuser", False) or getattr(user, "is_staff", False) or
+                (getattr(getattr(user, "rol", None), "nombre", "").lower() == "administrador")):
+            qs = qs.filter(usuario=user)
+
+        numero = self.request.query_params.get("numero")
+        if numero:
+            qs = qs.filter(numero__icontains=numero)
+
+        f_desde = self.request.query_params.get("fecha_desde")
+        f_hasta = self.request.query_params.get("fecha_hasta")
+        estado  = self.request.query_params.get("estado")
+
+        # 🔧 Corrección de lookups de fecha (Django): __date__gte / __date__lte
+        if hasattr(Factura, "emitida_en"):
+            if f_desde:
+                qs = qs.filter(emitida_en__date__gte=f_desde)
+            if f_hasta:
+                qs = qs.filter(emitida_en__date__lte=f_hasta)
+            qs = qs.order_by("-emitida_en", "-pk")
+        else:
+            qs = qs.order_by("-pk")
+
+        if estado:
+            qs = qs.filter(estado__iexact=estado)
+
+        return qs
     
 #Hasta 
 
