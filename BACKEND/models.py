@@ -615,8 +615,19 @@ class SalesRangeReportItem(models.Model):
     def __str__(self):
         return f"{self.producto_id} [{self.reporte_id}] = {self.cantidad}"
 
+class LowStockAlert(models.Model):
+    """
+    Guarda el estado de alerta por inventario (producto + talla) para no spamear correos.
+    """
+    inventario = models.OneToOneField('Inventario', on_delete=models.CASCADE, related_name='low_stock_alert')
+    umbral = models.PositiveIntegerField(default=5)
+    en_alerta = models.BooleanField(default=False)           # True si actualmente está < umbral
+    first_detected = models.DateTimeField(null=True, blank=True)
+    last_sent_at = models.DateTimeField(null=True, blank=True)
+    times_sent = models.PositiveIntegerField(default=0)
 
-
+    def __str__(self):
+        return f"Alert({self.inventario_id}) < {self.umbral}: {self.en_alerta}"
 
 
 

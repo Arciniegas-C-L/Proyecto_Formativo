@@ -63,6 +63,8 @@ from BACKEND.permissions import (
 
 )
 
+
+
 # --- MODELOS del proyecto (import explícito)
 from .models import (
     # básicos
@@ -98,8 +100,16 @@ from .models import (
     Direccion,
     SalesRangeReport,
     SalesRangeReportItem,
+    LowStockAlert,
 )
 from django.db.models import Min
+
+#Imports para enviar cuando stocks este por debajo de 5
+from .utils_email import send_email_raw
+from django.core.cache import cache
+from django.db.models import F
+from BACKEND.services.stock_alerts_core import LOW_STOCK_UMBRAL
+
 
 # --- SERIALIZERS del proyecto (import explícito)
 from .serializer import (
@@ -618,7 +628,7 @@ class TallaViewSet(viewsets.ModelViewSet):
 from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 # Asumo que ya tienes estos modelos/serializers/permissions importados en tu archivo:
@@ -3066,3 +3076,117 @@ class SalesRangeReportViewSet(mixins.ListModelMixin,
 
         data = SalesRangeReportSerializer(rep).data
         return Response(data, status=status.HTTP_201_CREATED)
+
+LOW_STOCK_UMBRAL = 5
+DIGEST_TOP_N = 10
+LOW_STOCK_CACHE_TTL = 90 * 60  # 90 minutos de cooldown por inventario
+
+def _admin_emails():
+    try:
+        rol_admin = Rol.objects.get(nombre__iexact='administrador')
+    except Rol.DoesNotExist:
+        return []
+    qs = (Usuario.objects
+          .filter(rol=rol_admin, estado=True, is_active=True)
+          .exclude(correo__isnull=True)
+          .exclude(correo=''))
+    return list(qs.values_list('correo', flat=True))
+
+def _stock_of(inv: Inventario) -> int:
+    s = inv.stock_talla if inv.stock_talla is not None else inv.cantidad
+    try:
+        return int(s or 0)
+    except:
+        return 0
+
+def _item_ctx(inv: Inventario):
+    return {
+        "categoria": inv.producto.subcategoria.categoria.nombre,
+        "subcategoria": inv.producto.subcategoria.nombre,
+        "producto": inv.producto.nombre,
+        "grupo_talla": inv.talla.grupo.nombre,
+        "talla": inv.talla.nombre,
+        "stock": _stock_of(inv),
+    }
+
+def _table_html(rows, title, umbral=None):
+    # Construye una tabla HTML simple sin templates
+    header = f"<h2>{title}</h2>"
+    if umbral is not None:
+        header += f"<p>Umbral: <strong>{umbral}</strong></p>"
+    head = (
+        "<table border='1' cellpadding='6' cellspacing='0'>"
+        "<thead><tr>"
+        "<th>Categoría</th><th>Subcategoría</th><th>Producto</th>"
+        "<th>Grupo Talla</th><th>Talla</th><th>Stock</th>"
+        "</tr></thead><tbody>"
+    )
+    body = "".join(
+        f"<tr><td>{r['categoria']}</td><td>{r['subcategoria']}</td>"
+        f"<td>{r['producto']}</td><td>{r['grupo_talla']}</td>"
+        f"<td>{r['talla']}</td><td><strong>{r['stock']}</strong></td></tr>"
+        for r in rows
+    )
+    tail = "</tbody></table>"
+    return header + head + body + tail
+
+def _send_low_stock_email_single(inv: Inventario, umbral: int):
+    """
+    Arma y envía un correo por 1 inventario bajo de stock.
+    """
+    ctx = [_item_ctx(inv)]
+    html = _table_html(ctx, title="Alerta de bajo stock por talla", umbral=umbral)
+    send_email_raw(
+        subject=f"[ALERTA] Bajo stock: {inv.producto.nombre} / Talla {inv.talla.nombre}",
+        to_emails=_admin_emails(),
+        html_body=html,
+        text_body=None
+    )
+
+def low_stock_event_check(inv: Inventario, umbral: int = LOW_STOCK_UMBRAL):
+    """
+    Lógica para ser invocada al guardar Inventario.
+    Usa cache para no spamear: 1 correo cada 90 min por inventario bajo.
+    """
+    stock = _stock_of(inv)
+    if stock < umbral:
+        key = f"lowstock:inv:{inv.pk}:u{umbral}"
+        if not cache.get(key):
+            _send_low_stock_email_single(inv, umbral=umbral)
+            cache.set(key, True, timeout=LOW_STOCK_CACHE_TTL)
+    else:
+        # si se recuperó, limpia la bandera para permitir futuras alertas
+        key = f"lowstock:inv:{inv.pk}:u{umbral}"
+        cache.delete(key)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_low_stock_digest(request):
+    """
+    Enviar el resumen diario (o on-demand).
+    Si hay ítems < umbral => lista bajos.
+    Si no hay, envía los TOP N con menor stock.
+    Permisos: autentificado (idealmente admin).
+    """
+    umbral = int(request.data.get("umbral", LOW_STOCK_UMBRAL))
+    top_n = int(request.data.get("top_n", DIGEST_TOP_N))
+
+    invs = (Inventario.objects
+            .select_related('producto__subcategoria__categoria', 'talla__grupo')
+            .all())
+
+    bajos = [i for i in invs if _stock_of(i) < umbral]
+    hay_bajos = len(bajos) > 0
+
+    items = bajos if hay_bajos else sorted(invs, key=_stock_of)[:top_n]
+    rows = [_item_ctx(i) for i in items]
+
+    title = "Resumen diario: Ítems bajo stock" if hay_bajos else f"Resumen diario: TOP {top_n} con menor stock"
+    html = _table_html(rows, title=title, umbral=umbral)
+    send_email_raw(
+        subject="[Resumen diario] Stock por talla",
+        to_emails=_admin_emails(),
+        html_body=html,
+        text_body=None
+    )
+    return Response({"ok": True, "items": len(rows), "hay_bajos": hay_bajos})
