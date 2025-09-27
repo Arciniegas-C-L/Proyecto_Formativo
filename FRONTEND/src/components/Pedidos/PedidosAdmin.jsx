@@ -33,6 +33,8 @@ function formatDate(dt) {
 }
 
 export function PedidosAdmin() {
+  const [fechaMinima, setFechaMinima] = useState("");
+  const [fechaMaxima, setFechaMaxima] = useState("");
   const [loading, setLoading] = useState(false);
   const [pedidos, setPedidos] = useState([]);
 
@@ -70,6 +72,26 @@ export function PedidosAdmin() {
 
   useEffect(() => {
     fetchPedidos();
+    // Obtener fecha mínima del primer pedido y máxima del día actual
+    const obtenerFechasLimite = async () => {
+      try {
+        const { data } = await listarPedidos({ ordering: "fecha" });
+        if (Array.isArray(data) && data.length > 0) {
+          const primerPedido = data[0];
+          const fechaPrimer = primerPedido.fecha || primerPedido.created_at || "";
+          setFechaMinima(fechaPrimer ? fechaPrimer.slice(0, 10) : "");
+        }
+      } catch {
+        setFechaMinima("");
+      }
+      // Fecha máxima: hoy
+      const hoy = new Date();
+      const yyyy = hoy.getFullYear();
+      const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+      const dd = String(hoy.getDate()).padStart(2, "0");
+      setFechaMaxima(`${yyyy}-${mm}-${dd}`);
+    };
+    obtenerFechasLimite();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -136,6 +158,8 @@ export function PedidosAdmin() {
                 className="form-control"
                 value={fechaMin}
                 onChange={(e) => setFechaMin(e.target.value)}
+                min={fechaMinima}
+                max={fechaMaxima}
               />
             </div>
             <div className="col-6 col-md-3">
@@ -145,6 +169,8 @@ export function PedidosAdmin() {
                 className="form-control"
                 value={fechaMax}
                 onChange={(e) => setFechaMax(e.target.value)}
+                min={fechaMinima}
+                max={fechaMaxima}
               />
             </div>
             <div className="col-12 col-sm-6 col-md-2">
