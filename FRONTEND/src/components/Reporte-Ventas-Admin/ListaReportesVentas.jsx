@@ -5,6 +5,7 @@ import {
   listarItemsReporteVentas,
   ORDERING,
 } from "../../api/ReporteVentasRango.api";
+import "../../assets/css/Reporte-Ventas-Admin/ListaReporteVentas.css";
 
 function fmtCOP(v) {
   return new Intl.NumberFormat("es-CO", {
@@ -137,7 +138,7 @@ export function ListaReportesVentas({
   return (
     <>
       <div className="table-responsive">
-        <table className="table table-sm align-middle">
+        <table className="table lista-table-dark m-0">
           <thead>
             <tr>
               <th style={{ width: 70 }}>ID</th>
@@ -150,38 +151,48 @@ export function ListaReportesVentas({
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan="6" className="text-center text-muted py-4">Cargando…</td></tr>
+              <tr>
+                <td colSpan="6" className="text-center lista-no-data py-4">
+                  Cargando…
+                </td>
+              </tr>
             )}
             {!loading && reportes.length === 0 && (
-              <tr><td colSpan="6" className="text-center text-muted py-4">No hay reportes.</td></tr>
+              <tr>
+                <td colSpan="6" className="text-center lista-no-data py-4">
+                  No hay reportes.
+                </td>
+              </tr>
             )}
             {!loading && reportes.map((r) => {
               const activo = r.id === seleccionadoId;
               return (
-                <tr key={r.id} className={activo ? "table-primary" : ""}>
+                <tr key={r.id} className={activo ? "lista-table-primary" : ""}>
                   <td>#{r.id}</td>
-                  <td>{r.fecha_inicio} &rarr; {r.fecha_fin}</td>
-                  <td className="small text-muted">{new Date(r.generado_en).toLocaleString()}</td>
+                  <td>{r.fecha_inicio} → {r.fecha_fin}</td>
+                  <td className="small lista-text-muted">
+                    {new Date(r.generado_en).toLocaleString()}
+                  </td>
                   <td className="text-end">{fmtCOP(r.ventas_netas)}</td>
                   <td className="text-end">{r.items_totales ?? 0}</td>
                   <td className="text-center">
-                    <div className="btn-group btn-group-sm">
+                    <div className="btn-group btn-group-sm lista-btn-group">
                       <button
-                        className={`btn ${activo ? "btn-secondary" : "btn-outline-secondary"}`}
+                        className={`btn lista-btn-select ${activo ? "active" : ""}`}
                         title="Seleccionar en el admin"
                         onClick={() => onSelect(r.id)}
                       >
                         Seleccionar
                       </button>
                       <button
-                        className="btn btn-primary"
+                        className="btn lista-btn-view"
                         title="Ver en grande"
                         onClick={() => openPreview(r.id)}
                       >
                         Ver
                       </button>
                       <button
-                        className="btn btn-outline-danger"
+                        className="btn lista-btn-delete"
                         title="Eliminar"
                         onClick={() => handleDelete(r.id)}
                       >
@@ -196,91 +207,90 @@ export function ListaReportesVentas({
         </table>
       </div>
 
-      {/* Modal simple CSS (sin JS de Bootstrap) */}
+      {/* Modal personalizado */}
       {show && (
         <>
-          <div
-            className="position-fixed top-0 start-0 w-100 h-100"
-            style={{ background: "rgba(0,0,0,.4)", zIndex: 1050 }}
-            onClick={closePreview}
-          />
-          <div
-            className="position-fixed top-50 start-50 translate-middle w-100"
-            style={{ maxWidth: 1100, zIndex: 1060 }}
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="card shadow-lg">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 className="mb-0">Reporte #{previewId}</h5>
-                  {hdr && (
-                    <div className="small text-muted">
-                      {hdr.fecha_inicio} &rarr; {hdr.fecha_fin} · Generado: {new Date(hdr.generado_en).toLocaleString()}
-                    </div>
-                  )}
-                </div>
-                <div className="btn-group">
-                  <button className="btn btn-success btn-sm" onClick={exportCSV} disabled={!rows.length}>
-                    Exportar CSV
-                  </button>
-                  <button className="btn btn-outline-secondary btn-sm" onClick={() => window.print()}>
-                    Imprimir
-                  </button>
-                  <button className="btn btn-outline-dark btn-sm" onClick={closePreview}>
-                    Cerrar
-                  </button>
+          <div className="lista-modal-overlay" onClick={closePreview} />
+          <div className="lista-modal-content" role="dialog" aria-modal="true">
+            <div className="lista-glass-modal">
+              <div className="lista-modal-header">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                  <div className="mb-2 mb-md-0">
+                    <h5 className="mb-1 lista-modal-title">
+                      Reporte #{previewId}
+                    </h5>
+                    {hdr && (
+                      <div className="small lista-modal-subtitle">
+                        {hdr.fecha_inicio} → {hdr.fecha_fin} · Generado: {new Date(hdr.generado_en).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="btn-group">
+                    <button className="btn lista-btn-export" onClick={exportCSV} disabled={!rows.length}>
+                      Exportar CSV
+                    </button>
+                    <button className="btn lista-btn-print" onClick={() => window.print()}>
+                      Imprimir
+                    </button>
+                    <button className="btn lista-btn-close" onClick={closePreview}>
+                      Cerrar
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="card-body">
+              <div className="p-4 lista-modal-body">
                 {/* KPIs */}
                 {hdr && (
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-3">
-                      <div className="card h-100 shadow-sm">
-                        <div className="card-body">
-                          <div className="small text-muted">Ventas netas</div>
-                          <h3 className="mb-0">{fmtCOP(hdr.ventas_netas)}</h3>
+                  <div className="row g-4 mb-4">
+                    <div className="col-xl-3 col-lg-6">
+                      <div className="lista-kpi-card">
+                        <div className="lista-kpi-label">
+                          Ventas netas
+                        </div>
+                        <h3 className="mb-0 lista-kpi-value">{fmtCOP(hdr.ventas_netas)}</h3>
+                      </div>
+                    </div>
+                    <div className="col-xl-3 col-lg-6">
+                      <div className="lista-kpi-card">
+                        <div className="lista-kpi-label">
+                          Items vendidos
+                        </div>
+                        <h3 className="mb-0 lista-kpi-value">{hdr.items_totales ?? 0}</h3>
+                        <div className="lista-kpi-subtitle">
+                          Tickets: {hdr.tickets ?? 0}
                         </div>
                       </div>
                     </div>
-                    <div className="col-md-3">
-                      <div className="card h-100 shadow-sm">
-                        <div className="card-body">
-                          <div className="small text-muted">Items vendidos</div>
-                          <h3 className="mb-0">{hdr.items_totales ?? 0}</h3>
-                          <div className="small text-muted mt-2">Tickets: {hdr.tickets ?? 0}</div>
+                    <div className="col-xl-3 col-lg-6">
+                      <div className="lista-kpi-card">
+                        <div className="lista-kpi-label">
+                          Top producto
                         </div>
+                        <div className="lista-kpi-product-name">{hdr.top?.producto?.nombre || "—"}</div>
+                        <div className="lista-kpi-subtitle">Cantidad: {hdr.top?.cantidad ?? 0}</div>
                       </div>
                     </div>
-                    <div className="col-md-3">
-                      <div className="card h-100 shadow-sm">
-                        <div className="card-body">
-                          <div className="small text-muted">Top producto</div>
-                          <div className="fw-semibold">{hdr.top?.producto?.nombre || "—"}</div>
-                          <div className="small">Cantidad: {hdr.top?.cantidad ?? 0}</div>
+                    <div className="col-xl-3 col-lg-6">
+                      <div className="lista-kpi-card">
+                        <div className="lista-kpi-label">
+                          Menos vendido
                         </div>
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="card h-100 shadow-sm">
-                        <div className="card-body">
-                          <div className="small text-muted">Menos vendido</div>
-                          <div className="fw-semibold">{hdr.bottom?.producto?.nombre || "—"}</div>
-                          <div className="small">Cantidad: {hdr.bottom?.cantidad ?? 0}</div>
-                        </div>
+                        <div className="lista-kpi-product-name">{hdr.bottom?.producto?.nombre || "—"}</div>
+                        <div className="lista-kpi-subtitle">Cantidad: {hdr.bottom?.cantidad ?? 0}</div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Controles tabla */}
-                <div className="row g-2 align-items-end mb-2">
-                  <div className="col-sm-6 col-md-4">
-                    <label className="form-label mb-1">Ordenar por</label>
+                <div className="row g-3 mb-3">
+                  <div className="col-md-4">
+                    <label className="lista-form-label">
+                      Ordenar por
+                    </label>
                     <select
-                      className="form-select"
+                      className="form-select lista-form-control"
                       value={ordering}
                       onChange={(e) => { setOrdering(e.target.value); setPage(1); }}
                     >
@@ -292,10 +302,12 @@ export function ListaReportesVentas({
                       <option value={ORDERING.MENOS_TICKETS}>Menos tickets</option>
                     </select>
                   </div>
-                  <div className="col-sm-6 col-md-3">
-                    <label className="form-label mb-1">Filas por página</label>
+                  <div className="col-md-3">
+                    <label className="lista-form-label">
+                      Filas por página
+                    </label>
                     <select
-                      className="form-select"
+                      className="form-select lista-form-control"
                       value={pageSize}
                       onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
                     >
@@ -304,15 +316,23 @@ export function ListaReportesVentas({
                       <option value={50}>50</option>
                     </select>
                   </div>
-                  <div className="col-md-5 text-md-end small text-muted">
-                    {loadingPreview ? "Cargando…" : `Total filas: ${count}`}
+                  <div className="col-md-5 d-flex align-items-end">
+                    <div className="small lista-text-muted">
+                      {loadingPreview ? "Cargando…" : `Total filas: ${count}`}
+                    </div>
                   </div>
                 </div>
 
+                {err && (
+                  <div className="alert lista-alert-danger mb-3">
+                    {err}
+                  </div>
+                )}
+
                 {/* Tabla detalle */}
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle">
-                    <thead className="table-light">
+                <div className="table-responsive mb-3">
+                  <table className="table lista-table-dark m-0">
+                    <thead>
                       <tr>
                         <th>ID</th>
                         <th>Producto</th>
@@ -333,7 +353,7 @@ export function ListaReportesVentas({
                       ))}
                       {!rows.length && (
                         <tr>
-                          <td colSpan="5" className="text-center text-muted py-4">
+                          <td colSpan="5" className="text-center lista-no-data py-4">
                             {loadingPreview ? "Cargando..." : "Sin datos."}
                           </td>
                         </tr>
@@ -343,23 +363,25 @@ export function ListaReportesVentas({
                 </div>
 
                 {/* Paginación */}
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="small">Página {page} de {totalPages}</span>
-                  <div className="btn-group">
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page <= 1}
-                    >
-                      « Anterior
-                    </button>
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page >= totalPages}
-                    >
-                      Siguiente »
-                    </button>
+                <div className="lista-pagination">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                    <span className="small mb-2 mb-md-0">Página {page} de {totalPages}</span>
+                    <div className="btn-group">
+                      <button
+                        className="btn lista-btn-pagination"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page <= 1}
+                      >
+                        « Anterior
+                      </button>
+                      <button
+                        className="btn lista-btn-pagination"
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page >= totalPages}
+                      >
+                        Siguiente »
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

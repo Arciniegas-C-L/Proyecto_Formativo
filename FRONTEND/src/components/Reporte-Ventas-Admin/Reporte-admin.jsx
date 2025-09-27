@@ -10,6 +10,7 @@ import {
 } from "../../api/ReporteVentasRango.api";
 import { api } from "../../api/axios";
 import {ListaReportesVentas} from "./ListaReportesVentas"; // <- default import
+import "../../assets/css/Reporte-Ventas-Admin/Reporte-admin.css";
 
 // Utils de fecha
 function todayStr() {
@@ -242,19 +243,19 @@ export function ReporteVentasRangoAdmin() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(count / pageSize)), [count, pageSize]);
 
   return (
-    <div className="container py-3">
-      <h2 className="mb-3">Reporte de Ventas por Rango</h2>
+    <div className="reporte-ventas-container">
+      <h2 className="reporte-mb-3">Reporte de Ventas por Rango</h2>
 
       {/* Cuadrito: Generar | Listar */}
-      <div className="d-inline-flex mb-3 border rounded-pill overflow-hidden">
+      <div className="reporte-toggle-container">
         <button
-          className={`btn ${mode === "generar" ? "btn-primary" : "btn-light"} rounded-0`}
+          className={`reporte-toggle-btn ${mode === "generar" ? "active" : ""}`}
           onClick={() => setMode("generar")}
         >
           Generar
         </button>
         <button
-          className={`btn ${mode === "listar" ? "btn-primary" : "btn-light"} rounded-0`}
+          className={`reporte-toggle-btn ${mode === "listar" ? "active" : ""}`}
           onClick={() => setMode("listar")}
         >
           Listar
@@ -265,113 +266,117 @@ export function ReporteVentasRangoAdmin() {
       {mode === "generar" && (
         <>
           {/* Generar reporte */}
-          <div className="card mb-3">
-            <div className="card-body row g-3">
-              <div className="col-md-3">
-                <label className="form-label">Desde</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={desde}
-                  min={limites.min}
-                  max={limites.max}
-                  onChange={(e) => setDesde(e.target.value || limites.min)}
-                />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Hasta</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={hasta}
-                  min={limites.min}
-                  max={limites.max}
-                  onChange={(e) => setHasta(e.target.value || todayStr())}
-                />
-                <div className="form-text">El backend normaliza a [desde, hasta)</div>
-              </div>
-
-              <div className="col-md-2 d-flex align-items-end">
-                <div className="form-check">
+          <div className="reporte-card">
+            <div className="reporte-card-body">
+              <div className="reporte-row reporte-gap-3">
+                <div className="reporte-col reporte-col-md-3">
+                  <label className="reporte-form-label">Desde</label>
                   <input
-                    id="soloAprobados"
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={soloAprobados}
-                    onChange={(e) => setSoloAprobados(e.target.checked)}
+                    type="date"
+                    className="reporte-form-control"
+                    value={desde}
+                    min={limites.min}
+                    max={limites.max}
+                    onChange={(e) => setDesde(e.target.value || limites.min)}
                   />
-                  <label className="form-check-label" htmlFor="soloAprobados">
-                    Solo aprobados
-                  </label>
                 </div>
-              </div>
 
-              <div className="col-md-4 d-flex align-items-end gap-2">
-                <button className="btn btn-primary" onClick={onGenerar} disabled={generating}>
-                  {generating ? "Generando..." : "Generar reporte"}
-                </button>
-                <button
-                  className="btn btn-outline-secondary"
-                  onClick={() => {
-                    setDesde(firstDayOfMonthStr());
-                    setHasta(todayStr());
-                    setSoloAprobados(false);
-                  }}
-                  disabled={generating}
-                >
-                  Reset
-                </button>
+                <div className="reporte-col reporte-col-md-3">
+                  <label className="reporte-form-label">Hasta</label>
+                  <input
+                    type="date"
+                    className="reporte-form-control"
+                    value={hasta}
+                    min={limites.min}
+                    max={limites.max}
+                    onChange={(e) => setHasta(e.target.value || todayStr())}
+                  />
+                  <div className="reporte-form-text">El backend normaliza a [desde, hasta)</div>
+                </div>
+
+                <div className="reporte-col reporte-col-md-2 reporte-d-flex reporte-align-items-end">
+                  <div className="reporte-form-check">
+                    <input
+                      id="soloAprobados"
+                      className="reporte-form-check-input"
+                      type="checkbox"
+                      checked={soloAprobados}
+                      onChange={(e) => setSoloAprobados(e.target.checked)}
+                    />
+                    <label className="reporte-form-check-label" htmlFor="soloAprobados">
+                      Solo aprobados
+                    </label>
+                  </div>
+                </div>
+
+                <div className="reporte-col reporte-col-md-4 reporte-d-flex reporte-align-items-end reporte-gap-2">
+                  <button className="reporte-btn-primary" onClick={onGenerar} disabled={generating}>
+                    {generating ? "Generando..." : "Generar reporte"}
+                  </button>
+                  <button
+                    className="reporte-btn-secondary"
+                    onClick={() => {
+                      setDesde(firstDayOfMonthStr());
+                      setHasta(todayStr());
+                      setSoloAprobados(false);
+                    }}
+                    disabled={generating}
+                  >
+                    Reset
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Selector rápido por <select> (conservado por si te sirve) */}
-          <div className="card mb-3">
-            <div className="card-body row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Reportes generados</label>
-                <select
-                  className="form-select"
-                  value={reporteId || ""}
-                  onChange={(e) => setReporteId(Number(e.target.value) || null)}
-                >
-                  {!reportes.length && <option value="">— No hay reportes —</option>}
-                  {reportes.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      #{r.id} — {r.fecha_inicio} → {r.fecha_fin}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Ordenar detalle por</label>
-                <div className="d-flex gap-2">
+          <div className="reporte-card">
+            <div className="reporte-card-body">
+              <div className="reporte-row reporte-gap-3">
+                <div className="reporte-col reporte-col-md-6">
+                  <label className="reporte-form-label">Reportes generados</label>
                   <select
-                    className="form-select"
-                    value={ordering}
-                    onChange={(e) => {
-                      setOrdering(e.target.value);
-                      setPage(1);
-                    }}
+                    className="reporte-form-select"
+                    value={reporteId || ""}
+                    onChange={(e) => setReporteId(Number(e.target.value) || null)}
                   >
-                    <option value={ORDERING.MAS_VENDIDOS}>Más vendidos</option>
-                    <option value={ORDERING.MENOS_VENDIDOS}>Menos vendidos</option>
-                    <option value={ORDERING.MAYOR_INGRESO}>Mayor ingreso</option>
-                    <option value={ORDERING.MENOR_INGRESO}>Menor ingreso</option>
-                    <option value={ORDERING.MAS_TICKETS}>Más tickets</option>
-                    <option value={ORDERING.MENOS_TICKETS}>Menos tickets</option>
+                    {!reportes.length && <option value="">— No hay reportes —</option>}
+                    {reportes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        #{r.id} — {r.fecha_inicio} → {r.fecha_fin}
+                      </option>
+                    ))}
                   </select>
+                </div>
 
-                  <button
-                    className="btn btn-success"
-                    onClick={exportCSV}
-                    disabled={!items.length}
-                    title="Exportar detalle a CSV"
-                  >
-                    Exportar CSV
-                  </button>
+                <div className="reporte-col reporte-col-md-6">
+                  <label className="reporte-form-label">Ordenar detalle por</label>
+                  <div className="reporte-d-flex reporte-gap-2">
+                    <select
+                      className="reporte-form-select"
+                      value={ordering}
+                      onChange={(e) => {
+                        setOrdering(e.target.value);
+                        setPage(1);
+                      }}
+                    >
+                      <option value={ORDERING.MAS_VENDIDOS}>Más vendidos</option>
+                      <option value={ORDERING.MENOS_VENDIDOS}>Menos vendidos</option>
+                      <option value={ORDERING.MAYOR_INGRESO}>Mayor ingreso</option>
+                      <option value={ORDERING.MENOR_INGRESO}>Menor ingreso</option>
+                      <option value={ORDERING.MAS_TICKETS}>Más tickets</option>
+                      <option value={ORDERING.MENOS_TICKETS}>Menos tickets</option>
+                    </select>
+
+                    <button
+                      className="reporte-btn-success"
+                      onClick={exportCSV}
+                      disabled={!items.length}
+                      title="Exportar detalle a CSV"
+                    >
+                      Exportar CSV
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -379,52 +384,48 @@ export function ReporteVentasRangoAdmin() {
 
           {/* KPIs */}
           {reporte && (
-            <div className="row g-3 mb-3">
-              <div className="col-md-3">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="small text-muted">Ventas netas</div>
-                    <h4 className="mb-0">
-                      {new Intl.NumberFormat("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                        maximumFractionDigits: 0,
-                      }).format(reporte.ventas_netas ?? 0)}
-                    </h4>
-                    <div className="text-muted mt-2">
-                      {reporte.fecha_inicio} → {reporte.fecha_fin}
-                    </div>
+            <div className="reporte-row reporte-gap-3 reporte-mb-3">
+              <div className="reporte-col reporte-col-md-3">
+                <div className="reporte-kpi-card">
+                  <div className="reporte-kpi-title">Ventas netas</div>
+                  <div className="reporte-kpi-value">
+                    {new Intl.NumberFormat("es-CO", {
+                      style: "currency",
+                      currency: "COP",
+                      maximumFractionDigits: 0,
+                    }).format(reporte.ventas_netas ?? 0)}
+                  </div>
+                  <div className="reporte-kpi-subtitle">
+                    {reporte.fecha_inicio} → {reporte.fecha_fin}
                   </div>
                 </div>
               </div>
 
-              <div className="col-md-3">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="small text-muted">Items vendidos</div>
-                    <h4 className="mb-0">{reporte.items_totales ?? 0}</h4>
-                    <div className="small text-muted mt-2">Tickets: {reporte.tickets ?? 0}</div>
-                  </div>
+              <div className="reporte-col reporte-col-md-3">
+                <div className="reporte-kpi-card">
+                  <div className="reporte-kpi-title">Items vendidos</div>
+                  <div className="reporte-kpi-value">{reporte.items_totales ?? 0}</div>
+                  <div className="reporte-kpi-subtitle">Tickets: {reporte.tickets ?? 0}</div>
                 </div>
               </div>
 
-              <div className="col-md-3">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="small text-muted">Top producto</div>
-                    <h6 className="mb-1">{reporte.top?.producto?.nombre || "—"}</h6>
-                    <div className="small">Cantidad: {reporte.top?.cantidad ?? 0}</div>
+              <div className="reporte-col reporte-col-md-3">
+                <div className="reporte-kpi-card">
+                  <div className="reporte-kpi-title">Top producto</div>
+                  <div className="reporte-kpi-value" style={{fontSize: '1.25rem'}}>
+                    {reporte.top?.producto?.nombre || "—"}
                   </div>
+                  <div className="reporte-kpi-subtitle">Cantidad: {reporte.top?.cantidad ?? 0}</div>
                 </div>
               </div>
 
-              <div className="col-md-3">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="small text-muted">Menos vendido</div>
-                    <h6 className="mb-1">{reporte.bottom?.producto?.nombre || "—"}</h6>
-                    <div className="small">Cantidad: {reporte.bottom?.cantidad ?? 0}</div>
+              <div className="reporte-col reporte-col-md-3">
+                <div className="reporte-kpi-card">
+                  <div className="reporte-kpi-title">Menos vendido</div>
+                  <div className="reporte-kpi-value" style={{fontSize: '1.25rem'}}>
+                    {reporte.bottom?.producto?.nombre || "—"}
                   </div>
+                  <div className="reporte-kpi-subtitle">Cantidad: {reporte.bottom?.cantidad ?? 0}</div>
                 </div>
               </div>
             </div>
@@ -432,20 +433,24 @@ export function ReporteVentasRangoAdmin() {
 
           {/* Errores */}
           {error && (
-            <div className="alert alert-danger" role="alert">
+            <div className="reporte-alert-danger" role="alert">
               {error}
             </div>
           )}
 
           {/* Tabla detalle */}
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <h5 className="mb-0">Detalle por producto</h5>
-                <div className="d-flex align-items-center gap-2">
-                  <label className="form-label mb-0 me-2 small">Filas por página</label>
+          <div className="reporte-table-container">
+            <div className="reporte-card-body">
+              <div className="reporte-d-flex reporte-align-items-center reporte-justify-content-between reporte-mb-2">
+                <h5 className="reporte-mb-0" style={{color: '#00d4ff', fontSize: '1.25rem', fontWeight: '600'}}>
+                  Detalle por producto
+                </h5>
+                <div className="reporte-d-flex reporte-align-items-center reporte-gap-2">
+                  <label className="reporte-form-label reporte-mb-0 reporte-me-2" style={{fontSize: '0.875rem'}}>
+                    Filas por página
+                  </label>
                   <select
-                    className="form-select"
+                    className="reporte-form-select"
                     style={{ width: 100 }}
                     value={pageSize}
                     onChange={(e) => {
@@ -460,15 +465,15 @@ export function ReporteVentasRangoAdmin() {
                 </div>
               </div>
 
-              <div className="table-responsive">
-                <table className="table table-sm align-middle">
+              <div className="reporte-table-responsive">
+                <table className="reporte-table">
                   <thead>
                     <tr>
                       <th>ID</th>
                       <th>Producto</th>
-                      <th className="text-end">Cantidad</th>
-                      <th className="text-end">Ingresos</th>
-                      <th className="text-end">Tickets</th>
+                      <th className="reporte-text-end">Cantidad</th>
+                      <th className="reporte-text-end">Ingresos</th>
+                      <th className="reporte-text-end">Tickets</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -476,20 +481,20 @@ export function ReporteVentasRangoAdmin() {
                       <tr key={`${p.producto?.id ?? p.producto_id}-${p.cantidad}-${p.ingresos}`}>
                         <td>{p.producto?.id ?? p.producto_id}</td>
                         <td>{p.producto?.nombre ?? "—"}</td>
-                        <td className="text-end">{p.cantidad}</td>
-                        <td className="text-end">
+                        <td className="reporte-text-end">{p.cantidad}</td>
+                        <td className="reporte-text-end">
                           {new Intl.NumberFormat("es-CO", {
                             style: "currency",
                             currency: "COP",
                             maximumFractionDigits: 0,
                           }).format(p.ingresos ?? 0)}
                         </td>
-                        <td className="text-end">{p.tickets}</td>
+                        <td className="reporte-text-end">{p.tickets}</td>
                       </tr>
                     ))}
                     {!items.length && (
                       <tr>
-                        <td colSpan="5" className="text-center text-muted py-4">
+                        <td colSpan="5" className="reporte-empty-state">
                           {loading ? "Cargando..." : "Sin datos para este reporte."}
                         </td>
                       </tr>
@@ -499,18 +504,18 @@ export function ReporteVentasRangoAdmin() {
               </div>
 
               {/* Paginación */}
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="small">Página {page} de {totalPages}</span>
-                <div className="btn-group">
+              <div className="reporte-pagination">
+                <span className="reporte-pagination-info">Página {page} de {totalPages}</span>
+                <div className="reporte-pagination-controls">
                   <button
-                    className="btn btn-outline-secondary btn-sm"
+                    className="reporte-pagination-btn"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
                   >
                     « Anterior
                   </button>
                   <button
-                    className="btn btn-outline-secondary btn-sm"
+                    className="reporte-pagination-btn"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                   >
@@ -525,11 +530,13 @@ export function ReporteVentasRangoAdmin() {
 
       {/* ───────────────── LISTAR ───────────────── */}
       {mode === "listar" && (
-        <div className="card">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h5 className="mb-0">Reportes generados</h5>
-              <span className="badge bg-light text-dark">
+        <div className="reporte-card">
+          <div className="reporte-card-body">
+            <div className="reporte-d-flex reporte-justify-content-between reporte-align-items-center reporte-mb-2">
+              <h5 className="reporte-mb-0" style={{color: '#00d4ff', fontSize: '1.25rem', fontWeight: '600'}}>
+                Reportes generados
+              </h5>
+              <span className="reporte-badge">
                 {reportes.length} reporte{reportes.length === 1 ? "" : "s"}
               </span>
             </div>
@@ -549,4 +556,3 @@ export function ReporteVentasRangoAdmin() {
     </div>
   );
 }
-

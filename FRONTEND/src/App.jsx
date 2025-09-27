@@ -34,8 +34,8 @@ import { AdminLayout } from "./components/Admin/AdminLayout.jsx";
 import { ListaProductosPage } from "./pages/ListaProductosPage.jsx";
 import { FacturasPage } from "./pages/FacturasPage.jsx";
 import { PedidosPage } from "./pages/PedidosPage.jsx";
-import {ReporteVentasRangoAdminPage} from "./pages/ReporteVentasRangoAdminPage.jsx"
 import AdminHome from "./components/Admin/AdminHome.jsx";
+import {ReporteVentasRangoAdminPage} from "./pages/ReporteVentasRangoAdminPage.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
@@ -118,14 +118,14 @@ function AppContent() {
               </RutaPrivada>
             }
           />
-         { <Route
+          {/* <Route
           path="/facturas"
           element={
             <RutaPrivada role={["cliente", "administrador"]}>
               <FacturasPage />
             </RutaPrivada>
           }
-          />}
+          />*/}
           {/*  Ver factura por ID reutilizando RetornoMPpage */}
           <Route
             path="/facturas/:id"
@@ -140,14 +140,6 @@ function AppContent() {
             element={
               <RutaPrivada role={["administrador"]}>
                 <CategoriasPage />
-              </RutaPrivada>
-            }
-          />
-          <Route
-            path="/Reporte"
-            element={
-              <RutaPrivada role={["administrador"]}>
-                <ReporteVentasRangoAdminPage />
               </RutaPrivada>
             }
           />
@@ -186,41 +178,43 @@ function AppContent() {
               </RutaPrivada>
             }
           >
-            {/*  RUTA PRINCIPAL DEL ADMIN - Dashboard Home */}
+            {/* ========== DASHBOARD PRINCIPAL ========== */}
             <Route index element={<AdminHome />} />
             <Route path="home" element={<AdminHome />} />
-
-            {/*  Resto de rutas admin */}
             <Route path="dashboard" element={<AdminProvedoresPage />} />
-            <Route path="proveedores" element={<AdminProvedoresPage />} />
-            <Route
-              path="proveedores/registrados"
-              element={<ProveedoresRegistradosPage />}
-            />
+            <Route path="perfil" element={<PerfilPage />} />
+
+            {/* ========== GESTIÓN DE USUARIOS (Sin mostrar en panel) ========== */}
             <Route path="usuarios" element={<AdminUsuariosPage />} />
-            <Route path="inventario" element={<InventarioPage />} />
-            <Route path="productos" element={<ListaProductosPage />} />
-            <Route path="productos/crear" element={<ProductosFormPage />} />
-            <Route
-              path="productos/editar/:id"
-              element={<ProductosFormPage />}
-            />
             <Route path="roles" element={<RolFormPage />} />
             <Route path="roles/lista" element={<RolListaPage />} />
+
+            {/* ========== GESTIÓN DE PRODUCTOS ========== */}
+            <Route path="categorias" element={<CategoriasPage />} />
+            <Route path="productos" element={<ListaProductosPage />} />
+            <Route path="productos/crear" element={<ProductosFormPage />} />
+            <Route path="productos/editar/:id" element={<ProductosFormPage />} />
+            <Route path="catalogo" element={<Catalogopage />} />
+            
+            {/* ========== GESTIÓN DE TALLAS ========== */}
+            <Route path="tallas" element={<TallasPage />} />
             <Route path="tallas/grupo" element={<GrupoTallaPage />} />
             <Route path="tallas/grupo/crear" element={<GrupoTallaPage />} />
-            <Route
-              path="tallas/grupo/editar/:id"
-              element={<GrupoTallaPage />}
-            />
-            <Route path="tallas" element={<TallasPage />} />
-            <Route path="categorias" element={<CategoriasPage />} />
+            <Route path="tallas/grupo/editar/:id" element={<GrupoTallaPage />} />
+
+            {/* ========== GESTIÓN DE INVENTARIO ========== */}
+            <Route path="inventario" element={<InventarioPage />} />
+
+            {/* ========== GESTIÓN DE PROVEEDORES ========== */}
+            <Route path="proveedores" element={<AdminProvedoresPage />} />
+            <Route path="proveedores/registrados" element={<ProveedoresRegistradosPage />} />
+
+            {/* ========== GESTIÓN DE VENTAS ========== */}
             <Route path="pedidos" element={<PedidosPage />} />
             <Route path="facturas" element={<FacturasPage />} />
             <Route path="facturas/:id" element={<RetornoMPpage />} />
             <Route path="retornoMP" element={<RetornoMPpage />} />
-            {/* PERFIL ADMIN EN LAYOUT */}
-            <Route path="perfil" element={<PerfilPage />} />
+            <Route path="reportes/ventas" element={<ReporteVentasRangoAdminPage />} />
           </Route>
 
           {/* Redirección por defecto */}
@@ -249,7 +243,6 @@ function AppContent() {
 export function App() {
   return (
     <AuthProvider>
-      <AutoAvatarInitializer />
       <AppContent />
     </AuthProvider>
   );

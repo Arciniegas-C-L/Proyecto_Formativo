@@ -92,6 +92,7 @@ export function Facturas() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [data, setData] = useState(null);
+  const [allFacturas, setAllFacturas] = useState([]); // Para obtener fechas límite
 
   // Filtros
   const [qNumero, setQNumero] = useState("");
@@ -102,6 +103,38 @@ export function Facturas() {
 
   const { items, count } = usePaginatedResponse(data);
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
+
+  // Obtener fechas límite para los calendarios
+  const fechaLimites = useMemo(() => {
+    if (!allFacturas.length) return { min: null, max: null };
+    
+    const fechas = allFacturas
+      .map(f => f.fecha || f.emitida_en || f.created_at)
+      .filter(Boolean)
+      .map(fecha => new Date(fecha))
+      .filter(fecha => !isNaN(fecha.getTime()));
+    
+    if (!fechas.length) return { min: null, max: null };
+    
+    const min = new Date(Math.min(...fechas));
+    const max = new Date(); // Fecha actual
+    
+    return {
+      min: min.toISOString().split('T')[0],
+      max: max.toISOString().split('T')[0]
+    };
+  }, [allFacturas]);
+
+  // Cargar todas las facturas para obtener fechas límite
+  const fetchAllFacturas = async () => {
+    try {
+      const { data: resp } = await listarFacturas({ page: 1, page_size: 1000 });
+      const facturas = Array.isArray(resp) ? resp : (resp.results || []);
+      setAllFacturas(facturas);
+    } catch (e) {
+      console.log("Error cargando todas las facturas para fechas límite:", e);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -125,14 +158,27 @@ export function Facturas() {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchAllFacturas();
+  }, []);
+
+  // Cargar datos iniciales después de obtener todas las facturas
+  useEffect(() => {
+    if (allFacturas.length > 0) {
+      fetchData();
+    }
+  }, [allFacturas]);
+
+  useEffect(() => {
+    if (allFacturas.length > 0) { // Solo buscar si ya tenemos las facturas para fechas límite
+      fetchData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize]);
+  }, [page, pageSize, qNumero, qDesde, qHasta]);
 
   const onBuscar = (e) => {
     e.preventDefault();
     setPage(1);
-    fetchData();
+    // fetchData se ejecutará automáticamente por el useEffect
   };
 
   const onLimpiar = () => {
@@ -140,7 +186,7 @@ export function Facturas() {
     setQDesde("");
     setQHasta("");
     setPage(1);
-    fetchData();
+    // fetchData se ejecutará automáticamente por el useEffect al cambiar los estados
   };
 
   const descargarPdfFactura = async (id, numero) => {
@@ -154,6 +200,25 @@ export function Facturas() {
 
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
   const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
+
+  // Manejar cambio en fecha "desde"
+  const handleDesdeChange = (e) => {
+    const nuevaFechaDesde = e.target.value;
+    setQDesde(nuevaFechaDesde);
+    
+    // Si la fecha "hasta" es menor que la nueva fecha "desde", limpiarla
+    if (qHasta && nuevaFechaDesde && qHasta < nuevaFechaDesde) {
+      setQHasta("");
+    }
+  };
+
+  // Manejar cambio en página de filas
+  const handlePageSizeChange = (e) => {
+    const newPageSize = Number(e.target.value);
+    setPageSize(newPageSize);
+    setPage(1); // Resetear a la primera página
+    // fetchData se ejecutará automáticamente por el useEffect
+  };
 
   // Render de cada factura como card (para móviles) - SIN DUPLICACIÓN
   const renderFacturaCard = (f) => {
@@ -269,7 +334,9 @@ export function Facturas() {
                   type="date"
                   className="form-control facturas-input"
                   value={qDesde}
-                  onChange={(e) => setQDesde(e.target.value)}
+                  onChange={handleDesdeChange}
+                  min={fechaLimites.min}
+                  max={fechaLimites.max}
                 />
               </div>
               <div className="facturas-filter-group">
@@ -279,6 +346,8 @@ export function Facturas() {
                   className="form-control facturas-input"
                   value={qHasta}
                   onChange={(e) => setQHasta(e.target.value)}
+                  min={qDesde || fechaLimites.min}
+                  max={fechaLimites.max}
                 />
               </div>
             </div>
@@ -288,10 +357,7 @@ export function Facturas() {
               <select
                 className="form-select facturas-input"
                 value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setPage(1);
-                }}
+                onChange={handlePageSizeChange}
               >
                 {[5, 10, 20, 50].map((n) => (
                   <option key={n} value={n}>

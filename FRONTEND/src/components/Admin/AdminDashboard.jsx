@@ -18,6 +18,9 @@ import {
   FaShoppingCart,
   FaFileInvoice,
   FaUserCircle,
+  FaStore,
+  FaCog,
+  FaChartBar,
 } from "react-icons/fa";
 import "../../assets/css/Admin/AdminDashboard.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -25,7 +28,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 export const AdminDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, rol } = useAuth();
   
   // Estado que persiste en localStorage
   const [barraLateralColapsada, setBarraLateralColapsada] = useState(() => {
@@ -33,8 +36,7 @@ export const AdminDashboard = () => {
     return saved ? JSON.parse(saved) : false;
   });
   
-  const [mostrarModalCerrarSesion, setMostrarModalCerrarSesion] =
-    useState(false);
+  const [mostrarModalCerrarSesion, setMostrarModalCerrarSesion] = useState(false);
 
   // Guardar el estado en localStorage cuando cambie
   React.useEffect(() => {
@@ -52,7 +54,7 @@ export const AdminDashboard = () => {
 
   // Función para ir al home de forma rápida
   const irAlInicio = () => {
-    setBarraLateralColapsada(true); // Cierra el panel
+    setBarraLateralColapsada(true);
     navigate("/", { replace: true });
   };
 
@@ -66,59 +68,65 @@ export const AdminDashboard = () => {
   const esRutaActiva = (ruta) =>
     location.pathname === ruta || location.pathname.startsWith(ruta + "/");
 
+  // Verificar si es administrador
+  const esAdmin = rol === "administrador";
+
   const elementosMenu = [
-    // PERFIL ADMIN
-    {
-      ruta: "/admin/perfil",
-      icono: FaUserCircle,
-      etiqueta: "Perfil",
-      seccion: "principal",
-    },
-    //  DASHBOARD PRINCIPAL - Vista general del sistema
+    // ========== DASHBOARD PRINCIPAL ==========
     { 
       ruta: "/admin", 
       icono: FaTachometerAlt, 
       etiqueta: "Dashboard",
-      seccion: "principal"
+      seccion: "dashboard"
+    },
+    {
+      ruta: "/admin/perfil",
+      icono: FaUserCircle,
+      etiqueta: "Perfil",
+      seccion: "dashboard",
     },
 
-    //  GESTIÓN DE CATEGORÍAS - Base para la organización de productos
+    // ========== GESTIÓN DE PRODUCTOS ==========
     { 
       ruta: "/admin/categorias", 
       icono: FaTags, 
       etiqueta: "Categorías",
-      seccion: "catalogo"
-    },
-
-    //  GESTIÓN DE TALLAS - Sistema de tallas antes de crear productos
-    { 
-      ruta: "/admin/tallas/grupo", 
-      icono: FaRuler, 
-      etiqueta: "Grupos de Tallas",
-      seccion: "catalogo"
+      seccion: "productos"
     },
     { 
-      ruta: "/admin/tallas", 
-      icono: FaRuler, 
-      etiqueta: "Gestionar Tallas",
-      seccion: "catalogo"
+      ruta: "/admin/productos", 
+      icono: FaBoxOpen, 
+      etiqueta: "Lista Productos",
+      seccion: "productos"
     },
-
-    //  GESTIÓN DE PRODUCTOS - Crear y administrar productos
     { 
       ruta: "/admin/productos/crear", 
       icono: FaPlus, 
       etiqueta: "Crear Producto",
       seccion: "productos"
     },
-    { 
-      ruta: "/admin/productos", 
-      icono: FaBoxOpen, 
-      etiqueta: "Listar Productos",
+    ...(esAdmin ? [{
+      ruta: "/admin/catalogo",
+      icono: FaStore,
+      etiqueta: "Vista Catálogo",
       seccion: "productos"
+    }] : []),
+
+    // ========== GESTIÓN DE TALLAS ==========
+    { 
+      ruta: "/admin/tallas", 
+      icono: FaRuler, 
+      etiqueta: "Gestionar Tallas",
+      seccion: "tallas"
+    },
+    { 
+      ruta: "/admin/tallas/grupo", 
+      icono: FaCog, 
+      etiqueta: "Grupos de Tallas",
+      seccion: "tallas"
     },
 
-    //  INVENTARIO - Gestión de stock
+    // ========== GESTIÓN DE INVENTARIO ==========
     { 
       ruta: "/admin/inventario", 
       icono: FaWarehouse, 
@@ -126,7 +134,7 @@ export const AdminDashboard = () => {
       seccion: "inventario"
     },
 
-    //  GESTIÓN DE PROVEEDORES - Administración de proveedores
+    // ========== GESTIÓN DE PROVEEDORES ==========
     { 
       ruta: "/admin/proveedores", 
       icono: FaUsers, 
@@ -140,7 +148,7 @@ export const AdminDashboard = () => {
       seccion: "proveedores"
     },
 
-    //  PEDIDOS Y VENTAS - Gestión comercial
+    // ========== GESTIÓN DE VENTAS ==========
     { 
       ruta: "/admin/pedidos", 
       icono: FaShoppingCart, 
@@ -153,16 +161,22 @@ export const AdminDashboard = () => {
       etiqueta: "Facturas",
       seccion: "ventas"
     },
+    { 
+      ruta: "/admin/reportes/ventas", 
+      icono: FaChartBar, 
+      etiqueta: "Reporte de Ventas",
+      seccion: "ventas"
+    },
   ];
 
-  // Agrupar elementos por sección 
+  // Agrupar elementos por sección siguiendo el orden de App.jsx
   const seccionesMenu = {
-    principal: { titulo: "Dashboard", elementos: [] },
-    catalogo: { titulo: "Configuración del Catálogo", elementos: [] },
+    dashboard: { titulo: "Dashboard Principal", elementos: [] },
     productos: { titulo: "Gestión de Productos", elementos: [] },
-    inventario: { titulo: "Control de Inventario", elementos: [] },
+    tallas: { titulo: "Gestión de Tallas", elementos: [] },
+    inventario: { titulo: "Gestión de Inventario", elementos: [] },
     proveedores: { titulo: "Gestión de Proveedores", elementos: [] },
-    ventas: { titulo: "Pedidos y Facturación", elementos: [] },
+    ventas: { titulo: "Gestión de Ventas", elementos: [] },
   };
 
   // Clasificar elementos por sección
@@ -298,7 +312,7 @@ export const AdminDashboard = () => {
         </div>
       </aside>
 
-      {/* Botón hamburguesa - */}
+      {/* Botón hamburguesa */}
       {barraLateralColapsada && (
         <button
           className="boton-hamburguesa"
