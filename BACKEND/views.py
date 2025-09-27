@@ -9,6 +9,7 @@ import io
 from django.db.models import Prefetch
 from django.core.mail import EmailMessage
 from django.db import transaction, IntegrityError
+from BACKEND.services.stock_alerts_core import low_stock_event_check
 
 from django.http import FileResponse, HttpResponse
 from rest_framework.decorators import action
@@ -27,6 +28,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework.pagination import PageNumberPagination
+from django.core.exceptions import ValidationError
 
 # --- DRF
 from rest_framework import status, viewsets, serializers, mixins
@@ -1124,7 +1126,6 @@ class InventarioView(viewsets.ModelViewSet):
 
     # ==============================
     # Actualización de stock por tallas (modal)
-    from BACKEND.services.stock_alerts_core import low_stock_event_check
     # ==============================
     @action(detail=False, methods=['post'])
     def actualizar_stock_tallas(self, request):

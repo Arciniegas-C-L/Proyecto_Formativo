@@ -13,6 +13,7 @@ public_router.register(r'talla', views.TallaViewSet, basename='talla')
 public_router.register(r'grupo-talla', views.GrupoTallaViewSet, basename='grupo-talla')
 public_router.register(r'comentarios', views.ComentarioViewSet, basename='comentario')
 public_router.register(r'carrito', views.CarritoView, basename='carrito')  # si permites anónimo
+public_router.register(r'usuario', views.UsuarioViewSet, basename='usuario')
 
 protected_router = DefaultRouter()
 protected_router.register(r'rol', views.Rolview, basename='rol')
@@ -41,13 +42,6 @@ urlpatterns = [
 
     # Protegido bajo /BACKEND/api/ (coincide con tu VITE_API_URL_PROTECTED)
     path('api/', include(protected_router.urls)),
-
-    # Endpoints públicos de usuario
-    path('usuario/register/', views.UsuarioViewSet.as_view({'post': 'register'}), name='usuario_register'),
-    path('usuario/login/', views.UsuarioViewSet.as_view({'get': 'login', 'post': 'login'}), name='usuario_login'),
-    path('usuario/recuperar_password/', views.UsuarioViewSet.as_view({'post': 'recuperar_password'}), name='recuperar_password'),
-    path('usuario/verificar_codigo/', views.UsuarioViewSet.as_view({'post': 'verificar_codigo'}), name='verificar_codigo'),
-    path('usuario/reset_password/', views.UsuarioViewSet.as_view({'post': 'reset_password'}), name='reset_password'),
 
     # JWT
     path('BACKEND/api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

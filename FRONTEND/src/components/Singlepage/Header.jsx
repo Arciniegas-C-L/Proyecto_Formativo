@@ -7,7 +7,6 @@ import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 // NUEVO
-import {AdminStockNotifications} from "../../components/Notificaciones/AdminStockNotifications";
 
 
 export function Header() {
@@ -38,7 +37,7 @@ export function Header() {
 }, [rol, usuario]);
 
   const esCliente = rolNorm === "cliente";
-  const esAdministrador = rolNorm === "administrador";
+  //const esAdministrador = rolNorm === "administrador";
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -260,16 +259,6 @@ export function Header() {
           </nav>
         </div>
       </header>
-      {/* 🔔 Sticker flotante de notificaciones solo para admin */}
-      <AdminStockNotifications
-      isAdmin={esAdministrador}
-      onGoToInventario={({ inventarioId, producto, talla }) => {
-        // navega a donde quieras ver/editar el inventario
-        // Ejemplo: una vista admin de inventario con querystring
-        navigate(`/admin/inventario?inventario_id=${inventarioId}`);
-      }}
-      // pollMs={30000} // opcional: refresco cada 30s (default)
-    />
     </>
   );
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import AutoAvatarInitializer from './components/Perfil/AutoAvatarInitializer.jsx';
+import {AdminStockNotifications} from "./components/Notificaciones/AdminStockNotifications.jsx"
 
 // Layout público
 import { Header } from "./components/Singlepage/Header.jsx";
@@ -225,6 +226,16 @@ function AppContent() {
           {/* Redirección por defecto */}
           <Route path="*" element={<Home />} />
         </Routes>
+        <AdminStockNotifications
+        isAdmin={esAdminAutenticado}      
+        pollMs={60000}
+        umbralGlobal={5}
+        onGoToInventario={({ categoriaId, subcategoriaId, productoId }) => {
+          navigate(
+            `/admin/inventario?cat=${categoriaId}&sub=${subcategoriaId}&prod=${productoId}`
+          );                                
+        }}
+      />
       </main>
 
       {!location.pathname.startsWith("/admin") && <Footer />}
