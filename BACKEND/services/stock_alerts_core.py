@@ -1,7 +1,11 @@
 # BACKEND/services/stock_alerts_core.py
+import logging
+from django.conf import settings
 from django.core.cache import cache
 from BACKEND.models import Inventario, Usuario, Rol
 from BACKEND.utils_email import send_email_raw
+
+logger = logging.getLogger(__name__)
 
 LOW_STOCK_UMBRAL = 5
 DIGEST_TOP_N = 10
@@ -11,18 +15,24 @@ def _admin_emails():
     try:
         rol_admin = Rol.objects.get(nombre__iexact='administrador')
     except Rol.DoesNotExist:
+        logger.warning("Rol 'administrador' no existe; no hay destinatarios para alertas.")
         return []
-    emails = (Usuario.objects
-              .filter(rol=rol_admin, estado=True, is_active=True)
-              .exclude(correo__isnull=True).exclude(correo='')
-              .values_list('correo', flat=True))
-    clean = sorted({e.strip() for e in emails if e and e.strip()})
-    return clean
+    emails_qs = (Usuario.objects
+                 .filter(rol=rol_admin, estado=True, is_active=True)
+                 .exclude(correo__isnull=True).exclude(correo='')
+                 .values_list('correo', flat=True))
+    cleaned = sorted({(e or "").strip() for e in emails_qs if (e or "").strip()})
+    # Debug opcional controlado por setting
+    if getattr(settings, "STOCK_ALERTS_DEBUG", False):
+        logger.warning("(_admin_emails) -> %s", cleaned)
+    return cleaned
 
 def _stock_of(inv: Inventario) -> int:
     s = inv.stock_talla if inv.stock_talla is not None else inv.cantidad
-    try: return int(s or 0)
-    except: return 0
+    try:
+        return int(s or 0)
+    except Exception:
+        return 0
 
 def _item_ctx(inv: Inventario):
     return {
@@ -51,12 +61,14 @@ def _table_html(rows, title, umbral=None):
 
 def _send_low_stock_email_single(inv: Inventario, umbral: int):
     html = _table_html([_item_ctx(inv)], title="Alerta de bajo stock por talla", umbral=umbral)
-    send_email_raw(
+    sent = send_email_raw(
         subject=f"[ALERTA] Bajo stock: {inv.producto.nombre} / Talla {inv.talla.nombre}",
         to_emails=_admin_emails(),
         html_body=html,
         text_body=None
     )
+    if getattr(settings, "STOCK_ALERTS_DEBUG", False):
+        logger.warning("(_send_low_stock_email_single) enviados=%s", sent)
 
 def low_stock_event_check(inv: Inventario, umbral: int = LOW_STOCK_UMBRAL):
     stock = _stock_of(inv)

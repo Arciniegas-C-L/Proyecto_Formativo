@@ -1124,6 +1124,7 @@ class InventarioView(viewsets.ModelViewSet):
 
     # ==============================
     # Actualización de stock por tallas (modal)
+    from BACKEND.services.stock_alerts_core import low_stock_event_check
     # ==============================
     @action(detail=False, methods=['post'])
     def actualizar_stock_tallas(self, request):
@@ -1150,24 +1151,33 @@ class InventarioView(viewsets.ModelViewSet):
                 inv = self.queryset.get(producto_id=producto_id, talla_id=talla_id)
                 inv.stock_talla = stock
                 inv.stockMinimo = stock_minimo
-                inv.save(update_fields=['stock_talla', 'stockMinimo'])
+                inv.save(update_fields=['stock_talla', 'stockMinimo'])   # <-- aquí salta la señal
 
                 inventarios_actualizados.append(inv)
                 stock_total += stock
-
-            return Response({
-                "mensaje": "Stock por tallas actualizado exitosamente",
-                "inventarios": self.get_serializer(inventarios_actualizados, many=True).data,
-                "stock_total": stock_total
-            })
 
         except Inventario.DoesNotExist:
             return Response({"error": "No se encontró el inventario para una talla especificada"},
                             status=status.HTTP_404_NOT_FOUND)
         except Producto.DoesNotExist:
             return Response({"error": "Producto no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        # 🔔 Correo: NO romper respuesta si falla
+        email_ok = True
+        try:
+            # opcional: si quieres forzar el chequeo además de la señal
+            for inv in inventarios_actualizados:
+                low_stock_event_check(inv, umbral=5)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            print("[WARN] Error enviando correo de bajo stock:", e)
+            email_ok = False
+
+        return Response({
+            "mensaje": "Stock por tallas actualizado exitosamente",
+            "inventarios": self.get_serializer(inventarios_actualizados, many=True).data,
+            "stock_total": stock_total,
+            "email_ok": email_ok,  # el front puede mostrar warning si False
+        }, status=status.HTTP_200_OK)
 
     # ==============================
     # Cambiar grupo de talla y sincronizar inventario
