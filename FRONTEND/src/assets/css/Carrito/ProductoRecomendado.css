@@ -1,3 +1,4 @@
+/* ====== Tarjeta recomendada ====== */
 .producto-recomendado-card {
   border-radius: 18px;
   overflow: hidden;
@@ -9,6 +10,9 @@
   height: 100%;
   border: 1.5px solid #e0e0e0;
   position: relative;
+  width: 100%;
+  max-width: 280px; /* 👈 ancho base en desktop */
+  margin: 0 auto;
 }
 
 .producto-recomendado-card:hover {
@@ -17,6 +21,7 @@
   border-color: #9d4edd;
 }
 
+/* Imagen */
 .producto-recomendado-img {
   width: 100%;
   height: 180px;
@@ -24,6 +29,7 @@
   background: linear-gradient(45deg, #f8f9ff, #ffffff);
 }
 
+/* Cuerpo */
 .producto-recomendado-body {
   padding: 1rem 1.2rem 1.2rem 1.2rem;
   display: flex;
@@ -55,7 +61,7 @@
   background: linear-gradient(45deg, #F26BE2, #00D4FF);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 8px; 
   padding: 0.5rem 1.2rem;
   font-weight: 600;
   margin-top: auto;
@@ -64,4 +70,58 @@
 
 .producto-recomendado-btn:hover {
   background: linear-gradient(45deg, #9D4EDD, #00D4FF);
+}
+
+/* ====== Responsive ====== */
+
+/* Tablets */
+@media (max-width: 991px) {
+  .producto-recomendado-card {
+    max-width: 240px;  /* más compacto */
+  }
+  .producto-recomendado-img {
+    height: 160px;
+  }
+  .producto-recomendado-nombre {
+    font-size: 1rem;
+  }
+  .producto-recomendado-descripcion {
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile grande */
+@media (max-width: 767px) {
+  .producto-recomendado-card {
+    max-width: 200px;  /* más estrecho para que quepan 2 en fila */
+  }
+  .producto-recomendado-img {
+    height: 140px;
+  }
+  .producto-recomendado-body {
+    padding: 0.8rem;
+  }
+  .producto-recomendado-nombre {
+    font-size: 0.95rem;
+  }
+}
+
+/* Mobile pequeño */
+@media (max-width: 575px) {
+  .producto-recomendado-card {
+    max-width: 100%; /* ocupa todo el ancho */
+  }
+  .producto-recomendado-img {
+    height: 180px; /* imagen un poco más grande */
+  }
+  .producto-recomendado-nombre {
+    text-align: center;
+  }
+  .producto-recomendado-precio {
+    text-align: center;
+  }
+  .producto-recomendado-btn {
+    width: 100%;
+    text-align: center;
+  }
 }

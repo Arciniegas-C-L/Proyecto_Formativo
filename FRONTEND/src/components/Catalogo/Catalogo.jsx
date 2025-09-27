@@ -231,13 +231,14 @@ export function Catalogo() {
             </div>
           ) : (
             productosFiltrados.map((producto) => (
-              <ProductoCard
+              <div className="producto-item">
+                <ProductoCard
                 key={producto.id}
                 producto={producto}
                 capitalizar={capitalizar}
-                // aquí está el ajuste para permitir anónimo/invitado
-                mostrarAgregarCarrito={puedeAgregar}
-              />
+                mostrarAgregarCarrito={authState?.rol === "cliente"}
+                />
+              </div>
             ))
           )}
         </div>

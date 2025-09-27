@@ -625,7 +625,8 @@ export function Carrito() {
             />
           ))}
         </div>
-        <div className="ver-mas-container">
+      </div>
+      <div className="ver-mas-container">
           <button
             className="btn-ver-mas"
             onClick={() => navigate('/catalogo')}
@@ -633,7 +634,6 @@ export function Carrito() {
             Ver más productos
           </button>
         </div>
-      </div>
     </div>
   );
 }

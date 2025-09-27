@@ -18,10 +18,10 @@ export default function TallasDisponibles({
 
   return (
     <div className="tallas-container">
-      <div className="tallas-label">
-        <span>Tallas:</span>
-      </div>
       <div className="botones-tallas">
+        <div className="tallas-label">
+          <span>Tallas:</span>
+        </div>
         {inventarioTallas.map((inv, i) => (
           <button
             key={i}

@@ -187,6 +187,6 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
           Ver Proveedores Registrados
         </button>
       </div>
-    </>
+    </> 
   );
 }

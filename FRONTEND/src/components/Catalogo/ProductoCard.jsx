@@ -150,28 +150,41 @@ export default function ProductoCard({ producto, capitalizar, onProductoAgregado
       </div>
 
       <div className="product-info">
-        <h3 className="product-title">{capitalizar(producto.nombre || "Sin nombre")}</h3>
-        <p className="product-description">{producto.descripcion || "Sin descripción"}</p>
-        <div className="product-category">
-          <span>{capitalizar(producto.subcategoria_nombre || "Sin categoría")}</span>
-        </div>
-        <div className="product-price">
+        {/* Nombre y precio en la misma línea */}
+        <div className="product-row">
+          <span className="product-title">
+            {capitalizar(producto.nombre || "Sin nombre")}
+          </span>
           <span className="current-price">
             ${parseFloat(producto.precio || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 })}
           </span>
         </div>
+         <p className="product-description">
+          {producto.descripcion || "Sin descripción"}
+        </p>
 
-        {producto.inventario_tallas?.length > 0 && (
-          <div className="product-sizes">
-            <TallasDisponibles
-              productoId={producto.id}
-              inventarioTallas={producto.inventario_tallas}
-              tallaSeleccionada={tallaSeleccionada}
-              mostrarStock={mostrarStock}
-            />
+        {/* Tallas y talla seleccionada en la misma línea */}
+        {producto.inventario_tallas && producto.inventario_tallas.length > 0 && (
+          <div className="product-sizes-row">
+            <span className="product-sizes-label">
+            </span>
+            
+            <div className="product-sizes">
+              <TallasDisponibles
+                productoId={producto.id}
+                inventarioTallas={producto.inventario_tallas}
+                tallaSeleccionada={tallaSeleccionada}
+                mostrarStock={mostrarStock}
+              />
+            </div>
+            {tallaSeleccionada && (
+              <span className="product-sizes-label talla-seleccionada">{tallaSeleccionada.talla}</span>
+            )}
           </div>
         )}
 
+        
+        {/* Cantidad solo se muestra si hay talla seleccionada */}
         {tallaSeleccionada && (
           <div className="quantity-controls">
             <div className="quantity-selector">
