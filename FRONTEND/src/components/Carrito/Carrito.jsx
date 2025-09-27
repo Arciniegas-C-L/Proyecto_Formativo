@@ -42,7 +42,6 @@ function useMercadoPagoLoader(publicKey) {
     };
     document.head.appendChild(script);
   }, []);
-  
 
   useEffect(() => {
     if (loaded && window.MercadoPago && publicKey) {
@@ -64,7 +63,12 @@ export function Carrito() {
   const [error, setError] = useState(null);
   const [creatingPreference, setCreatingPreference] = useState(false);
 
-  // Solo lo que acepta tu modelo: telefono (se usa para contacto) + direccion (string)
+  // NUEVOS CAMPOS
+  const [ciudad, setCiudad]   = useState("");
+  const [barrio, setBarrio]   = useState("");
+  const [calle,  setCalle]    = useState("");
+
+  // Teléfono y dirección (string opcional como complemento)
   const [telefono, setTelefono] = useState(usuario?.telefono || "");
   const [direccion, setDireccion] = useState(usuario?.direccion || "");
   const [formErrors, setFormErrors] = useState({});
@@ -76,34 +80,31 @@ export function Carrito() {
     cargarCarrito();
     cargarProductosRecomendados();
 
-    // refrescar cuando el catálogo agregue algo
     const onCarritoActualizado = () => cargarCarrito();
     window.addEventListener("carritoActualizado", onCarritoActualizado);
     return () => window.removeEventListener("carritoActualizado", onCarritoActualizado);
   }, []);
 
-
   useEffect(() => {
-  const tryAdopt = async () => {
-    if (!autenticado) return;
-    if (didTryAdopt.current) return;          // ⛔ evita el doble efecto en dev
-    didTryAdopt.current = true;
+    const tryAdopt = async () => {
+      if (!autenticado) return;
+      if (didTryAdopt.current) return;
+      didTryAdopt.current = true;
 
-    const cartId = localStorage.getItem("cartId");
-    if (!cartId) return;
-    try {
-      await adoptarCarritoAnon(cartId);
-      localStorage.removeItem("cartId");
-      window.dispatchEvent(new CustomEvent("carritoActualizado"));
-      toast.success("Se migró tu carrito a tu cuenta");
-    } catch (e) {
-      // Silenciar (no console.error, no toast)
-      // Opcional: reintentar silenciosamente más tarde
-    }
-  };
+      const cartId = localStorage.getItem("cartId");
+      if (!cartId) return;
+      try {
+        await adoptarCarritoAnon(cartId);
+        localStorage.removeItem("cartId");
+        window.dispatchEvent(new CustomEvent("carritoActualizado"));
+        toast.success("Se migró tu carrito a tu cuenta");
+      } catch (e) {
+        // Silenciar
+      }
+    };
 
-  tryAdopt();
-}, [autenticado]);
+    tryAdopt();
+  }, [autenticado]);
 
   // Normaliza response.data (array | {results: []} | objeto)
   const cargarCarrito = async () => {
@@ -114,7 +115,6 @@ export function Carrito() {
       let data;
 
       if (!autenticado) {
-        // Anónimo → usar SIEMPRE el id guardado en localStorage
         const lsId = localStorage.getItem("cartId");
         if (!lsId) {
           setCarrito(null);
@@ -127,7 +127,6 @@ export function Carrito() {
           data = resp?.data;
         } catch (e) {
           if (e?.response?.status === 404) {
-            // El carrito ya no existe en backend
             localStorage.removeItem("cartId");
             setCarrito(null);
             setItems([]);
@@ -137,7 +136,6 @@ export function Carrito() {
           throw e;
         }
       } else {
-        // Autenticado → la lista ya viene filtrada por user en backend
         const response = await fetchCarritos();
         data = response?.data;
       }
@@ -256,16 +254,23 @@ export function Carrito() {
     }
   };
 
-  // Validación mínima
+  // Validación: Teléfono + (ciudad/barrio/calle) O dirección string como respaldo
   const validar = () => {
     const errs = {};
     if (!telefono?.trim() || telefono.trim().length < 7) errs.telefono = 'Teléfono inválido';
-    if (!direccion?.trim() || direccion.trim().length < 5) errs.direccion = 'Dirección muy corta';
+
+    const hasDict = !!(ciudad.trim() && barrio.trim() && calle.trim());
+    if (!hasDict) {
+      if (!direccion?.trim() || direccion.trim().length < 5) {
+        errs.direccion = 'Completa ciudad, barrio y calle, o escribe una dirección válida';
+      }
+    }
+
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  // Crear preferencia y redirigir (SOLO email + direccion)
+  // Crear preferencia y redirigir
   const handlePagar = async () => {
     try {
       if (!carrito || items.length === 0) {
@@ -285,24 +290,37 @@ export function Carrito() {
         return;
       }
       if (!validar()) {
-        toast.error("Revisa teléfono y dirección");
+        toast.error("Revisa los datos de envío");
         return;
       }
 
       setCreatingPreference(true);
 
-      // Respetar max_length=255 en tu modelo
-      const direccionTrimmed = direccion.trim().slice(0, 255);
+      // Respetar max_length=255
+      const direccionTrimmed = (direccion || "").trim().slice(0, 255);
+
+      // Si hay ciudad+barrio+calle → enviar dict con las keys que espera el backend
+      // (linea1, linea2, referencia, ciudad). Si no, enviar string como fallback.
+      const hasDict = !!(ciudad.trim() && barrio.trim() && calle.trim());
+      const address = hasDict
+        ? {
+            linea1: calle.trim(),            // Calle principal
+            linea2: direccionTrimmed,        // Complemento opcional (apto/torre)
+            referencia: barrio.trim(),       // Barrio
+            ciudad: ciudad.trim(),           // Ciudad
+            // departamento lo puedes agregar luego si tienes el input
+          }
+        : direccionTrimmed;                  // Fallback string
 
       const payload = {
         email: usuario?.correo || usuario?.email,
-        direccion: direccionTrimmed,
+        address,
       };
 
       const { data } = await crearPreferenciaPago(carrito.idCarrito, payload);
 
       if (!data?.init_point) {
-        toast.error("Registrese o iniccie seccion para completar pago");
+        toast.error("Regístrese o inicie sesión para completar pago");
         return;
       }
 
@@ -338,7 +356,6 @@ export function Carrito() {
     }
   };
 
-  // Método que llama a handlePagar
   const handleFinalizarCompra = async () => {
     await handlePagar();
   };
@@ -505,7 +522,7 @@ export function Carrito() {
                   </div>
                 </div>
 
-                {/* Solo Teléfono + Dirección */}
+                {/* Datos de envío */}
                 <div className="direccion-envio-card">
                   <h3><FaMapMarkerAlt /> Datos de envío</h3>
                   <div className="form-grid">
@@ -521,13 +538,48 @@ export function Carrito() {
                       {formErrors.telefono && <small className="error">{formErrors.telefono}</small>}
                     </div>
 
+                    {/* NUEVOS CAMPOS */}
+                    <div className="form-group">
+                      <label>Ciudad</label>
+                      <input
+                        type="text"
+                        value={ciudad}
+                        onChange={(e) => setCiudad(e.target.value)}
+                        placeholder="Ej: Ibagué"
+                        disabled={creatingPreference}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Barrio</label>
+                      <input
+                        type="text"
+                        value={barrio}
+                        onChange={(e) => setBarrio(e.target.value)}
+                        placeholder="Ej: Los Tunjos"
+                        disabled={creatingPreference}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Calle</label>
+                      <input
+                        type="text"
+                        value={calle}
+                        onChange={(e) => setCalle(e.target.value)}
+                        placeholder="Ej: Calle 10 #5-23"
+                        disabled={creatingPreference}
+                      />
+                    </div>
+
+                    {/* Complemento opcional como string */}
                     <div className="form-group form-group-col2">
-                      <label>Dirección (string)</label>
+                      <label>Dirección (complemento opcional)</label>
                       <input
                         type="text"
                         value={direccion}
                         onChange={(e) => setDireccion(e.target.value)}
-                        placeholder="Ej: Calle 10 #5-23, Barrio Centro"
+                        placeholder="Apto, torre, interior…"
                         disabled={creatingPreference}
                       />
                       {formErrors.direccion && <small className="error">{formErrors.direccion}</small>}

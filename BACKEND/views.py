@@ -1558,9 +1558,28 @@ class CarritoView(viewsets.ModelViewSet):
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=400)
 
+        # ⬇⬇ NUEVO: permitir que nos manden la dirección desde el front
+        data = request.data or {}
+        address = data.get("address")  # dict opcional: { nombre, telefono, departamento, ciudad, linea1, linea2, referencia }
+
         with transaction.atomic():
             # Reutiliza (o crea) un único Pedido asociado al carrito
             pedido = self._ensure_pedido_from_carrito(carrito)
+
+            # ⬇⬇ NUEVO: persistir snapshot de envío en carrito y pedido
+            if address and isinstance(address, dict):
+                if hasattr(carrito, "shipping_snapshot"):
+                    carrito.shipping_snapshot = address
+                    carrito.save(update_fields=["shipping_snapshot"])
+                if hasattr(pedido, "shipping_snapshot"):
+                    pedido.shipping_snapshot = address
+                    pedido.save(update_fields=["shipping_snapshot"])
+            else:
+                # Si no llega address, pero el carrito ya tenía snapshot, copialo al pedido una sola vez
+                if hasattr(carrito, "shipping_snapshot") and carrito.shipping_snapshot and hasattr(pedido, "shipping_snapshot"):
+                    if not getattr(pedido, "shipping_snapshot", None):
+                        pedido.shipping_snapshot = carrito.shipping_snapshot
+                        pedido.save(update_fields=["shipping_snapshot"])
 
             # Copia líneas SOLO si aún no existen en el pedido
             if not self._pedido_items_qs(pedido).exists():
@@ -1588,27 +1607,36 @@ class CarritoView(viewsets.ModelViewSet):
         # ---- 0) Sanitizar entrada ----
         data = request.data or {}
         email = data.get("email") or getattr(carrito.usuario, "email", None) or "test_user@example.com"
-        address = data.get("address")  # opcional; puede venir del front
+        address_raw = data.get("address")  # puede ser dict o string o None
 
-        # Guardar dirección (solo 'direccion' string) si llegó address
-        if address:
-            # arma una sola línea con lo que tengas
-            linea = ", ".join([
-                str(address.get("linea1", "")).strip(),
-                str(address.get("linea2", "")).strip(),
-                str(address.get("referencia", "")).strip()
-            ]).strip(", ").strip()
-            if linea:
-                try:
-                    Direccion.objects.create(
-                        usuario=carrito.usuario,
-                        direccion=linea[:255]  # tu CharField max_length=255
-                    )
-                except ValidationError as ve:
-                    # tu modelo puede lanzar ValidationError si hay reglas de negocio
-                    return Response({"error": ve.detail if hasattr(ve, "detail") else str(ve)},
-                                    status=status.HTTP_400_BAD_REQUEST)
+        # Helper robusto: acepta dict o string
+        def _addr_line(a) -> str:
+            if not a:
+                return ""
+            if isinstance(a, str):
+                return a.strip()[:255]
+            if isinstance(a, dict):
+                partes = [
+                    str(a.get("linea1", "")).strip(),
+                    str(a.get("linea2", "")).strip(),
+                    str(a.get("referencia", "")).strip(),
+                    " ".join([str(a.get("ciudad", "")).strip(), str(a.get("departamento", "")).strip()]).strip()
+                ]
+                txt = ", ".join([p for p in partes if p])
+                return txt[:255]
+            return str(a)[:255]
 
+        addr_line = _addr_line(address_raw)
+        addr_snapshot = address_raw if isinstance(address_raw, dict) else None  # solo dict
+
+        # Guardar como registro Direccion (texto) si llegó algo
+        if addr_line:
+            try:
+                Direccion.objects.create(usuario=carrito.usuario, direccion=addr_line)
+            except ValidationError as ve:
+                return Response({"error": getattr(ve, "detail", str(ve))}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ---- 1) Validar items del carrito ----
         if carrito.items.count() == 0:
             return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1619,7 +1647,6 @@ class CarritoView(viewsets.ModelViewSet):
             qty = int(it.cantidad or 0)
             if unit_price <= 0 or qty <= 0:
                 return Response({"error": "Precio o cantidad inválidos en algún ítem"}, status=400)
-
             items_mp.append({
                 "id": str(getattr(it.producto, "id", getattr(it.producto, "pk", ""))),
                 "title": getattr(it.producto, "nombre", "Producto"),
@@ -1633,9 +1660,9 @@ class CarritoView(viewsets.ModelViewSet):
             return Response({"error": "El total del carrito debe ser mayor a 0"}, status=400)
 
         # ---- 3) Snapshot opcional y refs ----
-        if address and hasattr(carrito, "shipping_snapshot"):
+        if addr_snapshot and hasattr(carrito, "shipping_snapshot"):
             try:
-                carrito.shipping_snapshot = address
+                carrito.shipping_snapshot = addr_snapshot
                 carrito.save(update_fields=["shipping_snapshot"])
             except Exception:
                 pass
@@ -1645,7 +1672,6 @@ class CarritoView(viewsets.ModelViewSet):
         carrito.mp_status = "pending"
         carrito.save(update_fields=["external_reference", "mp_status"])
 
-        # Valores por defecto si no están en settings
         frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
         frontend_return_path = getattr(settings, "FRONTEND_RETURN_PATH", "/pagos/retorno")
         return_url = f"{frontend_url}{frontend_return_path}?carritoId={carrito.idCarrito}"
@@ -1657,12 +1683,17 @@ class CarritoView(viewsets.ModelViewSet):
             "back_urls": {"success": return_url, "failure": return_url, "pending": return_url},
             "notification_url": getattr(settings, "MP_NOTIFICATION_URL", f"{frontend_url}/mp/webhook"),
         }
-        if address:
-            preference_data["metadata"] = {"address": address}
+
+        # Metadata segura: si es dict la mando tal cual; si es string, la empaqueto
+        if address_raw is not None:
+            preference_data["metadata"] = {
+                "address": addr_snapshot if addr_snapshot else {"direccion": addr_line}
+            }
+
         if getattr(settings, "MP_SEND_AUTO_RETURN", False):
             preference_data["auto_return"] = "approved"
 
-        # ---- 4) Llamada a MP con manejo de errores ----
+        # ---- 4) Llamada a MP ----
         try:
             resp = requests.post(
                 "https://api.mercadopago.com/checkout/preferences",
@@ -2405,12 +2436,12 @@ class FacturaView(viewsets.ModelViewSet):
                 return str(dt)
 
         # ------- colores del proyecto -------
-        color_primary = colors.HexColor("#1fb2d2")  # Cyan principal
+        color_primary = colors.HexColor("#1fb2d2")    # Cyan principal
         color_secondary = colors.HexColor("#2c3e50")  # Azul oscuro
-        color_accent = colors.HexColor("#16a085")  # Verde azulado
-        color_bg_light = colors.HexColor("#f8f9fa")  # Fondo claro
+        color_accent = colors.HexColor("#16a085")     # Verde azulado
+        color_bg_light = colors.HexColor("#f8f9fa")   # Fondo claro
         color_text_dark = colors.HexColor("#2c3e50")  # Texto oscuro
-        color_text_light = colors.HexColor("#6c757d")  # Texto claro
+        color_text_light = colors.HexColor("#6c757d") # Texto claro
 
         # ------- documento -------
         buf = BytesIO()
@@ -2422,56 +2453,49 @@ class FacturaView(viewsets.ModelViewSet):
         )
 
         styles = getSampleStyleSheet()
-        
-        # Estilos personalizados con colores del proyecto
         styles.add(ParagraphStyle(
-            name="h1center", 
-            parent=styles["Heading1"], 
-            alignment=TA_CENTER, 
+            name="h1center",
+            parent=styles["Heading1"],
+            alignment=TA_CENTER,
             spaceAfter=12,
             textColor=color_primary,
             fontSize=24,
             fontName="Helvetica-Bold"
         ))
-        
         styles.add(ParagraphStyle(
-            name="label", 
-            fontName="Helvetica", 
-            fontSize=9, 
+            name="label",
+            fontName="Helvetica",
+            fontSize=9,
             textColor=color_text_light,
             spaceBefore=2,
             spaceAfter=1
         ))
-        
         styles.add(ParagraphStyle(
-            name="value", 
-            fontName="Helvetica-Bold", 
+            name="value",
+            fontName="Helvetica-Bold",
             fontSize=11,
             textColor=color_text_dark,
             spaceAfter=3
         ))
-        
         styles.add(ParagraphStyle(
-            name="right", 
-            parent=styles["Normal"], 
+            name="right",
+            parent=styles["Normal"],
             alignment=TA_RIGHT,
             textColor=color_text_dark
         ))
-        
         styles.add(ParagraphStyle(
-            name="smallcenter", 
-            fontName="Helvetica", 
-            fontSize=8, 
-            textColor=color_text_light, 
+            name="smallcenter",
+            fontName="Helvetica",
+            fontSize=8,
+            textColor=color_text_light,
             alignment=TA_CENTER,
             spaceAfter=6
         ))
 
         story = []
-        
-        # Header con línea decorativa
+
+        # Header
         story.append(Paragraph("FACTURA DE VENTA", styles["h1center"]))
-        # Línea decorativa debajo del título
         line_table = Table([["", ""]], colWidths=[180*mm, 0])
         line_table.setStyle(TableStyle([
             ("LINEBELOW", (0,0), (0,0), 2, color_primary),
@@ -2480,7 +2504,7 @@ class FacturaView(viewsets.ModelViewSet):
         story.append(line_table)
         story.append(Spacer(1, 4*mm))
 
-        # ------- encabezado mejorado -------
+        # ------- encabezado -------
         emisor_nombre = getattr(settings, "FACTURA_EMISOR_NOMBRE", "Variedad y Estilos ZOE")
         emisor_dir    = getattr(settings, "FACTURA_EMISOR_DIR", "")
 
@@ -2500,31 +2524,46 @@ class FacturaView(viewsets.ModelViewSet):
             or "—"
         )
 
-        # Dirección cliente: Factura.direccion -> Pedido.shipping_snapshot -> última Direccion
-        cliente_dir = getattr(factura, "direccion", "") or ""
-        pedido = getattr(factura, "pedido", None)
-        if not cliente_dir and pedido and hasattr(pedido, "shipping_snapshot"):
-            cliente_dir = _addr_from_snapshot(getattr(pedido, "shipping_snapshot", {}) or {})
-        if not cliente_dir and getattr(factura, "usuario", None):
-            try:
+        # ------- DIRECCIÓN DEL CLIENTE (PRIORIDAD SNAPSHOT) -------
+        # 1) Factura.shipping_address (JSON)
+        # 2) Factura.direccion (string)
+        # 3) Pedido.shipping_snapshot (JSON)
+        # 4) Última Direccion del usuario
+        cliente_dir = ""
+        try:
+            # 1) Snapshot guardado en la factura
+            if hasattr(factura, "shipping_address") and getattr(factura, "shipping_address", None):
+                cliente_dir = _addr_from_snapshot(getattr(factura, "shipping_address"))
+
+            # 2) Cadena denormalizada
+            if not cliente_dir:
+                cliente_dir = getattr(factura, "direccion", "") or ""
+
+            # 3) Snapshot del pedido
+            pedido = getattr(factura, "pedido", None)
+            if not cliente_dir and pedido and hasattr(pedido, "shipping_snapshot"):
+                cliente_dir = _addr_from_snapshot(getattr(pedido, "shipping_snapshot", {}) or {})
+
+            # 4) Última Dirección del usuario (fallback)
+            if not cliente_dir and getattr(factura, "usuario", None):
                 from .models import Direccion
                 ult = Direccion.objects.filter(usuario=factura.usuario).order_by("-pk").first()
                 if ult and getattr(ult, "direccion", ""):
                     cliente_dir = ult.direccion
-            except Exception:
-                pass
+        except Exception:
+            # ante cualquier error en los fallbacks, no romper el PDF
+            pass
         cliente_dir = cliente_dir or "—"
 
         fecha_fact = getattr(factura, "emitida_en", None) or getattr(factura, "created_at", None)
 
-        # Sección de información con mejor diseño
+        # Sección de información
         meta_left = [
             [Paragraph("EMISOR", styles["label"]), ""],
             [Paragraph(emisor_nombre, styles["value"]), ""],
             [Paragraph("Dirección:", styles["label"]), ""],
-            [Paragraph(emisor_dir or "—", styles["value"]), ""],
+            [Paragraph(emisor_dir or "zoe@gmail.com", styles["value"]), ""],
         ]
-        
         meta_mid = [
             [Paragraph("FACTURA", styles["label"]), ""],
             [Paragraph(getattr(factura, "numero", "") or str(factura.pk), styles["value"]), ""],
@@ -2533,7 +2572,6 @@ class FacturaView(viewsets.ModelViewSet):
             [Paragraph("Fecha:", styles["label"]), ""],
             [Paragraph(dmy_hm(fecha_fact), styles["value"]), ""],
         ]
-        
         meta_right = [
             [Paragraph("CLIENTE", styles["label"]), ""],
             [Paragraph(cliente_nombre, styles["value"]), ""],
@@ -2545,12 +2583,10 @@ class FacturaView(viewsets.ModelViewSet):
             [Paragraph(factura.moneda or "COP", styles["value"]), ""],
         ]
 
-        # Crear tabla con fondo para las secciones
         t_left = Table(meta_left, colWidths=[62*mm, 2*mm])
-        t_mid = Table(meta_mid, colWidths=[38*mm, 2*mm])  
+        t_mid = Table(meta_mid, colWidths=[38*mm, 2*mm])
         t_right = Table(meta_right, colWidths=[54*mm, 2*mm])
 
-        # Aplicar estilos a cada tabla
         for t in [t_left, t_mid, t_right]:
             t.setStyle(TableStyle([
                 ("VALIGN", (0,0), (-1,-1), "TOP"),
@@ -2562,18 +2598,16 @@ class FacturaView(viewsets.ModelViewSet):
                 ("BOX", (0,0), (-1,-1), 0.5, color_primary),
             ]))
 
-        # Tabla contenedora
         main_table = Table([[t_left, t_mid, t_right]], colWidths=[64*mm, 40*mm, 56*mm], hAlign=TA_LEFT)
         main_table.setStyle(TableStyle([
             ("VALIGN", (0,0), (-1,-1), "TOP"),
             ("LEFTPADDING", (0,0), (-1,-1), 2),
             ("RIGHTPADDING", (0,0), (-1,-1), 2),
         ]))
-        
         story.append(main_table)
         story.append(Spacer(1, 8*mm))
 
-        # ------- items con mejor diseño -------
+        # ------- items -------
         story.append(Paragraph("DETALLE DE PRODUCTOS", ParagraphStyle(
             name="section_header",
             fontName="Helvetica-Bold",
@@ -2601,27 +2635,18 @@ class FacturaView(viewsets.ModelViewSet):
 
         t_items = Table(rows, colWidths=[90*mm, 20*mm, 35*mm, 35*mm], hAlign="LEFT")
         t_items.setStyle(TableStyle([
-            # Header con color primario
             ("BACKGROUND", (0,0), (-1,0), color_primary),
             ("TEXTCOLOR", (0,0), (-1,0), colors.white),
             ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
             ("FONTSIZE", (0,0), (-1,0), 10),
-            
-            # Filas alternadas
             ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, color_bg_light]),
-            
-            # Bordes y grid
             ("GRID", (0,0), (-1,-1), 0.5, color_primary),
             ("BOX", (0,0), (-1,-1), 1, color_primary),
-            
-            # Alineación
             ("ALIGN", (1,1), (1,-1), "CENTER"),
             ("ALIGN", (2,1), (3,-1), "RIGHT"),
             ("FONTSIZE", (0,1), (-1,-1), 9),
             ("FONTNAME", (0,1), (-1,-1), "Helvetica"),
             ("TEXTCOLOR", (0,1), (-1,-1), color_text_dark),
-            
-            # Padding
             ("TOPPADDING", (0,0), (-1,-1), 6),
             ("BOTTOMPADDING", (0,0), (-1,-1), 6),
             ("LEFTPADDING", (0,0), (-1,-1), 8),
@@ -2630,7 +2655,7 @@ class FacturaView(viewsets.ModelViewSet):
         story.append(t_items)
         story.append(Spacer(1, 8*mm))
 
-        # ------- totales con mejor diseño -------
+        # ------- totales -------
         subtotal  = getattr(factura, "subtotal", None)
         impuestos = getattr(factura, "impuestos", None)
         total     = getattr(factura, "total", 0)
@@ -2639,20 +2664,27 @@ class FacturaView(viewsets.ModelViewSet):
             try:
                 subtotal = sum([(it.subtotal if it.subtotal is not None else Decimal(str(it.precio))*it.cantidad) for it in items], Decimal("0"))
             except Exception:
-                subtotal = total
-        if impuestos is None:
-            try:
-                impuestos = Decimal(str(total)) - Decimal(str(subtotal))
-            except Exception:
-                impuestos = 0
+                subtotal = Decimal(str(total)) if total is not None else 0
 
+        # IVA 19% calculado sobre el TOTAL a pagar (como pediste)
+        try:
+            iva = Decimal(str(total)) * Decimal("0.19")
+        except Exception:
+            # fallback por si total viniera raro
+            try:
+                iva = Decimal(str(subtotal)) * Decimal("0.19")
+            except Exception:
+                iva = Decimal("0")
+
+        # (Opcional) si ya no quieres mostrar "Impuestos", elimínalo de las filas.
+        # Aquí dejo solo Subtotal, IVA y TOTAL:
         tot_rows = [
             ["Subtotal:",  money(subtotal)],
-            ["Impuestos:", money(impuestos)],
-            ["", ""],  # Línea separadora
+            ["IVA (19%):", money(iva)],
+            ["", ""],  # Línea separadora visual
             ["TOTAL:",     money(total)],
         ]
-        
+
         t_tot = Table(tot_rows, colWidths=[45*mm, 45*mm], hAlign="RIGHT")
         t_tot.setStyle(TableStyle([
             ("ALIGN", (0,0), (-1,-1), "RIGHT"),
@@ -2674,7 +2706,7 @@ class FacturaView(viewsets.ModelViewSet):
         story.append(t_tot)
         story.append(Spacer(1, 12*mm))
 
-        # Footer mejorado
+        # Footer
         footer_style = ParagraphStyle(
             name="footer",
             fontName="Helvetica-Oblique",
@@ -2684,8 +2716,7 @@ class FacturaView(viewsets.ModelViewSet):
             spaceBefore=6
         )
         story.append(Paragraph("Gracias por su compra. Este documento constituye su factura de venta.", footer_style))
-        
-        # Línea decorativa final
+
         final_line = Table([["", ""]], colWidths=[180*mm, 0])
         final_line.setStyle(TableStyle([
             ("LINEABOVE", (0,0), (0,0), 1, color_primary),
