@@ -1,0 +1,372 @@
+/* src/components/admin/ListaReportesVentas.css */
+
+.lista-table-dark {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 15px;
+  overflow: hidden;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lista-table-dark thead {
+  background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%);
+}
+
+.lista-table-dark thead th {
+  color: #1a1a2e !important;
+  font-weight: 700;
+  border: none;
+  padding: 1rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lista-table-dark tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.lista-table-dark tbody tr:hover {
+  background: rgba(0, 201, 255, 0.1);
+  transform: scale(1.01);
+}
+
+.lista-table-dark tbody tr.lista-table-primary {
+  background: rgba(0, 201, 255, 0.2) !important;
+  border-color: #00c9ff;
+}
+
+.lista-table-dark tbody td {
+  color: white;
+  border: none;
+  padding: 1rem;
+  vertical-align: middle;
+}
+
+.lista-no-data {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.lista-text-muted {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Botones de la tabla */
+.lista-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lista-btn-group .btn {
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  margin: 0;
+}
+
+.lista-btn-select {
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  background: transparent !important;
+  backdrop-filter: blur(10px);
+}
+
+.lista-btn-select.active {
+  background: rgba(0, 201, 255, 0.3) !important;
+  border-color: #00c9ff !important;
+  color: #00c9ff !important;
+}
+
+.lista-btn-select:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #00c9ff !important;
+  color: #00c9ff !important;
+}
+
+.lista-btn-view {
+  background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%) !important;
+  border: none !important;
+  color: #1a1a2e !important;
+}
+
+.lista-btn-view:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 201, 255, 0.4);
+  color: #1a1a2e !important;
+}
+
+.lista-btn-delete {
+  border: 1px solid rgba(220, 53, 69, 0.5) !important;
+  color: #dc3545 !important;
+  background: transparent !important;
+  backdrop-filter: blur(10px);
+}
+
+.lista-btn-delete:hover {
+  background: rgba(220, 53, 69, 0.2) !important;
+  border-color: #dc3545 !important;
+  color: #dc3545 !important;
+  transform: translateY(-2px);
+}
+
+/* Modal */
+.lista-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 1050;
+  animation: fadeIn 0.3s ease;
+}
+
+.lista-modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 95%;
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1060;
+  animation: slideIn 0.3s ease;
+}
+
+.lista-glass-modal {
+  background: rgba(26, 26, 46, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.lista-modal-header {
+  background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%);
+  color: #1a1a2e;
+  border-radius: 20px 20px 0 0;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lista-modal-title {
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.lista-modal-subtitle {
+  color: #1a1a2e;
+  opacity: 0.8;
+}
+
+.lista-modal-body {
+  color: white;
+}
+
+/* Botones del modal header */
+.lista-btn-export {
+  background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.lista-btn-export:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(86, 171, 47, 0.4);
+  color: white !important;
+}
+
+.lista-btn-export:disabled {
+  opacity: 0.7;
+}
+
+.lista-btn-print,
+.lista-btn-close {
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  background: transparent !important;
+  backdrop-filter: blur(10px);
+}
+
+.lista-btn-print:hover,
+.lista-btn-close:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #00c9ff !important;
+  color: #00c9ff !important;
+}
+
+/* KPI Cards en modal */
+.lista-kpi-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(0, 201, 255, 0.3);
+  border-radius: 15px;
+  padding: 1.5rem;
+  backdrop-filter: blur(15px);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.lista-kpi-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 201, 255, 0.2);
+  border-color: #00c9ff;
+}
+
+.lista-kpi-label {
+  color: #92fe9d;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.lista-kpi-value {
+  color: white;
+  font-weight: 700;
+}
+
+.lista-kpi-product-name {
+  font-weight: 600;
+  color: white;
+}
+
+.lista-kpi-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Controles de formulario en modal */
+.lista-form-label {
+  color: #00c9ff;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.lista-form-control {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 10px !important;
+  color: white !important;
+  backdrop-filter: blur(10px);
+}
+
+.lista-form-control:focus {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #00c9ff !important;
+  box-shadow: 0 0 0 0.25rem rgba(0, 201, 255, 0.25) !important;
+  color: white !important;
+}
+
+.lista-form-control option {
+  background: #1a1a2e;
+  color: white;
+}
+
+/* Alert de error */
+.lista-alert-danger {
+  background: rgba(220, 53, 69, 0.2) !important;
+  border: 1px solid rgba(220, 53, 69, 0.5) !important;
+  color: #f8d7da !important;
+  border-radius: 10px !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Paginación */
+.lista-pagination {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 1rem;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lista-btn-pagination {
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  background: transparent !important;
+  backdrop-filter: blur(10px);
+  border-radius: 8px !important;
+  font-weight: 600;
+}
+
+.lista-btn-pagination:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #00c9ff !important;
+  color: #00c9ff !important;
+}
+
+.lista-btn-pagination:disabled {
+  opacity: 0.5;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.9);
+  }
+  to { 
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .lista-modal-content {
+    width: 98%;
+    max-height: 95vh;
+  }
+  
+  .lista-modal-header {
+    padding: 1rem;
+  }
+  
+  .lista-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .lista-btn-group .btn {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .lista-modal-header .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 1rem;
+  }
+  
+  .lista-modal-header .btn-group .btn {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .lista-btn-group {
+    flex-direction: row;
+    gap: 4px;
+  }
+  
+  .lista-btn-group .btn {
+    width: auto;
+  }
+}

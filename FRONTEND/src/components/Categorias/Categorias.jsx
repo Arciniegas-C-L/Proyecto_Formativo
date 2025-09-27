@@ -56,7 +56,7 @@ export function CategoriaForm() {
   const [categoria, setCategoria] = useState({
     nombre: "",
     estado: true,
-    usarSubcategorias: false,
+    usarSubcategorias: true, // Siempre true ahora
   });
 
   const [subcategoria, setSubcategoria] = useState({
@@ -134,16 +134,15 @@ export function CategoriaForm() {
         return;
       }
 
-      if (categoria.usarSubcategorias) {
-        await createSubcategoria({
-          nombre: subcategoria.nombre,
-          estado: Boolean(subcategoria.estado),
-          stockMinimo: Number(subcategoria.stockMinimo) || 0,
-          categoria: Number(idCategoria),
-        });
-      }
+      // Siempre crear subcategoría ya que es obligatorio
+      await createSubcategoria({
+        nombre: subcategoria.nombre,
+        estado: Boolean(subcategoria.estado),
+        stockMinimo: Number(subcategoria.stockMinimo) || 0,
+        categoria: Number(idCategoria),
+      });
 
-      setCategoria({ nombre: "", estado: true, usarSubcategorias: false });
+      setCategoria({ nombre: "", estado: true, usarSubcategorias: true });
       setSubcategoria({ nombre: "", estado: true, stockMinimo: 0 });
       setModoCategoria("nueva");
       setCategoriaExistenteId("");
@@ -261,40 +260,22 @@ export function CategoriaForm() {
                     </div>
                   )}
 
-                  {/* Checkbox Subcategoría */}
-                  <div className="form-check mb-4">
-                    <input
-                      type="checkbox"
-                      className="form-check-input custom-checkbox"
-                      name="usarSubcategorias"
-                      checked={!!categoria.usarSubcategorias}
-                      onChange={handleCategoriaChange}
-                      id="usarSubcategorias"
-                    />
-                    <label className="form-check-label fw-medium" htmlFor="usarSubcategorias">
-                      <i className="fas fa-layer-group me-2"></i>
-                      Agregar Subcategoría
-                    </label>
-                  </div>
-
-                  {/* Sección Subcategoría mejorada visualmente */}
-                  {categoria.usarSubcategorias && (
-                    <div className="subcategoria-card">
-                      <div className="subcategoria-card-header">
-                        <h5 className="mb-0">
-                          <i className="fas fa-layer-group me-2"></i>
-                          Información de la Subcategoría
-                        </h5>
-                      </div>
-                      <hr className="subcategoria-divider" />
-                      <div className="subcategoria-card-body">
-                        <SubcategoriaForm
-                          subcategoria={subcategoria}
-                          onChange={handleSubcategoriaChange}
-                        />
-                      </div>
+                  {/* Sección Subcategoría (siempre visible) */}
+                  <div className="subcategoria-card">
+                    <div className="subcategoria-card-header">
+                      <h5 className="mb-0">
+                        <i className="fas fa-layer-group me-2"></i>
+                        Información de la Subcategoría
+                      </h5>
                     </div>
-                  )}
+                    <hr className="subcategoria-divider" />
+                    <div className="subcategoria-card-body">
+                      <SubcategoriaForm
+                        subcategoria={subcategoria}
+                        onChange={handleSubcategoriaChange}
+                      />
+                    </div>
+                  </div>
 
                   {/* Botón Guardar */}
                   <div className="d-flex justify-content-center mt-4">

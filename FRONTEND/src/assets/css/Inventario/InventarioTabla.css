@@ -1,4 +1,4 @@
-/* InventarioTabla.css - Versión simple y mobile-first */
+/* InventarioTabla.css - Versión optimizada y responsive */
 
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
@@ -7,6 +7,12 @@
   margin: 0 auto;
   padding: 20px;
   font-family: 'Urbanist', sans-serif;
+  box-sizing: border-box;
+}
+
+.inventario-tabla-container *,
+.inventario-tabla-container *::before,
+.inventario-tabla-container *::after {
   box-sizing: border-box;
 }
 
@@ -63,7 +69,7 @@
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/*  TABLA NORMAL (Desktop)  */
+/*  TABLA DESKTOP  */
 .inventario-tabla-container .tabla-container {
   background: #fff;
   border-radius: 12px;
@@ -110,6 +116,10 @@
 
 /*  RESPONSIVE MÓVILES  */
 @media (max-width: 768px) {
+  .inventario-tabla-container {
+    padding: 15px 10px;
+  }
+  
   .inventario-tabla-container .page-title {
     font-size: 1.6rem;
     text-align: center;
@@ -120,7 +130,12 @@
     font-size: 0.8rem;
   }
   
-  /* Convertir tabla en tarjetas apiladas */
+  /* Convertir tabla en cards */
+  .inventario-tabla-container .tabla-container {
+    box-shadow: none;
+    background: transparent;
+  }
+  
   .inventario-tabla-container .tabla-inventario {
     min-width: 100%;
     display: block;
@@ -149,69 +164,64 @@
   }
   
   .inventario-tabla-container .tabla-inventario td {
-    display: block;
+    display: flex;
+    align-items: center;
     text-align: left !important;
     padding: 8px 0 !important;
     border-bottom: 1px solid #f0f0f0 !important;
-    position: relative;
-    padding-left: 45% !important;
   }
   
   .inventario-tabla-container .tabla-inventario td:last-child {
     border-bottom: none !important;
-    text-align: center !important;
-    padding-left: 0 !important;
+    justify-content: center !important;
     padding-top: 15px !important;
   }
   
-  /* Labels para cada campo */
+  /* Labels para móvil */
   .inventario-tabla-container .tabla-inventario td:before {
     content: attr(data-label);
-    position: absolute;
-    left: 0;
-    width: 40%;
-    padding-right: 10px;
-    white-space: nowrap;
+    width: 100px;
     font-weight: 600;
     color: #00b0e0;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    margin-right: 10px;
+    flex-shrink: 0;
   }
-  .error-message:empty {
-  display: none;
-  }
-
   
-  /* Labels específicos para cada tipo de tabla */
-  /* Categorías */
+  /* Labels por tipo de tabla */
   .inventario-tabla-container .tabla-inventario td:nth-child(1):before { content: "Categoría"; }
-  .inventario-tabla-container .tabla-inventario td:nth-child(2):before { content: "Subcategorías"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(2):before { content: "Subcats"; }
   .inventario-tabla-container .tabla-inventario td:nth-child(3):before { content: "Productos"; }
   .inventario-tabla-container .tabla-inventario td:nth-child(4):before { content: "Estado"; }
-  .inventario-tabla-container .tabla-inventario td:nth-child(5):before { content: "Acciones"; }
+  .inventario-tabla-container .tabla-inventario td:nth-child(5):before { content: ""; }
   
-  /* Productos */
-  .inventario-tabla-container .tabla-inventario td:nth-child(1):before { content: "Producto"; }
-  .inventario-tabla-container .tabla-inventario td:nth-child(2):before { content: "Precio"; }
-  .inventario-tabla-container .tabla-inventario td:nth-child(3):before { content: "Stock Total"; }
-  .inventario-tabla-container .tabla-inventario td:nth-child(4):before { content: "Stock Mínimo"; }
-  .inventario-tabla-container .tabla-inventario td:nth-child(5):before { content: "Stock por Tallas"; }
-  .inventario-tabla-container .tabla-inventario td:nth-child(6):before { content: "Acciones"; }
-  
-  /* Ajustar imágenes en móvil */
-  .inventario-tabla-container .producto-imagen,
-  .inventario-tabla-container .imagen-placeholder {
-    width: 35px;
-    height: 35px;
+  /* Para productos */
+  .inventario-tabla-container .tabla-productos td:nth-child(1):before { content: "Producto"; }
+  .inventario-tabla-container .tabla-productos td:nth-child(2):before { content: "Precio"; }
+  .inventario-tabla-container .tabla-productos td:nth-child(3):before { content: "Stock"; }
+  .inventario-tabla-container .tabla-productos td:nth-child(4):before { content: "Mínimo"; }
+  .inventario-tabla-container .tabla-productos td:nth-child(5):before { content: "Tallas"; }
+  .inventario-tabla-container .tabla-productos td:nth-child(6):before { content: ""; }
+}
+
+/*  MÓVILES PEQUEÑOS  */
+@media (max-width: 480px) {
+  .inventario-tabla-container {
+    padding: 10px 8px;
   }
   
-  .inventario-tabla-container .producto-info {
-    gap: 8px;
+  .inventario-tabla-container .page-title {
+    font-size: 1.4rem;
   }
   
-  .inventario-tabla-container .producto-nombre {
-    font-size: 0.85rem;
+  .inventario-tabla-container .tabla-inventario tr {
+    padding: 12px;
+  }
+  
+  .inventario-tabla-container .tabla-inventario td:before {
+    width: 80px;
+    font-size: 0.7rem;
   }
 }
 
@@ -293,14 +303,15 @@
 .inventario-tabla-container .btn-action i {
   font-size: 14px;
   font-weight: 900;
-  font-family: "Font Awesome 5 Free", "Font Awesome 6 Free";
 }
 
-/* Fallbacks para íconos */
-.inventario-tabla-container .btn-action .fa-eye:not(.fa)::before { content: "👁"; font-family: inherit; }
-.inventario-tabla-container .btn-action .fa-plus:not(.fa)::before { content: "➕"; font-family: inherit; }
-.inventario-tabla-container .btn-action .fa-edit:not(.fa)::before { content: "✏"; font-family: inherit; }
-.inventario-tabla-container .btn-action .fa-save:not(.fa)::before { content: "💾"; font-family: inherit; }
+/* Tamaño táctil en móvil */
+@media (max-width: 768px) {
+  .inventario-tabla-container .btn-action {
+    min-width: 40px;
+    height: 40px;
+  }
+}
 
 /*  PRODUCTOS  */
 .inventario-tabla-container .producto-info {
@@ -315,6 +326,7 @@
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid #ddd;
+  flex-shrink: 0;
 }
 
 .inventario-tabla-container .imagen-placeholder {
@@ -328,11 +340,25 @@
   border-radius: 6px;
   color: #6c757d;
   font-size: 1.2rem;
+  flex-shrink: 0;
 }
 
 .inventario-tabla-container .producto-nombre {
   font-weight: 500;
   color: #333;
+  word-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+  .inventario-tabla-container .producto-imagen,
+  .inventario-tabla-container .imagen-placeholder {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .inventario-tabla-container .producto-nombre {
+    font-size: 0.85rem;
+  }
 }
 
 /*  SELECT  */
@@ -387,6 +413,7 @@
   justify-content: center;
   z-index: 9999;
   backdrop-filter: blur(2px);
+  padding: 10px;
 }
 
 .inventario-tabla-container .modal-content {
@@ -394,7 +421,7 @@
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   max-width: 600px;
-  width: 90%;
+  width: 100%;
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -495,29 +522,6 @@
   overflow-y: auto;
 }
 
-/* Bootstrap-like classes */
-.inventario-tabla-container .d-flex { display: flex !important; }
-.inventario-tabla-container .gap-1 { gap: 0.25rem !important; }
-.inventario-tabla-container .gap-2 { gap: 0.5rem !important; }
-.inventario-tabla-container .justify-content-center { justify-content: center !important; }
-.inventario-tabla-container .align-items-center { align-items: center !important; }
-.inventario-tabla-container .flex-wrap { flex-wrap: wrap !important; }
-.inventario-tabla-container .mb-2 { margin-bottom: 0.5rem !important; }
-.inventario-tabla-container .mb-3 { margin-bottom: 1rem !important; }
-.inventario-tabla-container .me-1 { margin-right: 0.25rem !important; }
-.inventario-tabla-container .fw-bold { font-weight: 700 !important; }
-.inventario-tabla-container .text-muted { color: #6c757d !important; }
-
-.inventario-tabla-container .row {
-  display: flex;
-  flex-wrap: wrap;
-  margin: 0 -0.75rem;
-}
-
-.inventario-tabla-container .col-2 { flex: 0 0 16.66666667%; width: 16.66666667%; padding: 0 0.75rem; }
-.inventario-tabla-container .col-4 { flex: 0 0 33.33333333%; width: 33.33333333%; padding: 0 0.75rem; }
-.inventario-tabla-container .col-6 { flex: 0 0 50%; width: 50%; padding: 0 0.75rem; }
-
 .inventario-tabla-container .form-control {
   display: block;
   width: 100%;
@@ -537,37 +541,6 @@
   border-color: #8b3581;
   outline: 0;
   box-shadow: 0 0 0 0.2rem rgba(139, 53, 129, 0.25);
-}
-
-.inventario-tabla-container .form-label { margin-bottom: 0.5rem; }
-
-.inventario-tabla-container .btn {
-  display: inline-block;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  text-align: center;
-  text-decoration: none;
-  vertical-align: middle;
-  cursor: pointer;
-  border: 1px solid transparent;
-  border-radius: 0.375rem;
-  transition: all 0.15s ease-in-out;
-}
-
-.inventario-tabla-container .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; border-radius: 0.25rem; }
-
-.inventario-tabla-container .btn-outline-primary {
-  color: #00b0e0;
-  border-color: #00b0e0;
-  background-color: transparent;
-}
-
-.inventario-tabla-container .btn-outline-primary:hover {
-  color: #fff;
-  background-color: #00b0e0;
-  border-color: #00b0e0;
 }
 
 /*  LOADING  */
@@ -625,16 +598,18 @@
   margin-left: auto;
 }
 
-.inventario-tabla-container .snackbar-close:hover { opacity: 1; }
-
-/*  RESPONSIVE  */
-@media (max-width: 1024px) {
-  .inventario-tabla-container { padding: 15px; }
-  .inventario-tabla-container .tabla-inventario { font-size: 0.85rem; }
+.inventario-tabla-container .snackbar-close:hover { 
+  opacity: 1; 
 }
 
-@media (max-width: 480px) {
-  .inventario-tabla-container { padding: 10px; }
-  .inventario-tabla-container .mobile-card { padding: 12px; margin-bottom: 12px; }
-  .inventario-tabla-container .btn-action { min-width: 28px; height: 28px; }
+/* Clases de utilidad básicas */
+.inventario-tabla-container .d-flex { display: flex !important; }
+.inventario-tabla-container .justify-content-center { justify-content: center !important; }
+.inventario-tabla-container .align-items-center { align-items: center !important; }
+.inventario-tabla-container .gap-2 { gap: 0.5rem !important; }
+.inventario-tabla-container .mb-2 { margin-bottom: 0.5rem !important; }
+.inventario-tabla-container .fw-bold { font-weight: 700 !important; }
+
+.error-message:empty {
+  display: none;
 }

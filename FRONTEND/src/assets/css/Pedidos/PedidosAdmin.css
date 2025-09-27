@@ -69,8 +69,7 @@
 /* Inputs oscuros  */
 .container.py-3 .form-control,
 .container.py-3 .form-select {
-  background-color: #1A1F2E !important;
-  border: 1px solid #34495e !important;
+  border: 1px solid  #00bcd4;
   color: #ecf0f1 !important;
   border-radius: 0.375rem !important;
   padding: 0.5rem 0.75rem !important;
@@ -83,19 +82,17 @@
   outline: none !important;
   box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25) !important;
   border-color: #00bcd4 !important;
-  background-color: #1A1F2E !important;
-  color: #ecf0f1 !important;
+  color: #6f96a0 !important;
 }
 
 .container.py-3 .form-control::placeholder {
   color: #95a5a6 !important;
 }
 
-.container.py-3 .form-select option {
-  background: #2c3e50 !important;
-  color: #ecf0f1 !important;
+.container.py-3 .form-control::placeholder {
+  color: #6c757d !important;
+  opacity: 1 !important; /* asegura que no se vea transparente */
 }
-
 /* Botón de búsqueda  */
 .container.py-3 .btn.btn-primary.btn-sm {
   background: #00bcd4 !important;

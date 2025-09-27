@@ -126,9 +126,9 @@
 }
 
 .facturas-input {
-  background-color: #1A1F2E;
-  border: 1px solid #34495e;
-  color: #ecf0f1;
+  border: 1px solid #00bcd4;
+  color: #212529;  /* Texto negro/gris Bootstrap */
+  background: #ffffff; 
   border-radius: 0.375rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
