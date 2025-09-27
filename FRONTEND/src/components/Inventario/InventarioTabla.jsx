@@ -399,9 +399,7 @@ const InventarioTabla = () => {
                         className="btn-action btn-secondary"
                         onClick={() =>
                           navigate(
-                            `/producto/crear?subcategoria=${sub.id}&subcategoriaNombre=${encodeURIComponent(
-                              sub.nombre
-                            )}`
+                            `/admin/productos/crear`
                           )
                         }
                         title="Crear producto"
@@ -511,7 +509,11 @@ const InventarioTabla = () => {
                   <div className="d-flex gap-1 justify-content-center">
                     <button
                       className="btn-action btn-primary"
-                      onClick={() => (window.location.href = p.acciones.ver_detalle)}
+                        onClick={() =>
+                          navigate(
+                            `/admin/productos/`
+                          )
+                        }
                       title="Ver detalles del producto"
                     >
                       <i className="fas fa-eye"></i>
