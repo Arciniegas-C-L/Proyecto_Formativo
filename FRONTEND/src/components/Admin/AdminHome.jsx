@@ -175,7 +175,6 @@ const AdminHome = () => {
       {/*  HEADER SECTION  */}
       <div className="admin-header">
         <div className="header-left">
-          <h1 className="admin-title">Panel de Administración</h1>
         </div>
         <div className="header-actions">
           {/* Muestra la fecha y hora actual */}

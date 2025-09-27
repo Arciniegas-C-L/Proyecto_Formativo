@@ -1,16 +1,16 @@
-/* Layout general */
+
 .admin-layout {
   display: flex;
   min-height: 100vh;
   width: 100%;
 }
 
-/* Contenedor principal: contenido + footer */
+/* Contenedor principal: */
 .admin-contenido {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 260px; /* ancho sidebar */
+  margin-left: 260px; 
   min-height: 100vh;
   box-sizing: border-box;
   position: relative;
@@ -23,47 +23,54 @@
 
 /* Contenido principal */
 .contenido-principal {
-  flex: 1; /* ocupa el espacio disponible */
+  flex: 1; 
   padding: 20px;
+  padding-bottom: 100px; 
   overflow-x: auto;
   background: #f8f9fa; 
   box-sizing: border-box;
 }
 
-/* Footer siempre al final */
+/* Footer siempre al final - COMENTADO PARA USAR FOOTER FIJO */
+/*
 .contenedor-footer-admin {
-  margin-top: auto; /* empuja al fondo */
+  margin-top: auto;
   flex-shrink: 0;
   width: 100%;
 }
+*/
 
 /* Responsivo */
 @media (max-width: 991px) {
   .admin-contenido {
-    margin-left: 0; /* sidebar oculto en móviles */
+    margin-left: 0; 
   }
 }
 
 @media (max-width: 768px) {
   .contenido-principal {
     padding: 15px;
+    padding-bottom: 110px; 
   }
 }
 
 @media (max-width: 576px) {
   .contenido-principal {
     padding: 10px;
+    padding-bottom: 100px;
   }
 }
 
 @media (max-width: 480px) {
   .contenido-principal {
     padding: 8px;
+    padding-bottom: 95px;
   }
 }
 
 @media (max-width: 360px) {
   .contenido-principal {
     padding: 6px;
+    padding-bottom: 90px;
   }
 }

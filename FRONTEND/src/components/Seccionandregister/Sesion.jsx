@@ -1,25 +1,26 @@
-import React, { useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import saludo from '../../assets/images/saludo.webp';
-import bienvenida from '../../assets/images/bienvenida.gif';
-import '../../assets/css/Seccionandregistrer/sesion.css';
-import { useAuth } from '../../context/AuthContext';
-import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
-import toast from 'react-hot-toast';
-import "bootstrap-icons/font/bootstrap-icons.css"; 
+import React, { useRef, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import saludo from "../../assets/images/saludo.webp";
+import bienvenida from "../../assets/images/bienvenida.gif";
+import "../../assets/css/Seccionandregistrer/sesion.css";
+import { useAuth } from "../../context/AuthContext";
+import { loginUsuario, registerUsuario } from "../../api/Usuario.api";
+import toast from "react-hot-toast";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import "../../assets/css/Seccionandregistrer/sesion.css";
 
 export function Sesion() {
   const { login } = useAuth();
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPasswordLogin, setShowPasswordLogin] = useState(false); 
-  const [showPasswordRegister, setShowPasswordRegister] = useState(false); 
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
+  const [showPasswordRegister, setShowPasswordRegister] = useState(false);
   const [showPasswordRegister2, setShowPasswordRegister2] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignInClick = () => containerRef.current?.classList.remove('toggle');
-  const handleSignUpClick = () => containerRef.current?.classList.add('toggle');
+  const handleSignInClick = () =>
+    containerRef.current?.classList.remove("toggle");
+  const handleSignUpClick = () => containerRef.current?.classList.add("toggle");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -41,12 +42,12 @@ export function Sesion() {
         rol: data?.rol,
       });
 
-      toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
+      toast.success(`Bienvenido ${data?.usuario?.nombre || ""}`.trim());
 
-      if (data?.rol === 'administrador') {
-        navigate('/admin', { replace: true }); // Redirige al dashboard principal del admin (AdminHome)
+      if (data?.rol === "administrador") {
+        navigate("/admin", { replace: true }); // Redirige al dashboard principal del admin (AdminHome)
       } else {
-        navigate('/', { replace: true });
+        navigate("/", { replace: true });
       }
     } catch (error) {
       const backend = error?.response?.data;
@@ -55,7 +56,7 @@ export function Sesion() {
         backend?.non_field_errors?.[0] ||
         backend?.mensaje ||
         backend?.error ||
-        'Credenciales inválidas';
+        "Credenciales inválidas";
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -63,88 +64,103 @@ export function Sesion() {
   };
 
   const handleRegister = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  const form = e.target.elements;
-  const nombre = form.nombre.value;
-  const apellido = form.apellido.value;
-  const telefono = form.telefono.value;
-  const correo = form.correo.value;
-  const password = form.password.value.trim();
-  const password2 = form.password2.value.trim();
+    const form = e.target.elements;
+    const nombre = form.nombre.value;
+    const apellido = form.apellido.value;
+    const telefono = form.telefono.value;
+    const correo = form.correo.value;
+    const password = form.password.value.trim();
+    const password2 = form.password2.value.trim();
 
-  if (password !== password2) {
-    toast.error('Las contraseñas no coinciden.');
-    setIsSubmitting(false);
-    return;
-  }
-  if (password.length < 6) {
-    toast.error('La contraseña debe tener al menos 6 caracteres.');
-    setIsSubmitting(false);
-    return;
-  }
-
-  try {
-    await registerUsuario({ nombre, apellido, correo, password, telefono });
-    toast.success('Registro exitoso. Ahora inicia sesión.');
-    containerRef.current?.classList.remove('toggle');
-  } catch (error) {
-    const status = error?.response?.status;
-    const data = error?.response?.data;
-
-    // 1) Detección directa por status 409 (Conflict)
-    if (status === 409) {
-      toast.error('El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.');
-      form.correo?.focus();
+    if (password !== password2) {
+      toast.error("Las contraseñas no coinciden.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
       setIsSubmitting(false);
       return;
     }
 
-    // 2) DRF/Django: errores por campo: { correo: ["..."], email: ["..."] }
-    const correoMsg =
-      (Array.isArray(data?.correo) && data.correo[0]) ||
-      (Array.isArray(data?.email) && data.email[0]) ||
-      (typeof data?.correo === 'string' && data.correo) ||
-      (typeof data?.email === 'string' && data.email);
+    try {
+      await registerUsuario({ nombre, apellido, correo, password, telefono });
+      toast.success("Registro exitoso. Ahora inicia sesión.");
+      containerRef.current?.classList.remove("toggle");
+    } catch (error) {
+      const status = error?.response?.status;
+      const data = error?.response?.data;
 
-    if (correoMsg) {
-      // Normaliza el mensaje si es el típico "already exists"
-      const lower = String(correoMsg).toLowerCase();
-      if (lower.includes('existe') || lower.includes('exists') || lower.includes('taken') || lower.includes('registrad')) {
-        toast.error('El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.');
-      } else {
-        toast.error(correoMsg);
+      // 1) Detección directa por status 409 (Conflict)
+      if (status === 409) {
+        toast.error(
+          "El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña."
+        );
+        form.correo?.focus();
+        setIsSubmitting(false);
+        return;
       }
-      form.correo?.focus();
-      setIsSubmitting(false);
-      return;
-    }
 
-    // 3) Otros formatos comunes:
-    // {code: 'EMAIL_TAKEN'} o {error: 'EMAIL_TAKEN'}
-    const code = data?.code || data?.error || data?.mensaje || data?.message;
-    if (typeof code === 'string' && code.toUpperCase().includes('EMAIL') && code.toUpperCase().includes('TAKEN')) {
-      toast.error('El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.');
-      form.correo?.focus();
-      setIsSubmitting(false);
-      return;
-    }
+      // 2) DRF/Django: errores por campo: { correo: ["..."], email: ["..."] }
+      const correoMsg =
+        (Array.isArray(data?.correo) && data.correo[0]) ||
+        (Array.isArray(data?.email) && data.email[0]) ||
+        (typeof data?.correo === "string" && data.correo) ||
+        (typeof data?.email === "string" && data.email);
 
-    // 4) Fallback genérico
-    const errorMsg =
-      data?.mensaje ||
-      data?.error ||
-      (status === 400 && 'Datos inválidos') ||
-      (status === 401 && 'No autorizado') ||
-      (status === 500 && 'Error interno del servidor') ||
-      error.message ||
-      'No se pudo registrar el usuario';
-    toast.error(errorMsg);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      if (correoMsg) {
+        // Normaliza el mensaje si es el típico "already exists"
+        const lower = String(correoMsg).toLowerCase();
+        if (
+          lower.includes("existe") ||
+          lower.includes("exists") ||
+          lower.includes("taken") ||
+          lower.includes("registrad")
+        ) {
+          toast.error(
+            "El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña."
+          );
+        } else {
+          toast.error(correoMsg);
+        }
+        form.correo?.focus();
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 3) Otros formatos comunes:
+      // {code: 'EMAIL_TAKEN'} o {error: 'EMAIL_TAKEN'}
+      const code = data?.code || data?.error || data?.mensaje || data?.message;
+      if (
+        typeof code === "string" &&
+        code.toUpperCase().includes("EMAIL") &&
+        code.toUpperCase().includes("TAKEN")
+      ) {
+        toast.error(
+          "El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña."
+        );
+        form.correo?.focus();
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 4) Fallback genérico
+      const errorMsg =
+        data?.mensaje ||
+        data?.error ||
+        (status === 400 && "Datos inválidos") ||
+        (status === 401 && "No autorizado") ||
+        (status === 500 && "Error interno del servidor") ||
+        error.message ||
+        "No se pudo registrar el usuario";
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="container-sesion">
@@ -165,7 +181,9 @@ export function Sesion() {
                 required
               />
               <i
-                className={`bi ${showPasswordLogin ? "bi-eye-slash" : "bi-eye"}`}
+                className={`bi ${
+                  showPasswordLogin ? "bi-eye-slash" : "bi-eye"
+                }`}
                 onClick={() => setShowPasswordLogin(!showPasswordLogin)}
               ></i>
             </div>
@@ -173,27 +191,52 @@ export function Sesion() {
               ¿Olvidaste tu contraseña?
             </Link>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? 'Procesando...' : 'Iniciar sesión'}
+              {isSubmitting ? "Procesando..." : "Iniciar sesión"}
             </button>
           </form>
         </div>
 
+        {/* Formulario Registro */}
         {/* Formulario Registro */}
         <div className="container-form">
           <form className="sign-up" onSubmit={handleRegister}>
             <h2>Registrarse</h2>
             <span>Use su correo electrónico para registrarse</span>
             <div className="container-input">
-              <input type="text" name="nombre" placeholder="Nombre" required />
+              <input
+                type="text"
+                name="nombre"
+                placeholder="Nombre"
+                maxLength={20}
+                required
+              />
             </div>
             <div className="container-input">
-              <input type="text" name="apellido" placeholder="Apellido" required />
+              <input
+                type="text"
+                name="apellido"
+                placeholder="Apellido"
+                maxLength={20}
+                required
+              />
             </div>
             <div className="container-input">
-              <input type="tel" name="telefono" placeholder="Teléfono" required />
+              <input
+                type="tel"
+                name="telefono"
+                placeholder="Teléfono"
+                maxLength={10}
+                required
+              />
             </div>
             <div className="container-input">
-              <input type="email" name="correo" placeholder="Correo" required />
+              <input
+                type="email"
+                name="correo"
+                placeholder="Correo"
+                maxLength={40}
+                required
+              />
             </div>
             {/* Contraseña */}
             <div className="container-input">
@@ -201,14 +244,21 @@ export function Sesion() {
                 type={showPasswordRegister ? "text" : "password"}
                 name="password"
                 placeholder="Contraseña"
+                maxLength={200}
                 autoComplete="new-password"
                 required
               />
               <i
-                className={`bi ${showPasswordRegister ? "bi-eye-slash" : "bi-eye"}`}
+                className={`bi ${
+                  showPasswordRegister ? "bi-eye-slash" : "bi-eye"
+                }`}
                 onClick={() => setShowPasswordRegister(!showPasswordRegister)}
                 role="button"
-                aria-label={showPasswordRegister ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-label={
+                  showPasswordRegister
+                    ? "Ocultar contraseña"
+                    : "Mostrar contraseña"
+                }
               ></i>
             </div>
 
@@ -218,18 +268,25 @@ export function Sesion() {
                 type={showPasswordRegister2 ? "text" : "password"}
                 name="password2"
                 placeholder="Confirmar contraseña"
+                maxLength={200}
                 autoComplete="new-password"
                 required
               />
               <i
-                className={`bi ${showPasswordRegister2 ? "bi-eye-slash" : "bi-eye"}`}
+                className={`bi ${
+                  showPasswordRegister2 ? "bi-eye-slash" : "bi-eye"
+                }`}
                 onClick={() => setShowPasswordRegister2(!showPasswordRegister2)}
                 role="button"
-                aria-label={showPasswordRegister2 ? "Ocultar confirmación" : "Mostrar confirmación"}
+                aria-label={
+                  showPasswordRegister2
+                    ? "Ocultar confirmación"
+                    : "Mostrar confirmación"
+                }
               ></i>
-</div>
+            </div>
             <button type="submit" className="button" disabled={isSubmitting}>
-              {isSubmitting ? 'Procesando...' : 'Registrarse'}
+              {isSubmitting ? "Procesando..." : "Registrarse"}
             </button>
           </form>
         </div>
@@ -240,8 +297,8 @@ export function Sesion() {
             <h3>¡Bienvenido!</h3>
             <img className="saludo-welcome" src={bienvenida} alt="Bienvenida" />
             <p>
-              Es un placer tenerte de regreso. Tu tienda favorita te estaba esperando. Ingresa y continúa donde lo
-              dejaste.
+              Es un placer tenerte de regreso. Tu tienda favorita te estaba
+              esperando. Ingresa y continúa donde lo dejaste.
             </p>
             <button className="button" onClick={handleSignUpClick}>
               Registrarse
@@ -251,7 +308,8 @@ export function Sesion() {
             <h3>¡Hola!</h3>
             <img className="saludo-welcome" src={saludo} alt="Saludo" />
             <p>
-              Nos alegra tenerte aquí. Crea tu cuenta y descubre todo lo que hemos preparado para ti
+              Nos alegra tenerte aquí. Crea tu cuenta y descubre todo lo que
+              hemos preparado para ti
             </p>
             <button className="button" onClick={handleSignInClick}>
               Iniciar sesión

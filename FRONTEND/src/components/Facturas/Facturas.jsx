@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   listarFacturas,
   descargarFacturaPDF,
-  descargarComprobantePago,
 } from "../../api/Factura.api";
 import { Link } from "react-router-dom";
 import "../../assets/css/Facturas/Facturas.css";
@@ -57,6 +56,36 @@ const descargarBlob = (blob, nombreArchivo) => {
   a.download = nombreArchivo;
   a.click();
   window.URL.revokeObjectURL(url);
+};
+
+// Función helper para formatear datos de factura y evitar duplicación
+const formatearFactura = (f) => {
+  const fecha = f.fecha || f.emitida_en || f.created_at || null;
+  const correo =
+    f.cliente_email ||
+    f.usuario_email ||
+    f.email ||
+    (f.usuario && f.usuario.email) ||
+    "—";
+  const moneda = f.moneda || "COP";
+  const totalFmt = fmtMoney(f.total, moneda);
+  const estado = (f.estado || "").toLowerCase();
+  const badge =
+    estado === "pagada"
+      ? "facturas-badge-success"
+      : estado === "pendiente"
+      ? "facturas-badge-warning"
+      : estado === "anulada"
+      ? "facturas-badge-danger"
+      : "facturas-badge-secondary";
+
+  return {
+    fechaFormatted: fmtDate(fecha),
+    correoFormatted: correo,
+    moneda,
+    totalFormatted: totalFmt,
+    badgeClass: badge,
+  };
 };
 
 export function Facturas() {
@@ -123,38 +152,12 @@ export function Facturas() {
     }
   };
 
-  const descargarPdfComprobante = async (id, numero) => {
-    try {
-      const { data: blob } = await descargarComprobantePago(id);
-      descargarBlob(blob, `Comprobante_${numero || id}.pdf`);
-    } catch {
-      alert("No fue posible descargar el comprobante de pago.");
-    }
-  };
-
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
   const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
 
-  // Render de cada factura como card (para móviles)
+  // Render de cada factura como card (para móviles) - SIN DUPLICACIÓN
   const renderFacturaCard = (f) => {
-    const fecha = f.fecha || f.emitida_en || f.created_at || null;
-    const correo =
-      f.cliente_email ||
-      f.usuario_email ||
-      f.email ||
-      (f.usuario && f.usuario.email) ||
-      "—";
-    const moneda = f.moneda || "COP";
-    const totalFmt = fmtMoney(f.total, moneda);
-    const estado = (f.estado || "").toLowerCase();
-    const badge =
-      estado === "pagada"
-        ? "facturas-badge-success"
-        : estado === "pendiente"
-        ? "facturas-badge-warning"
-        : estado === "anulada"
-        ? "facturas-badge-danger"
-        : "facturas-badge-secondary";
+    const facturaData = formatearFactura(f);
 
     return (
       <div key={f.id} className="facturas-card">
@@ -164,7 +167,7 @@ export function Facturas() {
               {f.numero || "—"}
             </span>
             {f.estado && (
-              <span className={`facturas-badge ${badge}`}>
+              <span className={`facturas-badge ${facturaData.badgeClass}`}>
                 {f.estado}
               </span>
             )}
@@ -174,18 +177,18 @@ export function Facturas() {
         <div className="facturas-card-body">
           <div className="facturas-card-row">
             <span className="facturas-card-label">Fecha:</span>
-            <span className="facturas-card-value">{fmtDate(fecha)}</span>
+            <span className="facturas-card-value">{facturaData.fechaFormatted}</span>
           </div>
           
           <div className="facturas-card-row">
             <span className="facturas-card-label">Correo:</span>
-            <span className="facturas-card-value facturas-card-email">{correo}</span>
+            <span className="facturas-card-value facturas-card-email">{facturaData.correoFormatted}</span>
           </div>
           
           <div className="facturas-card-row">
             <span className="facturas-card-label">Total:</span>
             <span className="facturas-card-value facturas-card-total">
-              {totalFmt} {moneda}
+              {facturaData.totalFormatted} {facturaData.moneda}
             </span>
           </div>
         </div>
@@ -204,13 +207,6 @@ export function Facturas() {
           >
             <i className="bi bi-file-earmark-pdf"></i>
             PDF
-          </button>
-          <button
-            className="btn btn-purple btn-sm"
-            onClick={() => descargarPdfComprobante(f.id, f.numero)}
-          >
-            <i className="bi bi-receipt"></i>
-            Comp.
           </button>
         </div>
       </div>
@@ -341,7 +337,7 @@ export function Facturas() {
                   <th className="text-end">Total</th>
                   <th>Moneda</th>
                   <th>Estado</th>
-                  <th style={{ width: 240 }}>Acciones</th>
+                  <th style={{ width: 180 }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -353,40 +349,22 @@ export function Facturas() {
                   </tr>
                 )}
                 {items.map((f) => {
-                  const fecha =
-                    f.fecha || f.emitida_en || f.created_at || null;
-                  const correo =
-                    f.cliente_email ||
-                    f.usuario_email ||
-                    f.email ||
-                    (f.usuario && f.usuario.email) ||
-                    "—";
-                  const moneda = f.moneda || "COP";
-                  const totalFmt = fmtMoney(f.total, moneda);
-                  const estado = (f.estado || "").toLowerCase();
-                  const badge =
-                    estado === "pagada"
-                      ? "facturas-badge-success"
-                      : estado === "pendiente"
-                      ? "facturas-badge-warning"
-                      : estado === "anulada"
-                      ? "facturas-badge-danger"
-                      : "facturas-badge-secondary";
+                  const facturaData = formatearFactura(f);
 
                   return (
                     <tr key={f.id} className="facturas-table-row">
                       <td className="fw-semibold text-cyan">
                         {f.numero || "—"}
                       </td>
-                      <td className="text-black">{fmtDate(fecha)}</td>
-                      <td className="text-black">{correo}</td>
+                      <td className="text-black">{facturaData.fechaFormatted}</td>
+                      <td className="text-black">{facturaData.correoFormatted}</td>
                       <td className="text-end fw-bold text-black">
-                        {totalFmt}
+                        {facturaData.totalFormatted}
                       </td>
-                      <td className="text-black">{moneda}</td>
+                      <td className="text-black">{facturaData.moneda}</td>
                       <td>
                         {f.estado ? (
-                          <span className={`facturas-badge ${badge}`}>
+                          <span className={`facturas-badge ${facturaData.badgeClass}`}>
                             {f.estado}
                           </span>
                         ) : (
@@ -408,14 +386,6 @@ export function Facturas() {
                             }
                           >
                             PDF
-                          </button>
-                          <button
-                            className="btn btn-purple btn-sm"
-                            onClick={() =>
-                              descargarPdfComprobante(f.id, f.numero)
-                            }
-                          >
-                            Comprobante
                           </button>
                         </div>
                       </td>

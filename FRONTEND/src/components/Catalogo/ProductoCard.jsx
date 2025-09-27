@@ -14,7 +14,7 @@ export default function ProductoCard({ producto, capitalizar, onProductoAgregado
   const [cantidad, setCantidad] = useState(0);
   const [tallaSeleccionada, setTallaSeleccionada] = useState(null);
   const [agregando, setAgregando] = useState(false);
-  const { usuario } = useAuth();
+  const { usuario, rol } = useAuth();
 
   if (!producto || !producto.nombre || !producto.imagen) {
     console.warn("Producto con datos incompletos:", producto);
@@ -191,13 +191,16 @@ export default function ProductoCard({ producto, capitalizar, onProductoAgregado
           </div>
         )}
 
-        <button
-          className={`add-to-cart-btn ${!tallaSeleccionada || cantidad <= 0 ? "disabled" : "active"}`}
-          onClick={agregarAlCarrito}
-          disabled={!tallaSeleccionada || cantidad <= 0 || agregando}
-        >
-          {agregando ? "Agregando..." : "Agregar al carrito"}
-        </button>
+        {/* Ocultar botón si el rol es administrador */}
+        {rol !== "administrador" && (
+          <button
+            className={`add-to-cart-btn ${!tallaSeleccionada || cantidad <= 0 ? "disabled" : "active"}`}
+            onClick={agregarAlCarrito}
+            disabled={!tallaSeleccionada || cantidad <= 0 || agregando}
+          >
+            {agregando ? "Agregando..." : "Agregar al carrito"}
+          </button>
+        )}
       </div>
     </div>
   );
