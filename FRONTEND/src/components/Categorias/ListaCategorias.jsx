@@ -255,7 +255,7 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
                   name="nombre"
                   value={editModalData.nombre}
                   onChange={e => setEditModalData({ ...editModalData, nombre: e.target.value })}
-                  maxLength={45}
+                  maxLength={20}
                   placeholder="Ingrese el nombre de la categoría"
                 />
               </div>
@@ -319,7 +319,7 @@ function ListaCategorias({ categorias = [], onCategoriasActualizadas = () => {} 
                   name="nombre"
                   value={editSubModalData.nombre}
                   onChange={e => setEditSubModalData({ ...editSubModalData, nombre: e.target.value })}
-                  maxLength={45}
+                  maxLength={20}
                   placeholder="Ingrese el nombre de la subcategoría"
                 />
               </div>

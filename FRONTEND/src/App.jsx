@@ -41,6 +41,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { RutaPrivada } from "./routes/RutaPrivada.jsx";
 import { RetornoMPpage } from "./pages/RetornoMPpage";
 import { MisPedidosPage } from "./pages/MisPedidosPage";
+import {ListaUsuariosPage} from "./pages/ListausuariosPage.jsx"
 
 // Contexto y rutas privadas
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
@@ -215,6 +216,7 @@ function AppContent() {
             <Route path="facturas/:id" element={<RetornoMPpage />} />
             <Route path="retornoMP" element={<RetornoMPpage />} />
             <Route path="reportes/ventas" element={<ReporteVentasRangoAdminPage />} />
+            <Route path="ListaUsuarios" element={<ListaUsuariosPage/>} />
           </Route>
 
           {/* Redirección por defecto */}

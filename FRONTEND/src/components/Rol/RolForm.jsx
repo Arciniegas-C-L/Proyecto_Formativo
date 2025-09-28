@@ -29,6 +29,7 @@ const onSubmit = handleSubmit(async data => {
           <input
             type="text"
             placeholder="Nombre del rol"
+            maxLength={20}
             className={`rol-input ${errors.nombre ? 'rol-invalid' : ''}`}
             {...register("nombre", { required: true })}
           />

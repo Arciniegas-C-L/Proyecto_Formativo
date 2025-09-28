@@ -80,9 +80,9 @@ const CambiarPassword = () => {
       {step === 3 && (
         <form className="cambiar-password-form" onSubmit={handleCambiar}>
           <h4 className="cambiar-password-titulo">Nueva contraseña</h4>
-          <input className="cambiar-password-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Nueva contraseña" required />
-          <input className="cambiar-password-input" type="password" value={password2} onChange={e => setPassword2(e.target.value)} placeholder="Repetir contraseña" required />
-          <button className="cambiar-password-btn" type="submit" disabled={loading}>Cambiar contraseña</button>
+          <input className="cambiar-password-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Nueva contraseña" required maxLength={40} />
+          <input className="cambiar-password-input" type="password" value={password2} onChange={e => setPassword2(e.target.value)} placeholder="Repetir contraseña" required maxLength={40}/>
+          <button className="cambiar-password-btn" type="submit" disabled={loading} maxLength={20}>Cambiar contraseña</button>
         </form>
       )}
       {error && <div className="error">{error}</div>}

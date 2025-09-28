@@ -532,8 +532,10 @@ export function Carrito() {
                         type="tel"
                         value={telefono}
                         onChange={(e) => setTelefono(e.target.value)}
-                        placeholder="Ej: 3001234567"
+                        placeholder="Ej: 3160813975"
                         disabled={creatingPreference}
+                        maxLength={10}
+                        minLength={10}
                       />
                       {formErrors.telefono && <small className="error">{formErrors.telefono}</small>}
                     </div>
@@ -547,6 +549,7 @@ export function Carrito() {
                         onChange={(e) => setCiudad(e.target.value)}
                         placeholder="Ej: Ibagué"
                         disabled={creatingPreference}
+                        maxLength={20}
                       />
                     </div>
 
@@ -558,6 +561,7 @@ export function Carrito() {
                         onChange={(e) => setBarrio(e.target.value)}
                         placeholder="Ej: Los Tunjos"
                         disabled={creatingPreference}
+                        maxLength={20}
                       />
                     </div>
 
@@ -569,6 +573,7 @@ export function Carrito() {
                         onChange={(e) => setCalle(e.target.value)}
                         placeholder="Ej: Calle 10 #5-23"
                         disabled={creatingPreference}
+                        maxLength={20}
                       />
                     </div>
 
@@ -581,6 +586,7 @@ export function Carrito() {
                         onChange={(e) => setDireccion(e.target.value)}
                         placeholder="Apto, torre, interior…"
                         disabled={creatingPreference}
+                        maxLength={20}
                       />
                       {formErrors.direccion && <small className="error">{formErrors.direccion}</small>}
                     </div>

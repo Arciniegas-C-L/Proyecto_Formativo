@@ -243,7 +243,7 @@ export function GrupoTalla() {
                 name="nombre"
                 value={formData.nombre}
                 onChange={handleInputChange}
-                maxLength={45}
+                maxLength={20}
                 required
               />
 

@@ -171,7 +171,7 @@ export function Sesion() {
             <h2>Iniciar sesión</h2>
             <span>Use su correo y contraseña</span>
             <div className="container-input">
-              <input type="email" name="correo" placeholder="Correo" required />
+              <input type="email" name="correo" placeholder="Correo" required maxLength={40} />
             </div>
             <div className="container-input">
               <input
@@ -179,6 +179,7 @@ export function Sesion() {
                 name="password"
                 placeholder="Contraseña"
                 required
+                maxLength={20}
               />
               <i
                 className={`bi ${
@@ -226,6 +227,7 @@ export function Sesion() {
                 name="telefono"
                 placeholder="Teléfono"
                 maxLength={10}
+                minLength={10}
                 required
               />
             </div>
@@ -244,7 +246,7 @@ export function Sesion() {
                 type={showPasswordRegister ? "text" : "password"}
                 name="password"
                 placeholder="Contraseña"
-                maxLength={200}
+                maxLength={40}
                 autoComplete="new-password"
                 required
               />
@@ -268,7 +270,7 @@ export function Sesion() {
                 type={showPasswordRegister2 ? "text" : "password"}
                 name="password2"
                 placeholder="Confirmar contraseña"
-                maxLength={200}
+                maxLength={40}
                 autoComplete="new-password"
                 required
               />

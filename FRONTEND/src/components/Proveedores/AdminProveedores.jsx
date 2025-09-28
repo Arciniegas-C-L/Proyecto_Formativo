@@ -135,6 +135,7 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
           placeholder="Nombre del proveedor"
           value={form.nombre}
           onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+          maxLength={50}
           required
         />
 
@@ -145,6 +146,7 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
           value={form.correo}
           onChange={(e) => setForm({ ...form, correo: e.target.value })}
           required
+          maxLength={40}
         />
 
         <input
@@ -153,6 +155,8 @@ export function AdminProveedores({ proveedorEditar, onEditComplete }) {
           placeholder="Número de teléfono"
           value={form.telefono}
           onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+          maxLength={20}
+          minLength={10}
           required
         />
 

@@ -74,6 +74,7 @@ export function VerificarCodigo({ correo }) {
                 onChange={(e) => setCodigo(e.target.value)}
                 required
                 maxLength={6}
+                minLength={6}
                 className="verificar-input"
               />
               <button type="submit" className="verificar-btn">
@@ -92,6 +93,7 @@ export function VerificarCodigo({ correo }) {
                   placeholder="Nueva contraseña"
                   value={nuevaContrasena}
                   onChange={(e) => setNuevaContrasena(e.target.value)}
+                  maxLength={40}
                   required
                   className="verificar-input pe-5"
                 />

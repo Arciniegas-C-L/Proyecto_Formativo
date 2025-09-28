@@ -309,7 +309,7 @@ export function Tallas() {
               name="nombre"
               value={formData.nombre}
               onChange={handleInputChange}
-              maxLength={10}
+              maxLength={20}
             />
             <small className="text-muted mb-2 d-block">
               {(formData.nombre || "").length}/10 caracteres

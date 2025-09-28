@@ -364,6 +364,7 @@ export function Perfil() {
                       name="nombre"
                       value={usuario.nombre}
                       onChange={handleChange}
+                      maxLength={10}
                     />
                   </div>
 
@@ -374,6 +375,7 @@ export function Perfil() {
                       name="apellido"
                       value={usuario.apellido}
                       onChange={handleChange}
+                      maxLength={10}
                     />
                   </div>
 
@@ -394,6 +396,8 @@ export function Perfil() {
                       name="telefono"
                       value={usuario.telefono}
                       onChange={handleChange}
+                      maxLength={10}
+                      minLength={10}
                     />
                   </div>
 

@@ -160,7 +160,7 @@ export function ProveedoresRegistrados() {
               name="correo"
               value={editData.correo}
               onChange={manejarCambio}
-              maxLength={50}
+              maxLength={40}
             />
 
             <label className="form-label">Teléfono *</label>
@@ -170,6 +170,7 @@ export function ProveedoresRegistrados() {
               value={editData.telefono}
               onChange={manejarCambio}
               maxLength={20}
+              minLength={10}
             />
 
             <label className="form-label">Tipo *</label>

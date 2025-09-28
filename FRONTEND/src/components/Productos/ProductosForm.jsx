@@ -179,6 +179,7 @@ export function ProductosForm() {
               value={formData.nombre}
               onChange={handleInputChange}
               className={errors.nombre ? "error" : ""}
+              maxLength={20}
             />
             <span className="error-message">{errors.nombre}</span>
           </div>

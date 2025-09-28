@@ -167,6 +167,12 @@ export const AdminDashboard = () => {
       etiqueta: "Reporte de Ventas",
       seccion: "ventas"
     },
+    {
+     ruta: "/admin/ListaUsuarios", 
+      icono: FaUsers, 
+      etiqueta: "ListaUsuarios",
+      seccion: "usuarios"
+    },
   ];
 
   // Agrupar elementos por sección siguiendo el orden de App.jsx
@@ -177,6 +183,7 @@ export const AdminDashboard = () => {
     inventario: { titulo: "Gestión de Inventario", elementos: [] },
     proveedores: { titulo: "Gestión de Proveedores", elementos: [] },
     ventas: { titulo: "Gestión de Ventas", elementos: [] },
+    usuarios: { titulo: "Gestión de Usuarios", elementos: [] }
   };
 
   // Clasificar elementos por sección

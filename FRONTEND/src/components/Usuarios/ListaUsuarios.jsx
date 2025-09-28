@@ -1,159 +1,163 @@
+// src/components/Usuarios/ListaUsuarios.jsx
 import React, { useEffect, useState } from "react";
-import { fetchUsuario, updateUsuario, handleToggleEstado } from "../../api/Usuario.api.js";
-import { useNavigate } from "react-router-dom";
+import { getUsuarios } from "../../api/Usuario.api.js";
+import "../../assets/css/Tallas/Tallas.css"; // Reutilizamos estilos
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const ListaUsuarios = () => {
-  const [usuarios, setUsuarios] = useState([]); // Lista completa de usuarios
-  const [filtro, setFiltro] = useState("todos"); // Filtro de estado
-  const [editando, setEditando] = useState(null); // idUsuario en edición
-  const [formEdit, setFormEdit] = useState({}); // Datos del usuario que se edita
-  const navigate = useNavigate();
+  const { autenticado, rol } = useAuth();
 
-  // 🔹 Traer todos los usuarios al cargar
+  const [usuarios, setUsuarios] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  // Normaliza diferentes formas en que puedas guardar el rol
+  const isAdmin =
+    rol === "administrador" ||
+    rol === 1 ||
+    rol === "1" ||
+    (typeof rol === "object" && (rol?.nombre === "administrador" || rol?.idRol === 1));
+
   const fetchUsuarios = async () => {
+    setError("");
+    setCargando(true);
     try {
-      const res = await fetchUsuario();
-      setUsuarios(res.data);
-    } catch (error) {
-      console.error("Error al cargar usuarios:", error);
+      const res = await getUsuarios(); // Debe traer la lista, no /me
+      const data = res.data;
+
+      // Normaliza posibles formatos de respuesta
+      const lista =
+        Array.isArray(data) ? data :
+        Array.isArray(data?.results) ? data.results :
+        Array.isArray(data?.items) ? data.items :
+        Array.isArray(data?.usuarios) ? data.usuarios : [];
+
+      // Mapea claves y asegura booleano en estado
+      const normalizados = lista.map((u, idx) => ({
+        idUsuario: u.idUsuario ?? u.id ?? u.pk ?? u.uuid ?? idx,
+        nombre: u.nombre ?? "",
+        apellido: u.apellido ?? "",
+        correo: u.correo ?? "",
+        telefono: u.telefono ?? "",
+        rol: u.rol?.idRol ?? u.rol,
+        estado: typeof u.estado === "string" ? u.estado === "true" : Boolean(u.estado),
+      }));
+
+      setUsuarios(normalizados);
+    } catch (err) {
+      console.error("Error al cargar usuarios:", err);
+      setUsuarios([]);
+      setError("No fue posible cargar los usuarios.");
+    } finally {
+      setCargando(false);
     }
   };
 
   useEffect(() => {
-    fetchUsuarios();
-  }, []);
-
-  // 🔹 Cambiar estado Activo/Inactivo usando PATCH
-  const cambiarEstado = async (usuario) => {
-    try {
-      // Solo enviamos el campo 'estado' con PATCH
-      await handleToggleEstado(usuario.idUsuario, !usuario.estado);
-      fetchUsuarios(); // refrescar lista
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
-    }
-  };
-
-  // 🔹 Preparar edición
-  const iniciarEdicion = (usuario) => {
-    setEditando(usuario.idUsuario);
-    setFormEdit({
-      ...usuario,
-      estado: usuario.estado ? "true" : "false",
-      rol: usuario.rol?.idRol || usuario.rol,
-    });
-  };
-
-  // 🔹 Cambios en inputs de edición
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormEdit({ ...formEdit, [name]: value });
-  };
-
-  // 🔹 Guardar edición (PUT completo)
-  const guardarEdicion = async () => {
-    try {
-      const payload = {
-        nombre: formEdit.nombre,
-        apellido: formEdit.apellido,
-        correo: formEdit.correo,
-        telefono: formEdit.telefono,
-        estado: formEdit.estado === "true",
-        rol: parseInt(formEdit.rol),
-      };
-
-      // Solo admins pueden cambiar contraseña
-      if (formEdit.password && (payload.rol === 1 || payload.rol === "1")) {
-        payload.password = formEdit.password;
-      }
-
-      await updateUsuario(formEdit.idUsuario, payload);
-      alert("Usuario actualizado ");
-      setEditando(null);
+    if (autenticado && isAdmin) {
       fetchUsuarios();
-    } catch (error) {
-      console.error("Error al actualizar usuario:", error);
-      alert("Error al actualizar ");
+    } else {
+      setCargando(false);
     }
-  };
+  }, [autenticado, isAdmin]);
 
-  // 🔹 Filtrar usuarios
-  const usuariosFiltrados = usuarios.filter((u) => {
-    if (filtro === "todos") return true;
-    return filtro === "activo" ? u.estado === true : u.estado === false;
-  });
+  if (!autenticado) {
+    return (
+      <div className="lista-tallas-container">
+        <div className="loading">Debes iniciar sesión para ver esta página.</div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="lista-tallas-container">
+        <div className="loading">No tienes permisos para ver esta sección.</div>
+      </div>
+    );
+  }
+
+  if (cargando) {
+    return <div className="container mt-4">Cargando...</div>;
+  }
+
+  // Solo activos
+  const usuariosActivos = Array.isArray(usuarios)
+    ? usuarios.filter((u) => u.estado === true)
+    : [];
 
   return (
-    <div className="container mt-4">
-      <h2>Lista de Usuarios</h2>
-
-      {/* 🔹 Filtros */}
-      <div className="mb-3">
-        <button className={`btn me-2 ${filtro === "todos" ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setFiltro("todos")}>Todos</button>
-        <button className={`btn me-2 ${filtro === "activo" ? "btn-success" : "btn-outline-success"}`} onClick={() => setFiltro("activo")}>Activos</button>
-        <button className={`btn ${filtro === "inactivo" ? "btn-danger" : "btn-outline-danger"}`} onClick={() => setFiltro("inactivo")}>Inactivos</button>
+    <div className="lista-tallas-container">{/* Reuso de contenedor con paddings */}
+      <div className="header-acciones">
+        <h2>Usuarios Activos</h2>
+        <div className="header-controls" />
       </div>
 
-      {/* 🔹 Botón volver a registro */}
-      <button className="btn btn-secondary mb-3" onClick={() => navigate("/usuario")}>Volver a Registrar Usuario</button>
+      {error && (
+        <div className="loading" style={{ color: "#b00020" }}>
+          {error}
+        </div>
+      )}
 
-      {/* 🔹 Tabla de usuarios */}
-      <table className="table table-bordered table-hover">
-        <thead className="table-dark">
-          <tr>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usuariosFiltrados.map((u) =>
-            editando === u.idUsuario ? (
-              // 🔹 Modo edición
-              <tr key={u.idUsuario}>
-                <td><input type="text" className="form-control" name="nombre" value={formEdit.nombre} onChange={handleChange} /></td>
-                <td><input type="text" className="form-control" name="apellido" value={formEdit.apellido} onChange={handleChange} /></td>
-                <td><input type="email" className="form-control" name="correo" value={formEdit.correo} onChange={handleChange} /></td>
-                <td><input type="text" className="form-control" name="telefono" value={formEdit.telefono} onChange={handleChange} /></td>
-                <td>{formEdit.rol === 1 ? "Administrador" : "Usuario"}</td>
-                <td>
-                  <select className="form-select" name="estado" value={formEdit.estado} onChange={handleChange}>
-                    <option value="true">Activo</option>
-                    <option value="false">Inactivo</option>
-                  </select>
-                </td>
-                <td>
-                  {formEdit.rol === 1 || formEdit.rol === "1" ? (
-                    <input type="password" className="form-control mb-2" name="password" placeholder="Nueva contraseña" value={formEdit.password || ""} onChange={handleChange} />
-                  ) : null}
-                  <button className="btn btn-success btn-sm me-2" onClick={guardarEdicion}>Guardar</button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setEditando(null)}>Cancelar</button>
-                </td>
+      {/* Vista Desktop - Tabla */}
+      <div className="tabla-container desktop-view">
+        <table className="tabla-tallas">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {usuariosActivos.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="loading">No hay usuarios activos</td>
               </tr>
             ) : (
-              // 🔹 Modo vista
-              <tr key={u.idUsuario}>
-                <td>{u.nombre}</td>
-                <td>{u.apellido}</td>
-                <td>{u.correo}</td>
-                <td>{u.telefono}</td>
-                <td>{u.rol === 1 ? "Administrador" : "Usuario"}</td>
-                <td><span className={`badge ${u.estado ? "bg-success" : "bg-danger"}`}>{u.estado ? "Activo" : "Inactivo"}</span></td>
-                <td>
-                  <button className={`btn btn-sm me-2 ${u.estado ? "btn-warning" : "btn-success"}`} onClick={() => cambiarEstado(u)}>
-                    {u.estado ? "Inactivar" : "Activar"}
-                  </button>
-                  <button className="btn btn-sm btn-info" onClick={() => iniciarEdicion(u)}>Editar</button>
-                </td>
-              </tr>
-            )
-          )}
-        </tbody>
-      </table>
+              usuariosActivos.map((u) => (
+                <tr key={u.idUsuario}>
+                  <td>{u.nombre}</td>
+                  <td>{u.apellido}</td>
+                  <td>{u.correo}</td>
+                  <td>{u.rol === 1 ? "Administrador" : "Cliente"}</td>
+                  <td className="estado-talla">
+                    <span className="chip-estado on">Activo</span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Vista Mobile - Cards */}
+      <div className="mobile-view">
+        {usuariosActivos.length === 0 ? (
+          <div className="loading-mobile">No hay usuarios activos</div>
+        ) : (
+          <div className="tallas-cards">
+            {usuariosActivos.map((u) => (
+              <div key={u.idUsuario} className="talla-card">
+                <div className="card-header">
+                  <div className="talla-info">
+                    <h3 className="talla-nombre">{u.nombre} {u.apellido}</h3>
+                    <p className="talla-grupo">{u.correo}</p>
+                  </div>
+                  <span className="chip-estado-mobile on">Activo</span>
+                </div>
+                <div className="card-meta" style={{ padding: "0 .5rem .5rem .5rem" }}>
+                  <p style={{ margin: 0 }}>
+                    <strong>Rol:</strong> {u.rol === 1 ? "Administrador" : "Cliente"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

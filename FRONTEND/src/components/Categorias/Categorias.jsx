@@ -18,6 +18,7 @@ function SubcategoriaForm({ subcategoria, onChange }) {
             onChange={onChange}
             placeholder="Ingresa el nombre de la subcategoría"
             required
+            maxLength={20}
           />
         </div>
         <div className="col-md-6 mb-3">
@@ -223,6 +224,7 @@ export function CategoriaForm() {
                           onChange={handleCategoriaChange}
                           placeholder="Ingresa el nombre de la categoría"
                           required
+                          maxLength={20}
                         />
                       </div>
                       <div className="col-md-4 d-flex align-items-end mb-3">
