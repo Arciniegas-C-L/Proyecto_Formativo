@@ -1,9 +1,10 @@
+/* AdminStockNotifications.css */
 
-/* BOTÓN FLOTANTE - REPOSICIONADO */
+/* BOTÓN FLOTANTE */
 .notification-btn-float {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  bottom: 18px;
+  right: 18px;
   width: 56px;
   height: 56px;
   background: #8b3581;
@@ -338,47 +339,8 @@
   color: white;
 }
 
-/* RESPONSIVE DESIGN MEJORADO */
-
-/* Para pantallas grandes (Desktop) */
-@media (min-width: 1200px) {
-  .notification-btn-float {
-    top: 24px;
-    right: 24px;
-    width: 60px;
-    height: 60px;
-  }
-  
-  .notification-icon {
-    font-size: 22px;
-  }
-  
-  .notification-panel {
-    width: 450px;
-  }
-}
-
-/* Para pantallas medianas (Tablet) */
+/* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
-  .notification-btn-float {
-    top: 16px;
-    right: 16px;
-    width: 50px;
-    height: 50px;
-  }
-  
-  .notification-icon {
-    font-size: 18px;
-  }
-  
-  .notification-badge {
-    min-width: 22px;
-    height: 22px;
-    font-size: 11px;
-    top: -3px;
-    right: -3px;
-  }
-  
   .notification-panel {
     width: 85%;
     max-width: 400px;
@@ -419,30 +381,29 @@
   }
 }
 
-/* Para móviles grandes */
 @media (max-width: 576px) {
-  .notification-btn-float {
-    top: 12px;
-    right: 12px;
-    width: 48px;
-    height: 48px;
-  }
-  
-  .notification-icon {
-    font-size: 16px;
-  }
-  
-  .notification-badge {
-    min-width: 20px;
-    height: 20px;
-    font-size: 10px;
-    top: -2px;
-    right: -2px;
-  }
-  
   .notification-panel {
     width: 90%;
     max-width: 380px;
+  }
+  
+  .notification-btn-float {
+    width: 52px;
+    height: 52px;
+    bottom: 16px;
+    right: 16px;
+  }
+  
+  .notification-icon {
+    font-size: 18px;
+  }
+  
+  .notification-badge {
+    min-width: 22px;
+    height: 22px;
+    font-size: 11px;
+    top: -3px;
+    right: -3px;
   }
   
   .notification-header {
@@ -471,19 +432,7 @@
   }
 }
 
-/* Para móviles pequeños */
 @media (max-width: 480px) {
-  .notification-btn-float {
-    top: 10px;
-    right: 10px;
-    width: 44px;
-    height: 44px;
-  }
-  
-  .notification-icon {
-    font-size: 15px;
-  }
-  
   .notification-panel {
     width: 95%;
     max-width: 360px;
@@ -508,47 +457,31 @@
   }
 }
 
-/* Para móviles muy pequeños */
 @media (max-width: 360px) {
-  .notification-btn-float {
-    top: 8px;
-    right: 8px;
-    width: 42px;
-    height: 42px;
-  }
-  
-  .notification-icon {
-    font-size: 14px;
-  }
-  
-  .notification-badge {
-    min-width: 18px;
-    height: 18px;
-    font-size: 9px;
-  }
-  
   .notification-panel {
     width: 98%;
     max-width: 340px;
   }
-}
-
-/* ESTADOS ESPECIALES PARA EVITAR CONFLICTOS */
-
-/* Cuando hay sidebar colapsado - ajustar posición */
-.barra-lateral-admin.colapsada ~ .admin-contenido .notification-btn-float {
-  right: 20px;
-}
-
-/* Ajuste para cuando el footer es fijo */
-@media (max-width: 768px) {
-  .admin-contenido .notification-btn-float {
-    top: 16px;
-    right: 16px;
+  
+  .notification-btn-float {
+    width: 48px;
+    height: 48px;
+    bottom: 12px;
+    right: 12px;
+  }
+  
+  .notification-icon {
+    font-size: 16px;
+  }
+  
+  .notification-badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 10px;
   }
 }
 
-/* Estados de carga mejorados */
+/* Estados de carga */
 .notification-loading .placeholder {
   background: linear-gradient(90deg, #f0f0f0 25%, rgba(139, 53, 129, 0.1) 50%, #f0f0f0 75%);
   background-size: 200% 100%;
@@ -560,104 +493,20 @@
   100% { background-position: 200% 0; }
 }
 
-/* Scrollbar personalizado mejorado */
+/* Scrollbar personalizado */
 .notification-list::-webkit-scrollbar {
   width: 6px;
 }
 
 .notification-list::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 3px;
 }
 
 .notification-list::-webkit-scrollbar-thumb {
   background: #8b3581;
   border-radius: 3px;
-  transition: background 0.3s ease;
 }
 
 .notification-list::-webkit-scrollbar-thumb:hover {
   background: #6d2a65;
-}
-
-/* Firefox scrollbar */
-.notification-list {
-  scrollbar-width: thin;
-  scrollbar-color: #8b3581 #f1f1f1;
-}
-
-/* Animaciones de entrada */
-.notification-panel-open .notification-content {
-  animation: slideInRight 0.3s ease-out;
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.notification-btn-float {
-  animation: fadeInScale 0.5s ease-out;
-}
-
-@keyframes fadeInScale {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Modo oscuro - si lo implementas en el futuro */
-@media (prefers-color-scheme: dark) {
-  .notification-content {
-    background: #1a1a1a;
-    border-left-color: #8b3581;
-  }
-  
-  .notification-item {
-    border-bottom-color: #333;
-    color: #fff;
-  }
-  
-  .notification-item:hover {
-    background: #2a2a2a;
-  }
-  
-  .notification-footer {
-    background: #2a2a2a;
-    border-top-color: #333;
-  }
-}
-
-/* Accesibilidad mejorada */
-.notification-btn-float:focus,
-.notification-btn-close:focus,
-.notification-btn-refresh:focus,
-.notification-btn-read-all:focus {
-  outline: 3px solid rgba(139, 53, 129, 0.5);
-  outline-offset: 2px;
-}
-
-/* Reducir movimiento para usuarios sensibles */
-@media (prefers-reduced-motion: reduce) {
-  .notification-btn-float,
-  .notification-item,
-  .notification-panel-open .notification-content {
-    animation: none;
-    transition: none;
-  }
-  
-  .notification-btn-float:hover {
-    transform: none;
-  }
 }
