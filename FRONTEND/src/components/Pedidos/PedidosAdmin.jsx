@@ -44,6 +44,34 @@ export function PedidosAdmin() {
   const [fechaMax, setFechaMax] = useState(""); // yyyy-mm-dd
   const [estado, setEstado] = useState(""); // "", "true", "false"
 
+  // Validación reforzada para fechas
+  const handleFechaMinChange = (e) => {
+    const nuevaFechaMin = e.target.value;
+    if (
+      fechaMinima && nuevaFechaMin < fechaMinima
+      || fechaMaxima && nuevaFechaMin > fechaMaxima
+    ) {
+      return;
+    }
+    setFechaMin(nuevaFechaMin);
+    // Si la fechaMax es menor que la nueva fechaMin, limpiar fechaMax
+    if (fechaMax && nuevaFechaMin && fechaMax < nuevaFechaMin) {
+      setFechaMax("");
+    }
+  };
+
+  const handleFechaMaxChange = (e) => {
+    const nuevaFechaMax = e.target.value;
+    // Solo permitir fechas dentro del rango válido
+    if (
+      fechaMin && nuevaFechaMax < fechaMin
+      || fechaMaxima && nuevaFechaMax > fechaMaxima
+    ) {
+      return;
+    }
+    setFechaMax(nuevaFechaMax);
+  };
+
   // UI
   const [expanded, setExpanded] = useState({}); // { [idPedido]: boolean }
 
@@ -157,9 +185,10 @@ export function PedidosAdmin() {
                 type="date"
                 className="form-control"
                 value={fechaMin}
-                onChange={(e) => setFechaMin(e.target.value)}
+                onChange={handleFechaMinChange}
                 min={fechaMinima}
                 max={fechaMaxima}
+                required={false}
               />
             </div>
             <div className="col-6 col-md-3">
@@ -168,9 +197,11 @@ export function PedidosAdmin() {
                 type="date"
                 className="form-control"
                 value={fechaMax}
-                onChange={(e) => setFechaMax(e.target.value)}
-                min={fechaMinima}
+                onChange={handleFechaMaxChange}
+                min={fechaMin || fechaMinima}
                 max={fechaMaxima}
+                disabled={!fechaMin}
+                required={false}
               />
             </div>
             <div className="col-12 col-sm-6 col-md-2">

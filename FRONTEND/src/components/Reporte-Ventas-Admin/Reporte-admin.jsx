@@ -1,4 +1,3 @@
-// src/components/admin/ReporteVentasRangoAdmin.jsx
 import { useEffect, useMemo, useState } from "react";
 import {
   generarReporteVentas,
@@ -9,7 +8,7 @@ import {
   ORDERING,
 } from "../../api/ReporteVentasRango.api";
 import { api } from "../../api/axios";
-import {ListaReportesVentas} from "./ListaReportesVentas"; // <- default import
+import {ListaReportesVentas} from "./ListaReportesVentas";
 import "../../assets/css/Reporte-Ventas-Admin/Reporte-admin.css";
 
 // Utils de fecha
@@ -20,6 +19,7 @@ function todayStr() {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
 function firstDayOfMonthStr() {
   const d = new Date();
   const yyyy = d.getFullYear();
@@ -27,31 +27,90 @@ function firstDayOfMonthStr() {
   return `${yyyy}-${mm}-01`;
 }
 
-function toCSV(rows) {
-  if (!rows?.length) return "";
-  const headers = Object.keys(rows[0]);
-  const csv = [
-    headers.join(","),
-    ...rows.map((r) =>
-      headers
-        .map((h) => {
-          const cell = r[h] ?? "";
-          const text = typeof cell === "object" ? JSON.stringify(cell) : String(cell);
-          const needsQuotes = /[",\n]/.test(text);
-          return needsQuotes ? `"${text.replace(/"/g, '""')}"` : text;
-        })
-        .join(",")
-    ),
-  ].join("\n");
-  return csv;
+
+
+// Componente de paginación funcional
+function PaginationControls({ 
+  currentPage, 
+  totalPages, 
+  onPageChange, 
+  pageSize, 
+  onPageSizeChange,
+  totalItems,
+  loading 
+}) {
+  const startItem = (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  return (
+    <div className="reporte-pagination">
+      <div className="reporte-pagination-info">
+        <div>Mostrando {startItem}-{endItem} de {totalItems} resultados</div>
+        <div className="reporte-d-flex reporte-align-items-center reporte-gap-2 reporte-mt-2">
+          <label className="reporte-form-label reporte-mb-0">Filas:</label>
+          <select
+            className="reporte-form-select"
+            style={{ width: '70px', padding: '0.25rem', fontSize: '0.8rem' }}
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+            disabled={loading}
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+      </div>
+      
+      <div className="reporte-pagination-controls">
+        <button
+          className="reporte-pagination-btn"
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1 || loading}
+        >
+          Primera
+        </button>
+        
+        <button
+          className="reporte-pagination-btn"
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage <= 1 || loading}
+        >
+          Anterior
+        </button>
+        
+        <span className="reporte-pagination-info">
+          Página {currentPage} de {totalPages}
+        </span>
+        
+        <button
+          className="reporte-pagination-btn"
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage >= totalPages || loading}
+        >
+          Siguiente
+        </button>
+        
+        <button
+          className="reporte-pagination-btn"
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages || loading}
+        >
+          Última
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function ReporteVentasRangoAdmin() {
-  // modo UI arriba (cuadrito)
-  const [mode, setMode] = useState("generar"); // "generar" | "listar"
+  // Estado del modo UI
+  const [mode, setMode] = useState("generar");
 
-  // límites de calendario (opcional)
+  // Límites de fecha
   const [limites, setLimites] = useState({ min: "", max: todayStr() });
+  
   useEffect(() => {
     (async () => {
       try {
@@ -60,7 +119,8 @@ export function ReporteVentasRangoAdmin() {
           min: res.data?.min_fecha || "2020-01-01",
           max: res.data?.max_fecha || todayStr(),
         });
-      } catch {
+      } catch (error) {
+        console.error("Error cargando límites:", error);
         setLimites({ min: "2020-01-01", max: todayStr() });
       }
     })();
@@ -69,26 +129,26 @@ export function ReporteVentasRangoAdmin() {
   // Filtros para generar
   const [desde, setDesde] = useState(firstDayOfMonthStr());
   const [hasta, setHasta] = useState(todayStr());
-  const [soloAprobados, setSoloAprobados] = useState(false); // sandbox por defecto
+  const [soloAprobados, setSoloAprobados] = useState(false);
 
-  // Estado global
+  // Estados globales
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
-  // Listado de reportes y selección
+  // Estados de reportes y datos
   const [reportes, setReportes] = useState([]);
   const [reporteId, setReporteId] = useState(null);
-  const [reporte, setReporte] = useState(null); // KPIs
+  const [reporte, setReporte] = useState(null);
 
-  // Detalle items
+  // Estados de detalle e items
   const [ordering, setOrdering] = useState(ORDERING.MAS_VENDIDOS);
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [count, setCount] = useState(0);
 
-  // Carga lista de reportes (últimos)
+  // Funciones de carga
   const loadReportes = async () => {
     setLoading(true);
     setError("");
@@ -98,14 +158,13 @@ export function ReporteVentasRangoAdmin() {
       setReportes(data);
       if (!reporteId && data.length) setReporteId(data[0].id);
     } catch (e) {
-      console.error(e);
+      console.error("Error cargando reportes:", e);
       setError(e?.response?.data?.detail || "Error cargando reportes.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Carga detalle KPIs del reporte seleccionado
   const loadReporteDetail = async (id) => {
     if (!id) return;
     setLoading(true);
@@ -114,7 +173,7 @@ export function ReporteVentasRangoAdmin() {
       const res = await getReporteVentas(id);
       setReporte(res.data);
     } catch (e) {
-      console.error(e);
+      console.error("Error cargando detalle del reporte:", e);
       setError(e?.response?.data?.detail || "Error cargando el reporte.");
       setReporte(null);
     } finally {
@@ -122,19 +181,22 @@ export function ReporteVentasRangoAdmin() {
     }
   };
 
-  // Carga items del reporte seleccionado con ordering/paginación
   const loadItems = async (id) => {
     if (!id) return;
     setLoading(true);
     setError("");
     try {
-      const res = await listarItemsReporteVentas(id, { ordering, page, page_size: pageSize });
+      const res = await listarItemsReporteVentas(id, { 
+        ordering, 
+        page, 
+        page_size: pageSize 
+      });
       const isPaginated = Array.isArray(res.data?.results);
       const rows = isPaginated ? res.data.results : res.data;
       setItems(rows || []);
       setCount(isPaginated ? res.data.count : rows?.length || 0);
     } catch (e) {
-      console.error(e);
+      console.error("Error cargando items:", e);
       setError(e?.response?.data?.detail || "Error cargando el detalle de productos.");
       setItems([]);
       setCount(0);
@@ -143,7 +205,6 @@ export function ReporteVentasRangoAdmin() {
     }
   };
 
-  // Generar reporte
   const onGenerar = async () => {
     setGenerating(true);
     setError("");
@@ -156,19 +217,20 @@ export function ReporteVentasRangoAdmin() {
       const res = await generarReporteVentas(body);
       await loadReportes();
       setReporteId(res.data?.id ?? null);
-      await loadReporteDetail(res.data?.id);
-      setPage(1);
-      await loadItems(res.data?.id);
-      setMode("generar"); // te quedas en generar viendo KPIs/tabla
+      if (res.data?.id) {
+        await loadReporteDetail(res.data.id);
+        setPage(1);
+        await loadItems(res.data.id);
+      }
+      setMode("generar");
     } catch (e) {
-      console.error(e);
+      console.error("Error generando reporte:", e);
       setError(e?.response?.data?.detail || "No se pudo generar el reporte.");
     } finally {
       setGenerating(false);
     }
   };
 
-  // Eliminar reporte
   const onDeleteReporte = async (id) => {
     setLoading(true);
     setError("");
@@ -192,40 +254,21 @@ export function ReporteVentasRangoAdmin() {
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error eliminando reporte:", e);
       setError(e?.response?.data?.detail || "No se pudo eliminar el reporte.");
     } finally {
       setLoading(false);
     }
   };
 
-  // CSV
-  const exportCSV = () => {
-    const rows = items.map((p) => ({
-      producto_id: p.producto?.id ?? p.producto_id,
-      producto_nombre: p.producto?.nombre,
-      cantidad: p.cantidad,
-      ingresos: p.ingresos,
-      tickets: p.tickets,
-    }));
-    const csv = toCSV(rows);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const label = reporte ? `${reporte.fecha_inicio}_a_${reporte.fecha_fin}` : `${desde}_a_${hasta}`;
-    a.download = `reporte_ventas_${label}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
+
 
   // Efectos
   useEffect(() => {
     loadReportes();
     // eslint-disable-next-line
   }, []);
+
   useEffect(() => {
     if (reporteId) {
       loadReporteDetail(reporteId);
@@ -234,19 +277,29 @@ export function ReporteVentasRangoAdmin() {
     }
     // eslint-disable-next-line
   }, [reporteId]);
+
   useEffect(() => {
     if (reporteId) loadItems(reporteId);
     // eslint-disable-next-line
   }, [ordering, page, pageSize]);
 
-  // Paginación cliente si no viene del server
+  // Cálculos de paginación
   const totalPages = useMemo(() => Math.max(1, Math.ceil(count / pageSize)), [count, pageSize]);
+
+  // Función para formatear moneda
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      maximumFractionDigits: 0,
+    }).format(value ?? 0);
+  };
 
   return (
     <div className="reporte-ventas-container">
       <h2 className="reporte-mb-3">Reporte de Ventas por Rango</h2>
 
-      {/* Cuadrito: Generar | Listar */}
+      {/* Toggle buttons */}
       <div className="reporte-toggle-container">
         <button
           className={`reporte-toggle-btn ${mode === "generar" ? "active" : ""}`}
@@ -262,13 +315,13 @@ export function ReporteVentasRangoAdmin() {
         </button>
       </div>
 
-      {/* ───────────────── GENERAR ───────────────── */}
+      {/* MODO GENERAR */}
       {mode === "generar" && (
         <>
-          {/* Generar reporte */}
+          {/* Formulario de generación */}
           <div className="reporte-card">
             <div className="reporte-card-body">
-              <div className="reporte-row reporte-gap-3">
+              <div className="reporte-row">
                 <div className="reporte-col reporte-col-md-3">
                   <label className="reporte-form-label">Desde</label>
                   <input
@@ -278,6 +331,7 @@ export function ReporteVentasRangoAdmin() {
                     min={limites.min}
                     max={limites.max}
                     onChange={(e) => setDesde(e.target.value || limites.min)}
+                    required
                   />
                 </div>
 
@@ -290,6 +344,7 @@ export function ReporteVentasRangoAdmin() {
                     min={limites.min}
                     max={limites.max}
                     onChange={(e) => setHasta(e.target.value || todayStr())}
+                    required
                   />
                   <div className="reporte-form-text">El backend normaliza a [desde, hasta)</div>
                 </div>
@@ -310,7 +365,11 @@ export function ReporteVentasRangoAdmin() {
                 </div>
 
                 <div className="reporte-col reporte-col-md-4 reporte-d-flex reporte-align-items-end reporte-gap-2">
-                  <button className="reporte-btn-primary" onClick={onGenerar} disabled={generating}>
+                  <button 
+                    className="reporte-btn-primary" 
+                    onClick={onGenerar} 
+                    disabled={generating}
+                  >
                     {generating ? "Generando..." : "Generar reporte"}
                   </button>
                   <button
@@ -329,10 +388,10 @@ export function ReporteVentasRangoAdmin() {
             </div>
           </div>
 
-          {/* Selector rápido por <select> (conservado por si te sirve) */}
+          {/* Selector de reportes y configuración */}
           <div className="reporte-card">
             <div className="reporte-card-body">
-              <div className="reporte-row reporte-gap-3">
+              <div className="reporte-row">
                 <div className="reporte-col reporte-col-md-6">
                   <label className="reporte-form-label">Reportes generados</label>
                   <select
@@ -351,32 +410,21 @@ export function ReporteVentasRangoAdmin() {
 
                 <div className="reporte-col reporte-col-md-6">
                   <label className="reporte-form-label">Ordenar detalle por</label>
-                  <div className="reporte-d-flex reporte-gap-2">
-                    <select
-                      className="reporte-form-select"
-                      value={ordering}
-                      onChange={(e) => {
-                        setOrdering(e.target.value);
-                        setPage(1);
-                      }}
-                    >
-                      <option value={ORDERING.MAS_VENDIDOS}>Más vendidos</option>
-                      <option value={ORDERING.MENOS_VENDIDOS}>Menos vendidos</option>
-                      <option value={ORDERING.MAYOR_INGRESO}>Mayor ingreso</option>
-                      <option value={ORDERING.MENOR_INGRESO}>Menor ingreso</option>
-                      <option value={ORDERING.MAS_TICKETS}>Más tickets</option>
-                      <option value={ORDERING.MENOS_TICKETS}>Menos tickets</option>
-                    </select>
-
-                    <button
-                      className="reporte-btn-success"
-                      onClick={exportCSV}
-                      disabled={!items.length}
-                      title="Exportar detalle a CSV"
-                    >
-                      Exportar CSV
-                    </button>
-                  </div>
+                  <select
+                    className="reporte-form-select"
+                    value={ordering}
+                    onChange={(e) => {
+                      setOrdering(e.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value={ORDERING.MAS_VENDIDOS}>Más vendidos</option>
+                    <option value={ORDERING.MENOS_VENDIDOS}>Menos vendidos</option>
+                    <option value={ORDERING.MAYOR_INGRESO}>Mayor ingreso</option>
+                    <option value={ORDERING.MENOR_INGRESO}>Menor ingreso</option>
+                    <option value={ORDERING.MAS_TICKETS}>Más tickets</option>
+                    <option value={ORDERING.MENOS_TICKETS}>Menos tickets</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -384,16 +432,12 @@ export function ReporteVentasRangoAdmin() {
 
           {/* KPIs */}
           {reporte && (
-            <div className="reporte-row reporte-gap-3 reporte-mb-3">
+            <div className="reporte-row reporte-mb-3">
               <div className="reporte-col reporte-col-md-3">
                 <div className="reporte-kpi-card">
                   <div className="reporte-kpi-title">Ventas netas</div>
                   <div className="reporte-kpi-value">
-                    {new Intl.NumberFormat("es-CO", {
-                      style: "currency",
-                      currency: "COP",
-                      maximumFractionDigits: 0,
-                    }).format(reporte.ventas_netas ?? 0)}
+                    {formatCurrency(reporte.ventas_netas)}
                   </div>
                   <div className="reporte-kpi-subtitle">
                     {reporte.fecha_inicio} → {reporte.fecha_fin}
@@ -431,40 +475,26 @@ export function ReporteVentasRangoAdmin() {
             </div>
           )}
 
-          {/* Errores */}
+          {/* Alertas de error */}
           {error && (
             <div className="reporte-alert-danger" role="alert">
               {error}
             </div>
           )}
 
-          {/* Tabla detalle */}
+          {/* Tabla de detalle */}
           <div className="reporte-table-container">
             <div className="reporte-card-body">
               <div className="reporte-d-flex reporte-align-items-center reporte-justify-content-between reporte-mb-2">
-                <h5 className="reporte-mb-0" style={{color: '#00d4ff', fontSize: '1.25rem', fontWeight: '600'}}>
+                <h5 className="reporte-mb-0" style={{color: '#00bcd4', fontSize: '1.25rem', fontWeight: '600'}}>
                   Detalle por producto
                 </h5>
-                <div className="reporte-d-flex reporte-align-items-center reporte-gap-2">
-                  <label className="reporte-form-label reporte-mb-0 reporte-me-2" style={{fontSize: '0.875rem'}}>
-                    Filas por página
-                  </label>
-                  <select
-                    className="reporte-form-select"
-                    style={{ width: 100 }}
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setPage(1);
-                    }}
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                  </select>
-                </div>
+                <span className="reporte-badge">
+                  {count} productos
+                </span>
               </div>
 
+              {/* Vista de tabla para desktop */}
               <div className="reporte-table-responsive">
                 <table className="reporte-table">
                   <thead>
@@ -483,11 +513,7 @@ export function ReporteVentasRangoAdmin() {
                         <td>{p.producto?.nombre ?? "—"}</td>
                         <td className="reporte-text-end">{p.cantidad}</td>
                         <td className="reporte-text-end">
-                          {new Intl.NumberFormat("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            maximumFractionDigits: 0,
-                          }).format(p.ingresos ?? 0)}
+                          {formatCurrency(p.ingresos)}
                         </td>
                         <td className="reporte-text-end">{p.tickets}</td>
                       </tr>
@@ -503,49 +529,87 @@ export function ReporteVentasRangoAdmin() {
                 </table>
               </div>
 
-              {/* Paginación */}
-              <div className="reporte-pagination">
-                <span className="reporte-pagination-info">Página {page} de {totalPages}</span>
-                <div className="reporte-pagination-controls">
-                  <button
-                    className="reporte-pagination-btn"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1}
-                  >
-                    « Anterior
-                  </button>
-                  <button
-                    className="reporte-pagination-btn"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                  >
-                    Siguiente »
-                  </button>
-                </div>
+              {/* Vista de cards para móvil */}
+              <div className="reporte-mobile-cards">
+                {items.map((p) => (
+                  <div key={`mobile-${p.producto?.id ?? p.producto_id}-${p.cantidad}-${p.ingresos}`} className="reporte-mobile-card">
+                    <div className="reporte-mobile-card-header">
+                      <div className="reporte-mobile-card-title">
+                        {p.producto?.nombre ?? "—"}
+                      </div>
+                      <div className="reporte-mobile-card-id">
+                        #{p.producto?.id ?? p.producto_id}
+                      </div>
+                    </div>
+                    <div className="reporte-mobile-card-body">
+                      <div className="reporte-mobile-card-field">
+                        <div className="reporte-mobile-card-label">Cantidad</div>
+                        <div className="reporte-mobile-card-value primary">
+                          {p.cantidad?.toLocaleString('es-CO') ?? 0}
+                        </div>
+                      </div>
+                      <div className="reporte-mobile-card-field">
+                        <div className="reporte-mobile-card-label">Tickets</div>
+                        <div className="reporte-mobile-card-value">
+                          {p.tickets ?? 0}
+                        </div>
+                      </div>
+                      <div className="reporte-mobile-card-field" style={{gridColumn: '1 / -1'}}>
+                        <div className="reporte-mobile-card-label">Ingresos</div>
+                        <div className="reporte-mobile-card-value currency">
+                          {formatCurrency(p.ingresos)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {!items.length && (
+                  <div className="reporte-empty-state">
+                    {loading ? "Cargando..." : "Sin datos para este reporte."}
+                  </div>
+                )}
               </div>
+
+              {/* Paginación */}
+              {count > 0 && (
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                  }}
+                  totalItems={count}
+                  loading={loading}
+                />
+              )}
             </div>
           </div>
         </>
       )}
 
-      {/* ───────────────── LISTAR ───────────────── */}
+      {/* MODO LISTAR */}
       {mode === "listar" && (
         <div className="reporte-card">
           <div className="reporte-card-body">
             <div className="reporte-d-flex reporte-justify-content-between reporte-align-items-center reporte-mb-2">
-              <h5 className="reporte-mb-0" style={{color: '#00d4ff', fontSize: '1.25rem', fontWeight: '600'}}>
+              <h5 className="reporte-mb-0" style={{color: '#00bcd4', fontSize: '1.25rem', fontWeight: '600'}}>
                 Reportes generados
               </h5>
               <span className="reporte-badge">
                 {reportes.length} reporte{reportes.length === 1 ? "" : "s"}
               </span>
             </div>
+            
             <ListaReportesVentas
               reportes={reportes}
               seleccionadoId={reporteId}
               onSelect={(id) => {
                 setReporteId(id);
-                setMode("generar"); // al seleccionar, te lleva a la vista con KPIs/tabla
+                setMode("generar");
               }}
               onDelete={onDeleteReporte}
               loading={loading}

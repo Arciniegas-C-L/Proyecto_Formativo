@@ -125,6 +125,16 @@ export function Facturas() {
     };
   }, [allFacturas]);
 
+  // Calcular límites dinámicos para el campo "hasta"
+  const fechaHastaLimites = useMemo(() => {
+    const hoy = new Date().toISOString().split('T')[0];
+    
+    return {
+      min: qDesde || fechaLimites.min, // Si hay "desde", usar esa como mínima
+      max: hoy // Máximo siempre es hoy
+    };
+  }, [qDesde, fechaLimites.min]);
+
   // Cargar todas las facturas para obtener fechas límite
   const fetchAllFacturas = async () => {
     try {
@@ -201,15 +211,35 @@ export function Facturas() {
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
   const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
 
-  // Manejar cambio en fecha "desde"
+
+  // Manejar cambio en fecha "desde" - REFORZADO
   const handleDesdeChange = (e) => {
     const nuevaFechaDesde = e.target.value;
+    // Solo permitir fechas dentro del rango válido
+    if (
+      fechaLimites.min && nuevaFechaDesde < fechaLimites.min
+      || fechaLimites.max && nuevaFechaDesde > fechaLimites.max
+    ) {
+      return;
+    }
     setQDesde(nuevaFechaDesde);
-    
     // Si la fecha "hasta" es menor que la nueva fecha "desde", limpiarla
     if (qHasta && nuevaFechaDesde && qHasta < nuevaFechaDesde) {
       setQHasta("");
     }
+  };
+
+  // Manejar cambio en fecha "hasta" - REFORZADO
+  const handleHastaChange = (e) => {
+    const nuevaFechaHasta = e.target.value;
+    // Solo permitir fechas dentro del rango válido
+    if (
+      fechaHastaLimites.min && nuevaFechaHasta < fechaHastaLimites.min
+      || fechaHastaLimites.max && nuevaFechaHasta > fechaHastaLimites.max
+    ) {
+      return;
+    }
+    setQHasta(nuevaFechaHasta);
   };
 
   // Manejar cambio en página de filas
@@ -337,6 +367,7 @@ export function Facturas() {
                   onChange={handleDesdeChange}
                   min={fechaLimites.min}
                   max={fechaLimites.max}
+                  required={false}
                 />
               </div>
               <div className="facturas-filter-group">
@@ -345,9 +376,11 @@ export function Facturas() {
                   type="date"
                   className="form-control facturas-input"
                   value={qHasta}
-                  onChange={(e) => setQHasta(e.target.value)}
-                  min={qDesde || fechaLimites.min}
-                  max={fechaLimites.max}
+                  onChange={handleHastaChange}
+                  min={fechaHastaLimites.min}
+                  max={fechaHastaLimites.max}
+                  disabled={!qDesde}
+                  required={false}
                 />
               </div>
             </div>

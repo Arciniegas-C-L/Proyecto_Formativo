@@ -435,6 +435,160 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+
+/* MODAL LOGIN REQUERIDO */
+.modal-login-overlay {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(5px);
+}
+
+.modal-login-content {
+  background-color: #1F1F2E;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  animation: modalSlideIn 0.3s ease-out;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.modal-login-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.modal-login-title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: clamp(1rem, 4vw, 1.3rem);
+  font-family: "Montserrat", sans-serif;
+  color: #A78BFA;
+}
+
+.modal-login-text {
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+  text-align: center;
+  color: #bbbbbb;
+  margin-bottom: 0.3rem;
+  line-height: 1.4;
+}
+
+.modal-login-btn {
+  border: none;
+  border-radius: 0.5rem;
+  font-size: clamp(0.7rem, 2.5vw, 0.85rem);
+  font-weight: bold;
+  padding: 0.6rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: auto;
+  min-width: 160px;
+  max-width: 200px;
+  background: linear-gradient(45deg, #A78BFA, #60A5FA);
+  color: #000;
+}
+
+.modal-login-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.modal-login-btn:focus {
+  outline: none;
+  box-shadow: 0 0 6px rgba(167, 139, 250, 0.4);
+}
+
+.modal-login-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* RESPONSIVE MODAL LOGIN */
+
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .modal-login-content {
+    max-width: 380px;
+  }
+  
+  .modal-login-body {
+    padding: 1.4rem 1.1rem;
+  }
+}
+
+/* Móviles grandes (481px - 767px) */
+@media (max-width: 767px) and (min-width: 481px) {
+  .modal-login-content {
+    max-width: 340px;
+  }
+  
+  .modal-login-body {
+    padding: 1.3rem 1rem;
+  }
+  
+  .modal-dialog {
+    margin: 1rem;
+  }
+}
+
+/* Móviles medianos (361px - 480px) */
+@media (max-width: 480px) and (min-width: 361px) {
+  .modal-login-content {
+    max-width: 300px;
+  }
+  
+  .modal-login-body {
+    padding: 1.2rem 0.9rem;
+  }
+  
+  .modal-login-btn {
+    min-width: 140px;
+    max-width: 180px;
+    padding: 0.55rem 1.3rem;
+  }
+  
+  .modal-dialog {
+    margin: 1rem;
+  }
+}
+
+/* Móviles pequeños (hasta 360px) */
+@media (max-width: 360px) {
+  .modal-login-content {
+    max-width: 280px;
+  }
+  
+  .modal-login-body {
+    padding: 1rem 0.8rem;
+    gap: 1rem;
+  }
+  
+  .modal-login-btn {
+    font-size: 0.65rem;
+    padding: 0.5rem 1.2rem;
+    min-width: 120px;
+    max-width: 160px;
+  }
+  
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+}
+
 /* Responsive para sección recomendados */
 @media (max-width: 1200px) {
   .productos-recomendados {

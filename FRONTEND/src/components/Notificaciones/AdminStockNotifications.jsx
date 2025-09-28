@@ -1,10 +1,10 @@
-// AdminStockNotifications.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   getTablaCategorias,
   getTablaSubcategorias,
   getTablaProductos,
 } from "../../api/InventarioApi";
+import "../../assets/css/Notificaciones/AdminStockNotificaciones.css";
 
 // --- Util: "hace X"
 function timeAgo(iso) {
@@ -24,6 +24,11 @@ export function AdminStockNotifications({
   pollMs = 30000,           // intervalo de refresco
   umbralGlobal = 5,         // fallback si no viene stock_minimo en la talla
   onGoToInventario = null,  // ({categoriaId, subcategoriaId, productoId, tallaId, ...})
+  
+  // NUEVAS PROPS PARA POSICIONAMIENTO FLEXIBLE
+  position = "top-right",   // "top-right" | "top-left" | "bottom-right" | "bottom-left"
+  offset = 20,              // distancia desde los bordes
+  customPosition = null,    // { top?: number, right?: number, bottom?: number, left?: number }
 }) {
   const [open, setOpen] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
@@ -45,6 +50,37 @@ export function AdminStockNotifications({
     }
     return { unread, low, out, total: alertas.length };
   }, [alertas, readSet]);
+
+  // Calcular estilos de posicionamiento
+  const buttonStyles = useMemo(() => {
+    if (customPosition) {
+      return customPosition;
+    }
+    
+    const styles = {};
+    
+    switch (position) {
+      case "top-left":
+        styles.top = `${offset}px`;
+        styles.left = `${offset}px`;
+        break;
+      case "bottom-left":
+        styles.bottom = `${offset}px`;
+        styles.left = `${offset}px`;
+        break;
+      case "bottom-right":
+        styles.bottom = `${offset}px`;
+        styles.right = `${offset}px`;
+        break;
+      case "top-right":
+      default:
+        styles.top = `${offset}px`;
+        styles.right = `${offset}px`;
+        break;
+    }
+    
+    return styles;
+  }, [position, offset, customPosition]);
 
   const safeSet = useCallback((setter, v) => {
     if (mountedRef.current) setter(v);
@@ -222,76 +258,89 @@ export function AdminStockNotifications({
 
   return (
     <>
-      {/* Botón flotante */}
+      {/* Botón flotante con posicionamiento flexible */}
       <button
         type="button"
-        className="btn btn-primary rounded-circle position-fixed d-flex align-items-center justify-content-center shadow"
-        style={{ width: 56, height: 56, right: 18, bottom: 18, zIndex: 1080 }}
+        className="notification-btn-float"
+        style={buttonStyles}
         onClick={() => setOpen(true)}
         aria-label="Notificaciones de stock"
-        title="Notificaciones de stock"
+        title={`Notificaciones de stock - ${counts.unread > 0 ? counts.unread + ' sin leer' : counts.total + ' alertas'}`}
       >
-        <span style={{ fontSize: 20, lineHeight: 1 }} aria-hidden>🔔</span>
-        {counts.unread > 0 && (
-          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: 12 }}>
-            {loadingBadge ? "…" : counts.unread}
-            <span className="visually-hidden">no leídas</span>
+        <span className="notification-icon" aria-hidden="true">🔔</span>
+        {(counts.total > 0) && (
+          <span className="notification-badge">
+            {loadingBadge ? "…" : (counts.unread > 0 ? counts.unread : counts.total)}
+            <span className="visually-hidden">
+              {counts.unread > 0 ? "no leídas" : "alertas totales"}
+            </span>
           </span>
         )}
       </button>
 
       {/* Panel lateral */}
       <div
-        className={`position-fixed top-0 end-0 h-100 ${open ? "" : "d-none"}`}
-        style={{ zIndex: 1075, width: 400, background: "transparent" }}
+        className={`notification-panel ${open ? "notification-panel-open" : "notification-panel-closed"}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="hdr-alertas-stock"
       >
         {/* backdrop */}
         <div
-          className="position-fixed top-0 start-0 w-100 h-100"
-          style={{ background: "rgba(0,0,0,0.25)" }}
+          className="notification-backdrop"
           onClick={() => setOpen(false)}
         />
         {/* panel */}
-        <div className="card shadow h-100" style={{ width: 400, position: "absolute", right: 0, top: 0 }}>
-          <div className="card-header d-flex align-items-center justify-content-between">
-            <div className="d-flex flex-column">
-              <strong id="hdr-alertas-stock">Alertas de stock</strong>
-              <small className="text-muted">
+        <div className="notification-content">
+          <div className="notification-header">
+            <div className="notification-title-section">
+              <strong id="hdr-alertas-stock" className="notification-title">Alertas de stock</strong>
+              <small className="notification-subtitle">
                 {counts.low} bajo · {counts.out} sin stock
               </small>
             </div>
-            <div className="d-flex align-items-center gap-2">
+            <div className="notification-actions">
               <button
-                className="btn btn-sm btn-outline-secondary"
+                className="btn btn-sm btn-outline-secondary notification-btn-refresh"
                 onClick={() => { loadBadge(); loadList(); }}
                 disabled={loadingList || loadingBadge}
                 title="Refrescar"
               >
                 {loadingList || loadingBadge ? "..." : "Refrescar"}
               </button>
-              <button className="btn btn-sm btn-outline-primary" onClick={markAllRead} title="Marcar todas como vistas">
+              <button 
+                className="btn btn-sm btn-outline-primary notification-btn-read-all" 
+                onClick={markAllRead} 
+                title="Marcar todas como vistas"
+              >
                 Vistas
               </button>
-              <button className="btn btn-sm btn-light" onClick={() => setOpen(false)} title="Cerrar" aria-label="Cerrar panel">
+              <button 
+                className="btn btn-sm btn-light notification-btn-close" 
+                onClick={() => setOpen(false)} 
+                title="Cerrar" 
+                aria-label="Cerrar panel"
+              >
                 ✕
               </button>
             </div>
           </div>
 
-          <div className="card-body p-0 d-flex flex-column" style={{ minHeight: 0 }}>
-            {(errorBadge || errorList) && <div className="alert alert-danger m-2">{errorBadge || errorList}</div>}
+          <div className="notification-body">
+            {(errorBadge || errorList) && (
+              <div className="alert alert-danger notification-error">
+                {errorBadge || errorList}
+              </div>
+            )}
 
             {/* Lista */}
-            <div className="list-group list-group-flush overflow-auto" style={{ flex: 1 }}>
+            <div className="notification-list">
               {!loadingList && alertas.length === 0 && (
-                <div className="text-center text-muted p-4">Sin alertas activas.</div>
+                <div className="notification-empty">Sin alertas activas.</div>
               )}
 
               {loadingList && (
-                <div className="p-3">
+                <div className="notification-loading">
                   <div className="placeholder-glow">
                     <div className="placeholder col-10 mb-2"></div>
                     <div className="placeholder col-7 mb-2"></div>
@@ -304,27 +353,33 @@ export function AdminStockNotifications({
                 const isOut = a.tipo === "stock_out";
                 const isRead = readSet.has(aKey(a));
                 return (
-                  <div key={a.id} className={`list-group-item ${isRead ? "opacity-75" : ""}`}>
-                    <div className="d-flex justify-content-between align-items-start">
-                      <div className="me-2">
-                        <div className="fw-semibold">
-                          {a.producto} <span className="text-muted">· {a.talla}</span>
+                  <div key={a.id} className={`notification-item ${isRead ? "notification-item-read" : ""}`}>
+                    <div className="notification-item-main">
+                      <div className="notification-item-content">
+                        <div className="notification-item-title">
+                          {a.producto} <span className="notification-item-talla">· {a.talla}</span>
                         </div>
-                        <div className="small text-muted">
-                          <span className="me-2">{a.categoria} / {a.subcategoria}</span>
-                          {isOut ? "Sin stock" : `Stock bajo: ${a.cantidad} (mínimo: ${a.stock_minimo})`}
+                        <div className="notification-item-details">
+                          <span className="notification-item-category">
+                            {a.categoria} / {a.subcategoria}
+                          </span>
+                          <span className="notification-item-stock">
+                            {isOut ? "Sin stock" : `Stock bajo: ${a.cantidad} (mínimo: ${a.stock_minimo})`}
+                          </span>
                         </div>
-                        {a.actualizado_en && <div className="small text-muted">{timeAgo(a.actualizado_en)}</div>}
+                        {a.actualizado_en && (
+                          <div className="notification-item-time">{timeAgo(a.actualizado_en)}</div>
+                        )}
                       </div>
-                      <span className={`badge ${isOut ? "bg-danger" : "bg-warning text-dark"}`}>
+                      <span className={`badge notification-badge-status ${isOut ? "notification-badge-out" : "notification-badge-low"}`}>
                         {isOut ? "Sin stock" : "Bajo"}
                       </span>
                     </div>
 
-                    <div className="mt-2 d-flex flex-wrap gap-2">
+                    <div className="notification-item-buttons">
                       {typeof onGoToInventario === "function" && (
                         <button
-                          className="btn btn-sm btn-outline-secondary"
+                          className="btn btn-sm btn-outline-secondary notification-btn-go"
                           onClick={() =>
                             onGoToInventario({
                               categoriaId: a.categoriaId,
@@ -340,7 +395,10 @@ export function AdminStockNotifications({
                         </button>
                       )}
                       {!isRead && (
-                        <button className="btn btn-sm btn-outline-primary" onClick={() => markOneRead(a)}>
+                        <button 
+                          className="btn btn-sm btn-outline-primary notification-btn-mark" 
+                          onClick={() => markOneRead(a)}
+                        >
                           Marcar como vista
                         </button>
                       )}
@@ -351,11 +409,14 @@ export function AdminStockNotifications({
             </div>
 
             {/* Footer */}
-            <div className="border-top p-2 d-flex justify-content-between align-items-center">
-              <small className="text-muted">
+            <div className="notification-footer">
+              <small className="notification-total">
                 Total alertas activas: <strong>{counts.total}</strong>
               </small>
-              <button className="btn btn-sm btn-outline-secondary" onClick={() => setOpen(false)}>
+              <button 
+                className="btn btn-sm btn-outline-secondary notification-btn-close-footer" 
+                onClick={() => setOpen(false)}
+              >
                 Cerrar
               </button>
             </div>

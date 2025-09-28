@@ -6,8 +6,6 @@ import ZOE from "../../assets/images/home/ZOE.gif";
 import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-// NUEVO
-
 
 export function Header() {
   const { autenticado, logout, rol, usuario } = useAuth();
@@ -18,23 +16,23 @@ export function Header() {
   const navigate = useNavigate();
 
   const rolNorm = React.useMemo(() => {
-  // candidatos posibles
-  const candidates = [
-    rol,
-    usuario?.rol,
-    usuario?.role,
-    Array.isArray(rol) ? rol[0] : undefined,
-    Array.isArray(usuario?.roles) ? usuario.roles[0] : undefined,
-  ];
+    // candidatos posibles
+    const candidates = [
+      rol,
+      usuario?.rol,
+      usuario?.role,
+      Array.isArray(rol) ? rol[0] : undefined,
+      Array.isArray(usuario?.roles) ? usuario.roles[0] : undefined,
+    ];
 
-  // toma el primero definido y extrae texto
-  let raw = candidates.find(v => v != null);
+    // toma el primero definido y extrae texto
+    let raw = candidates.find(v => v != null);
 
-  if (typeof raw === "object") {
-    raw = raw?.nombre ?? raw?.role ?? raw?.slug ?? "";
-  }
-  return String(raw ?? "").trim().toLowerCase(); // "cliente", "administrador", etc.
-}, [rol, usuario]);
+    if (typeof raw === "object") {
+      raw = raw?.nombre ?? raw?.role ?? raw?.slug ?? "";
+    }
+    return String(raw ?? "").trim().toLowerCase(); // "cliente", "administrador", etc.
+  }, [rol, usuario]);
 
   const esCliente = rolNorm === "cliente";
   //const esAdministrador = rolNorm === "administrador";
@@ -115,29 +113,15 @@ export function Header() {
   return (
     <>
       {showConfirm && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-        >
-          <div className="modal-content-custom">
-            <div className="modal-header-custom">
-              <h5 className="modal-title-custom">Confirmar cierre de sesión</h5>
+        <div className="modal-overlay-confirm">
+          <div className="modal-content-confirm">
+            <div className="modal-header-confirm">
+              <h5 className="modal-title-confirm">Confirmar cierre de sesión</h5>
             </div>
-            <div className="modal-body-custom">
+            <div className="modal-body-confirm">
               <p>¿Estás seguro de que deseas cerrar sesión?</p>
             </div>
-            <div className="modal-footer-custom">
+            <div className="modal-footer-confirm">
               <button className="btn-modal-cancel" onClick={cancelLogout}>
                 Cancelar
               </button>
@@ -215,7 +199,7 @@ export function Header() {
                         </Link>
                       </li>
 
-                     {/* Solo CLIENTE: Mis pedidos */}
+                      {/* Solo CLIENTE: Mis pedidos */}
                       {esCliente && (
                         <li>
                           <Link
@@ -228,17 +212,17 @@ export function Header() {
                         </li>
                       )}
                       {/* NUEVO: Facturas (ruta privada /Facturas) */}
-                      { esCliente && (
-                      <li>
-                        <Link
-                          to="/Facturas"
-                          className="dropdown-item-custom"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <i className="bi bi-receipt"></i> Facturas
-                        </Link>
-                      </li>
-                    )}
+                      {esCliente && (
+                        <li>
+                          <Link
+                            to="/Facturas"
+                            className="dropdown-item-custom"
+                            onClick={() => setShowDropdown(false)}
+                          >
+                            <i className="bi bi-receipt"></i> Facturas
+                          </Link>
+                        </li>
+                      )}
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión
@@ -254,7 +238,7 @@ export function Header() {
                     <span className="nav-text">Sesión</span>
                   </Link>
                 </li>
-              )}{" "}
+              )}
             </ul>
           </nav>
         </div>
