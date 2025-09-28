@@ -7,7 +7,7 @@
   justify-content: center;
   text-align: center;
   position: relative;
-  background-image: url("/hero.jpeg");
+  background-image: url("../../../../public/hero.jpeg");
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -35,7 +35,6 @@
   max-width: min(90%, 1200px);
   width: 100%;
   animation: fadeInUp 0.7s ease-out forwards;
-  opacity: 0;
 }
 
 .hero-titulo {
@@ -62,7 +61,6 @@
   line-height: 1.6;
   animation: fadeIn 1.2s ease-out forwards;
   animation-delay: 0.3s;
-  opacity: 0;
 }
 
 .hero-boton {
@@ -80,7 +78,6 @@
   display: inline-block;
   animation: fadeInUp 0.7s ease-out forwards;
   animation-delay: 0.8s;
-  opacity: 0;
 }
 
 .hero-boton:hover {

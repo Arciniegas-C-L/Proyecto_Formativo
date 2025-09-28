@@ -230,15 +230,8 @@ export function Header() {
                       {/* NUEVO: Facturas (ruta privada /Facturas) */}
                       { esCliente && (
                       <li>
-                        <Link
-                          to="/Facturas"
-                          className="dropdown-item-custom"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <i className="bi bi-receipt"></i> Facturas
-                        </Link>
+                        <hr className="dropdown-divider-custom" />
                       </li>
-                    )}
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión

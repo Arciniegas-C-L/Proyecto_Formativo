@@ -7,16 +7,13 @@ import "../../assets/css/Productos/ListaProductos.css";
 import { EliminarModal } from  "../EliminarModal/EliminarModal"; 
 
 export function ListaProductos() {
+  const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
-  const navigate = useNavigate();
-
-  // ---- estado para ventana eliminar global ----
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [productoToDelete, setProductoToDelete] = useState(null);
-
   useEffect(() => {
       cargarProductos();
   }, []);
@@ -180,12 +177,13 @@ export function ListaProductos() {
                 productosFiltrados.map(producto => (
                   <tr key={`producto-${producto.id}`}>
                     <td className="celda-imagen">
-                      <img
-                        src={producto.imagen || 'https://via.placeholder.com/50'}
-                        alt={producto.nombre}
-                        onError={e => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/50'; }}
-                        tabIndex={0}
-                      />
+                      {typeof producto.imagen === 'string' && producto.imagen
+                        ? <img
+                            src={producto.imagen}
+                            alt={producto.nombre}
+                            tabIndex={0}
+                          />
+                        : null}
                     </td>
                     <td>{producto.nombre}</td>
                     <td className="celda-descripcion" title={producto.descripcion}>

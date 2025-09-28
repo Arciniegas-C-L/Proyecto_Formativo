@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import { listarPedidos } from "../../api/Pedido.api";
 import { listarItemsDePedido } from "../../api/PedidoProducto.api.js";
 import { Link } from "react-router-dom";
@@ -116,12 +117,8 @@ export function MisPedidos() {
     })();
   }, []);
 
-  const resolveImg = (src) => {
-    if (!src) return PLACEHOLDER;
-    if (typeof src === "string" && src.startsWith("http")) return src;
-    const base = import.meta.env.VITE_BACK_URL || "http://127.0.0.1:8000";
-    return `${base}${src}`;
-  };
+
+
 
   const toggleExpand = async (pedido) => {
     const pid = pedido.idPedido ?? pedido.id;

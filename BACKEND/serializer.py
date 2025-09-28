@@ -31,7 +31,7 @@ from .models import (
 
 
 from django.db.models import Q   # <-- IMPORTANTE
-from django.contrib.auth import authenticate
+ 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -92,13 +92,20 @@ class LoginSerializer(serializers.Serializer):
         correo = data.get('correo')
         password = data.get('password')
 
-        if correo and password:
-            user = authenticate(request=self.context.get('request'), username=correo, password=password)
-
-            if not user:
-                raise serializers.ValidationError("Credenciales inválidas", code='authorization')
-        else:
+        if not correo or not password:
             raise serializers.ValidationError("Debe incluir correo y contraseña", code='authorization')
+
+        from BACKEND.models import Usuario
+        try:
+            user = Usuario.objects.get(correo=correo)
+        except Usuario.DoesNotExist:
+            raise serializers.ValidationError("Credenciales inválidas", code='authorization')
+
+        if not user.check_password(password):
+            raise serializers.ValidationError("Credenciales inválidas", code='authorization')
+
+        if not user.is_active:
+            raise serializers.ValidationError("Usuario inactivo", code='authorization')
 
         data['user'] = user
         return data
@@ -148,7 +155,7 @@ class UsuarioRegistroSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['nombre', 'apellido', 'correo', 'password', 'rol']
+        fields = ['nombre', 'apellido', 'correo', 'telefono', 'password', 'rol']
 
     def validate_correo(self, value):
         if Usuario.objects.filter(correo=value).exists():
@@ -277,10 +284,40 @@ class TallaSerializer(serializers.ModelSerializer):
         return data
 
 class ProductoSerializer(serializers.ModelSerializer):
+
     subcategoria = serializers.PrimaryKeyRelatedField(queryset=Subcategoria.objects.all())
     subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
     inventario_tallas = serializers.SerializerMethodField()
+    imagen = serializers.ImageField(required=False, allow_null=True)
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        # Mostrar la URL pública de la imagen
+        if instance.imagen:
+            # Solo dejar la ruta a partir de /media/productos/...
+            url = instance.imagen.url
+            if '/media/productos/' in url:
+                url = url[url.find('/media/productos/'):]
+            request = self.context.get('request')
+            if request is not None:
+                rep['imagen'] = request.build_absolute_uri(url)
+            else:
+                rep['imagen'] = url
+        else:
+            rep['imagen'] = None
+        return rep
+
+    def get_imagen(self, obj):
+        if obj.imagen:
+            # Elimina la parte local y deja la ruta pública
+            url = obj.imagen.url.replace('/FRONTEND/public', '')
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(url)
+            return url
+        return None
+
 
     class Meta:
         model = Producto
@@ -296,6 +333,8 @@ class ProductoSerializer(serializers.ModelSerializer):
             'imagen',
             'inventario_tallas'
         ]
+
+
 
     def get_inventario_tallas(self, obj):
         inventarios = Inventario.objects.filter(producto=obj).select_related('talla')

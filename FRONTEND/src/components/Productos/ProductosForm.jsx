@@ -143,7 +143,6 @@ export function ProductosForm() {
       } else {
         await createProducto(formDataToSend);
         toast.success("Producto creado correctamente");
-        // Limpiar el formulario tras crear
         setFormData({
           nombre: "",
           descripcion: "",
@@ -155,7 +154,8 @@ export function ProductosForm() {
           imagenFile: null,
         });
       }
-      // No redirigir, solo mostrar el mensaje y limpiar si es nuevo
+      // Redirigir siempre a la lista de productos tras guardar
+      navigate("/admin/productos");
     } catch (error) {
       console.error(" Error guardando producto:", error);
       toast.error("Error al guardar el producto");

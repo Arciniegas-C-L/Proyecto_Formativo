@@ -1,6 +1,8 @@
-# ----------------------------
-# Comentarios de usuarios
-# ----------------------------
+
+from django.core.management import call_command
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 from django.db import models
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
@@ -9,6 +11,9 @@ from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+# ----------------------------
+# Comentarios de usuarios
+# ----------------------------
 class Comentario(models.Model):
 
     usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='comentarios')
@@ -24,8 +29,6 @@ class Comentario(models.Model):
     def __str__(self):
         return f"Comentario de {self.usuario.nombre} {self.usuario.apellido} - {self.valoracion} estrellas"
 
-
-
 # ----------------------------
 # Roles
 # ----------------------------
@@ -35,6 +38,11 @@ class Rol(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def delete(self, *args, **kwargs):
+        if self.imagen:
+            self.imagen.delete(save=False)
+        super().delete(*args, **kwargs)
 
 
 # ----------------------------
@@ -119,6 +127,39 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
 
+
+    # Señal para actualizar comentarios cuando se guarda el usuario
+
+    from django.core.management import call_command
+    def actualizar_comentarios_avatar_signal(sender, instance, **kwargs):
+        call_command('actualiza_comentarios_avatar')
+    post_save.connect(actualizar_comentarios_avatar_signal, sender='BACKEND.Usuario')
+
+
+# ----------------------------
+# Direcciones de usuario
+# ----------------------------
+class Direccion(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='direcciones')
+    direccion = models.CharField(max_length=255)
+
+    from rest_framework.exceptions import ValidationError
+    def save(self, *args, **kwargs):
+        # Limitar a 3 direcciones por usuario
+        if not self.pk and Direccion.objects.filter(usuario=self.usuario).count() >= 3:
+            raise ValidationError({'detail': 'No puedes tener más de 3 direcciones.'})
+        # No permitir direcciones duplicadas para el mismo usuario
+        if Direccion.objects.filter(usuario=self.usuario, direccion=self.direccion).exclude(pk=self.pk).exists():
+            raise ValidationError({'detail': 'Ya tienes una dirección igual registrada.'})
+        # No permitir que la dirección sea igual a la de datos personales
+        if self.usuario.direccion and self.direccion.strip() == self.usuario.direccion.strip():
+            raise ValidationError({'detail': 'No puedes registrar una dirección igual a la de tus datos personales.'})
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.direccion} - {self.usuario.nombre} {self.usuario.apellido}"
+
+
 # ----------------------------
 # Código de recuperación
 # ----------------------------
@@ -196,6 +237,25 @@ class Subcategoria(models.Model):
 
     def __str__(self):
         return f"{self.nombre} (de {self.categoria.nombre})"
+
+
+class Producto(models.Model):
+    nombre = models.CharField(max_length=45)
+    descripcion = models.TextField(max_length=200)
+    precio = models.PositiveIntegerField()
+    stock = models.PositiveIntegerField(default=0)
+    subcategoria = models.ForeignKey(Subcategoria, on_delete=models.CASCADE, related_name='productos')
+    imagen = models.ImageField(upload_to='FRONTEND/public/media/productos/', blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
+
+    def delete(self, *args, **kwargs):
+        if self.imagen:
+            self.imagen.delete(save=False)
+        super().delete(*args, **kwargs)
+
+
 class Talla(models.Model):
     nombre = models.CharField(max_length=10)
     grupo = models.ForeignKey(GrupoTalla, on_delete=models.CASCADE, related_name='tallas')

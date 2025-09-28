@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+  "build": "vite build && cp static.json dist/",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.1.1",
     "@mui/material": "^7.1.1",
+    "@popperjs/core": "^2.11.8",
     "@types/stylis": "^4.2.7",
     "axios": "^1.9.0",
     "bootstrap": "^5.3.8",

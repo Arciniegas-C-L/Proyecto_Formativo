@@ -1,5 +1,6 @@
 // src/components/Catalogo/ProductoCard.jsx
 import React, { useState } from "react";
+
 import { toast } from "react-hot-toast";
 import {
   agregarProducto,
@@ -138,15 +139,17 @@ export default function ProductoCard({ producto, capitalizar, onProductoAgregado
   return (
     <div className="product-card">
       <div className="product-image-container">
-        <img
-          src={producto.imagen || "https://via.placeholder.com/250x350?text=Imagen+no+disponible"}
-          alt={producto.nombre || "Producto"}
-          className="product-image"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "https://via.placeholder.com/250x350?text=Imagen+no+disponible";
-          }}
-        />
+        {producto.imagen && (
+          <img
+            src={producto.imagen}
+            alt={producto.nombre || "Producto"}
+            className="product-image"
+            onError={e => {
+              e.target.onerror = null;
+              e.target.style.display = 'none';
+            }}
+          />
+        )}
       </div>
 
       <div className="product-info">
