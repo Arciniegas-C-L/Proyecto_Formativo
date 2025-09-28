@@ -1,25 +1,34 @@
 // src/components/Carrito/Carrito.jsx
-import ProductoCard from '../Catalogo/ProductoCard';
-import { useAuth } from '../../context/AuthContext';
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-import { FaTrash, FaMinus, FaPlus, FaShoppingCart, FaEye, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
+import ProductoCard from "../Catalogo/ProductoCard";
+import { useAuth } from "../../context/AuthContext";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import {
+  FaTrash,
+  FaMinus,
+  FaPlus,
+  FaShoppingCart,
+  FaEye,
+  FaMapMarkerAlt,
+  FaPhone,
+} from "react-icons/fa";
 
 import {
   fetchCarritos,
-  getCarrito,            // <<<<<<<<<<<<<< NUEVO
+  getCarrito, // <<<<<<<<<<<<<< NUEVO
   actualizarCantidad,
   eliminarProducto,
   limpiarCarrito,
   crearPreferenciaPago,
   adoptarCarritoAnon,
-} from '../../api/CarritoApi';
-import { getALLProductos } from '../../api/Producto.api';
-import '../../assets/css/Carrito/Carrito.css';
+} from "../../api/CarritoApi";
+import { getALLProductos } from "../../api/Producto.api";
+import "../../assets/css/Carrito/Carrito.css";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
-const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
+const MP_PUBLIC_KEY_TEST =
+  import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
 
 // No tocar stock en acciones de carrito
 const NO_STOCK_TOUCH = { skip_stock: true, reserve: false };
@@ -32,12 +41,12 @@ function useMercadoPagoLoader(publicKey) {
       setLoaded(true);
       return;
     }
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = "https://sdk.mercadopago.com/js/v2";
     script.async = true;
     script.onload = () => setLoaded(true);
     script.onerror = () => {
-      console.error('No se pudo cargar el SDK de Mercado Pago');
+      console.error("No se pudo cargar el SDK de Mercado Pago");
       setLoaded(false);
     };
     document.head.appendChild(script);
@@ -64,9 +73,9 @@ export function Carrito() {
   const [creatingPreference, setCreatingPreference] = useState(false);
 
   // NUEVOS CAMPOS
-  const [ciudad, setCiudad]   = useState("");
-  const [barrio, setBarrio]   = useState("");
-  const [calle,  setCalle]    = useState("");
+  const [ciudad, setCiudad] = useState("");
+  const [barrio, setBarrio] = useState("");
+  const [calle, setCalle] = useState("");
 
   // Teléfono y dirección (string opcional como complemento)
   const [telefono, setTelefono] = useState(usuario?.telefono || "");
@@ -82,7 +91,8 @@ export function Carrito() {
 
     const onCarritoActualizado = () => cargarCarrito();
     window.addEventListener("carritoActualizado", onCarritoActualizado);
-    return () => window.removeEventListener("carritoActualizado", onCarritoActualizado);
+    return () =>
+      window.removeEventListener("carritoActualizado", onCarritoActualizado);
   }, []);
 
   useEffect(() => {
@@ -149,7 +159,7 @@ export function Carrito() {
         : [];
 
       const carritosActivos = carritos.filter(
-        c => c?.estado === true || c?.estado === 'activo'
+        (c) => c?.estado === true || c?.estado === "activo"
       );
 
       if (carritosActivos.length) {
@@ -168,9 +178,9 @@ export function Carrito() {
         setItems([]);
       }
     } catch (e) {
-      console.error('Error al cargar el carrito:', e);
-      setError('Error al cargar el carrito');
-      toast.error('Error al cargar el carrito');
+      console.error("Error al cargar el carrito:", e);
+      setError("Error al cargar el carrito");
+      toast.error("Error al cargar el carrito");
       setCarrito(null);
       setItems([]);
     } finally {
@@ -182,15 +192,20 @@ export function Carrito() {
     try {
       const response = await getALLProductos();
       const productos = response.data || [];
-      const productosValidos = productos.filter(p =>
-        p && p.nombre && p.imagen && p.precio && p.inventario_tallas?.length > 0
+      const productosValidos = productos.filter(
+        (p) =>
+          p &&
+          p.nombre &&
+          p.imagen &&
+          p.precio &&
+          p.inventario_tallas?.length > 0
       );
       const productosAleatorios = productosValidos
         .sort(() => 0.5 - Math.random())
         .slice(0, 10);
       setProductosRecomendados(productosAleatorios);
     } catch (e) {
-      console.error('Error al cargar productos recomendados:', e);
+      console.error("Error al cargar productos recomendados:", e);
     }
   };
 
@@ -206,24 +221,34 @@ export function Carrito() {
       const data = response.data;
       if (data?.items && Array.isArray(data.items)) {
         const itemsActualizados = data.items
-          .map(item => item?.producto ? {
-            ...item,
-            producto: { ...item.producto, imagen: item.producto.imagen || "https://via.placeholder.com/100" }
-          } : null)
+          .map((item) =>
+            item?.producto
+              ? {
+                  ...item,
+                  producto: {
+                    ...item.producto,
+                    imagen:
+                      item.producto.imagen || "https://via.placeholder.com/100",
+                  },
+                }
+              : null
+          )
           .filter(Boolean);
         setCarrito({ ...data, items: itemsActualizados });
         setItems(itemsActualizados);
-        toast.success('Cantidad actualizada');
+        toast.success("Cantidad actualizada");
       } else {
-        toast.error('Error al actualizar la cantidad: datos inválidos');
+        toast.error("Error al actualizar la cantidad: datos inválidos");
       }
     } catch (e) {
-      console.error('Error al actualizar cantidad:', e);
+      console.error("Error al actualizar cantidad:", e);
       const status = e?.response?.status;
       const msg =
-        status === 400 ? (e.response.data?.error || 'Datos inválidos') :
-        status === 404 ? 'Producto no encontrado en el carrito' :
-        'Error al actualizar la cantidad';
+        status === 400
+          ? e.response.data?.error || "Datos inválidos"
+          : status === 404
+          ? "Producto no encontrado en el carrito"
+          : "Error al actualizar la cantidad";
       toast.error(msg);
     }
   };
@@ -231,13 +256,17 @@ export function Carrito() {
   const handleEliminarProducto = async (itemId) => {
     try {
       if (!carrito) return;
-      const response = await eliminarProducto(carrito.idCarrito, itemId, NO_STOCK_TOUCH);
+      const response = await eliminarProducto(
+        carrito.idCarrito,
+        itemId,
+        NO_STOCK_TOUCH
+      );
       setCarrito(response.data);
       setItems(response.data?.items || []);
-      toast.success('Producto eliminado del carrito');
+      toast.success("Producto eliminado del carrito");
     } catch (e) {
-      console.error('Error al eliminar producto:', e);
-      toast.error('Error al eliminar el producto');
+      console.error("Error al eliminar producto:", e);
+      toast.error("Error al eliminar el producto");
     }
   };
 
@@ -247,22 +276,24 @@ export function Carrito() {
       const response = await limpiarCarrito(carrito.idCarrito, NO_STOCK_TOUCH);
       setCarrito(response.data);
       setItems([]);
-      toast.success('Carrito limpiado');
+      toast.success("Carrito limpiado");
     } catch (e) {
-      console.error('Error al limpiar carrito:', e);
-      toast.error('Error al limpiar el carrito');
+      console.error("Error al limpiar carrito:", e);
+      toast.error("Error al limpiar el carrito");
     }
   };
 
   // Validación: Teléfono + (ciudad/barrio/calle) O dirección string como respaldo
   const validar = () => {
     const errs = {};
-    if (!telefono?.trim() || telefono.trim().length < 7) errs.telefono = 'Teléfono inválido';
+    if (!telefono?.trim() || telefono.trim().length < 7)
+      errs.telefono = "Teléfono inválido";
 
     const hasDict = !!(ciudad.trim() && barrio.trim() && calle.trim());
     if (!hasDict) {
       if (!direccion?.trim() || direccion.trim().length < 5) {
-        errs.direccion = 'Completa ciudad, barrio y calle, o escribe una dirección válida';
+        errs.direccion =
+          "Completa ciudad, barrio y calle, o escribe una dirección válida";
       }
     }
 
@@ -304,13 +335,13 @@ export function Carrito() {
       const hasDict = !!(ciudad.trim() && barrio.trim() && calle.trim());
       const address = hasDict
         ? {
-            linea1: calle.trim(),            // Calle principal
-            linea2: direccionTrimmed,        // Complemento opcional (apto/torre)
-            referencia: barrio.trim(),       // Barrio
-            ciudad: ciudad.trim(),           // Ciudad
+            linea1: calle.trim(), // Calle principal
+            linea2: direccionTrimmed, // Complemento opcional (apto/torre)
+            referencia: barrio.trim(), // Barrio
+            ciudad: ciudad.trim(), // Ciudad
             // departamento lo puedes agregar luego si tienes el input
           }
-        : direccionTrimmed;                  // Fallback string
+        : direccionTrimmed; // Fallback string
 
       const payload = {
         email: usuario?.correo || usuario?.email,
@@ -361,18 +392,21 @@ export function Carrito() {
   };
 
   const calcularTotal = () => {
-    const total = items.reduce((acc, item) => acc + (parseFloat(item.subtotal) || 0), 0);
-    return total.toLocaleString('es-CO', { maximumFractionDigits: 0 });
+    const total = items.reduce(
+      (acc, item) => acc + (parseFloat(item.subtotal) || 0),
+      0
+    );
+    return total.toLocaleString("es-CO", { maximumFractionDigits: 0 });
   };
 
   const getImagenUrl = (imagenPath) => {
     if (!imagenPath) return "https://via.placeholder.com/100";
-    if (imagenPath.startsWith('http')) return imagenPath;
+    if (imagenPath.startsWith("http")) return imagenPath;
     return `${API_BASE_URL}${imagenPath}`;
   };
 
   const capitalizar = (texto) => {
-    if (!texto) return '';
+    if (!texto) return "";
     return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
   };
 
@@ -402,30 +436,44 @@ export function Carrito() {
 
   return (
     <div className="carrito-container">
-      <h1><FaShoppingCart /> Carrito de Compras</h1>
+      <h1>
+        <FaShoppingCart /> Carrito de Compras
+      </h1>
 
       {showLoginModal && (
-        <div className="modal fade show" style={{display: 'block', background: 'rgba(0,0,0,0.5)'}} tabIndex="-1">
+        <div
+          className="modal fade show modal-login-overlay"
+          style={{ display: "block" }}
+          tabIndex="-1"
+        >
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Iniciar sesión requerido</h5>
-              </div>
-              <div className="modal-body">
-                <p>Debes iniciar sesión para finalizar la compra. Serás redirigido en 5 segundos...</p>
+            <div className="modal-content modal-login-content">
+              <div className="modal-body modal-login-body">
+                <h4 className="modal-login-title">Iniciar sesión requerido</h4>
+                <p className="modal-login-text">
+                  Debes iniciar sesión para finalizar la compra. Serás
+                  redirigido en 5 segundos...
+                </p>
+                <button
+                  className="modal-login-btn"
+                  onClick={() => navigate("/sesion")}
+                  type="button"
+                >
+                  Ir a iniciar sesión
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {(!carrito || items.length === 0) ? (
+      {!carrito || items.length === 0 ? (
         <div className="carrito-vacio">
           <h2>Tu carrito está vacío</h2>
           <p>Agrega algunos productos para comenzar a comprar</p>
           <button
             className="btn-seguir-comprando"
-            onClick={() => navigate('/catalogo')}
+            onClick={() => navigate("/catalogo")}
           >
             Ver catálogo
           </button>
@@ -452,32 +500,50 @@ export function Carrito() {
 
                     <div className="item-info">
                       <h4>{item.producto?.nombre}</h4>
-                      <p className="item-descripcion">{item.producto?.descripcion}</p>
+                      <p className="item-descripcion">
+                        {item.producto?.descripcion}
+                      </p>
 
                       {item.talla && (
                         <p className="item-talla">
                           <strong>Talla:</strong>{" "}
-                          {typeof item.talla === 'object' && item.talla !== null
-                            ? (item.talla.nombre || '-')
-                            : (typeof item.talla === 'string' ? item.talla : '-')}
+                          {typeof item.talla === "object" && item.talla !== null
+                            ? item.talla.nombre || "-"
+                            : typeof item.talla === "string"
+                            ? item.talla
+                            : "-"}
                         </p>
                       )}
 
                       <div className="item-precio-cantidad">
                         <p className="item-precio">
-                          ${parseFloat(item.precio_unitario).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                          $
+                          {parseFloat(item.precio_unitario).toLocaleString(
+                            "es-CO",
+                            { maximumFractionDigits: 0 }
+                          )}
                         </p>
 
                         <div className="item-cantidad">
                           <button
-                            onClick={() => handleActualizarCantidad(item.idCarritoItem, item.cantidad - 1)}
+                            onClick={() =>
+                              handleActualizarCantidad(
+                                item.idCarritoItem,
+                                item.cantidad - 1
+                              )
+                            }
                             disabled={creatingPreference || item.cantidad <= 1}
                           >
                             <FaMinus />
                           </button>
                           <span>{item.cantidad}</span>
                           <button
-                            onClick={() => handleActualizarCantidad(item.idCarritoItem, item.cantidad + 1)}
+                            onClick={() =>
+                              handleActualizarCantidad(
+                                item.idCarritoItem,
+                                item.cantidad + 1
+                              )
+                            }
                             disabled={creatingPreference}
                           >
                             <FaPlus />
@@ -486,7 +552,10 @@ export function Carrito() {
                       </div>
 
                       <p className="item-subtotal">
-                        Subtotal: ${parseFloat(item.subtotal).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                        Subtotal: $
+                        {parseFloat(item.subtotal).toLocaleString("es-CO", {
+                          maximumFractionDigits: 0,
+                        })}
                       </p>
                     </div>
 
@@ -514,7 +583,9 @@ export function Carrito() {
                   </div>
                   <div className="resumen-linea">
                     <span>Cantidad total:</span>
-                    <span>{items.reduce((total, item) => total + item.cantidad, 0)}</span>
+                    <span>
+                      {items.reduce((total, item) => total + item.cantidad, 0)}
+                    </span>
                   </div>
                   <div className="resumen-linea total">
                     <span>Total a pagar:</span>
@@ -524,10 +595,14 @@ export function Carrito() {
 
                 {/* Datos de envío */}
                 <div className="direccion-envio-card">
-                  <h3><FaMapMarkerAlt /> Datos de envío</h3>
+                  <h3>
+                    <FaMapMarkerAlt /> Datos de envío
+                  </h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label><FaPhone /> Teléfono</label>
+                      <label>
+                        <FaPhone /> Teléfono
+                      </label>
                       <input
                         type="tel"
                         value={telefono}
@@ -535,7 +610,9 @@ export function Carrito() {
                         placeholder="Ej: 3001234567"
                         disabled={creatingPreference}
                       />
-                      {formErrors.telefono && <small className="error">{formErrors.telefono}</small>}
+                      {formErrors.telefono && (
+                        <small className="error">{formErrors.telefono}</small>
+                      )}
                     </div>
 
                     {/* NUEVOS CAMPOS */}
@@ -582,7 +659,9 @@ export function Carrito() {
                         placeholder="Apto, torre, interior…"
                         disabled={creatingPreference}
                       />
-                      {formErrors.direccion && <small className="error">{formErrors.direccion}</small>}
+                      {formErrors.direccion && (
+                        <small className="error">{formErrors.direccion}</small>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -600,7 +679,9 @@ export function Carrito() {
                     onClick={handleFinalizarCompra}
                     disabled={creatingPreference}
                   >
-                    {creatingPreference ? "Preparando pago..." : "Finalizar Compra"}
+                    {creatingPreference
+                      ? "Preparando pago..."
+                      : "Finalizar Compra"}
                   </button>
                 </div>
                 {!mpLoaded && (
@@ -615,7 +696,9 @@ export function Carrito() {
       )}
 
       <div className="productos-recomendados-section">
-        <h2><FaEye /> También te puede interesar</h2>
+        <h2>
+          <FaEye /> También te puede interesar
+        </h2>
         <div className="productos-recomendados row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
           {productosRecomendados.map((producto) => (
             <ProductoCard
@@ -627,13 +710,10 @@ export function Carrito() {
         </div>
       </div>
       <div className="ver-mas-container">
-          <button
-            className="btn-ver-mas"
-            onClick={() => navigate('/catalogo')}
-          >
-            Ver más productos
-          </button>
-        </div>
+        <button className="btn-ver-mas" onClick={() => navigate("/catalogo")}>
+          Ver más productos
+        </button>
+      </div>
     </div>
   );
 }

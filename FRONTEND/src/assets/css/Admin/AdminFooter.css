@@ -84,7 +84,7 @@
     font-size: 0.7rem;
   }
   
-  
+  /* Prevenir overflow de texto muy largo */
   .info-sesion-admin strong:first-child {
     max-width: 120px;
     overflow: hidden;
@@ -167,3 +167,4 @@
     left: 0 !important;
   }
 }
+

@@ -1,9 +1,8 @@
-// src/components/admin/ListaReportesVentas.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   getReporteVentas,
   listarItemsReporteVentas,
-  ORDERING,
+  ORDERING, 
 } from "../../api/ReporteVentasRango.api";
 import "../../assets/css/Reporte-Ventas-Admin/ListaReporteVentas.css";
 
@@ -48,8 +47,8 @@ export function ListaReportesVentas({
   // ───────── Modal de vista previa (Ver) ─────────
   const [show, setShow] = useState(false);
   const [previewId, setPreviewId] = useState(null);
-  const [hdr, setHdr] = useState(null);          // KPIs
-  const [rows, setRows] = useState([]);          // detalle
+  const [hdr, setHdr] = useState(null);
+  const [rows, setRows] = useState([]);
   const [ordering, setOrdering] = useState(ORDERING.MAS_VENDIDOS);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -137,30 +136,32 @@ export function ListaReportesVentas({
 
   return (
     <>
+      {/* Tabla principal responsive */}
       <div className="table-responsive">
-        <table className="table lista-table-dark m-0">
+        <table className="table lista-table-dark mb-0">
           <thead>
             <tr>
-              <th style={{ width: 70 }}>ID</th>
-              <th>Rango</th>
-              <th>Generado</th>
+              <th style={{ width: "80px" }} className="text-center">ID</th>
+              <th className="d-none d-md-table-cell">Rango de Fechas</th>
+              <th className="d-md-none">Rango</th>
+              <th className="d-none d-lg-table-cell">Fecha Generado</th>
               <th className="text-end">Ventas</th>
-              <th className="text-end">Items</th>
-              <th className="text-center" style={{ width: 220 }}>Acciones</th>
+              <th className="text-end d-none d-sm-table-cell">Items</th>
+              <th className="text-center" style={{ width: "200px" }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
                 <td colSpan="6" className="text-center lista-no-data py-4">
-                  Cargando…
+                  Cargando reportes...
                 </td>
               </tr>
             )}
             {!loading && reportes.length === 0 && (
               <tr>
-                <td colSpan="6" className="text-center lista-no-data py-4">
-                  No hay reportes.
+                <td colSpan="6" className="text-center lista-no-data py-5">
+                  No hay reportes disponibles.
                 </td>
               </tr>
             )}
@@ -168,35 +169,55 @@ export function ListaReportesVentas({
               const activo = r.id === seleccionadoId;
               return (
                 <tr key={r.id} className={activo ? "lista-table-primary" : ""}>
-                  <td>#{r.id}</td>
-                  <td>{r.fecha_inicio} → {r.fecha_fin}</td>
-                  <td className="small lista-text-muted">
-                    {new Date(r.generado_en).toLocaleString()}
-                  </td>
-                  <td className="text-end">{fmtCOP(r.ventas_netas)}</td>
-                  <td className="text-end">{r.items_totales ?? 0}</td>
                   <td className="text-center">
-                    <div className="btn-group btn-group-sm lista-btn-group">
+                    <span className="badge bg-secondary">#{r.id}</span>
+                  </td>
+                  <td className="d-none d-md-table-cell">
+                    <div className="fw-medium">{r.fecha_inicio}</div>
+                    <div className="small lista-text-muted">hasta {r.fecha_fin}</div>
+                  </td>
+                  <td className="d-md-none">
+                    <div className="small">{r.fecha_inicio}</div>
+                    <div className="small">→ {r.fecha_fin}</div>
+                  </td>
+                  <td className="small lista-text-muted d-none d-lg-table-cell">
+                    {new Date(r.generado_en).toLocaleString('es-CO', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </td>
+                  <td className="text-end fw-bold">
+                    {fmtCOP(r.ventas_netas)}
+                  </td>
+                  <td className="text-end d-none d-sm-table-cell">
+                    <span className="badge bg-info">{r.items_totales ?? 0}</span>
+                  </td>
+                  <td className="text-center">
+                    <div className="lista-btn-group">
                       <button
-                        className={`btn lista-btn-select ${activo ? "active" : ""}`}
-                        title="Seleccionar en el admin"
+                        className={`btn btn-sm lista-btn-select ${activo ? "active" : ""}`}
+                        title="Seleccionar para usar en el admin"
                         onClick={() => onSelect(r.id)}
                       >
-                        Seleccionar
+                        <span className="d-none d-lg-inline">Seleccionar</span>
+                        <span className="d-lg-none">Sel.</span>
                       </button>
                       <button
-                        className="btn lista-btn-view"
-                        title="Ver en grande"
+                        className="btn btn-sm lista-btn-view"
+                        title="Ver detalles del reporte"
                         onClick={() => openPreview(r.id)}
                       >
-                        Ver
+                        <span className="d-none d-lg-inline">Ver</span>
                       </button>
                       <button
-                        className="btn lista-btn-delete"
-                        title="Eliminar"
+                        className="btn btn-sm lista-btn-delete"
+                        title="Eliminar reporte"
                         onClick={() => handleDelete(r.id)}
                       >
-                        Eliminar
+                        <span className="d-none d-lg-inline">Eliminar</span>
                       </button>
                     </div>
                   </td>
@@ -211,82 +232,117 @@ export function ListaReportesVentas({
       {show && (
         <>
           <div className="lista-modal-overlay" onClick={closePreview} />
-          <div className="lista-modal-content" role="dialog" aria-modal="true">
+          <div className="lista-modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div className="lista-glass-modal">
+              {/* Header del modal */}
               <div className="lista-modal-header">
-                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
-                  <div className="mb-2 mb-md-0">
-                    <h5 className="mb-1 lista-modal-title">
-                      Reporte #{previewId}
-                    </h5>
+                <div className="row align-items-center">
+                  <div className="col-lg-8">
+                    <h4 id="modal-title" className="lista-modal-title mb-1">
+                      Reporte de Ventas #{previewId}
+                    </h4>
                     {hdr && (
-                      <div className="small lista-modal-subtitle">
-                        {hdr.fecha_inicio} → {hdr.fecha_fin} · Generado: {new Date(hdr.generado_en).toLocaleString()}
+                      <div className="lista-modal-subtitle">
+                        {hdr.fecha_inicio} → {hdr.fecha_fin} • 
+                        Generado: {new Date(hdr.generado_en).toLocaleString('es-CO')}
                       </div>
                     )}
                   </div>
-                  <div className="btn-group">
-                    <button className="btn lista-btn-export" onClick={exportCSV} disabled={!rows.length}>
-                      Exportar CSV
-                    </button>
-                    <button className="btn lista-btn-print" onClick={() => window.print()}>
-                      Imprimir
-                    </button>
-                    <button className="btn lista-btn-close" onClick={closePreview}>
-                      Cerrar
-                    </button>
+                  <div className="col-lg-4">
+                    <div className="btn-group w-100" role="group">
+                      <button 
+                        className="btn lista-btn-export" 
+                        onClick={exportCSV} 
+                        disabled={!rows.length}
+                        title="Exportar datos a CSV"
+                      >
+                        <i className="fas fa-download me-1"></i>
+                        <span className="d-none d-md-inline">Exportar</span>
+                        CSV
+                      </button>
+                      <button 
+                        className="btn lista-btn-print" 
+                        onClick={() => window.print()}
+                        title="Imprimir reporte"
+                      >
+                        <i className="fas fa-print me-1"></i>
+                        <span className="d-none d-md-inline">Imprimir</span>
+                      </button>
+                      <button 
+                        className="btn lista-btn-close" 
+                        onClick={closePreview}
+                        title="Cerrar modal"
+                      >
+                        <i className="fas fa-times me-1"></i>
+                        <span className="d-none d-md-inline">Cerrar</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 lista-modal-body">
-                {/* KPIs */}
+              <div className="lista-modal-body p-4">
+                {/* KPI Cards */}
                 {hdr && (
-                  <div className="row g-4 mb-4">
-                    <div className="col-xl-3 col-lg-6">
+                  <div className="row g-3 g-lg-4 mb-4">
+                    <div className="col-6 col-lg-3">
                       <div className="lista-kpi-card">
                         <div className="lista-kpi-label">
-                          Ventas netas
+                          <i className="fas fa-dollar-sign me-1"></i>
+                          Ventas Netas
                         </div>
-                        <h3 className="mb-0 lista-kpi-value">{fmtCOP(hdr.ventas_netas)}</h3>
+                        <h3 className="lista-kpi-value">{fmtCOP(hdr.ventas_netas)}</h3>
                       </div>
                     </div>
-                    <div className="col-xl-3 col-lg-6">
+                    <div className="col-6 col-lg-3">
                       <div className="lista-kpi-card">
                         <div className="lista-kpi-label">
-                          Items vendidos
+                          <i className="fas fa-box me-1"></i>
+                          Items Vendidos
                         </div>
-                        <h3 className="mb-0 lista-kpi-value">{hdr.items_totales ?? 0}</h3>
+                        <h3 className="lista-kpi-value">{hdr.items_totales ?? 0}</h3>
                         <div className="lista-kpi-subtitle">
+                          <i className="fas fa-receipt me-1"></i>
                           Tickets: {hdr.tickets ?? 0}
                         </div>
                       </div>
                     </div>
-                    <div className="col-xl-3 col-lg-6">
+                    <div className="col-6 col-lg-3">
                       <div className="lista-kpi-card">
                         <div className="lista-kpi-label">
-                          Top producto
+                          <i className="fas fa-trophy me-1"></i>
+                          Top Producto
                         </div>
-                        <div className="lista-kpi-product-name">{hdr.top?.producto?.nombre || "—"}</div>
-                        <div className="lista-kpi-subtitle">Cantidad: {hdr.top?.cantidad ?? 0}</div>
+                        <div className="lista-kpi-product-name">
+                          {hdr.top?.producto?.nombre || "—"}
+                        </div>
+                        <div className="lista-kpi-subtitle">
+                          Cantidad: {hdr.top?.cantidad ?? 0}
+                        </div>
                       </div>
                     </div>
-                    <div className="col-xl-3 col-lg-6">
+                    <div className="col-6 col-lg-3">
                       <div className="lista-kpi-card">
                         <div className="lista-kpi-label">
-                          Menos vendido
+                          <i className="fas fa-chart-line-down me-1"></i>
+                          Menos Vendido
                         </div>
-                        <div className="lista-kpi-product-name">{hdr.bottom?.producto?.nombre || "—"}</div>
-                        <div className="lista-kpi-subtitle">Cantidad: {hdr.bottom?.cantidad ?? 0}</div>
+                        <div className="lista-kpi-product-name">
+                          {hdr.bottom?.producto?.nombre || "—"}
+                        </div>
+                        <div className="lista-kpi-subtitle">
+                          Cantidad: {hdr.bottom?.cantidad ?? 0}
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Controles tabla */}
-                <div className="row g-3 mb-3">
+                {/* Controles de tabla */}
+                <div className="row g-3 mb-4">
                   <div className="col-md-4">
                     <label className="lista-form-label">
+                      <i className="fas fa-sort me-1"></i>
                       Ordenar por
                     </label>
                     <select
@@ -294,16 +350,17 @@ export function ListaReportesVentas({
                       value={ordering}
                       onChange={(e) => { setOrdering(e.target.value); setPage(1); }}
                     >
-                      <option value={ORDERING.MAS_VENDIDOS}>Más vendidos</option>
-                      <option value={ORDERING.MENOS_VENDIDOS}>Menos vendidos</option>
-                      <option value={ORDERING.MAYOR_INGRESO}>Mayor ingreso</option>
-                      <option value={ORDERING.MENOR_INGRESO}>Menor ingreso</option>
-                      <option value={ORDERING.MAS_TICKETS}>Más tickets</option>
-                      <option value={ORDERING.MENOS_TICKETS}>Menos tickets</option>
+                      <option value={ORDERING.MAS_VENDIDOS}> Más vendidos</option>
+                      <option value={ORDERING.MENOS_VENDIDOS}> Menos vendidos</option>
+                      <option value={ORDERING.MAYOR_INGRESO}> Mayor ingreso</option>
+                      <option value={ORDERING.MENOR_INGRESO}> Menor ingreso</option>
+                      <option value={ORDERING.MAS_TICKETS}> Más tickets</option>
+                      <option value={ORDERING.MENOS_TICKETS}> Menos tickets</option>
                     </select>
                   </div>
                   <div className="col-md-3">
                     <label className="lista-form-label">
+                      <i className="fas fa-list me-1"></i>
                       Filas por página
                     </label>
                     <select
@@ -311,50 +368,104 @@ export function ListaReportesVentas({
                       value={pageSize}
                       onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
                     >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
+                      <option value={10}>10 filas</option>
+                      <option value={20}>20 filas</option>
+                      <option value={50}>50 filas</option>
                     </select>
                   </div>
                   <div className="col-md-5 d-flex align-items-end">
                     <div className="small lista-text-muted">
-                      {loadingPreview ? "Cargando…" : `Total filas: ${count}`}
+                      {loadingPreview ? (
+                        <>
+                          <div className="spinner-border spinner-border-sm me-2" role="status">
+                            <span className="visually-hidden">Cargando...</span>
+                          </div>
+                          Cargando datos...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-database me-1"></i>
+                          Total de registros: <strong>{count}</strong>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
+                {/* Alert de error */}
                 {err && (
-                  <div className="alert lista-alert-danger mb-3">
-                    {err}
+                  <div className="alert lista-alert-danger mb-4" role="alert">
+                    <i className="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error:</strong> {err}
                   </div>
                 )}
 
-                {/* Tabla detalle */}
-                <div className="table-responsive mb-3">
-                  <table className="table lista-table-dark m-0">
+                {/* Tabla de detalle */}
+                <div className="table-responsive mb-4">
+                  <table className="table lista-table-dark mb-0">
                     <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Producto</th>
-                        <th className="text-end">Cantidad</th>
-                        <th className="text-end">Ingresos</th>
-                        <th className="text-end">Tickets</th>
+                        <th style={{ width: "80px" }} className="text-center">
+                          <i className="fas fa-hashtag me-1"></i>ID
+                        </th>
+                        <th>
+                          <i className="fas fa-tag me-1"></i>Producto
+                        </th>
+                        <th className="text-end">
+                          <i className="fas fa-boxes me-1"></i>Cantidad
+                        </th>
+                        <th className="text-end">
+                          <i className="fas fa-dollar-sign me-1"></i>Ingresos
+                        </th>
+                        <th className="text-end">
+                          <i className="fas fa-receipt me-1"></i>Tickets
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((p) => (
-                        <tr key={`${p.producto?.id ?? p.producto_id}-${p.cantidad}-${p.ingresos}`}>
-                          <td>{p.producto?.id ?? p.producto_id}</td>
-                          <td>{p.producto?.nombre ?? "—"}</td>
-                          <td className="text-end">{p.cantidad}</td>
-                          <td className="text-end">{fmtCOP(p.ingresos)}</td>
-                          <td className="text-end">{p.tickets}</td>
+                      {rows.map((p, index) => (
+                        <tr key={`${p.producto?.id ?? p.producto_id}-${p.cantidad}-${p.ingresos}-${index}`}>
+                          <td className="text-center">
+                            <span className="badge bg-secondary">
+                              {p.producto?.id ?? p.producto_id}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="fw-medium">
+                              {p.producto?.nombre ?? "Sin nombre"}
+                            </div>
+                          </td>
+                          <td className="text-end">
+                            <span className="badge bg-primary fs-6">
+                              {p.cantidad}
+                            </span>
+                          </td>
+                          <td className="text-end fw-bold">
+                            {fmtCOP(p.ingresos)}
+                          </td>
+                          <td className="text-end">
+                            <span className="badge bg-info">
+                              {p.tickets}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                       {!rows.length && (
                         <tr>
-                          <td colSpan="5" className="text-center lista-no-data py-4">
-                            {loadingPreview ? "Cargando..." : "Sin datos."}
+                          <td colSpan="5" className="text-center lista-no-data py-5">
+                            {loadingPreview ? (
+                              <>
+                                <div className="spinner-border text-primary mb-2" role="status">
+                                  <span className="visually-hidden">Cargando...</span>
+                                </div>
+                                <div>Cargando datos del reporte...</div>
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-search fa-2x mb-2 d-block"></i>
+                                Sin datos disponibles para mostrar.
+                              </>
+                            )}
                           </td>
                         </tr>
                       )}
@@ -364,23 +475,44 @@ export function ListaReportesVentas({
 
                 {/* Paginación */}
                 <div className="lista-pagination">
-                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                    <span className="small mb-2 mb-md-0">Página {page} de {totalPages}</span>
-                    <div className="btn-group">
-                      <button
-                        className="btn lista-btn-pagination"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page <= 1}
-                      >
-                        « Anterior
-                      </button>
-                      <button
-                        className="btn lista-btn-pagination"
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={page >= totalPages}
-                      >
-                        Siguiente »
-                      </button>
+                  <div className="row align-items-center">
+                    <div className="col-md-6">
+                      <span className="small text-muted">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Mostrando página <strong>{page}</strong> de <strong>{totalPages}</strong>
+                        {count > 0 && (
+                          <> • {count} registro{count !== 1 ? 's' : ''} en total</>
+                        )}
+                      </span>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="btn-group float-md-end" role="group">
+                        <button
+                          className="btn lista-btn-pagination"
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          disabled={page <= 1 || loadingPreview}
+                          title="Página anterior"
+                        >
+                          <i className="fas fa-chevron-left me-1"></i>
+                          Anterior
+                        </button>
+                        <button
+                          className="btn lista-btn-pagination"
+                          disabled
+                          style={{ minWidth: '80px' }}
+                        >
+                          {page} / {totalPages}
+                        </button>
+                        <button
+                          className="btn lista-btn-pagination"
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={page >= totalPages || loadingPreview}
+                          title="Página siguiente"
+                        >
+                          Siguiente
+                          <i className="fas fa-chevron-right ms-1"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
