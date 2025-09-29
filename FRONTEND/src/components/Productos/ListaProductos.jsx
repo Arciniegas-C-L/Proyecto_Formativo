@@ -33,6 +33,8 @@ export function ListaProductos() {
           console.error('Error al cargar productos:', error);
           setError('No se pudieron cargar los productos. Por favor, intente nuevamente.');
           toast.error('Error al cargar los productos');
+           import { Cloudinary } from "@cloudinary/url-gen";
+           import { fill } from "@cloudinary/url-gen/actions/resize";
       } finally {
           setLoading(false);
       }
@@ -87,13 +89,24 @@ export function ListaProductos() {
           toast.error(error.message || 'Error al eliminar el producto');
           if (error.response?.status === 500) {
               await cargarProductos();
-          }
-      } finally {
-          setLoading(false);
-      }
-  };
-
-  const handleCrear = () => {
+                                {(() => {
+                                  let imagenUrl = producto.imagen;
+                                  if (imagenUrl && imagenUrl.includes('res.cloudinary.com')) {
+                                    const matches = imagenUrl.match(/upload\/(?:v\d+\/)?(.+)$/);
+                                    const publicId = matches ? matches[1] : null;
+                                    if (publicId) {
+                                      const cld = new Cloudinary({ cloud: { cloudName: "dkwr4gcpl" } });
+                                      imagenUrl = cld.image(publicId).resize(fill().width(300).height(300)).toURL();
+                                    }
+                                  }
+                                  return imagenUrl ? (
+                                    <img
+                                      src={imagenUrl}
+                                      alt={producto.nombre}
+                                      className="producto-imagen"
+                                    />
+                                  ) : null;
+                                })()}
       navigate('/admin/productos/crear');
   };
 

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Cloudinary } from "@cloudinary/url-gen";
+import { fill } from "@cloudinary/url-gen/actions/resize";
 
 import { toast } from "react-hot-toast";
 import {
@@ -191,12 +193,23 @@ export default function ProductoCard({
     }
   };
 
+  // Cloudinary resize para imágenes subidas
+  const cld = new Cloudinary({ cloud: { cloudName: "dkwr4gcpl" } });
+  let imagenUrl = producto.imagen;
+  if (imagenUrl && imagenUrl.includes('res.cloudinary.com')) {
+    const matches = imagenUrl.match(/upload\/(?:v\d+\/)?(.+)$/);
+    const publicId = matches ? matches[1] : null;
+    if (publicId) {
+      imagenUrl = cld.image(publicId).resize(fill().width(300).height(300)).toURL();
+    }
+  }
+
   return (
     <div className="product-card">
       <div className="product-image-container">
-        {producto.imagen && (
+        {imagenUrl && (
           <img
-            src={producto.imagen}
+            src={imagenUrl}
             alt={producto.nombre || "Producto"}
             className="product-image"
             onError={e => {

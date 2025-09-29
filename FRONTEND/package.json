@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudinary/url-gen": "^1.22.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.1.1",
@@ -20,7 +21,7 @@
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "camelize": "^1.0.1",
-    "cloudinary-react": "^1.8.1",
+    "cloudinary": "^2.7.0",
     "css-color-keywords": "^1.0.0",
     "css-to-react-native": "^3.2.0",
     "jwt-decode": "^4.0.0",

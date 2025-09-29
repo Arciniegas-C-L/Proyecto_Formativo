@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Cloudinary } from "@cloudinary/url-gen";
+import { fill } from "@cloudinary/url-gen/actions/resize";
 // Widget de Cloudinary
 function CloudinaryUpload({ onUrl }) {
   const openWidget = () => {
@@ -267,11 +269,22 @@ export function ProductosForm() {
         <div className="form-group">
           <label>Imagen</label>
           <CloudinaryUpload onUrl={url => setFormData(prev => ({ ...prev, imagen: url }))} />
-          {formData.imagen && (
-            <div className="image-preview">
-              <img src={formData.imagen} alt="Producto" />
-            </div>
-          )}
+          {formData.imagen && (() => {
+            let imagenUrl = formData.imagen;
+            if (imagenUrl && imagenUrl.includes('res.cloudinary.com')) {
+              const matches = imagenUrl.match(/upload\/(?:v\d+\/)?(.+)$/);
+              const publicId = matches ? matches[1] : null;
+              if (publicId) {
+                const cld = new Cloudinary({ cloud: { cloudName: "dkwr4gcpl" } });
+                imagenUrl = cld.image(publicId).resize(fill().width(300).height(300)).toURL();
+              }
+            }
+            return (
+              <div className="image-preview">
+                <img src={imagenUrl} alt="Producto" />
+              </div>
+            );
+          })()}
         </div>
 
         <div className="form-actions">
