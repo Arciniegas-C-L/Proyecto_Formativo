@@ -120,14 +120,14 @@ function AppContent() {
               </RutaPrivada>
             }
           />
-          {/* <Route
+         <Route
           path="/facturas"
           element={
             <RutaPrivada role={["cliente", "administrador"]}>
               <FacturasPage />
             </RutaPrivada>
           }
-          />*/}
+          />
           {/*  Ver factura por ID reutilizando RetornoMPpage */}
           <Route
             path="/facturas/:id"
