@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import AutoAvatarInitializer from './components/Perfil/AutoAvatarInitializer.jsx';
+
 import {AdminStockNotifications} from "./components/Notificaciones/AdminStockNotifications.jsx"
 
 // Layout público
@@ -242,9 +243,11 @@ function AppContent() {
 }
 
 // Envolvemos AppContent con AuthProvider
+//Agregamos la funcion que crea un avatar de manera automatica
 export function App() {
   return (
     <AuthProvider>
+      <AutoAvatarInitializer /> 
       <AppContent />
     </AuthProvider>
   );

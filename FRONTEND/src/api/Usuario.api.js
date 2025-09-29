@@ -32,3 +32,6 @@ export const handleToggleEstado = (id, estadoActual) =>
   api.patch(`usuario/${id}/`, { estado: !estadoActual });
 
 export const getUsuarios = () => api.get('usuario/');
+
+export const updateUsuarioPartial = (id, data) =>
+  api.patch(`usuario/${id}/`, data); // <-- PATCH real

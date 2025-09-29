@@ -25,7 +25,7 @@ function SubcategoriaForm({ subcategoria, onChange }) {
           />
         </div>
         <div className="col-md-6 mb-3">
-          <label className="form-label fw-medium">Stock Mínimo</label>
+          <label className="form-label fw-medium">Stock Maximo</label>
           <input
             type="number"
             className="form-control custom-input"
