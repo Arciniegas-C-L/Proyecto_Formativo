@@ -309,8 +309,10 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     def get_imagen(self, obj):
         if obj.imagen:
-            # Elimina la parte local y deja la ruta pública
-            url = obj.imagen.url.replace('/FRONTEND/public', '')
+            url = obj.imagen.url
+            # Si es una URL de Cloudinary, se devuelve tal cual
+            if 'res.cloudinary.com' in url:
+                return url
             request = self.context.get('request')
             if request is not None:
                 return request.build_absolute_uri(url)
