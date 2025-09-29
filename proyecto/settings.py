@@ -85,6 +85,8 @@ INSTALLED_APPS = [
     "rest_framework", "rest_framework.authtoken",
     "rest_framework_simplejwt", "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
+    "cloudinary",
+    "cloudinary_storage",
 ]
 
 # ========= Middleware =========
@@ -182,10 +184,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
-# ========== Almacenamiento local para archivos media ==========
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+## ========== Configuración de Cloudinary para archivos media ========== 
+import os
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dkwr4gcpl',
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY', '456729818595688'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET', '8M_FX2bZ3z8MBjJpFj2JTvJiys4'),
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

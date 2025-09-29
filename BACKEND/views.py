@@ -527,12 +527,6 @@ class ProductoView(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
-            # Copiar imágenes a static/media después de crear el producto
-            try:
-                from django.core.management import call_command
-                call_command('copiar_media_a_static')
-            except Exception as e:
-                print(f"Error al copiar media a static: {e}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         print("Errores de validación en create:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
