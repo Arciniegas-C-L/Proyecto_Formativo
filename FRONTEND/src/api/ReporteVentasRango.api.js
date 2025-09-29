@@ -2,36 +2,61 @@
 import { api } from "./axios";
 
 /**
- * Generar (o regenerar) un reporte por rango.
- * Body:
- *  { desde: "YYYY-MM-DD", hasta: "YYYY-MM-DD", solo_aprobados?: true }
+ * Genera o regenera un reporte de ventas por rango.
+ * @param {{desde:string, hasta:string, solo_aprobados?:boolean}} body
+ * @returns {Promise<import('axios').AxiosResponse>}
+ * @example
+ * await generarReporteVentas({ desde: "2025-09-01", hasta: "2025-09-28", solo_aprobados: true })
  */
-export const generarReporteVentas = (body) =>
-  api.post("reportes/ventas/rango/generar/", body);
+export const generarReporteVentas = (body) => {
+  return api.post("reportes/ventas/rango/generar/", body);
+};
 
 /**
- * Listar reportes generados (cabeceras/KPIs).
- * Params opcionales: { desde?: "YYYY-MM-DD", hasta?: "YYYY-MM-DD", page?, page_size? }
+ * Lista reportes (cabeceras/KPIs) con filtros y paginación.
+ * @param {{desde?:string, hasta?:string, page?:number, page_size?:number}} [params]
+ * @returns {Promise<import('axios').AxiosResponse>}
+ * @example
+ * await listarReportesVentas({ desde: "2025-09-01", hasta: "2025-09-28", page:1, page_size:20 })
  */
-export const listarReportesVentas = (params = {}) =>
-  api.get("reportes/ventas/rango/", { params });
+export const listarReportesVentas = (params = {}) => {
+  return api.get("reportes/ventas/rango/", { params });
+};
 
 /**
- * Obtener detalle (KPIs) de un reporte por su id.
+ * Obtiene el detalle (KPIs) de un reporte por id.
+ * @param {number|string} id
+ * @returns {Promise<import('axios').AxiosResponse>}
  */
-export const getReporteVentas = (id) =>
-  api.get(`reportes/ventas/rango/${id}/`);
+export const getReporteVentas = (id) => {
+  if (id == null) throw new Error("getReporteVentas: id es requerido");
+  return api.get(`reportes/ventas/rango/${id}/`);
+};
 
 /**
- * Listar items (detalle por producto) de un reporte.
- * Params opcionales: { ordering?: "-cantidad" | "cantidad" | "-ingresos" | "ingresos" | "-tickets" | "tickets", page?, page_size? }
+ * Lista items (detalle por producto) de un reporte.
+ * @param {number|string} id
+ * @param {{ordering?: "-cantidad"|"cantidad"|"-ingresos"|"ingresos"|"-tickets"|"tickets", page?:number, page_size?:number}} [params]
+ * @returns {Promise<import('axios').AxiosResponse>}
+ * @example
+ * await listarItemsReporteVentas(5, { ordering: "-ingresos", page: 1, page_size: 50 })
  */
-export const listarItemsReporteVentas = (id, params = {}) =>
-  api.get(`reportes/ventas/rango/${id}/items/`, { params });
+export const listarItemsReporteVentas = (id, params = {}) => {
+  if (id == null) throw new Error("listarItemsReporteVentas: id es requerido");
+  return api.get(`reportes/ventas/rango/${id}/items/`, { params });
+};
 
-/* ─────────────────────────────────────────────────────────────
-   Helpers opcionales (por si quieres usarlos en el frontend)
-   ──────────────────────────────────────────────────────────── */
+/**
+ * Elimina un reporte por id.
+ * @param {number|string} id
+ * @returns {Promise<import('axios').AxiosResponse>}
+ */
+export const eliminarReporteVentas = (id) => {
+  if (id == null) throw new Error("eliminarReporteVentas: id es requerido");
+  return api.delete(`reportes/ventas/rango/${id}/`);
+};
+
+/** Ordenamientos permitidos para items */
 export const ORDERING = {
   MAS_VENDIDOS: "-cantidad",
   MENOS_VENDIDOS: "cantidad",
@@ -40,6 +65,3 @@ export const ORDERING = {
   MAS_TICKETS: "-tickets",
   MENOS_TICKETS: "tickets",
 };
-
-export const eliminarReporteVentas = (id) =>
-  api.delete(`reportes/ventas/rango/${id}/`);
