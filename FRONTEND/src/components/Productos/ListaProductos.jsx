@@ -95,11 +95,13 @@ export function ListaProductos() {
     }
   };
 
-  const productosFiltrados = productos.filter(producto =>
-    producto.nombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-    producto.descripcion.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-    producto.categoria_nombre.toLowerCase().includes(filtroBusqueda.toLowerCase())
-  );
+  const productosFiltrados = Array.isArray(productos)
+    ? productos.filter(producto =>
+        producto.nombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
+        producto.descripcion.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
+        producto.categoria_nombre.toLowerCase().includes(filtroBusqueda.toLowerCase())
+      )
+    : [];
 
   if (loading && productos.length === 0) {
       return (
