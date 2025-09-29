@@ -230,11 +230,12 @@ export function ProductosForm() {
               className={errors.categoria ? "error" : ""}
             >
               <option value="">Seleccione una categoría</option>
-              {categorias.map((cat) => (
-                <option key={cat.idCategoria} value={cat.idCategoria}>
-                  {cat.nombre}
-                </option>
-              ))}
+                {Array.isArray(categorias) &&
+                  categorias.map((cat) => (
+                    <option key={cat.idCategoria} value={cat.idCategoria}>
+                      {cat.nombre}
+                    </option>
+                  ))}
             </select>
             <span className="error-message">{errors.categoria}</span>
           </div>
@@ -250,11 +251,12 @@ export function ProductosForm() {
             className={errors.subcategoria ? "error" : ""}
           >
             <option value="">Seleccione una subcategoría</option>
-            {subcategorias.map((sub) => (
-              <option key={sub.idSubcategoria} value={sub.idSubcategoria}>
-                {sub.nombre}
-              </option>
-            ))}
+              {Array.isArray(subcategorias) &&
+                subcategorias.map((sub) => (
+                  <option key={sub.idSubcategoria} value={sub.idSubcategoria}>
+                    {sub.nombre}
+                  </option>
+                ))}
           </select>
           <span className="error-message">{errors.subcategoria}</span>
         </div>
