@@ -31,49 +31,69 @@
 
 .modal-contenido h3 {
   margin-bottom: 15px;
-  color: #fff; 
+  color: #ffffff; 
+  font-size: 1.4rem;
+  margin-top: 0;
 }
 
 .modal-contenido p {
   margin-bottom: 20px;
   font-size: 0.95rem;
   color: #e0e0e0;
+  margin-top: 0;
 }
 
 /* Botones */
 .modal-botones {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 1rem;
 }
 
-.btn-cancelar {
-  background-color: #9AA0A6;
-  color: #fff;
+.btn-cancelar,
+.btn-eliminar {
+  margin: 0;
+  color: #ffffff;
   border: none;
-  border-radius: 10px;
-  padding: 0.6rem 1.5rem;
-  cursor: pointer;
+  border-radius: 8px;
+  padding: 0;
+  font-size: 0.95rem;
   font-weight: 600;
-  transition: transform 0.2s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  width: 100px;
+  height: 40px;
+  min-width: 100px;
+  max-width: 100px;
+  min-height: 40px;
+  max-height: 40px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.btn-cancelar {
+  background-color: #6c757d;
 }
 
 .btn-cancelar:hover {
+  background-color: #5a6268;
   transform: translateY(-2px);
 }
 
 .btn-eliminar {
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 0.8rem 1.8rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  background-color: #9b4d96;
 }
 
+.btn-eliminar:hover {
+  background-color: #843d7f;
+  transform: translateY(-2px);
+}
 
 /* Animación */
 @keyframes fadeIn {
@@ -83,39 +103,71 @@
 
 /* === RESPONSIVIDAD === */
 
-/* Tablets y pantallas medianas */
+/* Tablets */
 @media (max-width: 768px) {
   .modal-contenido {
-    max-width: 90%;
     padding: 20px;
-    font-size: 0.95rem;
+    max-width: 85%;
   }
   
-  .modal-botones {
-    flex-direction: column;
-    gap: 0.7rem;
+  .modal-contenido h3 {
+    font-size: 1.2rem;
+  }
+  
+  .modal-contenido p {
+    font-size: 0.9rem;
   }
   
   .btn-cancelar,
   .btn-eliminar {
-    width: 100%;
+    width: 100px;
+    height: 40px;
+    min-width: 100px;
+    max-width: 100px;
+    min-height: 40px;
+    max-height: 40px;
   }
 }
 
-/* Móviles pequeños */
+/* Móviles */
 @media (max-width: 480px) {
-  .modal-fondo {
-    padding: 0.5rem;
-  }
-  
   .modal-contenido {
-    padding: 15px;
-    font-size: 0.9rem;
-    max-width: 95%;
+    padding: 18px;
+    max-width: 90%;
   }
   
   .modal-contenido h3 {
     font-size: 1.1rem;
+  }
+  
+  .modal-contenido p {
+    font-size: 0.88rem;
+  }
+  
+  .modal-botones {
+    gap: 0.8rem;
+  }
+  
+  .btn-cancelar,
+  .btn-eliminar {
+    width: 100px;
+    height: 40px;
+    min-width: 100px;
+    max-width: 100px;
+    min-height: 40px;
+    max-height: 40px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 360px) {
+  .modal-contenido {
+    padding: 15px;
+  }
+  
+  .modal-contenido h3 {
+    font-size: 1rem;
   }
   
   .modal-contenido p {
@@ -124,14 +176,16 @@
   
   .modal-botones {
     flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
+    gap: 0.6rem;
   }
   
   .btn-cancelar,
   .btn-eliminar {
-    width: auto;
-    min-width: 110px;
-    max-width: 180px;
+    width: 100px;
+    height: 40px;
+    min-width: 100px;
+    max-width: 100px;
+    min-height: 40px;
+    max-height: 40px;
   }
 }
