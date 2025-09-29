@@ -32,7 +32,7 @@
   flex-shrink: 0;
 }
 
-/* Botón nueva talla  */
+/* Botón nueva talla */
 .btn-nueva-talla {
   background-color: #8b3581;
   color: #fff;
@@ -111,7 +111,7 @@
   transition: background-color 0.3s ease;
 }
 
-/* Estados activos / inactivos  */
+/* Estados activos / inactivos */
 .chip-estado {
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
@@ -129,7 +129,7 @@
 }
 
 .chip-estado.on {
-  background-color: #4CAF50; 
+  background-color: #4CAF50;
   color: #ffffff;
 }
 
@@ -138,29 +138,33 @@
   color: #FFFFFF;
 }
 
-/* Botones acciones  */
+/* Botones acciones */
 .celda-acciones {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
   align-items: center;
-  padding: 0.3rem;
+  padding: 0.5rem;
 }
 
 .btn-editar,
 .btn-eliminar {
   border: none;
-  padding: 3px;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 0.8rem;
   cursor: pointer;
   color: white;
-  transition: all 0.2s ease;
-  width: 22px;
-  height: 22px;
+  transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-editar {
@@ -168,8 +172,9 @@
 }
 
 .btn-editar:hover {
-  transform: scale(1.05);
+  transform: translateY(-2px);
   background-color: #0090b0;
+  box-shadow: 0 4px 8px rgba(0, 176, 224, 0.3);
 }
 
 .btn-eliminar {
@@ -177,11 +182,16 @@
 }
 
 .btn-eliminar:hover {
-  transform: scale(1.05);
+  transform: translateY(-2px);
   background-color: #7a2e72;
+  box-shadow: 0 4px 8px rgba(139, 53, 129, 0.3);
 }
 
 .btn-agregar-productos {
+  display: none !important;
+}
+
+.btn-agregar-card {
   display: none !important;
 }
 
@@ -203,14 +213,138 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Modales */
-.dialog-talla-modal {
+/* Estilos para vista mobile - Cards */
+.tallas-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.talla-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.talla-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.talla-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.talla-nombre {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1A1F2E;
+  margin: 0 0 5px 0;
+  word-wrap: break-word;
+}
+
+.talla-grupo {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0;
+  word-wrap: break-word;
+}
+
+.chip-estado-mobile {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  color: #FFFFFF;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chip-estado-mobile.on {
+  background-color: #4CAF50;
+}
+
+.chip-estado-mobile.off {
+  background-color: #9AA0A6;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-card {
+  flex: 1;
+  min-width: calc(50% - 4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.btn-editar-card {
+  background-color: #00b0e0;
+}
+
+.btn-editar-card:hover {
+  background-color: #0090b0;
+  transform: scale(1.02);
+}
+
+.btn-eliminar-card {
+  background-color: #8b3581;
+}
+
+.btn-eliminar-card:hover {
+  background-color: #7a2e72;
+  transform: scale(1.02);
+}
+
+.btn-agregar-card {
+  background-color: #6c757d;
+  min-width: 100%;
+}
+
+.btn-agregar-card:hover {
+  background-color: #5a6268;
+  transform: scale(1.02);
+}
+
+/* Modales - Estilos base */
+.dialog-talla-modal,
+.modal-eliminar-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -219,7 +353,8 @@
   box-sizing: border-box;
 }
 
-.form-talla-modal {
+.form-talla-modal,
+.modal-eliminar-contenido {
   background-color: #fff;
   border-radius: 12px;
   padding: 25px;
@@ -227,7 +362,7 @@
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
   position: relative;
   box-sizing: border-box;
 }
@@ -261,17 +396,31 @@
 }
 
 .form-talla-modal .form-check-label {
-  font-weight: 400; 
+  font-weight: 400;
 }
 
 .form-talla-modal .btn {
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 6px 14px;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
   border: none;
   transition: all 0.3s ease;
   box-sizing: border-box;
+  width: auto !important;
+  min-width: 80px !important;
+  max-width: none !important;
+  height: 32px !important;
+  font-size: 0.8rem;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-transform: none;
+  letter-spacing: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .form-talla-modal .btn-primary {
@@ -280,7 +429,9 @@
 }
 
 .form-talla-modal .btn-primary:hover {
-  background-color: #0090b0;
+  background-color: #0090c0;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 176, 224, 0.3);
 }
 
 .form-talla-modal .btn-secondary {
@@ -290,18 +441,49 @@
 
 .form-talla-modal .btn-secondary:hover {
   background-color: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(108, 117, 125, 0.3);
+}
+
+/* Estilos globales para TODOS los botones de modales */
+.modal-eliminar-overlay .btn,
+.dialog-talla-modal .btn,
+button.btn-primary,
+button.btn-secondary {
+  width: auto !important;
+  min-width: 80px !important;
+  max-width: none !important;
+  height: 32px !important;
+  padding: 6px 14px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  border: none !important;
 }
 
 .form-talla-modal .d-flex {
   display: flex;
+  align-items: center;
 }
 
 .form-talla-modal .justify-content-end {
-  justify-content: flex-end;
+  justify-content: center;
+  gap: 12px;
 }
 
 .form-talla-modal .gap-2 {
-  gap: 8px;
+  gap: 12px;
 }
 
 .form-talla-modal .mb-2 {
@@ -343,59 +525,83 @@
 
 /* RESPONSIVE OPTIMIZADO */
 
-/* Tablets */
+/* Tablets grandes y pantallas medianas (1024px - 1200px) */
+@media (max-width: 1200px) {
+  .lista-tallas-container {
+    padding: 18px;
+  }
+
+  .header-acciones h2 {
+    font-size: 1.8rem;
+  }
+
+  .tabla-tallas th,
+  .tabla-tallas td {
+    padding: 0.7rem 0.4rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Tablets (768px - 1024px) */
 @media (max-width: 1024px) {
   .lista-tallas-container {
     padding: 15px;
   }
-  
+
   .header-acciones h2 {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
   }
-  
+
   .btn-nueva-talla {
-    padding: 6px 10px;
-    font-size: 0.8rem;
-    min-height: 30px;
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    min-height: 32px;
+    min-width: 130px;
   }
-  
+
   .tabla-tallas th,
   .tabla-tallas td {
     padding: 0.6rem 0.4rem;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .btn-editar,
   .btn-eliminar {
-    width: 20px;
-    height: 20px;
-    font-size: 0.65rem;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    font-size: 0.75rem;
   }
 
   .celda-acciones {
-    gap: 6px;
+    gap: 8px;
   }
-  
+
   .chip-estado {
     font-size: 0.65rem;
-    min-width: 45px;
+    min-width: 48px;
+    padding: 0.2rem 0.45rem;
   }
 }
 
-/* Mobile */
+/* Mobile grande (600px - 768px) */
 @media (max-width: 768px) {
   .lista-tallas-container {
-    padding: 10px;
+    padding: 12px;
   }
 
   .header-acciones {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
   }
 
   .header-acciones h2 {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
+    width: 100%;
+    text-align: center;
   }
 
   .header-controls {
@@ -405,134 +611,182 @@
 
   .btn-nueva-talla {
     width: auto;
-    min-width: 160px;
-    padding: 8px 12px;
-    font-size: 0.85rem;
+    min-width: 180px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    min-height: 38px;
   }
 
-  .tabla-container {
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    overflow-x: visible;
+  /* Ocultar tabla y mostrar cards */
+  .desktop-view {
+    display: none;
   }
 
-  .tabla-tallas {
-    min-width: 100%;
-    font-size: 0.75rem;
-  }
-
-  .tabla-tallas th,
-  .tabla-tallas td {
-    padding: 0.4rem 0.2rem;
-    font-size: 0.7rem;
-  }
-
-  .btn-editar,
-  .btn-eliminar {
-    width: 16px;
-    height: 16px;
-    font-size: 0.5rem;
-    padding: 2px;
-  }
-
-  .celda-acciones {
-    gap: 8px;
-  }
-
-  .chip-estado {
-    font-size: 0.6rem;
-    padding: 0.2rem 0.4rem;
-    min-width: 40px;
+  .mobile-view {
+    display: block;
   }
 
   /* Modal responsive */
   .dialog-talla-modal {
+    padding: 15px;
+  }
+
+  .form-talla-modal {
+    padding: 22px;
+    width: calc(100% - 30px);
+    max-width: none;
+  }
+
+  .form-talla-modal h3 {
+    font-size: 1.3rem;
+  }
+
+  .form-talla-modal .d-flex.justify-content-end {
+    flex-direction: row;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .form-talla-modal .btn {
+    flex: 0 0 auto;
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile mediano (480px - 600px) */
+@media (max-width: 600px) {
+  .lista-tallas-container {
     padding: 10px;
+  }
+
+  .header-acciones h2 {
+    font-size: 1.4rem;
+  }
+
+  .btn-nueva-talla {
+    min-width: 160px;
+    padding: 9px 14px;
+    font-size: 0.85rem;
+  }
+
+  .tallas-cards {
+    gap: 12px;
+  }
+
+  .talla-card {
+    padding: 14px;
+  }
+
+  .talla-nombre {
+    font-size: 1.05rem;
+  }
+
+  .talla-grupo {
+    font-size: 0.85rem;
+  }
+
+  .chip-estado-mobile {
+    padding: 5px 10px;
+    font-size: 0.7rem;
+  }
+
+  .btn-card {
+    font-size: 0.8rem;
+    padding: 9px 10px;
   }
 
   .form-talla-modal {
     padding: 20px;
-    margin: 10px;
-    width: calc(100% - 20px);
-    max-width: none;
-  }
-
-  .form-talla-modal .d-flex.justify-content-end {
-    flex-direction: column-reverse;
-    gap: 10px;
   }
 
   .form-talla-modal .btn {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
+    min-width: 100px;
+    max-width: 120px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
   }
 }
 
-/* Móviles pequeños */
+/* Mobile pequeño (360px - 480px) */
 @media (max-width: 480px) {
   .lista-tallas-container {
     padding: 8px;
   }
 
   .header-acciones h2 {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
   }
 
   .btn-nueva-talla {
-    font-size: 0.8rem;
-    padding: 8px 12px;
     min-width: 140px;
-    min-height: 32px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    min-height: 34px;
   }
 
   .btn-text-desktop {
-    display: none;
+    display: inline;
   }
 
-  .tabla-tallas {
-    font-size: 0.7rem;
-  }
-
-  .tabla-tallas th,
-  .tabla-tallas td {
-    padding: 0.3rem 0.1rem;
-    font-size: 0.65rem;
-  }
-
-  .btn-editar,
-  .btn-eliminar {
-    width: 14px;
-    height: 14px;
-    font-size: 0.45rem;
-    padding: 1px;
-  }
-
-  .celda-acciones {
+  .tallas-cards {
     gap: 10px;
   }
 
-  .chip-estado {
-    font-size: 0.55rem;
-    padding: 0.15rem 0.3rem;
-    min-width: 35px;
+  .talla-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .talla-nombre {
+    font-size: 1rem;
+  }
+
+  .talla-grupo {
+    font-size: 0.8rem;
+  }
+
+  .chip-estado-mobile {
+    padding: 4px 8px;
+    font-size: 0.65rem;
+  }
+
+  .btn-card {
+    font-size: 0.75rem;
+    padding: 8px 8px;
+    gap: 4px;
   }
 
   .form-talla-modal {
-    padding: 15px;
-    margin: 5px;
-    width: calc(100% - 10px);
+    padding: 18px;
+    width: calc(100% - 16px);
   }
 
   .form-talla-modal h3 {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+  }
+
+  .form-talla-modal .d-flex.justify-content-end {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .form-talla-modal .btn {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+    padding: 12px;
+    font-size: 0.9rem;
   }
 }
 
-/* Móviles muy pequeños */
-@media (max-width: 320px) {
+/* Mobile muy pequeño (320px - 360px) */
+@media (max-width: 360px) {
   .lista-tallas-container {
-    padding: 5px;
+    padding: 6px;
   }
 
   .header-acciones h2 {
@@ -540,27 +794,118 @@
   }
 
   .btn-nueva-talla {
-    font-size: 0.7rem;
-    min-width: 90px;
-    padding: 5px 8px;
-    min-height: 26px;
+    font-size: 0.75rem;
+    min-width: 120px;
+    padding: 7px 10px;
+    min-height: 30px;
+    gap: 4px;
   }
 
-  .tabla-tallas th,
-  .tabla-tallas td {
-    padding: 0.2rem 0.05rem;
+  .tallas-cards {
+    gap: 8px;
+  }
+
+  .talla-card {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .card-header {
+    gap: 8px;
+  }
+
+  .talla-nombre {
+    font-size: 0.95rem;
+  }
+
+  .talla-grupo {
+    font-size: 0.75rem;
+  }
+
+  .chip-estado-mobile {
+    padding: 3px 7px;
     font-size: 0.6rem;
   }
 
-  .btn-editar,
-  .btn-eliminar {
-    width: 14px;
-    height: 14px;
-    font-size: 0.5rem;
+  .card-actions {
+    gap: 6px;
   }
 
-  .chip-estado {
-    font-size: 0.5rem;
-    min-width: 30px;
+  .btn-card {
+    font-size: 0.7rem;
+    padding: 7px 6px;
+    min-width: calc(50% - 3px);
+  }
+
+  .form-talla-modal {
+    padding: 15px;
+    width: calc(100% - 12px);
+  }
+
+  .form-talla-modal h3 {
+    font-size: 1.05rem;
+  }
+
+  .form-talla-modal .form-control,
+  .form-talla-modal .form-select {
+    font-size: 0.9rem;
+    padding: 9px 10px;
+  }
+
+  .form-talla-modal .btn {
+    padding: 11px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile extremadamente pequeño (< 320px) */
+@media (max-width: 320px) {
+  .lista-tallas-container {
+    padding: 5px;
+  }
+
+  .header-acciones h2 {
+    font-size: 1rem;
+  }
+
+  .btn-nueva-talla {
+    font-size: 0.7rem;
+    min-width: 100px;
+    padding: 6px 8px;
+    min-height: 28px;
+  }
+
+  .btn-text-desktop {
+    display: none;
+  }
+
+  .talla-card {
+    padding: 8px;
+  }
+
+  .talla-nombre {
+    font-size: 0.9rem;
+  }
+
+  .talla-grupo {
+    font-size: 0.7rem;
+  }
+
+  .chip-estado-mobile {
+    font-size: 0.55rem;
+    padding: 2px 6px;
+  }
+
+  .btn-card {
+    font-size: 0.65rem;
+    padding: 6px 5px;
+  }
+
+  .form-talla-modal {
+    padding: 12px;
+  }
+
+  .form-talla-modal h3 {
+    font-size: 0.95rem;
   }
 }
