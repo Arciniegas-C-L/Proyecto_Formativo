@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { generateAvatarUrl } from '../../utils/avatar';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import "../../assets/css/Perfil/Perfil.css";
 import { updateUsuario } from "../../api/Usuario.api";
 import Direcciones from './Direcciones';
-import { getDirecciones, createDireccion, updateDireccion, deleteDireccion, setPrincipalDireccion } from '../../api/direccion.api';
 import CambiarPassword from './CambiarPassword';
-import PedidosHistorial from './PedidosHistorial';
 import { toast } from 'react-hot-toast';
 
 export function Perfil() {
@@ -19,7 +18,6 @@ export function Perfil() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [availableOptions, setAvailableOptions] = useState({});
   const [avatarError, setAvatarError] = useState(false);
-  const [mostrarDirecciones, setMostrarDirecciones] = useState(false);
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const didAutoAvatarRef = useRef(false);
 
@@ -139,54 +137,11 @@ export function Perfil() {
       didAutoAvatarRef.current = true;
       return;
     }
+  }, [usuarioContext]); // 👈 cierre correcto
 
-    didAutoAvatarRef.current = true;
-  }, [usuarioContext?.idUsuario, updateUsuarioContext]);
-
-  // Helpers URL
+  // --- Helpers y funciones de UI ---
   const toArrayParam = (value) => Array.isArray(value) ? value.join(",") : value;
 
-  const generateAvatarUrl = (options = avatarOptions) => {
-    const getValidValue = (category, value, fallback) => {
-      const validValues = availableOptions[category]?.enum || [];
-      return validValues.includes(value) ? value : fallback;
-    };
-    const validOptions = {
-      backgroundColor: getValidValue('backgroundColor', options.backgroundColor, '65c9ff'),
-      accessories: getValidValue('accessories', options.accessories, 'kurt'),
-      top: getValidValue('top', options.top, 'bigHair'),
-      hairColor: getValidValue('hairColor', options.hairColor, '2c1b18'),
-      clothing: getValidValue('clothing', options.clothing, 'blazerAndShirt'),
-      clothingColor: getValidValue('clothingColor', options.clothingColor, '262e33'),
-      eyes: getValidValue('eyes', options.eyes, 'default'),
-      eyebrows: getValidValue('eyebrows', options.eyebrows, 'default'),
-      mouth: getValidValue('mouth', options.mouth, 'smile'),
-      facialHair: getValidValue('facialHair', options.facialHair, 'beardLight'),
-      facialHairColor: getValidValue('facialHairColor', options.facialHairColor, 'a55728'),
-      skinColor: getValidValue('skinColor', options.skinColor, 'ffdbb4')
-    };
-    const params = new URLSearchParams({
-      seed: avatarSeed,
-      backgroundColor: toArrayParam([validOptions.backgroundColor]),
-      accessories: toArrayParam([validOptions.accessories]),
-      accessoriesProbability: 100,
-      top: toArrayParam([validOptions.top]),
-      hairColor: toArrayParam([validOptions.hairColor]),
-      clothing: toArrayParam([validOptions.clothing]),
-      clothesColor: toArrayParam([validOptions.clothingColor]),
-      eyes: toArrayParam([validOptions.eyes]),
-      eyebrows: toArrayParam([validOptions.eyebrows]),
-      mouth: toArrayParam([validOptions.mouth]),
-      facialHair: toArrayParam([validOptions.facialHair]),
-      facialHairColor: toArrayParam([validOptions.facialHairColor]),
-      facialHairProbability: 0,
-      skinColor: toArrayParam([validOptions.skinColor]),
-      size: 200
-    });
-    return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
-  };
-
-  // --- Funciones de UI/acciones ---
   const handleImageError = (e) => {
     console.error('Error loading avatar:', e.target.src);
     const fallbackUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${avatarSeed}`;
@@ -217,11 +172,12 @@ export function Perfil() {
         avatar_seed: avatarSeed,
         avatar_options: avatarOptions
       });
-      updateUsuarioContext({
-        ...usuario,
-        avatar_seed: avatarSeed,
-        avatar_options: avatarOptions
-      });
+      // Refresca el usuario desde la API para asegurar que el contexto y el header tengan el avatar correcto
+      const { fetchUsuario } = await import('../../api/Usuario.api');
+      const res = await fetchUsuario();
+      if (res?.data) {
+        updateUsuarioContext(res.data);
+      }
       alert('Avatar guardado exitosamente!');
       setActiveSection('datos');
     } catch {
@@ -259,7 +215,7 @@ export function Perfil() {
           return (
             <img
               key={`${activeCategory}-${value}-${i}`}
-              src={generateAvatarUrl(previewOptions)}
+              src={generateAvatarUrl(previewOptions, avatarSeed)}
               alt={`${activeCategory}: ${value}`}
               className={`option-avatar ${avatarOptions[activeCategory] === value ? 'selected' : ''}`}
               onClick={() => handleOptionChange(activeCategory, value)}
@@ -271,17 +227,8 @@ export function Perfil() {
     );
   };
 
-  // API real para Direcciones (usando imports directos)
-  const apiDirecciones = {
-    getDirecciones,
-    createDireccion,
-    updateDireccion,
-    deleteDireccion,
-    setPrincipalDireccion,
-  };
-
   return (
-    <div className="perfil-container">
+    <div className="perfil-container m-0 p-0">
       <div className="dashboard-perfil">
         <div className="perfil-info">
           <div className="perfil-avatar">
@@ -292,7 +239,7 @@ export function Perfil() {
               </div>
             ) : (
               <img
-                src={generateAvatarUrl()}
+                src={generateAvatarUrl(avatarOptions, avatarSeed)}
                 alt="Avatar"
                 className="avatar-image"
                 onError={handleImageError}
@@ -306,7 +253,6 @@ export function Perfil() {
 
           <div className="perfil-opciones">
             <button onClick={() => setActiveSection('datos')}>Datos Personales</button>
-            <button onClick={() => setActiveSection('pedidos')}>Pedidos</button>
             <button onClick={() => setActiveSection('config')}>Configuraciones</button>
             <button onClick={() => navigate('/')}>Salir</button>
           </div>
@@ -321,7 +267,7 @@ export function Perfil() {
 
               <div className="avatar-preview">
                 <img
-                  src={generateAvatarUrl()}
+                  src={generateAvatarUrl(avatarOptions, avatarSeed)}
                   alt="Avatar Preview"
                   className="avatar-preview-image"
                   onError={handleImageError}
@@ -415,69 +361,47 @@ export function Perfil() {
             </div>
           )}
 
-          {activeSection === 'pedidos' && (
-            <div className="pedidos-section">
-              <div className="titulo-opciones">
-                <h3>Pedidos</h3>
-              </div>
-              <PedidosHistorial />
-            </div>
-          )}
 
           {activeSection === 'config' && (
             <div className="config-section">
               <div className="titulo-opciones">
                 <h3>Configuraciones</h3>
               </div>
-
               <div className="config-grid">
-                <div className="config-card cambiar-password">
-                  <h4>🔒 Cambiar contraseña</h4>
-                  <button className="config-btn cambiar" onClick={() => setMostrarPassword(v => !v)}>
-                    {mostrarPassword ? 'Ocultar' : 'Cambiar contraseña'}
-                  </button>
-                  {mostrarPassword && (
-                    <div className="config-expand cambiar">
-                      <CambiarPassword
-                        onSolicitarCodigo={() => {}}
-                        onCambiarPassword={() => {}}
-                        loading={false}
-                        error={''}
-                      />
-                    </div>
-                  )}
-                </div>
+                  <div className="config-card cambiar-password">
+                    <h4>🔒 Cambiar contraseña</h4>
+                    <button className="config-btn cambiar" onClick={() => setMostrarPassword(v => !v)}>
+                      {mostrarPassword ? 'Ocultar' : 'Cambiar contraseña'}
+                    </button>
+                    {mostrarPassword && (
+                      <div className="config-expand cambiar">
+                        <CambiarPassword
+                          onSolicitarCodigo={() => {}}
+                          onCambiarPassword={() => {}}
+                          loading={false}
+                          error={''}
+                        />
+                      </div>
+                    )}
+                  </div>
 
-                <div className="config-card">
-                  <h4>🏠 Gestión de direcciones</h4>
-                  <button className="config-btn" onClick={() => setMostrarDirecciones(v => !v)}>
-                    {mostrarDirecciones ? 'Ocultar' : 'Administrar direcciones'}
-                  </button>
-                  {mostrarDirecciones && (
-                    <div className="config-expand">
-                      <Direcciones api={apiDirecciones} direccionPersonal={usuario.direccion} />
-                    </div>
-                  )}
-                </div>
-
-                <div className="config-card">
+                  <div className="config-card">
                   <h4>💳 Métodos de pago</h4>
                   <button className="config-btn" onClick={() => alert('Gestión de métodos de pago próximamente')}>
                     Administrar métodos de pago
                   </button>
                 </div>
-
-                <div className="config-card">
-                  <h4>🗑️ Eliminar cuenta</h4>
-                  <button className="config-btn danger" onClick={() => alert('Funcionalidad para eliminar cuenta próximamente')}>
-                    Eliminar cuenta
-                  </button>
-                </div>
+              </div>
+              <div className="boton-eliminar">
+                <button className="config-btn danger" style={{marginLeft: 'auto', display: 'block'}} onClick={() => alert('Funcionalidad para eliminar cuenta próximamente')}>
+                  Eliminar cuenta
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
     </div>
   );
 }

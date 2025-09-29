@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import { fetchCarritos } from "../../api/CarritoApi";
 import { useAuth } from "../../context/AuthContext";
+import { generateAvatarUrl } from "../../utils/avatar";
 import ZOE from "../../assets/images/home/ZOE.gif";
 import "../../assets/css/SinglePage/Header.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -196,7 +197,16 @@ export function Header() {
                 <li className="nav-item-custom dropdown-custom" ref={dropdownRef}>
                   <button className="nav-link-custom dropdown-btn" onClick={toggleDropdown}>
                     <div className="user-info">
-                      <i className="bi bi-person-circle nav-icon user-icon"></i>
+                      {autenticado && usuario?.avatar_seed ? (
+                        <img
+                          src={generateAvatarUrl(usuario.avatar_options, usuario.avatar_seed)}
+                          alt="Avatar Usuario"
+                          className="nav-avatar-img user-icon"
+                          style={{ width: 32, height: 32, borderRadius: "50%", marginRight: 8 }}
+                        />
+                      ) : (
+                        <i className="bi bi-person-circle nav-icon user-icon"></i>
+                      )}
                       <span className="user-name">
                         {usuario?.nombre || usuario?.username || "Usuario"}
                       </span>
@@ -251,11 +261,20 @@ export function Header() {
               ) : (
                 <li className="nav-item-custom">
                   <Link to="/sesion" className="nav-link-custom">
-                    <i className="bi bi-person-circle nav-icon"></i>
+                    {autenticado && usuario?.avatar_seed ? (
+                      <img
+                        src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${usuario.avatar_seed}`}
+                        alt="Avatar Usuario"
+                        className="nav-avatar-img"
+                        style={{ width: 32, height: 32, borderRadius: "50%", marginRight: 8 }}
+                      />
+                    ) : (
+                      <i className="bi bi-person-circle nav-icon"></i>
+                    )}
                     <span className="nav-text">Sesión</span>
                   </Link>
                 </li>
-              )}{" "}
+              )} {" "}
             </ul>
           </nav>
         </div>

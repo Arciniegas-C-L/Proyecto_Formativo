@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { VerificationModal } from './VerificationModal';
 import { useNavigate, Link } from 'react-router-dom';
 import saludo from '../../assets/images/saludo.webp';
 import bienvenida from '../../assets/images/bienvenida.gif';
@@ -13,6 +14,10 @@ export function Sesion() {
   const { login } = useAuth();
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [pendingLogin, setPendingLogin] = useState(null);
+  const [adminPassword, setAdminPassword] = useState('');
   const [showPasswordLogin, setShowPasswordLogin] = useState(false); 
   const [showPasswordRegister, setShowPasswordRegister] = useState(false); 
   const navigate = useNavigate();
@@ -24,27 +29,22 @@ export function Sesion() {
     e.preventDefault();
     setIsSubmitting(true);
     const form = e.target.elements;
-    const correo = form.correo.value;
-    const password = form.password.value;
+  const correo = form.correo.value;
+  const password = form.password.value;
 
     try {
       const { data } = await loginUsuario({ correo, password });
-
-      const access = data?.token?.access || data?.access;
-      const refresh = data?.token?.refresh || data?.refresh;
-
-      login({
-        access,
-        refresh,
-        usuario: data?.usuario,
-        rol: data?.rol,
-      });
-
-      toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
-
-      if (data?.rol === 'administrador') {
-        navigate('/admin/dashboard', { replace: true });
+      if (data?.requiere_verificacion) {
+        // Solo guardar datos básicos, NO token
+        setPendingLogin({ usuario: data?.usuario, rol: data?.rol });
+        setAdminEmail(correo);
+        setAdminPassword(password);
+        setShowVerificationModal(true);
       } else {
+        const access = data?.token?.access || data?.access;
+        const refresh = data?.token?.refresh || data?.refresh;
+        login({ access, refresh, usuario: data?.usuario, rol: data?.rol });
+        toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
         navigate('/', { replace: true });
       }
     } catch (error) {
@@ -98,8 +98,40 @@ export function Sesion() {
     }
   };
 
+  const handleVerificationSuccess = async (codigoIngresado) => {
+    if (pendingLogin && adminEmail && adminPassword && codigoIngresado) {
+      try {
+        // Realizar login con código y contraseña
+        const { data } = await loginUsuario({ correo: adminEmail, password: adminPassword, codigo: codigoIngresado });
+        const access = data?.token?.access || data?.access;
+        const refresh = data?.token?.refresh || data?.refresh;
+        login({ access, refresh, usuario: data?.usuario, rol: data?.rol });
+        toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
+        setShowVerificationModal(false);
+        setPendingLogin(null);
+        setAdminPassword('');
+        navigate('/admin/dashboard', { replace: true });
+      } catch {
+        toast.error('Error al verificar el código.');
+      }
+    }
+  };
+
+  const handleVerificationClose = () => {
+    setShowVerificationModal(false);
+    setPendingLogin(null);
+    setAdminEmail('');
+    navigate('/', { replace: true });
+  };
+
   return (
     <div className="container-sesion">
+      <VerificationModal
+        isOpen={showVerificationModal}
+        onRequestClose={handleVerificationClose}
+        email={adminEmail}
+        onSuccess={handleVerificationSuccess}
+      />
       <div className="container" ref={containerRef}>
         {/* Formulario Iniciar Sesión */}
         <div className="container-form">
