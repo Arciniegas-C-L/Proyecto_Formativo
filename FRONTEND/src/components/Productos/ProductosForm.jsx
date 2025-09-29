@@ -94,20 +94,22 @@ export function ProductosForm() {
 
   const loadCategorias = async () => {
     try {
-      const data = await getCategorias();
-      setCategorias(data);
+      const res = await getCategorias();
+      setCategorias(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error cargando categorías:", err);
+      setCategorias([]);
     }
   };
 
   const loadSubcategorias = async (categoriaId) => {
     try {
       setCargandoSubcategorias(true);
-      const data = await getSubcategoriasPorCategoria(categoriaId);
-      setSubcategorias(data);
+      const res = await getSubcategoriasPorCategoria(categoriaId);
+      setSubcategorias(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error cargando subcategorías:", err);
+      setSubcategorias([]);
     } finally {
       setCargandoSubcategorias(false);
     }
