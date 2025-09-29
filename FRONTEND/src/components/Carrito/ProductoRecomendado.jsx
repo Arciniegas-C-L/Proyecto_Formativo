@@ -1,4 +1,5 @@
 import React from "react";
+import { Cloudinary } from "@cloudinary/url-gen";
 import "../../assets/css/Carrito/ProductoRecomendado.css";
 
 export default function ProductoRecomendado({ producto, capitalizar, onVerDetalle }) {

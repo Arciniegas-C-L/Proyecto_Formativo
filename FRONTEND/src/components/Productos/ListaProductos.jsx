@@ -8,7 +8,9 @@ import { EliminarModal } from  "../EliminarModal/EliminarModal";
 
 export function ListaProductos() {
   const navigate = useNavigate();
-  const [productos, setProductos] = useState([]);
+  import React from 'react';
+  import { Cloudinary } from '@cloudinary/url-gen';
+  import { fill } from '@cloudinary/url-gen/actions/resize';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');

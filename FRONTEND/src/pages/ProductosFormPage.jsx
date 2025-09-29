@@ -3,7 +3,6 @@
 import { ProductosForm } from "../components/Productos/ProductosForm";
 import React from "react";
 import { Cloudinary } from "@cloudinary/url-gen";
-import { fill } from "@cloudinary/url-gen/actions/resize";
 
 export function ProductosFormPage() {
   return (
