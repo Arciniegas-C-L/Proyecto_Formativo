@@ -35,7 +35,7 @@ function CloudinaryUpload({ onUrl }) {
 
   return (
     <button type="button" onClick={openWidget} style={{ marginBottom: 8 }}>
-      Subir imagen a Cloudinary
+      Subir imagen
     </button>
   );
 }
@@ -172,6 +172,9 @@ export function ProductosForm() {
     if (!formData.categoria) errores.categoria = "Seleccione una categoría";
     if (!Number.isInteger(subId) || subId <= 0)
       errores.subcategoria = "Seleccione una subcategoría válida";
+    if (!formData.imagen || typeof formData.imagen !== 'string' || !formData.imagen.includes('res.cloudinary.com')) {
+      errores.imagen = "Debe subir una imagen válida de Cloudinary";
+    }
 
     setErrors(errores);
     return Object.keys(errores).length === 0;
@@ -280,28 +283,28 @@ export function ProductosForm() {
           <CloudinaryUpload
             onUrl={(url) => setFormData((prev) => ({ ...prev, imagen: url }))}
           />
-          {formData.imagen &&
-            (() => {
-              let imagenUrl = formData.imagen;
-              if (imagenUrl && imagenUrl.includes("res.cloudinary.com")) {
+          {formData.imagen && typeof formData.imagen === 'string' ? (
+            formData.imagen.includes('res.cloudinary.com') ? (
+              (() => {
+                let imagenUrl = formData.imagen;
                 const matches = imagenUrl.match(/upload\/(?:v\d+\/)?(.+)$/);
                 const publicId = matches ? matches[1] : null;
                 if (publicId) {
-                  const cld = new Cloudinary({
-                    cloud: { cloudName: "dkwr4gcpl" },
-                  });
-                  imagenUrl = cld
-                    .image(publicId)
-                    .resize(fill().width(300).height(300))
-                    .toURL();
+                  const cld = new Cloudinary({ cloud: { cloudName: "dkwr4gcpl" } });
+                  imagenUrl = cld.image(publicId).resize(fill().width(300).height(300)).toURL();
                 }
-              }
-              return (
-                <div className="image-preview">
-                  <img src={imagenUrl} alt="Producto" />
-                </div>
-              );
-            })()}
+                return (
+                  <div className="image-preview">
+                    <img src={imagenUrl} alt="Previsualización de producto" />
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="image-preview-error">
+                <span style={{ color: 'red' }}>La URL de la imagen no es válida para Cloudinary</span>
+              </div>
+            )
+          ) : null}
         </div>
 
         <div className="form-actions">
