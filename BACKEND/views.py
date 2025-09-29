@@ -979,7 +979,7 @@ class InventarioView(viewsets.ModelViewSet):
                     'descripcion': producto.descripcion,
                     'precio': producto.precio,
                     'stock': producto.stock,
-                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'imagen': producto.imagen if producto.imagen else None,
                     'tallas_stock': tallas_stock,
                     'categoria': {
                         'id': subcategoria.categoria.idCategoria,
@@ -1238,7 +1238,7 @@ class InventarioView(viewsets.ModelViewSet):
                     'stock_total': stock_total,
                     'stock_inicial_total': stock_inicial_total,
                     'stock_minimo_total': stock_minimo_total,
-                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'imagen': producto.imagen if producto.imagen else None,
                     'stock_por_talla': stock_por_talla,
                     'estado_stock': 'Bajo' if stock_total <= stock_minimo_total else 'Normal',
                     'acciones': {
