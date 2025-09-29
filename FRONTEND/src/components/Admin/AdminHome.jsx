@@ -5,6 +5,9 @@ import { fetchProveedores } from "../../api/Proveedor.api";
 import { getAllInventario } from "../../api/InventarioApi";
 import "../../assets/css/Admin/AdminHome.css";
 import { Link } from "react-router-dom";
+import { FaQuestionCircle } from "react-icons/fa";
+import { Modal, Button } from "react-bootstrap";
+
 
 const AdminHome = () => {
   // ESTADO Y VARIABLES REACTIVAS // 
@@ -19,7 +22,8 @@ const AdminHome = () => {
 
   // Estados para controlar el loading y tiempo actual
   const [loading, setLoading] = useState(true);        // Indica si está cargando datos
-  const [currentTime, setCurrentTime] = useState(new Date());  // Tiempo actual para mostrar en header
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [mostrarModal, setMostrarModal] = useState(false);  // Tiempo actual para mostrar en header
 
   //  EFECTOS Y CICLO DE VIDA //
   
@@ -201,6 +205,30 @@ const AdminHome = () => {
         {/* Sección de bienvenida con información general */}
         <div className="welcome-section">
           <h2 className="welcome-title">Variedad y Estilos ZOE</h2>
+          {/* Icono de ayuda */}
+          <FaQuestionCircle
+          size={22}
+          style={{ cursor: "pointer", color: "#0d6efd" }}
+          onClick={() => setMostrarModal(true)}
+          />
+          {/* Modal emergente */}
+          <Modal show={mostrarModal} onHide={() => setMostrarModal(false)} centered>
+            <Modal.Header closeButton>
+              <Modal.Title>Próximo paso</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                Vamos a crear un nuevo producto !, mediante este icono encontrarás el paso a seguir.
+                Dirígete a
+                <Link to="/admin/categorias">
+                  <strong style={{ cursor: "pointer", color: "#0d6efd" }}>Categorías</strong>
+                </Link>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={() => setMostrarModal(false)}>Cerrar
+                </Button>
+              </Modal.Footer>
+            </Modal>
+
           <p className="welcome-subtitle">
             Gestiona eficientemente todos los aspectos de tu tienda desde este panel centralizado
           </p>

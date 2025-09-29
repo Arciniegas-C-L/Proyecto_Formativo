@@ -8,6 +8,10 @@ import {
   createProducto,
   updateProducto,
 } from "../../api/Producto.api";
+import { Modal, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { FaQuestionCircle } from "react-icons/fa";
+
 
 export function ProductosForm() {
   const navigate = useNavigate();
@@ -32,6 +36,7 @@ export function ProductosForm() {
   const [cargandoSubcategorias, setCargandoSubcategorias] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
 
   // Cargar categorías al montar el componente
   useEffect(() => {
@@ -169,6 +174,30 @@ export function ProductosForm() {
       <h2 className="form-title">
         {productoEditar ? "Editar producto" : "Crear producto"}
       </h2>
+      {/* Icono de ayuda */}
+      <FaQuestionCircle
+      size={22}
+      style={{ cursor: "pointer", color: "#0d6efd" }}
+      onClick={() => setMostrarModal(true)}
+      />
+      {/* Modal emergente */}
+      <Modal show={mostrarModal} onHide={() => setMostrarModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Próximo paso</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Ahora debes llenar cada campo según la información correspondiente del producto que deseas crear. Terminado esto dirígete a
+          <Link to="/admin/inventario">
+            <strong style={{ cursor: "pointer", color: "#0d6efd" }}>Inventario</strong>
+          </Link>
+          para continuar con la gestión de inventario.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setMostrarModal(false)}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
       <form onSubmit={handleSubmit} className="producto-form" noValidate>
         <div className="form-row">
           <div className="form-group">

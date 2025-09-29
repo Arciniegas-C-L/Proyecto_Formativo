@@ -11,6 +11,9 @@ import "react-toastify/dist/ReactToastify.css";
 import "../../assets/css/Tallas/GrupoTalla.css";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { EliminarModal } from "../EliminarModal/EliminarModal.jsx";
+import { FaQuestionCircle } from "react-icons/fa";
+import { Modal, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
 
 // Rutas internas (por si luego quieres navegar a pantallas separadas)
 const ADMIN_ROUTES = {
@@ -31,6 +34,7 @@ export function GrupoTalla() {
   const [formData, setFormData] = useState({ nombre: "", descripcion: "" });
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteGrupoId, setDeleteGrupoId] = useState(null);
+  const [mostrarModal, setMostrarModal] = useState(false); /* para el modal del flujo en panel del admin */
 
   useEffect(() => {
     cargarGruposTalla();
@@ -165,6 +169,32 @@ export function GrupoTalla() {
     <div className="grupo-talla-container">
       <div className="grupo-header">
         <h2>Gestión de Grupos de Talla</h2>
+          {/* Icono de ayuda */}
+          <FaQuestionCircle
+          size={22}
+          style={{ cursor: "pointer", color: "#0d6efd" }}
+          onClick={() => setMostrarModal(true)}
+          />
+        {/* Modal emergente */}
+          <Modal show={mostrarModal} onHide={() => setMostrarModal(false)} centered>
+            <Modal.Header closeButton>
+            <Modal.Title>Próximo paso</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              En este panel de gestión de grupo tallas, asigna las
+              <strong style={{ cursor: "pointer", color: "#0d6efd" }}> tallas</strong>
+              correspondientes al grupo talla.
+              Después de hacer esto dirígete a
+              <Link to="/admin/productos/crear">
+                <strong style={{ cursor: "pointer", color: "#0d6efd" }}>Crear Producto</strong>
+              </Link>
+            </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={() => setMostrarModal(false)}>
+                  Cerrar
+                  </Button>
+              </Modal.Footer>
+          </Modal>
         <button className="btn-grupo-nuevo" onClick={handleCrear}>
           <FaPlus /> Nuevo Grupo
         </button>
