@@ -295,4 +295,3 @@ export function ProductosForm() {
       </form>
     </div>
   );
-}
