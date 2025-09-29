@@ -399,11 +399,6 @@ export function Carrito() {
     return total.toLocaleString("es-CO", { maximumFractionDigits: 0 });
   };
 
-  const getImagenUrl = (imagenPath) => {
-    if (!imagenPath) return "https://via.placeholder.com/100";
-    if (imagenPath.startsWith("http")) return imagenPath;
-    return `${API_BASE_URL}${imagenPath}`;
-  };
 
   const capitalizar = (texto) => {
     if (!texto) return "";
@@ -489,9 +484,9 @@ export function Carrito() {
                   <div key={item.idCarritoItem} className="carrito-item">
                     <div className="item-imagen">
                       <img
-                        src={getImagenUrl(item.producto?.imagen)}
+                        src={item.producto?.imagen || "https://via.placeholder.com/100"}
                         alt={item.producto?.nombre || "Producto"}
-                        onError={(e) => {
+                        onError={e => {
                           e.target.onerror = null;
                           e.target.src = "https://via.placeholder.com/100";
                         }}

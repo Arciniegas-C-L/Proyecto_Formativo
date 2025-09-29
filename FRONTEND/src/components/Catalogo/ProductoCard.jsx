@@ -1,5 +1,8 @@
 // src/components/Catalogo/ProductoCard.jsx
 import React, { useState } from "react";
+import { Cloudinary } from "@cloudinary/url-gen";
+import { fill } from "@cloudinary/url-gen/actions/resize";
+
 import { toast } from "react-hot-toast";
 import {
   agregarProducto,
@@ -16,7 +19,8 @@ export default function ProductoCard({ producto, capitalizar, onProductoAgregado
   const [agregando, setAgregando] = useState(false);
   const { usuario, rol } = useAuth();
 
-  if (!producto || !producto.nombre || !producto.imagen) {
+  // Validar que el producto tenga los datos esenciales (nombre)
+  if (!producto || !producto.nombre) {
     console.warn("Producto con datos incompletos:", producto);
     return null;
   }
@@ -135,18 +139,31 @@ export default function ProductoCard({ producto, capitalizar, onProductoAgregado
     }
   };
 
+  // Cloudinary resize para imágenes subidas
+  const cld = new Cloudinary({ cloud: { cloudName: "dkwr4gcpl" } });
+  let imagenUrl = producto.imagen;
+  if (imagenUrl && imagenUrl.includes('res.cloudinary.com')) {
+    const matches = imagenUrl.match(/upload\/(?:v\d+\/)?(.+)$/);
+    const publicId = matches ? matches[1] : null;
+    if (publicId) {
+      imagenUrl = cld.image(publicId).resize(fill().width(300).height(300)).toURL();
+    }
+  }
+
   return (
     <div className="product-card">
       <div className="product-image-container">
-        <img
-          src={producto.imagen || "https://via.placeholder.com/250x350?text=Imagen+no+disponible"}
-          alt={producto.nombre || "Producto"}
-          className="product-image"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "https://via.placeholder.com/250x350?text=Imagen+no+disponible";
-          }}
-        />
+        {imagenUrl && (
+          <img
+            src={imagenUrl}
+            alt={producto.nombre || "Producto"}
+            className="product-image"
+            onError={e => {
+              e.target.onerror = null;
+              e.target.style.display = 'none';
+            }}
+          />
+        )}
       </div>
 
       <div className="product-info">

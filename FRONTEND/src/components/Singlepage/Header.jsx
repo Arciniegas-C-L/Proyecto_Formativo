@@ -9,13 +9,19 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export function Header() {
+<<<<<<< HEAD
   const { autenticado, logout, rol, usuario } = useAuth();
+=======
+  const { autenticado, rol, logout, usuario } = useAuth();
+  const esAdministrador = rol === "administrador";
+>>>>>>> main
   const [showConfirm, setShowConfirm] = useState(false);
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
+<<<<<<< HEAD
   const rolNorm = React.useMemo(() => {
     // candidatos posibles
     const candidates = [
@@ -38,6 +44,8 @@ export function Header() {
   const esCliente = rolNorm === "cliente";
   //const esAdministrador = rolNorm === "administrador";
 
+=======
+>>>>>>> main
   const handleLogout = () => {
     setShowConfirm(true);
     setShowDropdown(false);
@@ -208,6 +216,7 @@ export function Header() {
                           <i className="bi bi-person-gear"></i> Mi Perfil
                         </Link>
                       </li>
+<<<<<<< HEAD
 
                       {/* Solo CLIENTE: Mis pedidos */}
                       {esCliente && (
@@ -223,6 +232,11 @@ export function Header() {
                       )}
                       {/* NUEVO: Facturas (ruta privada /Facturas) */}
                       {esCliente && (
+=======
+                      
+                      {/* NUEVA OPCIÓN: Panel de Administración - Solo para administradores */}
+                      {esAdministrador && (
+>>>>>>> main
                         <li>
                           <Link
                             to="/Facturas"
@@ -233,6 +247,13 @@ export function Header() {
                           </Link>
                         </li>
                       )}
+<<<<<<< HEAD
+=======
+
+                      <li>
+                        <hr className="dropdown-divider-custom" />
+                      </li>
+>>>>>>> main
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión

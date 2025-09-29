@@ -187,7 +187,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 class ComentarioViewSet(viewsets.ModelViewSet):
     queryset = Comentario.objects.select_related('usuario').all().order_by('-fecha')
     serializer_class = ComentarioSerializer
-    permission_classes = [ComentarioPermission]
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def perform_create(self, serializer):
         # Asigna el usuario autenticado y guarda snapshot de datos
@@ -288,18 +288,21 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     # --- LOGIN ---
     @action(detail=False, methods=['get', 'post'], permission_classes=[AllowAny])
     def login(self, request):
-        if request.method == 'GET':
-            serializer = LoginSerializer()
-            return Response(serializer.data)
-
-        serializer = LoginSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        correo = serializer.validated_data['correo']
-        password = serializer.validated_data['password']
         try:
-            usuario = Usuario.objects.select_related('rol').get(correo=correo)
+            if request.method == 'GET':
+                serializer = LoginSerializer()
+                return Response(serializer.data)
+
+            serializer = LoginSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            correo = serializer.validated_data['correo']
+            password = serializer.validated_data['password']
+            try:
+                usuario = Usuario.objects.select_related('rol').get(correo=correo)
+            except Usuario.DoesNotExist:
+                return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
             if not usuario.is_active:
                 return Response({"error": "Usuario inactivo"}, status=status.HTTP_403_FORBIDDEN)
@@ -373,8 +376,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 "token": token
             }, status=status.HTTP_200_OK)
 
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            import traceback
+            print("Error en login:", traceback.format_exc())
+            return Response({"error": "Error interno en el servidor", "detalle": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # --- ENVIAR CÓDIGO RECUPERACIÓN ---
     @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
@@ -384,9 +389,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         try:
             usuario = Usuario.objects.get(correo=correo)
 
-            # Verificar si ya hay un código activo en los últimos 3 minutos
+            # Verificar si ya hay un código activo en los últimos 30 segundos
             codigo_activo = CodigoRecuperacion.objects.filter(
-                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=3)
+                usuario=usuario, creado__gte=timezone.now() - timedelta(seconds=30)
             ).exists()
 
             if codigo_activo:
@@ -950,7 +955,7 @@ class InventarioView(viewsets.ModelViewSet):
                     'descripcion': producto.descripcion,
                     'precio': producto.precio,
                     'stock': producto.stock,
-                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'imagen': producto.imagen if producto.imagen else None,
                     'tallas_stock': tallas_stock,
                     'categoria': {
                         'id': subcategoria.categoria.idCategoria,
@@ -1156,7 +1161,7 @@ class InventarioView(viewsets.ModelViewSet):
                     'stock_total': stock_total,
                     'stock_inicial_total': stock_inicial_total,
                     'stock_minimo_total': stock_minimo_total,
-                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'imagen': producto.imagen if producto.imagen else None,
                     'stock_por_talla': stock_por_talla,
                     'estado_stock': 'Bajo' if stock_total <= stock_minimo_total else 'Normal',
                     'acciones': {
@@ -1354,51 +1359,54 @@ class CarritoView(viewsets.ModelViewSet):
                 precio=precio,
                 subtotal=subtotal,
             )
+            qs = PedidoProducto.objects.select_related(
+                "pedido", "pedido__usuario", "producto",
+                "producto__subcategoria", "producto__subcategoria__categoria",
+            ).order_by("-pedido__idPedido", "producto__nombre")
 
-            total += subtotal
+        # Si NO es admin, limitar a los pedidos del usuario autenticado
+        user = self.request.user
+        es_admin = getattr(getattr(user, "rol", None), "nombre", "").lower() == "admin" or user.is_staff
+        if not es_admin:
+            qs = qs.filter(pedido__usuario=user)
 
-        pedido.total = total
-        pedido.save(update_fields=["total"])
-    def _ensure_pedido_from_carrito(self, carrito):
+        # Filtro opcional por pedido
+        pedido_id = self.request.query_params.get("pedido")
+        if pedido_id:
+            qs = qs.filter(pedido_id=pedido_id)
+
+        return qs
+
+    # Si no quieres permitir crear/actualizar/borrar desde API pública comenta/borra estos métodos
+    # y cambia el ViewSet por ReadOnlyModelViewSet. Por ahora dejamos ModelViewSet.
+
+    @action(detail=False, methods=["get"])
+    def por_pedido(self, request):
         """
-        Crea/enlaza un único Pedido para el carrito (idempotente con lock).
+        GET /BACKEND/api/pedidoproductos/por_pedido/?pedido=<id>
+        Devuelve los ítems de un pedido específico (respetando visibilidad por usuario).
         """
-        from .models import Pedido
+        pedido_id = request.query_params.get("pedido")
+        if not pedido_id:
+            return Response({"detail": "Falta parámetro 'pedido'."}, status=status.HTTP_400_BAD_REQUEST)
 
-        with transaction.atomic():
-            # bloquea el carrito para evitar procesos concurrentes
-            c = Carrito.objects.select_for_update().get(pk=carrito.pk)
+        qs = self.get_queryset().filter(pedido_id=pedido_id)
+        data = self.get_serializer(qs, many=True).data
+        return Response(data, status=status.HTTP_200_OK)
 
-            # si ya está enlazado, reutiliza
-            pedido = getattr(c, "pedido", None)
-            if pedido:
-                return pedido
+class PagoView(viewsets.ModelViewSet):
+    serializer_class = PagoSerializer
+    queryset = Pago.objects.all()
+    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
 
-            # calcula total del carrito (sin romper si faltan campos)
-            total = Decimal("0")
-            try:
-                t = c.calcular_total()
-                total = Decimal(str(t))
-            except Exception:
-                for it in c.items.all():
-                    precio = Decimal(str(getattr(it, "precio_unitario", 0) or 0))
-                    cantidad = Decimal(str(getattr(it, "cantidad", 0) or 0))
-                    sub = getattr(it, "subtotal", None)
-                    sub = Decimal(str(sub)) if sub is not None else (precio * cantidad)
-                    total += sub
+class TipoPagoView(viewsets.ModelViewSet):
+    serializer_class = TipoPagoSerializer
+    queryset = TipoPago.objects.all()
+    permission_classes = [IsAuthenticated, AdminandCliente] #Por definir
 
-            pedido = Pedido.objects.create(
-                usuario=c.usuario,
-                total=total,
-                estado=True
-            )
-
-            # enlaza carrito ↔ pedido si existe el campo
-            if hasattr(c, "pedido"):
-                c.pedido = pedido
-                c.save(update_fields=["pedido"])
-
-            return pedido
+class CarritoView(viewsets.ModelViewSet):
+    serializer_class = CarritoSerializer
+    permission_classes = [IsAuthenticated, AdminandCliente]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
