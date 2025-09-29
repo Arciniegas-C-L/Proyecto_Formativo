@@ -3,6 +3,9 @@ import { createCategoria, getAllCategorias } from "../../api/Categoria.api";
 import { createSubcategoria, getAllSubcategorias } from "../../api/Subcategoria.api";
 import ListaCategorias from "./ListaCategorias";
 import "../../assets/css/Categoria/Categorias.css";
+import {FaQuestionCircle} from "react-icons/fa";
+import {Modal, Button} from "react-bootstrap";
+import { Link } from "react-router-dom";
 
 function SubcategoriaForm({ subcategoria, onChange }) {
   return (
@@ -70,7 +73,7 @@ export function CategoriaForm() {
   const [modoCategoria, setModoCategoria] = useState("nueva");
   const [categoriaExistenteId, setCategoriaExistenteId] = useState("");
   const [modoVista, setModoVista] = useState("formulario");
-
+  const [mostrarModal, setMostrarModal]= useState(false);
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -163,6 +166,30 @@ export function CategoriaForm() {
       <div className="row justify-content-center">
         <div className="col-12 col-lg-10 col-xl-8">
           
+          {/* Icono de ayuda */}
+          <FaQuestionCircle
+          size={22}
+          style={{ cursor: "pointer", color: "#e7561dff" }}
+          onClick={() => setMostrarModal(true)}
+          />
+           {/* Modal emergente */}
+          <Modal show={mostrarModal} onHide={() => setMostrarModal(false)} centered>
+            <Modal.Header closeButton>
+            <Modal.Title>Próximo paso</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              Después de crear una categoría y la subcategoría correspondiente, dirígete a 
+              <Link to="/admin/tallas/grupo">
+                <strong style={{ cursor: "pointer", color: "#0d6efd" }}>Grupo de Tallas</strong>
+              </Link>
+              para continuar con la gestion de tallas.
+            </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={() => setMostrarModal(false)}>
+                  Cerrar
+                  </Button>
+              </Modal.Footer>
+          </Modal>
           {/* Header */}
           <div className="text-center mb-4">
             <h1 className="display-6 fw-bold text-primary mb-3">Gestión de Categorías</h1>
