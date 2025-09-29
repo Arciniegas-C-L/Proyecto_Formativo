@@ -34,7 +34,7 @@ protected_router.register(r'grupo-talla', views.GrupoTallaViewSet, basename='gru
 protected_router.register(r'facturas', views.FacturaView, basename='facturas')
 protected_router.register(r'pedidoproductos', views.PedidoProductoView, basename='pedidoproducto')
 protected_router.register(r'comentarios', views.ComentarioViewSet, basename='comentario')
-protected_router.register(r"reportes/ventas/rango", views.SalesRangeReportViewSet, basename="sales-range-report")
+
 
 urlpatterns = [
     # Público bajo /BACKEND/  (coincide con tu VITE_API_URL_PUBLIC)

@@ -3,21 +3,20 @@
   max-width: 100%;
   margin: 0 auto;
   padding: 2rem;
-  background: #ffffff;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   min-height: 100vh;
 }
 
 /* Título con el mismo estilo del catálogo */
 .carrito-container h1 {
-  font-size: 3.2rem;
-  background: linear-gradient(45deg, #F26BE2, #00D4FF, #9D4EDD);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 900;
-  letter-spacing: 2px;
+  font-size: 2.6rem;
+  color: #0dcaf0;
+  font-weight: 800;
   margin-bottom: 2rem;
   text-align: center;
+  line-height: 1.2;
+  text-shadow: 0 0px 6px #00b0e044;
+  letter-spacing: -0.5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,21 +100,22 @@
 }
 
 .btn-seguir-comprando {
-  background: linear-gradient(45deg, #F26BE2, #00D4FF);
+  background: linear-gradient(135deg, #F26BE2 0%, #9D4EDD 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   text-decoration: none;
   display: inline-block;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(242, 107, 226, 0.10);
 }
 
 .btn-seguir-comprando:hover {
+  background: linear-gradient(135deg, #9D4EDD 0%, #F26BE2 100%);
+  box-shadow: 0 4px 16px rgba(242, 107, 226, 0.18);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   color: white;
   text-decoration: none;
 }
@@ -134,17 +134,19 @@
 
 /* Sección de items del carrito */
 .carrito-items-section {
-  background-color: #fff;
-  border-radius: 12px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
   padding: 2rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.08);
 }
 
 .carrito-items-section h2 {
-  color: #333;
+  color: #0dcaf0;
   margin-bottom: 1.5rem;
-  font-weight: 700;
-  font-size: 1.5rem;
+  font-weight: 800;
+  font-size: 2rem;
+  text-shadow: 0 0px 6px #00b0e044;
+  letter-spacing: -0.5px;
 }
 
 .carrito-items {
@@ -157,16 +159,17 @@
   display: flex;
   align-items: flex-start;
   padding: 1.5rem;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.08);
 }
 
 .carrito-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #F26BE2;
+  transform: translateY(-8px);
+  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
 }
 
 .item-imagen {
@@ -192,8 +195,8 @@
 
 .item-info h4 {
   margin: 0;
-  color: #333;
-  font-weight: 600;
+  color: #2d3748;
+  font-weight: 700;
   font-size: 1.2rem;
 }
 
@@ -300,18 +303,20 @@
 }
 
 .carrito-resumen {
-  background-color: #fff;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.08);
 }
 
 .carrito-resumen h2 {
-  color: #333;
+  color: #0dcaf0;
   margin-bottom: 1.5rem;
   text-align: center;
-  font-weight: 700;
-  font-size: 1.5rem;
+  font-weight: 800;
+  font-size: 2rem;
+  text-shadow: 0 0px 6px #00b0e044;
+  letter-spacing: -0.5px;
 }
 
 .resumen-detalles {
@@ -337,25 +342,28 @@
 
 .resumen-acciones {
   display: flex;
-  flex-direction: column;
+  width: fit-content;
+  margin: auto;
   gap: 1rem;
 }
 
 .btn-limpiar {
-  background: linear-gradient(45deg, #6c757d, #5a6268);
+  background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(113, 128, 150, 0.2);
+  width:fit-content;
 }
 
 .btn-limpiar:hover {
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(113, 128, 150, 0.3);
 }
 
 .btn-finalizar {
@@ -368,6 +376,7 @@
   transition: all 0.3s ease;
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  width:fit-content;
 }
 
 .btn-finalizar:hover {

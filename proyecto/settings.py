@@ -138,9 +138,28 @@ SIMPLE_JWT = {
 }
 
 # ========= DB (dev) =========
-DATABASES = {
-    "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}
-}
+USE_SQLITE = os.getenv("USE_SQLITE", "0").lower() in {"1", "true", "yes"}
+
+if USE_SQLITE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("MYSQL_DATABASE", "db_proyecto"),
+            "USER": os.getenv("MYSQL_USER", "root"),
+            "PASSWORD": os.getenv("MYSQL_PASSWORD", "proyecto"),
+            "HOST": os.getenv("MYSQL_HOST", "localhost"),
+            "PORT": os.getenv("MYSQL_PORT", "3306"),
+            # Opcional: charset y opciones
+            # "OPTIONS": {"charset": "utf8mb4"},
+        }
+    }
 
 # ========= Usuario, i18n, estáticos =========
 AUTH_USER_MODEL = "BACKEND.Usuario"

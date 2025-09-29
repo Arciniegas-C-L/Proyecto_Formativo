@@ -1,0 +1,73 @@
+/* Botón de redirección (login) en modal de comentarios */
+.footer-modal-btn-login {
+  background: linear-gradient(135deg, #F26BE2 0%, #9D4EDD 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(157, 78, 221, 0.10);
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+.footer-modal-btn-login:hover {
+  background: #8a3fc7;
+  transform: translateY(-1px);
+}
+
+.footer-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(37, 99, 235, 0.10); /* azul muy suave */
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: backdrop-filter 0.3s;
+}
+.footer-modal {
+  background: #f7faff;
+  border-radius: 1.2rem;
+  box-shadow: 0 4px 32px rgba(59,130,246,0.18);
+  padding: 2.2rem 2.5rem 1.5rem 2.5rem;
+  min-width: 320px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  text-align: center;
+  border: 2px solid #bcd0fa;
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+}
+.footer-modal-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #2563eb;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.footer-modal-close:hover {
+  color: #1e40af;
+}
+.footer-modal-title {
+  margin-bottom: 1.2rem;
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: #2563eb;
+  letter-spacing: -1px;
+  text-shadow: 0 2px 8px rgba(59,130,246,0.08);
+}
+.footer-modal-content {
+  font-size: 1.13rem;
+  color: #222e3a;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}

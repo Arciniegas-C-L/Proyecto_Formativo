@@ -340,7 +340,7 @@ export const Home = () => {
         setComentariosAleatorios([]);
       }
       // obtenerComentarios().then(res => ...)
-    } catch (err) {
+  } catch {
       // Manejo de error (puedes mostrar un toast si quieres)
     }
     setLoading(false);
@@ -399,17 +399,11 @@ export const Home = () => {
               Debes iniciar sesión para dejar un comentario.
             </div>
             <button
-              onClick={handleGoToLogin}
-              style={{
-                background: "#222",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "0.6rem 1.5rem",
-                marginRight: 10,
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
+                onClick={handleGoToLogin}
+                className="footer-modal-btn-login"
+                style={{
+                  marginRight: 10
+                }}
             >
               Ir a iniciar sesión
             </button>

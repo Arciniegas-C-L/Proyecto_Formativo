@@ -1,21 +1,26 @@
-import React, { useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import saludo from "../../assets/images/saludo.webp";
-import bienvenida from "../../assets/images/bienvenida.gif";
-import "../../assets/css/Seccionandregistrer/sesion.css";
-import { useAuth } from "../../context/AuthContext";
-import { loginUsuario, registerUsuario } from "../../api/Usuario.api";
-import toast from "react-hot-toast";
-import "bootstrap-icons/font/bootstrap-icons.css";
+import React, { useRef, useState } from 'react';
+import { VerificationModal } from './VerificationModal';
+import { useNavigate, Link } from 'react-router-dom';
+import saludo from '../../assets/images/saludo.webp';
+import bienvenida from '../../assets/images/bienvenida.gif';
+import '../../assets/css/Seccionandregistrer/sesion.css';
+import { useAuth } from '../../context/AuthContext';
+import { loginUsuario, registerUsuario } from '../../api/Usuario.api';
+import toast from 'react-hot-toast';
+import "bootstrap-icons/font/bootstrap-icons.css"; 
 import "../../assets/css/Seccionandregistrer/sesion.css";
 
 export function Sesion() {
   const { login } = useAuth();
   const containerRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [pendingLogin, setPendingLogin] = useState(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false); 
   const [showPasswordRegister, setShowPasswordRegister] = useState(false);
-  const [showPasswordRegister2, setShowPasswordRegister2] = useState(false);
+  const [showPasswordRegister2, setShowPasswordRegister2] = useState(false); 
   const navigate = useNavigate();
 
   const handleSignInClick = () =>
@@ -26,28 +31,23 @@ export function Sesion() {
     e.preventDefault();
     setIsSubmitting(true);
     const form = e.target.elements;
-    const correo = form.correo.value;
-    const password = form.password.value;
+  const correo = form.correo.value;
+  const password = form.password.value;
 
     try {
       const { data } = await loginUsuario({ correo, password });
-
-      const access = data?.token?.access || data?.access;
-      const refresh = data?.token?.refresh || data?.refresh;
-
-      login({
-        access,
-        refresh,
-        usuario: data?.usuario,
-        rol: data?.rol,
-      });
-
-      toast.success(`Bienvenido ${data?.usuario?.nombre || ""}`.trim());
-
-      if (data?.rol === "administrador") {
-        navigate("/admin", { replace: true }); // Redirige al dashboard principal del admin (AdminHome)
+      if (data?.requiere_verificacion) {
+        // Solo guardar datos básicos, NO token
+        setPendingLogin({ usuario: data?.usuario, rol: data?.rol });
+        setAdminEmail(correo);
+        setAdminPassword(password);
+        setShowVerificationModal(true);
       } else {
-        navigate("/", { replace: true });
+        const access = data?.token?.access || data?.access;
+        const refresh = data?.token?.refresh || data?.refresh;
+        login({ access, refresh, usuario: data?.usuario, rol: data?.rol });
+        toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
+        navigate('/', { replace: true });
       }
     } catch (error) {
       const backend = error?.response?.data;
@@ -88,82 +88,59 @@ export function Sesion() {
 
     try {
       await registerUsuario({ nombre, apellido, correo, password, telefono });
-      toast.success("Registro exitoso. Ahora inicia sesión.");
-      containerRef.current?.classList.remove("toggle");
+      toast.success('Registro exitoso. Ahora inicia sesión.');
+      containerRef.current?.classList.remove('toggle');
     } catch (error) {
+      const backend = error?.response?.data;
       const status = error?.response?.status;
-      const data = error?.response?.data;
-
-      // 1) Detección directa por status 409 (Conflict)
-      if (status === 409) {
-        toast.error(
-          "El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña."
-        );
-        form.correo?.focus();
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 2) DRF/Django: errores por campo: { correo: ["..."], email: ["..."] }
-      const correoMsg =
-        (Array.isArray(data?.correo) && data.correo[0]) ||
-        (Array.isArray(data?.email) && data.email[0]) ||
-        (typeof data?.correo === "string" && data.correo) ||
-        (typeof data?.email === "string" && data.email);
-
-      if (correoMsg) {
-        // Normaliza el mensaje si es el típico "already exists"
-        const lower = String(correoMsg).toLowerCase();
-        if (
-          lower.includes("existe") ||
-          lower.includes("exists") ||
-          lower.includes("taken") ||
-          lower.includes("registrad")
-        ) {
-          toast.error(
-            "El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña."
-          );
-        } else {
-          toast.error(correoMsg);
-        }
-        form.correo?.focus();
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 3) Otros formatos comunes:
-      // {code: 'EMAIL_TAKEN'} o {error: 'EMAIL_TAKEN'}
-      const code = data?.code || data?.error || data?.mensaje || data?.message;
-      if (
-        typeof code === "string" &&
-        code.toUpperCase().includes("EMAIL") &&
-        code.toUpperCase().includes("TAKEN")
-      ) {
-        toast.error(
-          "El correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña."
-        );
-        form.correo?.focus();
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 4) Fallback genérico
       const errorMsg =
-        data?.mensaje ||
-        data?.error ||
-        (status === 400 && "Datos inválidos") ||
-        (status === 401 && "No autorizado") ||
-        (status === 500 && "Error interno del servidor") ||
+        backend?.mensaje ||
+        backend?.error ||
+        (status === 400 && 'Datos inválidos') ||
+        (status === 401 && 'No autorizado') ||
+        (status === 500 && 'Error interno del servidor') ||
         error.message ||
-        "No se pudo registrar el usuario";
+        'No se pudo registrar el usuario';
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleVerificationSuccess = async (codigoIngresado) => {
+    if (pendingLogin && adminEmail && adminPassword && codigoIngresado) {
+      try {
+        // Realizar login con código y contraseña
+        const { data } = await loginUsuario({ correo: adminEmail, password: adminPassword, codigo: codigoIngresado });
+        const access = data?.token?.access || data?.access;
+        const refresh = data?.token?.refresh || data?.refresh;
+        login({ access, refresh, usuario: data?.usuario, rol: data?.rol });
+        toast.success(`Bienvenido ${data?.usuario?.nombre || ''}`.trim());
+        setShowVerificationModal(false);
+        setPendingLogin(null);
+        setAdminPassword('');
+        navigate('/admin/dashboard', { replace: true });
+      } catch {
+        toast.error('Error al verificar el código.');
+      }
+    }
+  };
+
+  const handleVerificationClose = () => {
+    setShowVerificationModal(false);
+    setPendingLogin(null);
+    setAdminEmail('');
+    navigate('/', { replace: true });
+  };
+
   return (
     <div className="container-sesion">
+      <VerificationModal
+        isOpen={showVerificationModal}
+        onRequestClose={handleVerificationClose}
+        email={adminEmail}
+        onSuccess={handleVerificationSuccess}
+      />
       <div className="container" ref={containerRef}>
         {/* Formulario Iniciar Sesión */}
         <div className="container-form">
@@ -240,7 +217,6 @@ export function Sesion() {
                 required
               />
             </div>
-            {/* Contraseña */}
             <div className="container-input">
               <input
                 type={showPasswordRegister ? "text" : "password"}

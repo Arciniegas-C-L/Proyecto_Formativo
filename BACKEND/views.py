@@ -240,12 +240,20 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
-        # Permitir actualizar avatar_seed y avatar_options por id
+        # LOG: Mostrar el payload recibido
+        print("[UsuarioViewSet.update] Payload recibido:", request.data)
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        # LOG: Mostrar el usuario actualizado
+        print("[UsuarioViewSet.update] Usuario actualizado:", serializer.data)
+
+        # Ejecutar comando de gestión para actualizar comentarios con el avatar actual
+        from django.core.management import call_command
+        call_command('actualiza_comentarios_avatar')
+
         return Response(serializer.data)
 
     # >>> Eliminado el action 'guest' que emitía tokens para el rol 'Invitado'.
@@ -299,6 +307,57 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             if not usuario.check_password(password):
                 return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
 
+            es_admin = usuario.rol and usuario.rol.nombre.lower() == 'administrador'
+            codigo = request.data.get('codigo')
+            from BACKEND.models import CodigoRecuperacion
+            if es_admin:
+                # Si no se envía código, solo enviar el código y pedir verificación
+                if not codigo:
+                    codigo_activo = CodigoRecuperacion.objects.filter(
+                        usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=3)
+                    ).exists()
+                    if not codigo_activo:
+                        codigo_gen = ''.join(random.choices(string.digits, k=6))
+                        CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo_gen)
+                        send_mail(
+                            subject="Código de verificación administrador",
+                            message=f"Tu código de verificación es: {codigo_gen}",
+                            from_email=settings.EMAIL_HOST_USER,
+                            recipient_list=[correo],
+                            fail_silently=False,
+                        )
+                    return Response({
+                        "requiere_verificacion": True,
+                        "mensaje": "Se ha enviado un código de verificación al correo. Ingresa el código para continuar.",
+                        "usuario": UsuarioSerializer(usuario).data,
+                        "rol": usuario.rol.nombre if usuario.rol else None
+                    }, status=status.HTTP_200_OK)
+                # Si se envía código, validarlo antes de devolver token
+                try:
+                    codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
+                except CodigoRecuperacion.DoesNotExist:
+                    return Response({"error": "No se encontró código de verificación"}, status=status.HTTP_400_BAD_REQUEST)
+                if codigo_obj.intentos >= 3:
+                    return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
+                if codigo_obj.codigo != codigo:
+                    codigo_obj.intentos += 1
+                    codigo_obj.save()
+                    return Response({"error": "Código incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
+                # Código correcto, devolver token
+                refresh = RefreshToken.for_user(usuario)
+                token = {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                }
+                usuario_serializado = UsuarioSerializer(usuario).data
+                return Response({
+                    "mensaje": "Login exitoso",
+                    "usuario": usuario_serializado,
+                    "rol": usuario.rol.nombre if usuario.rol else None,
+                    "token": token
+                }, status=status.HTTP_200_OK)
+
+            # Si no es admin, login normal
             refresh = RefreshToken.for_user(usuario)
             token = {
                 'refresh': str(refresh),

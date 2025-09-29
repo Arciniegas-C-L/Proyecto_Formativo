@@ -1,3 +1,10 @@
+/* Botón eliminar cuenta alineado a la derecha */
+.boton-eliminar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+  margin-right: 32px;
+}
 /* ===============================================
    PERFIL ZOE - DISEÑO E-COMMERCE MODERNO Y RESPONSIVO
    =============================================== */
@@ -5,8 +12,8 @@
 .perfil-container {
   min-height: 100vh;
   background: #fff;
-  padding: 20px 15px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  border-radius: 20px;
 }
 
 .dashboard-perfil {
@@ -26,7 +33,6 @@
   box-shadow: 0 10px 40px rgba(102, 126, 234, 0.12);
   height: fit-content;
   position: sticky;
-  top: 20px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
@@ -34,7 +40,7 @@
 .perfil-avatar {
   padding: 40px 28px 32px;
   text-align: center;
-  background: linear-gradient(135deg, #667eea 10%, #764ba2 100%);
+  background: rgba(21, 26, 38, 0.98);
   position: relative;
 }
 
@@ -54,10 +60,10 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  border: 4px solid #f26be2;
   object-fit: cover;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0px 30px #f26be2;
   position: relative;
   z-index: 1;
 }
@@ -70,12 +76,12 @@
 }
 
 .perfil-avatar h2 {
-  color: white;
+  color: #0dcaf0;
   font-size: 22px;
   font-weight: 700;
   margin: 20px 0 16px 0;
   line-height: 1.2;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 0px 10px #00b0e0;
   position: relative;
   z-index: 1;
 }
@@ -166,13 +172,13 @@
 .mostrar-opciones {
   background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.12);
+  box-shadow: 0 0 60px rgba(102, 126, 234, 0.591);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .titulo-opciones {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(21, 26, 38, 0.98);
   padding: 40px 32px;
   text-align: center;
   position: relative;
@@ -201,25 +207,23 @@
 }
 
 .titulo-opciones h3 {
-  color: white;
+  color: #0dcaf0;
   font-size: 32px;
   font-weight: 800;
   margin: 0;
   line-height: 1.2;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 0px 20px #00b0e0;
   position: relative;
   z-index: 1;
   letter-spacing: -0.5px;
 }
 
 /* ========== DATOS PERSONALES ========== */
-.datos-section {
-  padding: 50px 40px;
-}
 
 .datos-section1 {
   max-width: 800px;
   margin: 0 auto;
+  padding: 1.3rem;
 }
 
 .form-datos {
@@ -307,15 +311,15 @@
 }
 
 /* ========== CONFIGURACIONES ========== */
-.config-section {
-  padding: 50px 40px;
-}
+
 
 .config-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  display: flex;
+  flex-direction: row;
   gap: 28px;
   margin-top: 32px;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .config-card {
@@ -328,6 +332,11 @@
   overflow: hidden;
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.08);
   min-height: 180px;
+  max-width: 420px;
+  width: 100%;
+  margin: 0;
+}
+  margin-left: auto;
 }
 
 .config-card::before {
@@ -380,6 +389,7 @@
 }
 
 .config-btn.danger {
+  width: fit-content;
   background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
   box-shadow: 0 6px 20px rgba(229, 62, 62, 0.2);
 }
@@ -400,8 +410,9 @@
 }
 
 .config-expand {
-  margin-top: 20px;
-  animation: expandConfig 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 20px;
+  margin-top: 0;
+  animation: expandConfigRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(102, 126, 234, 0.05);
   border-radius: 12px;
   padding: 20px;
@@ -413,9 +424,9 @@
   border: 2px solid #bfdbfe;
 }
 
-@keyframes expandConfig {
-  from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes expandConfigRight {
+  from { opacity: 0; transform: translateX(-40px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
 }
 
 .config-card.cambiar-password {
@@ -431,12 +442,12 @@
 
 /* ========== EDITOR DE AVATAR ========== */
 .avatar-editor {
-  padding: 50px 40px;
   text-align: center;
 }
 
 .avatar-preview {
-  margin-bottom: 48px;
+  margin-bottom: 3rem;
+  margin-top: 1.5rem;
 }
 
 .avatar-preview-image {
@@ -457,6 +468,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 16px;
+  padding: 1rem;
   margin-bottom: 48px;
   max-width: 800px;
   margin-left: auto;
@@ -466,7 +478,7 @@
 .avatar-controls button {
   background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   border: 2px solid #e2e8f0;
-  padding: 16px 12px;
+  padding: .5rem .7rem;
   border-radius: 12px;
   font-size: 14px;
   cursor: pointer;
@@ -548,6 +560,7 @@
   box-shadow: 0 8px 30px rgba(72, 187, 120, 0.3);
   text-transform: uppercase;
   letter-spacing: 1px;
+  margin-bottom: 1.5rem;
 }
 
 .save-btn:hover {
@@ -793,4 +806,165 @@
 .cambiar-password-input:focus {
   border-color: #3b82f6;
   background: white;
-  box-shadow: 0 0 0 6px rgba(59, 130
+}
+
+/* =============================
+  MEDIA QUERIES RESPONSIVAS
+============================= */
+
+@media (max-width: 1024px) {
+  .dashboard-perfil {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 0;
+    border-radius: 0;
+    margin: 0;
+  }
+  .perfil-info {
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    display: flex;
+    width: 100%;
+  }
+  .perfil-avatar {
+    padding: 2rem;
+  }
+  .perfil-avatar h2 {
+    font-size: 2rem;
+  }
+  .perfil-opciones{
+    flex: 1;
+  }
+  .perfil-opciones button{
+    padding: 1rem 1.4rem;
+    font-size: 1.5rem;
+  }
+  .edit-avatar-btn {
+    padding: .9rem 1.2rem;
+    font-size: 12px;
+  }
+  .avatar-image,
+  .perfil-avatar img {
+    width: 7rem;
+    height: 7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-perfil {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0;
+    border-radius: 0;
+    margin: 0;
+  }
+  .perfil-info {
+    border-radius: 16px;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    display: flex;
+    width: 100%;
+  }
+  .perfil-avatar {
+    padding: 1rem;
+  }
+  .perfil-avatar h2 {
+    font-size: 1rem;
+  }
+  .perfil-opciones button{
+    padding: .8rem 1.2rem;
+    font-size: 1rem !important;
+  }
+  .edit-avatar-btn {
+    padding: .5rem .8rem;
+    font-size: 1rem;
+  }
+  .avatar-image,
+  .perfil-avatar img {
+    width: 80px;
+    height: 80px;
+  }
+  .mostrar-opciones {
+    border-radius: 16px;
+    box-shadow: none;
+  }
+  .titulo-opciones {
+    padding: 24px 12px;
+  }
+  .titulo-opciones h3 {
+    font-size: 24px;
+  }
+  .form-datos {
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .form-datos .form-group label{
+    font-size: .8rem !important;
+  }
+  .form-datos .form-group input{
+    font-size: .9rem !important;
+    padding: 8px 10px !important;
+  }
+  .btn-guardar {
+    padding: 14px 32px;
+    font-size: 15px;
+  }
+  .config-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .config-card {
+    padding: 18px 10px;
+    min-height: 120px;
+  }
+  .avatar-preview-image {
+    width: 100px;
+    height: 100px;
+  }
+  .avatar-controls {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 0;
+  }
+  .option-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    padding: 12px;
+    max-width: 100%;
+  }
+  .option-avatar {
+    width: 60px;
+    height: 60px;
+  }
+  .avatar-placeholder {
+    width: 80px;
+    height: 80px;
+  }
+  .direcciones {
+    padding: 18px 8px 12px;
+    border-radius: 10px;
+  }
+  .direccion-personal,
+  .direccion-item {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+  .direccion-info-texto {
+    font-size: 14px;
+  }
+  .direccion-btn-agregar {
+    padding: 10px 0;
+    font-size: 14px;
+  }
+  .direccion-form input {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+  .cambiar-password-input {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+}

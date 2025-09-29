@@ -7,8 +7,25 @@ export const AuthProvider = ({ children }) => {
   const [sesion, setSesion] = useState(auth.obtenerSesion());
 
   useEffect(() => {
-    // Puedes agregar lógica adicional aquí si el token debe verificarse
-    setSesion(auth.obtenerSesion());
+    // Al montar, refresca los datos del usuario desde la API si hay token
+    const sesionLocal = auth.obtenerSesion();
+    setSesion(sesionLocal);
+    if (sesionLocal.access) {
+      import('../api/Usuario.api').then(({ fetchUsuario }) => {
+        fetchUsuario()
+          .then(res => {
+            if (res?.data) {
+              auth.guardarSesion({
+                ...sesionLocal,
+                usuario: res.data,
+                rol: res.data.rol_nombre || res.data.rol || sesionLocal.rol
+              });
+              setSesion(auth.obtenerSesion());
+            }
+          })
+          .catch(() => {});
+      });
+    }
   }, []);
 
   const login = ({ access, refresh, usuario, rol }) => {

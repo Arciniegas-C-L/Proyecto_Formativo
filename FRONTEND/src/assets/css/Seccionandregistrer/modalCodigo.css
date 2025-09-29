@@ -1,0 +1,81 @@
+/* Estilos para el modal de código de verificación */
+
+/* Overlay único para VerificationModal */
+.verification-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Contenido único para VerificationModal */
+.verification-modal-content {
+  background: #fff;
+  border-radius: 18px;
+  padding: 36px 32px 28px 32px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(102, 126, 234, 0.18);
+  position: relative;
+  text-align: center;
+}
+
+.verification-modal-title {
+  color: #667eea;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
+.verification-modal-desc {
+  color: #4a5568;
+  font-size: 1.1rem;
+  margin-bottom: 18px;
+}
+
+.verification-modal-input {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  transition: border-color 0.3s;
+}
+
+.verification-modal-input:focus {
+  border-color: #667eea;
+  outline: none;
+}
+
+.verification-modal-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.12);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.verification-modal-btn:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.18);
+}
+
+.verification-modal-error {
+  color: #e53e3e;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  font-weight: 600;
+}

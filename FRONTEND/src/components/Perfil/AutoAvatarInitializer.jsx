@@ -69,7 +69,7 @@ export default function AutoAvatarInitializer() {
 
       didRunRef.current = true;
     })();
-  }, [usuarioContext?.idUsuario, updateUsuarioContext]);
+  }, [usuarioContext, updateUsuarioContext]);
 
   return null; // no renderiza UI
 }
