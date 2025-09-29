@@ -1,4 +1,29 @@
 import React, { useState, useEffect } from "react";
+// Widget de Cloudinary
+function CloudinaryUpload({ onUrl }) {
+  const openWidget = () => {
+    if (!window.cloudinary) {
+      alert("Cloudinary widget no cargado");
+      return;
+    }
+    window.cloudinary.createUploadWidget(
+      {
+        cloudName: 'dkwr4gcpl',
+        uploadPreset: 'default-preset', // Debes crear este preset en Cloudinary
+      },
+      (error, result) => {
+        if (!error && result && result.event === "success") {
+          onUrl(result.info.secure_url);
+        }
+      }
+    ).open();
+  };
+  return (
+    <button type="button" onClick={openWidget} style={{marginBottom:8}}>
+      Subir imagen a Cloudinary
+    </button>
+  );
+}
 import { toast } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../../assets/css/Productos/ProductosForm.css";
@@ -72,20 +97,8 @@ export function ProductosForm() {
 
   // Manejo de cambios en los inputs
   const handleInputChange = (e) => {
-    const { name, value, type, files } = e.target;
-    if (type === "file") {
-      const file = files[0];
-      if (file) {
-        const localImageUrl = URL.createObjectURL(file);
-        setFormData(prev => ({
-          ...prev,
-          imagenFile: file,
-          imagen: localImageUrl,
-        }));
-      }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   // Validación simple del formulario
@@ -120,28 +133,21 @@ export function ProductosForm() {
     const precioNum = Number(String(formData.precio).replace(",", "."));
     const stockNum = Number(formData.stock);
 
-    const formDataToSend = new FormData();
-    formDataToSend.append("nombre", formData.nombre.trim());
-    formDataToSend.append("descripcion", formData.descripcion.trim());
-    formDataToSend.append("precio", precioNum);
-    formDataToSend.append("stock", stockNum);
-    formDataToSend.append("subcategoria", subId);
-
-    if (formData.imagenFile) {
-      formDataToSend.append("imagen", formData.imagenFile);
-    }
-
-    console.log(" FormData enviado:");
-    for (let pair of formDataToSend.entries()) {
-      console.log(pair[0], ":", pair[1]);
-    }
+    const dataToSend = {
+      nombre: formData.nombre.trim(),
+      descripcion: formData.descripcion.trim(),
+      precio: precioNum,
+      stock: stockNum,
+      subcategoria: subId,
+      imagen: formData.imagen, // URL pública de Cloudinary
+    };
 
     try {
       if (productoEditar) {
-        await updateProducto(productoEditar.idProducto, formDataToSend);
+        await updateProducto(productoEditar.idProducto, dataToSend);
         toast.success("Producto actualizado correctamente");
       } else {
-        await createProducto(formDataToSend);
+        await createProducto(dataToSend);
         toast.success("Producto creado correctamente");
         setFormData({
           nombre: "",
@@ -151,10 +157,8 @@ export function ProductosForm() {
           categoria: "",
           subcategoria: "",
           imagen: "",
-          imagenFile: null,
         });
       }
-      // Redirigir siempre a la lista de productos tras guardar
       navigate("/admin/productos");
     } catch (error) {
       console.error(" Error guardando producto:", error);
@@ -262,12 +266,7 @@ export function ProductosForm() {
 
         <div className="form-group">
           <label>Imagen</label>
-          <input
-            type="file"
-            name="imagen"
-            onChange={handleInputChange}
-            accept="image/*"
-          />
+          <CloudinaryUpload onUrl={url => setFormData(prev => ({ ...prev, imagen: url }))} />
           {formData.imagen && (
             <div className="image-preview">
               <img src={formData.imagen} alt="Producto" />

@@ -287,37 +287,16 @@ class ProductoSerializer(serializers.ModelSerializer):
     subcategoria_nombre = serializers.CharField(source='subcategoria.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='subcategoria.categoria.nombre', read_only=True)
     inventario_tallas = serializers.SerializerMethodField()
-    imagen = serializers.ImageField(required=False, allow_null=True)
+    imagen = serializers.URLField(required=False, allow_null=True)
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         # Mostrar la URL pública de la imagen
-        if instance.imagen:
-            url = instance.imagen.url
-            # Si es una URL de Cloudinary, se devuelve tal cual
-            if 'res.cloudinary.com' in url:
-                rep['imagen'] = url
-            else:
-                request = self.context.get('request')
-                if request is not None:
-                    rep['imagen'] = request.build_absolute_uri(url)
-                else:
-                    rep['imagen'] = url
-        else:
-            rep['imagen'] = None
+        rep['imagen'] = instance.imagen if instance.imagen else None
         return rep
 
     def get_imagen(self, obj):
-        if obj.imagen:
-            url = obj.imagen.url
-            # Si es una URL de Cloudinary, se devuelve tal cual
-            if 'res.cloudinary.com' in url:
-                return url
-            request = self.context.get('request')
-            if request is not None:
-                return request.build_absolute_uri(url)
-            return url
-        return None
+        return obj.imagen if obj.imagen else None
 
 
     class Meta:
