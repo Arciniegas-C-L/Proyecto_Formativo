@@ -76,46 +76,46 @@ export function ProductosForm() {
     }
   }, [formData.categoria]);
 
-  const loadCategorias = async () => {
-    try {
-      const res = await getCategorias();
-      setCategorias(res.data);
-    } catch {
-      toast.error("Error al cargar categorías");
-    }
-  };
-
-  const loadSubcategorias = async (categoriaId) => {
-    setCargandoSubcategorias(true);
-    try {
-      const res = await getSubcategoriasPorCategoria(categoriaId);
-      setSubcategorias(res.data);
-    } catch {
-      toast.error("Error al cargar subcategorías");
-    } finally {
-      setCargandoSubcategorias(false);
-    }
-  };
-
-  // Manejo de cambios en los inputs
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Validación simple del formulario
-  const validateForm = () => {
-    const errores = {};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setLoading(true);
     const subId = parseInt(formData.subcategoria, 10);
-    const precioNum = Number(String(formData.precio).replace(",", "."));
-    const stockNum = Number(formData.stock);
+    // Usar FormData para evitar error de media type
+    const form = new FormData();
+    form.append('nombre', formData.nombre);
+    form.append('descripcion', formData.descripcion);
+    form.append('precio', Number(String(formData.precio).replace(",", ".")));
+    form.append('stock', Number(formData.stock));
+    form.append('categoria', formData.categoria);
+    form.append('subcategoria', subId);
+    form.append('imagen', formData.imagen); // URL pública de Cloudinary
 
-    if (!formData.nombre.trim()) errores.nombre = "El nombre es obligatorio";
-    if (!formData.descripcion.trim()) errores.descripcion = "La descripción es obligatoria";
-    if (isNaN(precioNum) || precioNum <= 0) errores.precio = "Precio inválido";
-    if (!Number.isInteger(stockNum) || stockNum < 0) errores.stock = "Stock inválido";
-    if (!formData.categoria) errores.categoria = "Seleccione una categoría";
-    if (!Number.isInteger(subId) || subId <= 0) errores.subcategoria = "Seleccione una subcategoría válida";
+    try {
+      if (productoEditar) {
+        await updateProducto(productoEditar.idProducto, form);
+        toast.success("Producto actualizado correctamente");
+      } else {
+        await createProducto(form);
+        toast.success("Producto creado correctamente");
+        setFormData({
+          nombre: "",
+          descripcion: "",
+          precio: "",
+          stock: "",
+          categoria: "",
+          subcategoria: "",
+          imagen: "",
+        });
+      }
+      navigate("/admin/productos");
+    } catch (error) {
+      console.error(" Error guardando producto:", error);
+      toast.error("Error al guardar el producto");
+    } finally {
+      setLoading(false);
+    }
+  };
 
     setErrors(errores);
     return Object.keys(errores).length === 0;
@@ -135,21 +135,21 @@ export function ProductosForm() {
     const precioNum = Number(String(formData.precio).replace(",", "."));
     const stockNum = Number(formData.stock);
 
-    const dataToSend = {
-      nombre: formData.nombre.trim(),
-      descripcion: formData.descripcion.trim(),
-      precio: precioNum,
-      stock: stockNum,
-      subcategoria: subId,
-      imagen: formData.imagen, // URL pública de Cloudinary
-    };
+    // Usar FormData para evitar error de media type
+    const form = new FormData();
+    form.append('nombre', formData.nombre.trim());
+    form.append('descripcion', formData.descripcion.trim());
+    form.append('precio', precioNum);
+    form.append('stock', stockNum);
+    form.append('subcategoria', subId);
+    form.append('imagen', formData.imagen);
 
     try {
       if (productoEditar) {
-        await updateProducto(productoEditar.idProducto, dataToSend);
+        await updateProducto(productoEditar.idProducto, form);
         toast.success("Producto actualizado correctamente");
       } else {
-        await createProducto(dataToSend);
+        await createProducto(form);
         toast.success("Producto creado correctamente");
         setFormData({
           nombre: "",
