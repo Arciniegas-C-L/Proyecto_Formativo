@@ -565,6 +565,8 @@ class ProductoView(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
+    
+    
 class GrupoTallaViewSet(viewsets.ModelViewSet):
     serializer_class = GrupoTallaSerializer
     queryset = GrupoTalla.objects.all()

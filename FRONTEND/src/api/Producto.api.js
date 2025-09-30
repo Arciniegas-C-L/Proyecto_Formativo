@@ -88,6 +88,9 @@ export const getCategorias = async () => {
 
 // Obtener las subcategorías filtradas por ID de categoría
 export const getSubcategoriasPorCategoria = async (idCategoria) => {
+  if (idCategoria === null || idCategoria === undefined || idCategoria === '' || idCategoria === 'null') {
+    return { data: [] }; // forma compatible con tu consumo actual
+  }
   try {
     return await api.get(`subcategoria/?categoria=${idCategoria}`);
   } catch (error) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback, } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   getTablaCategorias,
   getTablaSubcategorias,
@@ -21,16 +21,13 @@ function timeAgo(iso) {
 const aKey = (a) => `${a.categoriaId}-${a.subcategoriaId}-${a.productoId}-${a.tallaId}-${a.tipo}`;
 
 export function AdminStockNotifications({
-  isAdmin = false,          // pásalo desde auth: user.rol_nombre === 'administrador'
-  pollMs = 30000,           // intervalo de refresco
-  // ⚠️ Ignoraremos cualquier stock_minimo del backend y usaremos SIEMPRE este umbral por talla:
-  umbralGlobal = 5,         // <--- umbral fijo por talla
-  onGoToInventario = null,  // ({categoriaId, subcategoriaId, productoId, tallaId, ...})
-  
-  // Posicionamiento
-  position = "top-right",   // "top-right" | "top-left" | "bottom-right" | "bottom-left"
+  isAdmin = false,
+  pollMs = 30000,
+  umbralGlobal = 5,         // umbral fijo por talla
+  onGoToInventario = null,
+  position = "top-right",
   offset = 20,
-  customPosition = null,    // { top?, right?, bottom?, left? }
+  customPosition = null,
 }) {
   const [open, setOpen] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
@@ -38,23 +35,22 @@ export function AdminStockNotifications({
   const [alertas, setAlertas] = useState([]);
   const [errorList, setErrorList] = useState("");
   const [errorBadge, setErrorBadge] = useState("");
-  const [readSet, setReadSet] = useState(() => new Set());
   const Navigate = useNavigate();
 
   const mountedRef = useRef(true);
   const visibleRef = useRef(typeof document !== "undefined" ? document.visibilityState === "visible" : true);
 
   const counts = useMemo(() => {
-    let unread = 0, low = 0, out = 0;
+    let low = 0, out = 0;
     for (const a of alertas) {
-      if (!readSet.has(aKey(a))) unread++;
       if (a.tipo === "stock_out") out++;
       if (a.tipo === "stock_low") low++;
     }
-    return { unread, low, out, total: alertas.length };
-  }, [alertas, readSet]);
+    // “unread” ahora es simplemente lo visible
+    return { unread: alertas.length, low, out, total: alertas.length };
+  }, [alertas]);
 
-  // Calcular estilos de posicionamiento
+  // Posicionamiento del botón
   const buttonStyles = useMemo(() => {
     if (customPosition) return customPosition;
     const styles = {};
@@ -73,12 +69,10 @@ export function AdminStockNotifications({
   }, []);
 
   // --------------------------
-  // Núcleo: leer inventario y derivar alertas
-  // REGLA: alerta "stock_out" si stock === 0
-  //        alerta "stock_low" si 0 < stock < 5 (ignorando stock_minimo del backend)
+  // Núcleo: leer inventario y derivar alertas (0 => out, 0<stock<umbralGlobal => low)
   // --------------------------
   const derivarAlertas = useCallback(async () => {
-    const catRes = await getTablaCategorias(); // { datos: [...] }
+    const catRes = await getTablaCategorias();
     const categorias = catRes?.datos ?? [];
 
     const subPromises = categorias.map((c) => getTablaSubcategorias(c.id));
@@ -88,9 +82,7 @@ export function AdminStockNotifications({
     subSettled.forEach((r, idx) => {
       const categoria = categorias[idx];
       const subcats = r.status === "fulfilled" ? (r.value?.datos ?? []) : [];
-      if (categoria && Array.isArray(subcats)) {
-        catSubs.push({ categoria, subcats });
-      }
+      if (categoria && Array.isArray(subcats)) catSubs.push({ categoria, subcats });
     });
 
     const prodPromises = [];
@@ -112,7 +104,6 @@ export function AdminStockNotifications({
       const { categoria, subcat } = meta[i] || {};
 
       for (const p of productos) {
-        // p.stock_por_talla -> { "S": { talla_id, stock, ... }, ... }
         const spt = p?.stock_por_talla || {};
         for (const [tallaNombre, info] of Object.entries(spt)) {
           const tallaId = info?.talla_id;
@@ -122,16 +113,11 @@ export function AdminStockNotifications({
             alerts.push({
               id: `out-${categoria?.id}-${subcat?.id}-${p.id}-${tallaId}`,
               tipo: "stock_out",
-              categoriaId: categoria?.id,
-              categoria: categoria?.nombre,
-              subcategoriaId: subcat?.id,
-              subcategoria: subcat?.nombre,
-              productoId: p.id,
-              producto: p.nombre,
-              tallaId,
-              talla: tallaNombre,
+              categoriaId: categoria?.id, categoria: categoria?.nombre,
+              subcategoriaId: subcat?.id, subcategoria: subcat?.nombre,
+              productoId: p.id, producto: p.nombre,
+              tallaId, talla: tallaNombre,
               cantidad: 0,
-              // mantenemos el campo para UI, pero SIEMPRE 5
               stock_minimo: umbralGlobal,
               actualizado_en: nowIso,
             });
@@ -139,16 +125,12 @@ export function AdminStockNotifications({
             alerts.push({
               id: `low-${categoria?.id}-${subcat?.id}-${p.id}-${tallaId}`,
               tipo: "stock_low",
-              categoriaId: categoria?.id,
-              categoria: categoria?.nombre,
-              subcategoriaId: subcat?.id,
-              subcategoria: subcat?.nombre,
-              productoId: p.id,
-              producto: p.nombre,
-              tallaId,
-              talla: tallaNombre,
+              categoriaId: categoria?.id, categoria: categoria?.nombre,
+              subcategoriaId: subcat?.id, subcategoria: subcat?.nombre,
+              productoId: p.id, producto: p.nombre,
+              tallaId, talla: tallaNombre,
               cantidad: stock,
-              stock_minimo: umbralGlobal, // fijo a 5 para consistencia visual
+              stock_minimo: umbralGlobal,
               actualizado_en: nowIso,
             });
           }
@@ -159,13 +141,14 @@ export function AdminStockNotifications({
     return alerts;
   }, [umbralGlobal]);
 
-  // Carga para badge (conteo) – deriva alertas
+  // Carga para badge
   const loadBadge = useCallback(async () => {
     if (!isAdmin || !visibleRef.current) return;
     safeSet(setLoadingBadge, true);
     safeSet(setErrorBadge, "");
     try {
       const alerts = await derivarAlertas();
+      // ⬅️ ya NO filtramos por “leídas”; siempre mostramos lo actual
       safeSet(setAlertas, (prev) => {
         const sigPrev = JSON.stringify(prev.map((a) => [a.id, a.cantidad]));
         const sigNew  = JSON.stringify(alerts.map((a) => [a.id, a.cantidad]));
@@ -179,7 +162,7 @@ export function AdminStockNotifications({
     }
   }, [isAdmin, derivarAlertas, safeSet]);
 
-  // Carga para lista (cuando el panel está abierto)
+  // Carga para lista
   const loadList = useCallback(async () => {
     if (!isAdmin || !open || !visibleRef.current) return;
     safeSet(setLoadingList, true);
@@ -233,11 +216,14 @@ export function AdminStockNotifications({
 
   // acciones locales
   const markAllRead = () => {
-    const next = new Set(readSet);
-    for (const a of alertas) next.add(aKey(a));
-    setReadSet(next);
+    // Oculta todas las alertas visibles SOLO hasta el próximo refresco/carga
+    setAlertas([]);
   };
-  const markOneRead = (a) => setReadSet((prev) => new Set(prev).add(aKey(a)));
+
+  const markOneRead = (a) => {
+    // Oculta la alerta pulsada SOLO hasta el próximo refresco/carga
+    setAlertas((prev) => prev.filter(x => x.id !== a.id));
+  };
 
   return (
     <>
@@ -246,17 +232,15 @@ export function AdminStockNotifications({
         type="button"
         className="notification-btn-float"
         style={buttonStyles}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen(o => !o)}      // ⇦ toggle abrir/cerrar
         aria-label="Notificaciones de stock"
         title={`Notificaciones de stock - ${counts.unread > 0 ? counts.unread + ' sin leer' : counts.total + ' alertas'}`}
       >
         <span className="notification-icon" aria-hidden="true">🔔</span>
         {(counts.total > 0) && (
           <span className="notification-badge">
-            {loadingBadge ? "…" : (counts.unread > 0 ? counts.unread : counts.total)}
-            <span className="visually-hidden">
-              {counts.unread > 0 ? "no leídas" : "alertas totales"}
-            </span>
+            {loadingBadge ? "…" : counts.total}
+            <span className="visually-hidden">alertas totales</span>
           </span>
         )}
       </button>
@@ -285,7 +269,7 @@ export function AdminStockNotifications({
             <div className="notification-actions">
               <button
                 className="btn btn-sm btn-outline-secondary notification-btn-refresh"
-                onClick={() => { loadBadge(); loadList(); }}
+                onClick={() => { loadBadge(); loadList(); }}   // ⇦ refrescar vuelve a mostrarlas
                 disabled={loadingList || loadingBadge}
                 title="Refrescar"
               >
@@ -334,9 +318,8 @@ export function AdminStockNotifications({
 
               {!loadingList && alertas.map((a) => {
                 const isOut = a.tipo === "stock_out";
-                const isRead = readSet.has(aKey(a));
                 return (
-                  <div key={a.id} className={`notification-item ${isRead ? "notification-item-read" : ""}`}>
+                  <div key={a.id} className="notification-item">
                     <div className="notification-item-main">
                       <div className="notification-item-content">
                         <div className="notification-item-title">
@@ -347,9 +330,7 @@ export function AdminStockNotifications({
                             {a.categoria} / {a.subcategoria}
                           </span>
                           <span className="notification-item-stock">
-                            {isOut
-                              ? "Sin stock"
-                              : `Stock bajo: ${a.cantidad}` /* mostramos regla fija */}
+                            {isOut ? "Sin stock" : `Stock bajo: ${a.cantidad}`}
                           </span>
                         </div>
                         {a.actualizado_en && (
@@ -362,26 +343,36 @@ export function AdminStockNotifications({
                     </div>
 
                     <div className="notification-item-buttons">
-                      {typeof onGoToInventario === "function" && (
+                      {typeof onGoToInventario === "function" ? (
                         <button
                           className="btn btn-sm btn-outline-secondary notification-btn-go"
                           onClick={() =>
-                           Navigate(
-                            `/admin/inventario`
-                          )
+                            onGoToInventario({
+                              categoriaId: a.categoriaId,
+                              subcategoriaId: a.subcategoriaId,
+                              productoId: a.productoId,
+                              tallaId: a.tallaId,
+                              producto: a.producto,
+                              talla: a.talla,
+                            })
                           }
                         >
                           Ir a inventario
                         </button>
-                      )}
-                      {!isRead && (
-                        <button 
-                          className="btn btn-sm btn-outline-primary notification-btn-mark" 
-                          onClick={() => markOneRead(a)}
+                      ) : (
+                        <button
+                          className="btn btn-sm btn-outline-secondary notification-btn-go"
+                          onClick={() => Navigate(`/admin/inventario`)}
                         >
-                          Marcar como vista
+                          Ir a inventario
                         </button>
                       )}
+                      <button 
+                        className="btn btn-sm btn-outline-primary notification-btn-mark" 
+                        onClick={() => markOneRead(a)}   // ⇦ oculta temporalmente
+                      >
+                        Marcar como vista
+                      </button>
                     </div>
                   </div>
                 );

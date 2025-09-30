@@ -3,9 +3,10 @@ import { createCategoria, getAllCategorias } from "../../api/Categoria.api";
 import { createSubcategoria, getAllSubcategorias } from "../../api/Subcategoria.api";
 import ListaCategorias from "./ListaCategorias";
 import "../../assets/css/Categoria/Categorias.css";
-import {FaQuestionCircle} from "react-icons/fa";
-import {Modal, Button} from "react-bootstrap";
+import { FaQuestionCircle } from "react-icons/fa";
+import { Modal, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { toast } from "react-hot-toast"; // ⬅️ NUEVO
 
 function SubcategoriaForm({ subcategoria, onChange }) {
   return (
@@ -56,6 +57,30 @@ function SubcategoriaForm({ subcategoria, onChange }) {
   );
 }
 
+// ⬇️⬇️⬇️ Helper pequeño para mostrar mensajes de error claros
+function parseApiError(err) {
+  // Axios error shapes comunes
+  const resp = err?.response;
+  if (resp?.data) {
+    // detail clásico
+    if (typeof resp.data.detail === "string") return resp.data.detail;
+
+    // Errores de validación: { campo: ["msg1", "msg2"] }
+    if (typeof resp.data === "object") {
+      // Intenta tomar el primer string que encuentre
+      for (const key of Object.keys(resp.data)) {
+        const val = resp.data[key];
+        if (Array.isArray(val) && val.length && typeof val[0] === "string") {
+          return `${key}: ${val[0]}`;
+        }
+        if (typeof val === "string") return `${key}: ${val}`;
+      }
+    }
+  }
+  // Mensaje genérico
+  return err?.message || "Ocurrió un error inesperado";
+}
+
 export function CategoriaForm() {
   const [categoria, setCategoria] = useState({
     nombre: "",
@@ -73,7 +98,8 @@ export function CategoriaForm() {
   const [modoCategoria, setModoCategoria] = useState("nueva");
   const [categoriaExistenteId, setCategoriaExistenteId] = useState("");
   const [modoVista, setModoVista] = useState("formulario");
-  const [mostrarModal, setMostrarModal]= useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
+
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -92,8 +118,11 @@ export function CategoriaForm() {
       }));
 
       setCategorias(categoriasConSubcategorias);
+      // ✅ Opcional: toast suave indicando que se cargó (solo al montar puede ser ruidoso, por eso lo dejo sin loading)
+      // toast.success("Datos cargados");
     } catch (error) {
       console.error("Error cargando datos", error);
+      toast.error(`Error cargando datos: ${parseApiError(error)}`);
     }
   };
 
@@ -127,37 +156,42 @@ export function CategoriaForm() {
         idCategoria = payload?.idCategoria;
       } else {
         if (!categoriaExistenteId) {
-          alert("Debes seleccionar una categoría existente");
+          toast.error("Debes seleccionar una categoría existente");
           return;
         }
         idCategoria = categoriaExistenteId;
       }
 
       if (!idCategoria) {
-        alert("No se pudo obtener el ID de la categoría.");
+        toast.error("No se pudo obtener el ID de la categoría.");
         return;
       }
 
       // Siempre crear subcategoría ya que es obligatorio
-      await createSubcategoria({
-        nombre: subcategoria.nombre,
-        estado: Boolean(subcategoria.estado),
-        stockMinimo: Number(subcategoria.stockMinimo) || 0,
-        categoria: Number(idCategoria),
-      });
+      const loadingId = toast.loading("Guardando información…");
+      try {
+        await createSubcategoria({
+          nombre: subcategoria.nombre,
+          estado: Boolean(subcategoria.estado),
+          stockMinimo: Number(subcategoria.stockMinimo) || 0,
+          categoria: Number(idCategoria),
+        });
 
-      setCategoria({ nombre: "", estado: true, usarSubcategorias: true });
-      setSubcategoria({ nombre: "", estado: true, stockMinimo: 0 });
-      setModoCategoria("nueva");
-      setCategoriaExistenteId("");
+        setCategoria({ nombre: "", estado: true, usarSubcategorias: true });
+        setSubcategoria({ nombre: "", estado: true, stockMinimo: 0 });
+        setModoCategoria("nueva");
+        setCategoriaExistenteId("");
 
-      await cargarDatos();
-      setModoVista("lista");
+        await cargarDatos();
+        setModoVista("lista");
 
-      alert("Guardado correctamente");
+        toast.success("Guardado correctamente", { id: loadingId });
+      } catch (errSub) {
+        toast.error(`Error al crear subcategoría: ${parseApiError(errSub)}`, { id: loadingId });
+      }
     } catch (error) {
       console.error("Error al crear categoría o subcategoría", error);
-      alert("Error al crear categoría o subcategoría. Revisa la consola.");
+      toast.error(`Error al crear categoría o subcategoría: ${parseApiError(error)}`);
     }
   };
 
@@ -165,31 +199,31 @@ export function CategoriaForm() {
     <div className="container-fluid px-4 py-4">
       <div className="row justify-content-center">
         <div className="col-12 col-lg-10 col-xl-8">
-          
           {/* Icono de ayuda */}
           <FaQuestionCircle
-          size={22}
-          style={{ cursor: "pointer", color: "#e7561dff" }}
-          onClick={() => setMostrarModal(true)}
+            size={22}
+            style={{ cursor: "pointer", color: "#e7561dff" }}
+            onClick={() => setMostrarModal(true)}
           />
-           {/* Modal emergente */}
+          {/* Modal emergente */}
           <Modal show={mostrarModal} onHide={() => setMostrarModal(false)} centered>
             <Modal.Header closeButton>
-            <Modal.Title>Próximo paso</Modal.Title>
+              <Modal.Title>Próximo paso</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-              Después de crear una categoría y la subcategoría correspondiente, dirígete a 
+              Después de crear una categoría y la subcategoría correspondiente, dirígete a{" "}
               <Link to="/admin/tallas/grupo">
                 <strong style={{ cursor: "pointer", color: "#0d6efd" }}>Grupo de Tallas</strong>
-              </Link>
-              para continuar con la gestion de tallas.
+              </Link>{" "}
+              para continuar con la gestión de tallas.
             </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={() => setMostrarModal(false)}>
-                  Cerrar
-                  </Button>
-              </Modal.Footer>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setMostrarModal(false)}>
+                Cerrar
+              </Button>
+            </Modal.Footer>
           </Modal>
+
           {/* Header */}
           <div className="text-center mb-4">
             <h1 className="display-6 fw-bold text-primary mb-3">Gestión de Categorías</h1>
@@ -208,7 +242,6 @@ export function CategoriaForm() {
             <div className="card shadow-sm border-0 custom-card">
               <div className="card-body p-4">
                 <form onSubmit={handleSubmit}>
-                  
                   {/* Selector de Modo */}
                   <div className="mb-4">
                     <label className="form-label fw-semibold text-secondary mb-3">
@@ -218,7 +251,9 @@ export function CategoriaForm() {
                       <div className="col-md-6">
                         <button
                           type="button"
-                          className={`btn w-100 py-3 fw-medium ${modoCategoria === "nueva" ? "btn-primary" : "btn-outline-primary"}`}
+                          className={`btn w-100 py-3 fw-medium ${
+                            modoCategoria === "nueva" ? "btn-primary" : "btn-outline-primary"
+                          }`}
                           onClick={() => setModoCategoria("nueva")}
                         >
                           <i className="fas fa-plus-circle me-2"></i>
@@ -228,7 +263,9 @@ export function CategoriaForm() {
                       <div className="col-md-6">
                         <button
                           type="button"
-                          className={`btn w-100 py-3 fw-medium ${modoCategoria === "existente" ? "btn-primary" : "btn-outline-primary"}`}
+                          className={`btn w-100 py-3 fw-medium ${
+                            modoCategoria === "existente" ? "btn-primary" : "btn-outline-primary"
+                          }`}
                           onClick={() => setModoCategoria("existente")}
                         >
                           <i className="fas fa-list me-2"></i>
@@ -313,21 +350,19 @@ export function CategoriaForm() {
                       Guardar Información
                     </button>
                   </div>
-                  
                 </form>
               </div>
             </div>
           ) : (
             <div className="card shadow-sm border-0">
               <div className="card-body p-0">
-                <ListaCategorias 
-                  categorias={categorias} 
-                  onCategoriasActualizadas={cargarDatos} 
+                <ListaCategorias
+                  categorias={categorias}
+                  onCategoriasActualizadas={cargarDatos}
                 />
               </div>
             </div>
           )}
-          
         </div>
       </div>
     </div>

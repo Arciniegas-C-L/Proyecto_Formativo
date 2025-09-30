@@ -510,3 +510,151 @@
 .notification-list::-webkit-scrollbar-thumb:hover {
   background: #6d2a65;
 }
+
+/* =========================
+   RESPONSIVE — Notificaciones de Stock
+   Sin cambios de diseño ni paleta: solo tamaños, layout y espaciados
+   ========================= */
+
+/* Breakpoint L (≤ 1200px): panel un poco más angosto */
+@media (max-width: 1200px) {
+  .notification-content {
+    width: 420px;           /* antes: tu ancho desktop */
+  }
+}
+
+/* Breakpoint M (≤ 992px): panel aún más cómodo y acción/botón se acomodan */
+@media (max-width: 992px) {
+  .notification-content {
+    width: 380px;
+  }
+
+  .notification-actions {
+    gap: .4rem;             /* botones más juntitos sin cambiar estilos */
+    flex-wrap: wrap;
+  }
+
+  .notification-title {
+    font-size: 1rem;        /* leve ajuste de tipografía */
+  }
+  .notification-subtitle {
+    font-size: .8rem;
+  }
+}
+
+/* Breakpoint S (≤ 768px): panel tipo “drawer” vertical, ocupa alto completo */
+@media (max-width: 768px) {
+  .notification-panel {
+    align-items: flex-end;              /* el panel “sube” desde abajo si usas bottom sheet */
+  }
+
+  .notification-content {
+    width: 100vw;                       /* ocupa todo el ancho */
+    max-width: 100vw;
+    height: 85vh;                       /* alto cómodo para móvil */
+    max-height: 85vh;
+    border-radius: 16px 16px 0 0;       /* estilo de hoja inferior */
+    overflow: hidden;
+  }
+
+  .notification-body {
+    height: calc(85vh - 64px);          /* resta header/footer según tu altura */
+    overflow: auto;                     /* scroll solo dentro del body */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .notification-header,
+  .notification-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .notification-list {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  /* Ítem: apilar bloques para caber bien */
+  .notification-item {
+    gap: .5rem;
+  }
+  .notification-item-main {
+    align-items: flex-start;
+  }
+  .notification-item-content {
+    min-width: 0;                       /* evita overflow en títulos largos */
+  }
+  .notification-item-title {
+    font-size: .98rem;
+    word-break: break-word;
+  }
+  .notification-item-details {
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Botones del ítem: en móvil a dos columnas si hace falta */
+  .notification-item-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;     /* “Ir a inventario” / “Marcar como vista” */
+    gap: .5rem;
+  }
+
+  /* Botón flotante: área táctil mayor (misma paleta) */
+  .notification-btn-float {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+  }
+  .notification-badge {
+    min-width: 18px;
+    height: 18px;
+    font-size: 11px;
+    top: -6px;
+    right: -6px;
+  }
+}
+
+/* Breakpoint XS (≤ 480px): ocupa toda la pantalla si quieres “full” */
+@media (max-width: 480px) {
+  .notification-content {
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .notification-body {
+    height: calc(100vh - 64px);
+  }
+
+  /* Texto más compacto pero legible */
+  .notification-item-title {
+    font-size: .95rem;
+  }
+  .notification-item-category,
+  .notification-item-stock,
+  .notification-item-time {
+    font-size: .85rem;
+  }
+
+  /* Ocultar subtítulo si el ancho es muy pequeño */
+  .notification-subtitle {
+    display: none;
+  }
+}
+
+/* Accesibilidad: reducir animaciones si el usuario prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .notification-panel,
+  .notification-content,
+  .notification-backdrop {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Evita desbordes de textos extremadamente largos */
+.notification-item-title,
+.notification-item-category,
+.notification-item-stock {
+  overflow-wrap: anywhere;
+}

@@ -700,24 +700,9 @@ export function Carrito() {
           </div>
         </div>
       )}
-
-      <div className="productos-recomendados-section">
-        <h2>
-          <FaEye /> También te puede interesar
-        </h2>
-        <div className="productos-recomendados row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-          {productosRecomendados.map((producto) => (
-            <ProductoCard
-              key={producto.id}
-              producto={producto}
-              capitalizar={capitalizar}
-            />
-          ))}
-        </div>
-      </div>
       <div className="ver-mas-container">
         <button className="btn-ver-mas" onClick={() => navigate("/catalogo")}>
-          Ver más productos
+         Mas en Catalogo
         </button>
       </div>
     </div>
