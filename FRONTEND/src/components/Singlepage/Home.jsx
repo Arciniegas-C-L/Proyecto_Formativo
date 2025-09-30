@@ -296,10 +296,11 @@ export const Home = () => {
     });
   }, []);
 
-  // Elegir 3 aleatorios cada vez que cambian los comentarios
+  // Elegir 3 aleatorios de comentarios con 4 o 5 estrellas cada vez que cambian los comentarios
   useEffect(() => {
-    if (comentarios.length > 0) {
-      const copia = [...comentarios];
+    const destacados = comentarios.filter(c => c.valoracion === 4 || c.valoracion === 5);
+    if (destacados.length > 0) {
+      const copia = [...destacados];
       const seleccionados = [];
       while (copia.length > 0 && seleccionados.length < 3) {
         const idx = Math.floor(Math.random() * copia.length);

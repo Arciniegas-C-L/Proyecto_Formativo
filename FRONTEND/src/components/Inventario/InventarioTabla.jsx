@@ -12,8 +12,6 @@ import {
 import { updateGrupoTalla, asignarGrupoTallaDefault } from "../../api/Subcategoria.api";
 import { getAllGruposTalla } from "../../api/GrupoTalla.api";
 
-// Ajusta si tienes env vars (REACT_APP_API_BASE_URL, etc.)
-const BACKEND_URL = "http://127.0.0.1:8000";
 
 const InventarioTabla = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
@@ -424,109 +422,111 @@ const InventarioTabla = () => {
     );
   };
 
-  const renderProductosTable = () => (
-    <div className="tabla-container">
-      <table className="tabla-inventario">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Precio</th>
-            <th>Stock Total</th>
-            <th>Stock Mínimo</th>
-            <th>Stock por Tallas</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentData.datos.map((p) => {
-            const total = Object.values(p.stock_por_talla || {}).reduce(
-              (sum, info) => sum + (info?.stock || 0),
-              0
-            );
-            return (
-              <tr key={p.id}>
-                <td>
-                  <div className="producto-info">
-                    {p.imagen ? (
-                      <>
-                        <img
-                          src={`${BACKEND_URL}${p.imagen}`}
-                          alt={p.nombre}
-                          className="producto-imagen"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.nextSibling.style.display = "flex";
-                          }}
-                          loading="lazy"
-                        />
-                        <div className="imagen-placeholder" style={{ display: "none" }}>
-                          <i className="fas fa-image"></i>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="imagen-placeholder">
+const renderProductosTable = () => (
+  <div className="tabla-container">
+    <table className="tabla-inventario">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th>Stock Total</th>
+          <th>Stock Mínimo</th>
+          <th>Stock por Tallas</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {currentData.datos.map((producto) => {
+          const nombre = producto.nombre || "Sin nombre";
+          const precio = Number(producto.precio || 0);
+          // Si tu API trae "stock" como total, úsalo; si trae "stock_total", ajusta aquí:
+          const total = Number(producto.stock ?? producto.stock_total ?? 0);
+          // Si tu API trae stock_minimo_total, úsalo aquí:
+          const stockMinimo = Number(producto.stock_minimo ?? 5);
+
+          return (
+            <tr key={producto.id}>
+              {/* Columna de Producto (imagen y nombre) */}
+              <td>
+                <div className="producto-info">
+                  {producto.imagen ? (
+                    <>
+                      <img
+                        src={producto.imagen || "https://via.placeholder.com/100"}
+                        alt={nombre}
+                        className="producto-imagen"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          const ph = e.currentTarget.nextElementSibling;
+                          if (ph) ph.style.display = "flex";
+                        }}
+                        loading="lazy"
+                      />
+                      <div className="imagen-placeholder" style={{ display: "none" }}>
                         <i className="fas fa-image"></i>
                       </div>
-                    )}
-                    <span className="producto-nombre">{p.nombre}</span>
-                  </div>
-                </td>
+                    </>
+                  ) : (
+                    <div className="imagen-placeholder">
+                      <i className="fas fa-image"></i>
+                    </div>
+                  )}
+                  <span className="producto-nombre">{nombre}</span>
+                </div>
+              </td>
 
-                <td>${Number(p.precio || 0).toLocaleString("es-CO")}</td>
+              <td>${precio.toLocaleString("es-CO")}</td>
 
-                <td>
-                  <span className={`custom-badge ${total <= 5 ? "badge-error" : "badge-success"}`}>
-                    {total} unidades
-                  </span>
-                </td>
+              <td>
+                <span className={`custom-badge ${total <= 5 ? "badge-error" : "badge-success"}`}>
+                  {total} unidades
+                </span>
+              </td>
 
-                <td>5</td>
+              <td>{stockMinimo}</td>
 
-                <td>
-                  <button
-                    className="btn btn-outline-primary btn-sm mb-2"
-                    onClick={() => handleOpenStockDialog(p)}
-                    title="Distribuir stock por tallas"
-                  >
-                    <i className="fas fa-edit me-1"></i>
-                    Distribuir Stock
-                  </button>
-                  <div className="d-flex gap-1 flex-wrap justify-content-center">
-                    {Object.entries(p.stock_por_talla || {}).map(([talla, info]) => (
-                      <span
-                        key={talla}
-                        className={`custom-badge-small ${
-                          (info?.stock || 0) <= 5 ? "badge-small-error" : "badge-small-success"
-                        }`}
-                      >
-                        {talla}: {info?.stock || 0}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-
-                <td>
-                  <div className="d-flex gap-1 justify-content-center">
-                    <button
-                      className="btn-action btn-primary"
-                        onClick={() =>
-                          navigate(
-                            `/admin/productos/`
-                          )
-                        }
-                      title="Ver detalles del producto"
+              <td>
+                <button
+                  className="btn btn-outline-primary btn-sm mb-2"
+                  onClick={() => handleOpenStockDialog(producto)}
+                  title="Distribuir stock por tallas"
+                >
+                  <i className="fas fa-edit me-1"></i>
+                  Distribuir Stock
+                </button>
+                <div className="d-flex gap-1 flex-wrap justify-content-center">
+                  {Object.entries(producto.stock_por_talla || {}).map(([talla, info]) => (
+                    <span
+                      key={talla}
+                      className={`custom-badge-small ${
+                        (info?.stock || 0) <= 5 ? "badge-small-error" : "badge-small-success"
+                      }`}
                     >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+                      {talla}: {info?.stock || 0}
+                    </span>
+                  ))}
+                </div>
+              </td>
+
+              <td>
+                <div className="d-flex gap-1 justify-content-center">
+                  <button
+                    className="btn-action btn-primary"
+                    onClick={() => navigate(`/admin/productos/${producto.id}`)} // ajusta si tu ruta es distinta
+                    title="Ver detalles del producto"
+                  >
+                    <i className="fas fa-eye"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+);
+
 
   const StockDialog = () => {
     const stockTotal = selectedProducto?.stock || 0;

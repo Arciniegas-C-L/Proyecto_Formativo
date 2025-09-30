@@ -323,18 +323,21 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     # --- LOGIN ---
     @action(detail=False, methods=['get', 'post'], permission_classes=[AllowAny])
     def login(self, request):
-        if request.method == 'GET':
-            serializer = LoginSerializer()
-            return Response(serializer.data)
-
-        serializer = LoginSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        correo = serializer.validated_data['correo']
-        password = serializer.validated_data['password']
         try:
-            usuario = Usuario.objects.select_related('rol').get(correo=correo)
+            if request.method == 'GET':
+                serializer = LoginSerializer()
+                return Response(serializer.data)
+
+            serializer = LoginSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            correo = serializer.validated_data['correo']
+            password = serializer.validated_data['password']
+            try:
+                usuario = Usuario.objects.select_related('rol').get(correo=correo)
+            except Usuario.DoesNotExist:
+                return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
             if not usuario.is_active:
                 return Response({"error": "Usuario inactivo"}, status=status.HTTP_403_FORBIDDEN)
@@ -408,8 +411,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 "token": token
             }, status=status.HTTP_200_OK)
 
-        except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            import traceback
+            print("Error en login:", traceback.format_exc())
+            return Response({"error": "Error interno en el servidor", "detalle": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # --- ENVIAR CÓDIGO RECUPERACIÓN ---
     @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
@@ -419,9 +424,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         try:
             usuario = Usuario.objects.get(correo=correo)
 
-            # Verificar si ya hay un código activo en los últimos 3 minutos
+            # Verificar si ya hay un código activo en los últimos 30 segundos
             codigo_activo = CodigoRecuperacion.objects.filter(
-                usuario=usuario, creado__gte=timezone.now() - timedelta(minutes=3)
+                usuario=usuario, creado__gte=timezone.now() - timedelta(seconds=30)
             ).exists()
 
             if codigo_activo:
@@ -987,7 +992,7 @@ class InventarioView(viewsets.ModelViewSet):
                     'descripcion': producto.descripcion,
                     'precio': producto.precio,
                     'stock': producto.stock,
-                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'imagen': producto.imagen if producto.imagen else None,
                     'tallas_stock': tallas_stock,
                     'categoria': {
                         'id': subcategoria.categoria.idCategoria,
@@ -1193,7 +1198,7 @@ class InventarioView(viewsets.ModelViewSet):
                     'stock_total': stock_total,
                     'stock_inicial_total': stock_inicial_total,
                     'stock_minimo_total': stock_minimo_total,
-                    'imagen': producto.imagen.url if producto.imagen else None,
+                    'imagen': producto.imagen if producto.imagen else None,
                     'stock_por_talla': stock_por_talla,
                     'estado_stock': 'Bajo' if stock_total <= stock_minimo_total else 'Normal',
                     'acciones': {

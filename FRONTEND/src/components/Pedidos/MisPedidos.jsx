@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import { listarPedidos } from "../../api/Pedido.api";
 import { listarItemsDePedido } from "../../api/PedidoProducto.api.js";
 import { Link } from "react-router-dom";
@@ -31,7 +32,10 @@ function fmtFecha(iso) {
 function EstadoBadge({ estado }) {
   const ok = !!estado;
   return (
-    <span className={`mis-pedidos-badge ${ok ? "mis-pedidos-badge-success" : "mis-pedidos-badge-secondary"}`} title={ok ? "Completado" : "Pendiente"}>
+    <span
+      className={`mis-pedidos-badge ${ok ? "mis-pedidos-badge-success" : "mis-pedidos-badge-secondary"}`}
+      title={ok ? "Completado" : "Pendiente"}
+    >
       {ok ? "Completado" : "Pendiente"}
     </span>
   );
@@ -115,13 +119,6 @@ export function MisPedidos() {
       }
     })();
   }, []);
-
-  const resolveImg = (src) => {
-    if (!src) return PLACEHOLDER;
-    if (typeof src === "string" && src.startsWith("http")) return src;
-    const base = import.meta.env.VITE_BACK_URL || "http://127.0.0.1:8000";
-    return `${base}${src}`;
-  };
 
   const toggleExpand = async (pedido) => {
     const pid = pedido.idPedido ?? pedido.id;
@@ -220,7 +217,9 @@ export function MisPedidos() {
         <div className="mis-pedidos-stats">
           <div className="mis-pedidos-stat">
             <span className="mis-pedidos-stat-number">{ordered.length}</span>
-            <span className="mis-pedidos-stat-label">{ordered.length === 1 ? "pedido" : "pedidos"}</span>
+            <span className="mis-pedidos-stat-label">
+              {ordered.length === 1 ? "pedido" : "pedidos"}
+            </span>
           </div>
           <div className="mis-pedidos-stat">
             <span className="mis-pedidos-stat-number">{safePage}</span>
@@ -259,12 +258,12 @@ export function MisPedidos() {
                     </span>
                   </div>
                 </div>
-                <button 
-                  className="mis-pedidos-toggle-btn" 
+                <button
+                  className="mis-pedidos-toggle-btn"
                   onClick={() => toggleExpand(p)}
                   aria-expanded={abierto}
                 >
-                  <i className={`fas ${abierto ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                  <i className={`fas ${abierto ? "fa-chevron-up" : "fa-chevron-down"}`}></i>
                   {abierto ? "Ocultar productos" : "Ver productos"}
                 </button>
               </div>
@@ -277,7 +276,7 @@ export function MisPedidos() {
                       Cargando productos del pedido…
                     </div>
                   )}
-                  
+
                   {tieneError && (
                     <div className="mis-pedidos-error">
                       <i className="fas fa-exclamation-triangle"></i>
@@ -288,47 +287,35 @@ export function MisPedidos() {
                   {!cargandoItems && !tieneError && (
                     <>
                       {!items.length ? (
-                        <div className="mis-pedidos-no-items">
-                          <i className="fas fa-box-open"></i>
-                          Sin productos para mostrar
-                        </div>
+                        <div className="text-muted small">Sin productos para mostrar.</div>
                       ) : (
-                        <div className="mis-pedidos-productos">
+                        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                           {items.map((it, idx) => {
                             const nombre = it.nombre ?? "Producto";
-                            const urlImg = resolveImg(it.imagen);
+                            const urlImg = it.imagen || PLACEHOLDER;
                             const precio = it.precio ?? it.subtotal ?? null;
                             const cantidad = it.cantidad ?? 1;
                             const talla = it.talla ? ` · Talla: ${it.talla}` : "";
 
                             return (
-                              <div className="mis-pedidos-producto" key={idx}>
-                                <div className="mis-pedidos-producto-imagen">
+                              <div className="col" key={idx}>
+                                <div className="card h-100">
                                   <img
                                     src={urlImg}
+                                    className="card-img-top"
                                     alt={nombre}
-                                    onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = PLACEHOLDER;
+                                    }}
                                   />
-                                </div>
-                                <div className="mis-pedidos-producto-info">
-                                  <h6 className="mis-pedidos-producto-nombre">{nombre}</h6>
-                                  <div className="mis-pedidos-producto-detalles">
-                                    {cantidad > 1 && (
-                                      <span className="mis-pedidos-detalle">
-                                        <i className="fas fa-times"></i>
-                                        {cantidad}
-                                      </span>
-                                    )}
-                                    <span className="mis-pedidos-detalle mis-pedidos-precio">
-                                      <i className="fas fa-tag"></i>
-                                      ${fmtMoney(precio)}
-                                    </span>
-                                    {talla && (
-                                      <span className="mis-pedidos-detalle">
-                                        <i className="fas fa-ruler"></i>
-                                        {it.talla}
-                                      </span>
-                                    )}
+                                  <div className="card-body">
+                                    <h6 className="card-title mb-1">{nombre}</h6>
+                                    <div className="small text-muted">
+                                      {cantidad > 1 ? `Cantidad: ${cantidad} · ` : ""}
+                                      Precio: ${fmtMoney(precio)}
+                                      {talla}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -347,7 +334,7 @@ export function MisPedidos() {
 
       {/* Controles de paginación */}
       <nav className="mis-pedidos-pagination">
-        <button 
+        <button
           className={`mis-pedidos-page-btn ${safePage === 1 ? "disabled" : ""}`}
           onClick={() => changePage(safePage - 1)}
           disabled={safePage === 1}
@@ -360,8 +347,8 @@ export function MisPedidos() {
           {Array.from({ length: totalPages }).map((_, i) => {
             const pnum = i + 1;
             return (
-              <button 
-                key={pnum} 
+              <button
+                key={pnum}
                 className={`mis-pedidos-page-num ${pnum === safePage ? "active" : ""}`}
                 onClick={() => changePage(pnum)}
               >
@@ -371,7 +358,7 @@ export function MisPedidos() {
           })}
         </div>
 
-        <button 
+        <button
           className={`mis-pedidos-page-btn ${safePage === totalPages ? "disabled" : ""}`}
           onClick={() => changePage(safePage + 1)}
           disabled={safePage === totalPages}

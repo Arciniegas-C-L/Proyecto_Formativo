@@ -1,0 +1,20 @@
+# --- Mercado Pago (prueba) ---
+MP_PUBLIC_KEY=APP_USR-99d673bc-2b19-4405-a729-058ecc9c2520
+MP_ACCESS_TOKEN=APP_USR-4543657654113122-090516-fa7d8c8926cf11703fc237a5d4d00525-2652399295
+
+# --- URLs públicas (ngrok) ---
+FRONTEND_URL=https://exclusive-ferry-mechanical-receives.trycloudflare.com
+BACKEND_URL=https://95aa6551c767.ngrok-free.app
+
+#Vite
+VITE_API_URL_PUBLIC=http://localhost:8000/BACKEND/
+VITE_API_URL_PROTECTED=http://localhost:8000/BACKEND/api/
+
+# --- Rutas / opciones de retorno ---
+FRONTEND_RETURN_PATH=/RetornoMP
+BACKEND_PATH_PREFIX=/BACKEND        # si tu API pública cuelga de /BACKEND
+MP_RETURN_MODE=frontend             # que MP vuelva directo al front
+MP_SEND_AUTO_RETURN=true            # forzar auto_return=approved
+
+#Base de datos provisonal 
+USE_SQLITE=1

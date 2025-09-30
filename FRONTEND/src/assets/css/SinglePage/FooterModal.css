@@ -1,22 +1,3 @@
-/* Botón de redirección (login) en modal de comentarios */
-.footer-modal-btn-login {
-  background: linear-gradient(135deg, #F26BE2 0%, #9D4EDD 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(157, 78, 221, 0.10);
-  transition: all 0.2s ease;
-  margin-top: 1rem;
-}
-.footer-modal-btn-login:hover {
-  background: #8a3fc7;
-  transform: translateY(-1px);
-}
-
 .footer-modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;

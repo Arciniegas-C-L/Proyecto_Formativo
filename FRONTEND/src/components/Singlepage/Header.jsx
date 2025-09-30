@@ -9,15 +9,15 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export function Header() {
-  const { autenticado, logout, rol, usuario } = useAuth();
+  const { autenticado, rol, logout, usuario } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
   const [cantidadCarrito, setCantidadCarrito] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
+  // Normaliza el rol (cliente, administrador, etc.)
   const rolNorm = React.useMemo(() => {
-    // candidatos posibles
     const candidates = [
       rol,
       usuario?.rol,
@@ -25,18 +25,15 @@ export function Header() {
       Array.isArray(rol) ? rol[0] : undefined,
       Array.isArray(usuario?.roles) ? usuario.roles[0] : undefined,
     ];
-
-    // toma el primero definido y extrae texto
     let raw = candidates.find(v => v != null);
-
     if (typeof raw === "object") {
       raw = raw?.nombre ?? raw?.role ?? raw?.slug ?? "";
     }
-    return String(raw ?? "").trim().toLowerCase(); // "cliente", "administrador", etc.
+    return String(raw ?? "").trim().toLowerCase();
   }, [rol, usuario]);
 
+  const esAdministrador = rolNorm === "administrador" || rolNorm === "admin";
   const esCliente = rolNorm === "cliente";
-  //const esAdministrador = rolNorm === "administrador";
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -47,7 +44,6 @@ export function Header() {
     setShowConfirm(false);
     try {
       logout();
-      // redirige al home tras cerrar sesión
       navigate("/", { replace: true });
     } catch {
       navigate("/", { replace: true });
@@ -56,15 +52,14 @@ export function Header() {
 
   const cancelLogout = () => setShowConfirm(false);
 
-  const toggleDropdown = () => setShowDropdown((prev) => !prev);
+  const toggleDropdown = () => setShowDropdown(prev => !prev);
 
-  // Función para ir al panel de admin directamente
   const goToAdminPanel = () => {
     setShowDropdown(false);
     navigate("/admin/proveedores");
   };
 
-  // Cerrar dropdown si clic fuera del contenedor
+  // Cerrar dropdown clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -75,7 +70,7 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Cargar cantidad del carrito
+  // Cantidad de carrito (solo si autenticado)
   const cargarCantidadCarrito = async () => {
     if (!autenticado) {
       setCantidadCarrito(0);
@@ -163,8 +158,8 @@ export function Header() {
                 </Link>
               </li>
 
-              {/* Mostrar carrito solo si NO es admin */}
-              {rolNorm !== "admin" && rolNorm !== "administrador" && (
+              {/* Oculta carrito para administradores */}
+              {!esAdministrador && (
                 <li className="nav-item-custom">
                   <Link to="/carrito" className="nav-link-custom cart-link">
                     <i className="bi bi-cart3 nav-icon"></i>
@@ -209,30 +204,46 @@ export function Header() {
                         </Link>
                       </li>
 
-                      {/* Solo CLIENTE: Mis pedidos */}
+                      {/* Cliente: Mis pedidos + Facturas */}
                       {esCliente && (
+                        <>
+                          <li>
+                            <Link
+                              to="/Mispedidos"
+                              className="dropdown-item-custom"
+                              onClick={() => setShowDropdown(false)}
+                            >
+                              <i className="bi bi-bag-check"></i> Mis pedidos
+                            </Link>
+                          </li>
+                          <li>
+                            <Link
+                              to="/Facturas"
+                              className="dropdown-item-custom"
+                              onClick={() => setShowDropdown(false)}
+                            >
+                              <i className="bi bi-receipt"></i> Facturas
+                            </Link>
+                          </li>
+                        </>
+                      )}
+
+                      {/* Admin: acceso al panel */}
+                      {esAdministrador && (
                         <li>
-                          <Link
-                            to="/Mispedidos"
+                          <button
                             className="dropdown-item-custom"
-                            onClick={() => setShowDropdown(false)}
+                            onClick={goToAdminPanel}
                           >
-                            <i className="bi bi-bag-check"></i> Mis pedidos
-                          </Link>
+                            <i className="bi bi-speedometer2"></i> Panel de administración
+                          </button>
                         </li>
                       )}
-                      {/* NUEVO: Facturas (ruta privada /Facturas) */}
-                      {esCliente && (
-                        <li>
-                          <Link
-                            to="/Facturas"
-                            className="dropdown-item-custom"
-                            onClick={() => setShowDropdown(false)}
-                          >
-                            <i className="bi bi-receipt"></i> Facturas
-                          </Link>
-                        </li>
-                      )}
+
+                      <li>
+                        <hr className="dropdown-divider-custom" />
+                      </li>
+
                       <li>
                         <button className="dropdown-item-custom logout-btn" onClick={handleLogout}>
                           <i className="bi bi-box-arrow-right"></i> Cerrar Sesión

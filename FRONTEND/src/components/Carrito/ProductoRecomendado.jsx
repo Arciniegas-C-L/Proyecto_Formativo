@@ -1,4 +1,5 @@
 import React from "react";
+import { Cloudinary } from "@cloudinary/url-gen";
 import "../../assets/css/Carrito/ProductoRecomendado.css";
 
 export default function ProductoRecomendado({ producto, capitalizar, onVerDetalle }) {
@@ -8,15 +9,13 @@ export default function ProductoRecomendado({ producto, capitalizar, onVerDetall
 
   return (
     <div className="producto-recomendado-card">
-      <img
-        src={producto.imagen || "https://via.placeholder.com/300x200?text=Imagen+no+disponible"}
-        alt={producto.nombre || "Producto"}
-        className="producto-recomendado-img"
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.src = "https://via.placeholder.com/300x200?text=Imagen+no+disponible";
-        }}
-      />
+      {typeof producto.imagen === 'string' && producto.imagen
+        ? <img
+            src={producto.imagen}
+            alt={producto.nombre || "Producto"}
+            className="producto-recomendado-img"
+          />
+        : null}
       <div className="producto-recomendado-body">
         <div className="producto-recomendado-nombre">
           {capitalizar?.(producto.nombre) || producto.nombre}

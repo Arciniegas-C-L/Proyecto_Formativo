@@ -18,7 +18,7 @@ import { NoAutorizadoPage } from "./pages/NoAutorizadoPage.jsx";
 import { PerfilPage } from "./pages/PerfilPage.jsx";
 import { Catalogopage } from "./pages/Catalogopage.jsx";
 import { Carritopage } from "./pages/Carritopage.jsx";
-import { CategoriasPage } from "./pages/CategoriasPage.jsx";
+import CategoriasPage from "./pages/Categoriaspage.jsx";
 
 // Páginas Admin
 import { AdminProvedoresPage } from "./pages/AdminProvedoresPage.jsx";
@@ -59,6 +59,19 @@ function AppContent() {
   const noEsPaginaDeSesion =
     location.pathname !== "/sesion" &&
     location.pathname !== "/sesion/recuperar_contrasena";
+
+  // Redirección instantánea a la ruta original si existe en sessionStorage
+  useEffect(() => {
+    const restoring = window.sessionStorage.getItem('restoringPath');
+    const originalPath = window.sessionStorage.getItem('originalPath');
+    if (restoring && originalPath && location.pathname === '/') {
+      window.sessionStorage.removeItem('restoringPath');
+      window.sessionStorage.removeItem('originalPath');
+      window.history.replaceState(null, '', originalPath);
+      // Si usas react-router v6+, fuerza la navegación:
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  }, [location]);
 
   // Verificar si estamos en rutas de admin
   const esRutaAdmin = location.pathname.startsWith("/admin");

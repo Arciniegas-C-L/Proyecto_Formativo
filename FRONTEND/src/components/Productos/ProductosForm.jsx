@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { Cloudinary } from "@cloudinary/url-gen";
+import { fill } from "@cloudinary/url-gen/actions/resize";
 import { toast } from "react-hot-toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Modal, Button } from "react-bootstrap";
+import { FaQuestionCircle } from "react-icons/fa";
 import "../../assets/css/Productos/ProductosForm.css";
+
 import {
   getCategorias,
   getSubcategoriasPorCategoria,
@@ -9,9 +14,34 @@ import {
   updateProducto,
 } from "../../api/Producto.api";
 
-import { Modal, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
-import { FaQuestionCircle } from "react-icons/fa";
+// Widget de Cloudinary
+function CloudinaryUpload({ onUrl }) {
+  const openWidget = () => {
+    if (!window.cloudinary) {
+      alert("Cloudinary widget no cargado");
+      return;
+    }
+    window.cloudinary
+      .createUploadWidget(
+        {
+          cloudName: "dkwr4gcpl",
+          uploadPreset: "default-preset", // Asegúrate de crearlo en Cloudinary
+        },
+        (error, result) => {
+          if (!error && result && result.event === "success") {
+            onUrl(result.info.secure_url);
+          }
+        }
+      )
+      .open();
+  };
+
+  return (
+    <button type="button" onClick={openWidget} style={{ marginBottom: 8 }}>
+      Subir imagen
+    </button>
+  );
+}
 
 export function ProductosForm() {
   const navigate = useNavigate();
@@ -30,7 +60,6 @@ export function ProductosForm() {
       ? String(productoEditar.subcategoria.idSubcategoria)
       : "",
     imagen: productoEditar?.imagen || "",
-    imagenFile: null,
   });
 
   const [categorias, setCategorias] = useState([]);
@@ -52,7 +81,7 @@ export function ProductosForm() {
       loadSubcategorias(String(catId));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intencional: sólo al montar
+  }, []); // intencional
 
   // Cuando cambia la categoría en el formulario, cargar subcategorías o limpiar
   useEffect(() => {
@@ -73,82 +102,71 @@ export function ProductosForm() {
       setCategorias(res.data || []);
     } catch {
       toast.error("Error al cargar categorías");
+      setCategorias([]);
     }
   };
 
- const loadSubcategorias = async (categoriaId) => {
-  setCargandoSubcategorias(true);
-  try {
-    const res = await getSubcategoriasPorCategoria(categoriaId);
-    let list = res.data || [];
+  const loadSubcategorias = async (categoriaId) => {
+    setCargandoSubcategorias(true);
+    try {
+      const res = await getSubcategoriasPorCategoria(categoriaId);
+      let list = res.data || [];
 
-    // ✅ Solo filtra en cliente si viene info de categoría
-    const hasCategoryInfo = list.some(
-      (sub) =>
-        sub?.categoria?.idCategoria !== undefined ||
-        sub?.idCategoria !== undefined
-    );
-
-    if (hasCategoryInfo) {
-      const catNum = Number(categoriaId);
-      list = list.filter((sub) => {
-        const byNested =
-          sub?.categoria?.idCategoria !== undefined
-            ? Number(sub.categoria.idCategoria) === catNum
-            : null;
-        const byFlat =
+      // ✅ Solo filtra en cliente si viene info de categoría
+      const hasCategoryInfo = list.some(
+        (sub) =>
+          sub?.categoria?.idCategoria !== undefined ||
           sub?.idCategoria !== undefined
-            ? Number(sub.idCategoria) === catNum
-            : null;
-        if (byNested !== null) return byNested;
-        if (byFlat !== null) return byFlat;
-        return false;
-      });
-    }
-    // Si no hay info de categoría, asumimos que el backend ya filtró
-
-    setSubcategorias(list);
-
-    // Si la subcategoría seleccionada ya no pertenece a la categoría, limpiarla
-    if (formData.subcategoria) {
-      const stillValid = list.some(
-        (s) => String(s.idSubcategoria) === String(formData.subcategoria)
       );
-      if (!stillValid) {
-        setFormData((prev) => ({ ...prev, subcategoria: "" }));
+
+      if (hasCategoryInfo) {
+        const catNum = Number(categoriaId);
+        list = list.filter((sub) => {
+          const byNested =
+            sub?.categoria?.idCategoria !== undefined
+              ? Number(sub.categoria.idCategoria) === catNum
+              : null;
+          const byFlat =
+            sub?.idCategoria !== undefined
+              ? Number(sub.idCategoria) === catNum
+              : null;
+          if (byNested !== null) return byNested;
+          if (byFlat !== null) return byFlat;
+          return false;
+        });
       }
+      // Si no hay info de categoría, asumimos que el backend ya filtró
+
+      setSubcategorias(list);
+
+      // Si la subcategoría seleccionada ya no pertenece a la categoría, limpiarla
+      if (formData.subcategoria) {
+        const stillValid = list.some(
+          (s) => String(s.idSubcategoria) === String(formData.subcategoria)
+        );
+        if (!stillValid) {
+          setFormData((prev) => ({ ...prev, subcategoria: "" }));
+        }
+      }
+    } catch {
+      toast.error("Error al cargar subcategorías");
+      setSubcategorias([]);
+    } finally {
+      setCargandoSubcategorias(false);
     }
-  } catch {
-    toast.error("Error al cargar subcategorías");
-  } finally {
-    setCargandoSubcategorias(false);
-  }
-};
+  };
 
   const handleInputChange = (e) => {
-    const { name, value, type, files } = e.target;
-
-    if (type === "file") {
-      const file = files?.[0];
-      if (file) {
-        const localImageUrl = URL.createObjectURL(file);
-        setFormData((prev) => ({
-          ...prev,
-          imagenFile: file,
-          imagen: localImageUrl,
-        }));
-      }
-      return;
-    }
+    const { name, value } = e.target;
 
     // ✅ Reset subcategoría si cambia la categoría
     if (name === "categoria") {
       setFormData((prev) => ({
         ...prev,
         categoria: value,
-        subcategoria: "", // limpiar la sub seleccionada
+        subcategoria: "",
       }));
-      return; // el useEffect ya se encarga de cargar subcategorías
+      return; // el useEffect cargará subcategorías
     }
 
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -169,6 +187,13 @@ export function ProductosForm() {
     if (!formData.categoria) errores.categoria = "Seleccione una categoría";
     if (!Number.isInteger(subId) || subId <= 0)
       errores.subcategoria = "Seleccione una subcategoría válida";
+    if (
+      !formData.imagen ||
+      typeof formData.imagen !== "string" ||
+      !formData.imagen.includes("res.cloudinary.com")
+    ) {
+      errores.imagen = "Debe subir una imagen válida de Cloudinary";
+    }
 
     setErrors(errores);
     return Object.keys(errores).length === 0;
@@ -176,34 +201,30 @@ export function ProductosForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.error("Corrige los errores antes de continuar");
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
-    const subId = parseInt(formData.subcategoria, 10);
     const precioNum = Number(String(formData.precio).replace(",", "."));
     const stockNum = Number(formData.stock);
+    const subId = parseInt(formData.subcategoria, 10);
 
-    const formDataToSend = new FormData();
-    formDataToSend.append("nombre", formData.nombre.trim());
-    formDataToSend.append("descripcion", formData.descripcion.trim());
-    formDataToSend.append("precio", precioNum);
-    formDataToSend.append("stock", stockNum);
-    formDataToSend.append("subcategoria", subId);
-
-    if (formData.imagenFile) {
-      formDataToSend.append("imagen", formData.imagenFile);
-    }
+    // Usamos FormData para ser compatibles con tu backend
+    const form = new FormData();
+    form.append("nombre", formData.nombre.trim());
+    form.append("descripcion", formData.descripcion.trim());
+    form.append("precio", precioNum);
+    form.append("stock", stockNum);
+    form.append("categoria", formData.categoria);
+    form.append("subcategoria", subId);
+    form.append("imagen", formData.imagen); // URL de Cloudinary
 
     try {
       if (productoEditar) {
-        await updateProducto(productoEditar.idProducto, formDataToSend);
+        await updateProducto(productoEditar.idProducto, form);
         toast.success("Producto actualizado correctamente");
       } else {
-        await createProducto(formDataToSend);
+        await createProducto(form);
         toast.success("Producto creado correctamente");
         setFormData({
           nombre: "",
@@ -213,16 +234,49 @@ export function ProductosForm() {
           categoria: "",
           subcategoria: "",
           imagen: "",
-          imagenFile: null,
         });
         setSubcategorias([]);
       }
+      navigate("/admin/productos");
     } catch (error) {
       console.error("Error guardando producto:", error);
       toast.error("Error al guardar el producto");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Previsualización optimizada (si es Cloudinary)
+  const renderPreview = () => {
+    if (!formData.imagen || typeof formData.imagen !== "string") return null;
+
+    if (!formData.imagen.includes("res.cloudinary.com")) {
+      return (
+        <div className="image-preview-error">
+          <span style={{ color: "red" }}>
+            La URL de la imagen no es válida para Cloudinary
+          </span>
+        </div>
+      );
+    }
+
+    let imagenUrl = formData.imagen;
+    const matches = imagenUrl.match(/upload\/(?:v\d+\/)?(.+)$/);
+    const publicId = matches ? matches[1] : null;
+
+    if (publicId) {
+      const cld = new Cloudinary({ cloud: { cloudName: "dkwr4gcpl" } });
+      imagenUrl = cld
+        .image(publicId)
+        .resize(fill().width(300).height(300))
+        .toURL();
+    }
+
+    return (
+      <div className="image-preview">
+        <img src={imagenUrl} alt="Previsualización de producto" />
+      </div>
+    );
   };
 
   return (
@@ -242,7 +296,8 @@ export function ProductosForm() {
           <Modal.Title>Próximo paso</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Ahora debes llenar cada campo según la información correspondiente del producto que deseas crear. Terminado esto dirígete a{" "}
+          Ahora debes llenar cada campo según la información correspondiente del
+          producto que deseas crear. Terminado esto dirígete a{" "}
           <Link to="/admin/inventario">
             <strong style={{ cursor: "pointer", color: "#0d6efd" }}>
               Inventario
@@ -308,11 +363,12 @@ export function ProductosForm() {
               className={errors.categoria ? "error" : ""}
             >
               <option value="">Seleccione una categoría</option>
-              {categorias.map((cat) => (
-                <option key={cat.idCategoria} value={cat.idCategoria}>
-                  {cat.nombre}
-                </option>
-              ))}
+              {Array.isArray(categorias) &&
+                categorias.map((cat) => (
+                  <option key={cat.idCategoria} value={cat.idCategoria}>
+                    {cat.nombre}
+                  </option>
+                ))}
             </select>
             <span className="error-message">{errors.categoria}</span>
           </div>
@@ -357,22 +413,20 @@ export function ProductosForm() {
 
         <div className="form-group">
           <label>Imagen</label>
-          <input
-            type="file"
-            name="imagen"
-            onChange={handleInputChange}
-            accept="image/*"
+          <CloudinaryUpload
+            onUrl={(url) => setFormData((prev) => ({ ...prev, imagen: url }))}
           />
-          {formData.imagen && (
-            <div className="image-preview">
-              <img src={formData.imagen} alt="Producto" />
-            </div>
-          )}
+          {renderPreview()}
+          <span className="error-message">{errors.imagen}</span>
         </div>
 
         <div className="form-actions">
           <button type="submit" className="btn-guardar" disabled={loading}>
-            {loading ? "Guardando..." : productoEditar ? "Actualizar" : "Crear"}
+            {loading
+              ? "Guardando..."
+              : productoEditar
+              ? "Actualizar"
+              : "Crear"}
           </button>
         </div>
       </form>

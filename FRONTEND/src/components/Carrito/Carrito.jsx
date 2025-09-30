@@ -26,9 +26,9 @@ import {
 import { getALLProductos } from "../../api/Producto.api";
 import "../../assets/css/Carrito/Carrito.css";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
-const MP_PUBLIC_KEY_TEST =
-  import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
+
+const API_BASE_URL = "http://127.0.0.1:8000"; // Backend Django
+const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
 
 // No tocar stock en acciones de carrito
 const NO_STOCK_TOUCH = { skip_stock: true, reserve: false };
@@ -399,11 +399,6 @@ export function Carrito() {
     return total.toLocaleString("es-CO", { maximumFractionDigits: 0 });
   };
 
-  const getImagenUrl = (imagenPath) => {
-    if (!imagenPath) return "https://via.placeholder.com/100";
-    if (imagenPath.startsWith("http")) return imagenPath;
-    return `${API_BASE_URL}${imagenPath}`;
-  };
 
   const capitalizar = (texto) => {
     if (!texto) return "";
@@ -489,9 +484,9 @@ export function Carrito() {
                   <div key={item.idCarritoItem} className="carrito-item">
                     <div className="item-imagen">
                       <img
-                        src={getImagenUrl(item.producto?.imagen)}
+                        src={item.producto?.imagen || "https://via.placeholder.com/100"}
                         alt={item.producto?.nombre || "Producto"}
-                        onError={(e) => {
+                        onError={e => {
                           e.target.onerror = null;
                           e.target.src = "https://via.placeholder.com/100";
                         }}
@@ -700,10 +695,25 @@ export function Carrito() {
           </div>
         </div>
       )}
-      <div className="ver-mas-container">
-        <button className="btn-ver-mas" onClick={() => navigate("/catalogo")}>
-         Mas en Catalogo
-        </button>
+      <div className="productos-recomendados-section">
+                <h2><FaEye /> También te puede interesar</h2>
+                <div className="productos-recomendados row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                    {productosRecomendados.map((producto) => (
+                        <ProductoCard
+                            key={producto.id}
+                            producto={producto}
+                            capitalizar={capitalizar}
+                        />
+                    ))}
+                </div>
+                <div className="ver-mas-container">
+                    <button 
+                        className="btn-ver-mas"
+                        onClick={() => navigate('/catalogo')}
+                    >
+                        Ver más productos
+                    </button>
+        </div>
       </div>
     </div>
   );

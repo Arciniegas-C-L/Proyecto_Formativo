@@ -24,7 +24,7 @@ export function Footer() {
                 <b>Visión:</b> Ser reconocidos como líderes en el sector de moda y hogar, destacando por nuestra variedad, responsabilidad y cercanía con la comunidad.<br /><br />
                 <b>Valores:</b> Honestidad, pasión, servicio, creatividad y respeto por nuestros clientes y colaboradores.
               </div>
-            )}><FaBuilding className="icono-footer" />Nuestra Empresa</span>
+            )}><FaBuilding className="icono-footer" /> Nuestra Empresa</span>
             <span className="link" onClick={() => handleOpen('Sobre Nosotros',
               <div style={{textAlign:'left', maxWidth: 480, margin: '0 auto'}}>
                 Somos un equipo apasionado por la moda y el bienestar de las familias colombianas.<br /><br />
@@ -32,7 +32,7 @@ export function Footer() {
                 <b>¿Por qué elegirnos?</b> Porque nos esforzamos por ofrecer atención cercana, productos seleccionados y un ambiente de confianza y respeto.<br /><br />
                 <b>¡Gracias por ser parte de la familia ZOE!</b>
               </div>
-            )}><FaInfoCircle className="icono-footer" />Sobre Nosotros</span>
+            )}><FaInfoCircle className="icono-footer" /> Sobre Nosotros</span>
           </div>
           <div className="links">
             <p>Acerca de</p>
@@ -49,7 +49,7 @@ export function Footer() {
                 </ul>
                 <b>¡Queremos que tu experiencia sea memorable en cada compra!</b>
               </div>
-            )}><FaBoxOpen className="icono-footer" />Servicios</span>
+            )}><FaBoxOpen className="icono-footer" /> Servicios</span>
             <span
               className="link"
               onClick={() => handleOpen('Términos y Condiciones',
@@ -72,13 +72,14 @@ export function Footer() {
                 </div>
               )}
             >
-              <FaInfoCircle className="icono-footer" />Términos y Condiciones</span>
+              <FaInfoCircle className="icono-footer" /> Términos y Condiciones
+            </span>
           </div>
           <div className="links">
             <p>Navegación</p>
-            <Link to="/" className="link"><FaHome className="icono-footer" />Home</Link>
-            <Link to="/catalogo" className="link"><FaBoxOpen className="icono-footer" />Productos</Link>
-            <Link to="/carrito" className="link"><FaBoxOpen className="icono-footer" />Carrito</Link>
+            <Link to="/" className="link"><FaHome className="icono-footer" /> Home</Link>
+            <Link to="/catalogo" className="link"><FaBoxOpen className="icono-footer" /> Productos</Link>
+            <Link to="/carrito" className="link"><FaBoxOpen className="icono-footer" /> Carrito</Link>
           </div>
           <div className="links">
             <p>Contacto</p>

@@ -1,6 +1,8 @@
-# ----------------------------
-# Comentarios de usuarios
-# ----------------------------
+
+from django.core.management import call_command
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 from django.db import models
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
@@ -9,6 +11,9 @@ from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+# ----------------------------
+# Comentarios de usuarios
+# ----------------------------
 class Comentario(models.Model):
 
     usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='comentarios')
@@ -24,8 +29,6 @@ class Comentario(models.Model):
     def __str__(self):
         return f"Comentario de {self.usuario.nombre} {self.usuario.apellido} - {self.valoracion} estrellas"
 
-
-
 # ----------------------------
 # Roles
 # ----------------------------
@@ -35,6 +38,11 @@ class Rol(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def delete(self, *args, **kwargs):
+        if self.imagen:
+            self.imagen.delete(save=False)
+        super().delete(*args, **kwargs)
 
 
 # ----------------------------

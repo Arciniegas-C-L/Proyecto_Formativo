@@ -5,15 +5,21 @@ import { toast } from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import "../../assets/css/Productos/ListaProductos.css";
 import { EliminarModal } from  "../EliminarModal/EliminarModal"; 
+import { Cloudinary } from '@cloudinary/url-gen';
+import { fill } from '@cloudinary/url-gen/actions/resize';
 
 export function ListaProductos() {
+  const navigate = useNavigate();
+
+  // Crear producto (redirige al formulario de creación)
+  const handleCrear = () => {
+    navigate('/admin/productos/crear');
+  };
+
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
-  const navigate = useNavigate();
-
-  // ---- estado para ventana eliminar global ----
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [productoToDelete, setProductoToDelete] = useState(null);
 
@@ -26,7 +32,6 @@ export function ListaProductos() {
       setLoading(true);
       setError(null);
       const response = await getALLProductos();
-      
       if (response?.data) {
         setProductos(response.data);
       } else {
@@ -48,12 +53,12 @@ export function ListaProductos() {
         return;
       }
 
-      // Coerciones seguras
+      // Coerciones seguras (con IDs planos y objetos anidados)
       const precioNum = typeof producto.precio === 'string' ? parseFloat(producto.precio) : (producto.precio ?? 0);
       const stockNum  = typeof producto.stock  === 'string' ? parseInt(producto.stock)   : (producto.stock  ?? 0);
 
-      const catId  = typeof producto.categoria_id   === 'string' ? parseInt(producto.categoria_id)   : producto.categoria_id;
-      const subId  = typeof producto.subcategoria_id=== 'string' ? parseInt(producto.subcategoria_id): producto.subcategoria_id;
+      const catId  = typeof producto.categoria_id    === 'string' ? parseInt(producto.categoria_id)    : producto.categoria_id;
+      const subId  = typeof producto.subcategoria_id === 'string' ? parseInt(producto.subcategoria_id) : producto.subcategoria_id;
 
       const productoCompleto = {
         // base
@@ -64,7 +69,7 @@ export function ListaProductos() {
         stock:  isNaN(stockNum)  ? 0 : stockNum,
         imagen: producto.imagen || '',
 
-        // objetos anidados (compatibles con formularios que esperen objetos)
+        // objetos anidados
         categoria: {
           idCategoria: catId ?? null,
           nombre: producto.categoria_nombre || ''
@@ -74,7 +79,7 @@ export function ListaProductos() {
           nombre: producto.subcategoria_nombre || ''
         },
 
-        // IDs planos (compatibles con selects controlados)
+        // IDs planos para selects controlados
         categoriaId: catId ?? '',
         subcategoriaId: subId ?? ''
       };
@@ -86,13 +91,11 @@ export function ListaProductos() {
     }
   };
 
-  // ---- abrir ventana eliminar global ----
   const handleEliminarClick = (producto) => {
     setProductoToDelete(producto);
     setOpenDeleteDialog(true);
   };
 
-  // ---- confirmar eliminación ----
   const confirmDelete = async () => {
     if (!productoToDelete) return;
     try {
@@ -112,11 +115,7 @@ export function ListaProductos() {
     }
   };
 
-  const handleCrear = () => {
-    navigate('/admin/productos/crear');
-  };
-
-  // Endurecer filtros para evitar .toLowerCase() sobre null/undefined
+  // Filtro robusto (evita .toLowerCase sobre null/undefined)
   const productosFiltrados = productos.filter(producto => {
     const nombre = (producto?.nombre ?? '').toLowerCase();
     const descripcion = (producto?.descripcion ?? '').toLowerCase();
@@ -129,6 +128,24 @@ export function ListaProductos() {
       categoriaNombre.includes(filtro)
     );
   });
+
+  // Cloudinary helper (solo si la imagen ya viene de Cloudinary)
+  const cld = new Cloudinary({ cloud: { cloudName: "dkwr4gcpl" } });
+  const getOptimizedCloudinaryUrl = (imagenUrl) => {
+    try {
+      if (!imagenUrl || typeof imagenUrl !== 'string') return null;
+      if (!imagenUrl.includes('res.cloudinary.com')) return imagenUrl;
+
+      // Extrae publicId desde .../upload/(v123/)?<publicId>
+      const matches = imagenUrl.match(/upload\/(?:v\d+\/)?(.+)$/);
+      const publicId = matches ? matches[1] : null;
+      if (!publicId) return imagenUrl;
+
+      return cld.image(publicId).resize(fill().width(300).height(300)).toURL();
+    } catch {
+      return imagenUrl;
+    }
+  };
 
   if (loading && productos.length === 0) {
     return (
@@ -201,45 +218,64 @@ export function ListaProductos() {
                 </td>
               </tr>
             ) : (
-              productosFiltrados.map(producto => (
-                <tr key={`producto-${producto.id}`}>
-                  <td className="celda-imagen">
-                    <img
-                      src={producto.imagen || 'https://via.placeholder.com/50'}
-                      alt={producto.nombre}
-                      onError={e => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/50'; }}
-                      tabIndex={0}
-                    />
-                  </td>
-                  <td>{producto.nombre}</td>
-                  <td className="celda-descripcion" title={producto.descripcion}>
-                    {producto.descripcion}
-                  </td>
-                  <td>${(parseFloat(producto.precio) || 0).toLocaleString('es-CO')}</td>
-                  <td>{producto.categoria_nombre}</td>
-                  <td>{producto.stock}</td>
-                  <td className="celda-acciones">
-                    <button
-                      className="btn-editar"
-                      onClick={() => handleEditar(producto)}
-                      title="Editar producto"
-                      disabled={loading}
-                      aria-label={`Editar ${producto.nombre}`}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="btn-eliminar"
-                      onClick={() => handleEliminarClick(producto)}
-                      title="Eliminar producto"
-                      disabled={loading}
-                      aria-label={`Eliminar ${producto.nombre}`}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
-                </tr>
-              ))
+              productosFiltrados.map(producto => {
+                // Imagen con fallback + optimización Cloudinary
+                const rawUrl = producto.imagen || '';
+                const imagenUrl = getOptimizedCloudinaryUrl(rawUrl) || 'https://via.placeholder.com/50';
+
+                return (
+                  <tr key={`producto-${producto.id}`}>
+                    <td className="celda-imagen">
+                      {typeof rawUrl === 'string' && rawUrl ? (
+                        <img
+                          src={imagenUrl}
+                          alt={producto.nombre}
+                          className="producto-imagen"
+                          tabIndex={0}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = 'https://via.placeholder.com/50';
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src="https://via.placeholder.com/50"
+                          alt={producto.nombre}
+                          className="producto-imagen"
+                          tabIndex={0}
+                        />
+                      )}
+                    </td>
+                    <td>{producto.nombre}</td>
+                    <td className="celda-descripcion" title={producto.descripcion}>
+                      {producto.descripcion}
+                    </td>
+                    <td>${(parseFloat(producto.precio) || 0).toLocaleString('es-CO')}</td>
+                    <td>{producto.categoria_nombre}</td>
+                    <td>{producto.stock}</td>
+                    <td className="celda-acciones">
+                      <button
+                        className="btn-editar"
+                        onClick={() => handleEditar(producto)}
+                        title="Editar producto"
+                        disabled={loading}
+                        aria-label={`Editar ${producto.nombre}`}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="btn-eliminar"
+                        onClick={() => handleEliminarClick(producto)}
+                        title="Eliminar producto"
+                        disabled={loading}
+                        aria-label={`Eliminar ${producto.nombre}`}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
