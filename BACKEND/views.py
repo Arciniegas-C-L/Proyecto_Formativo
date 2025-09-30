@@ -49,6 +49,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 import requests
 import mercadopago
 
+#--- import que me permite traerme lo necesario para email de pedido confirmado por email
+from BACKEND.services.Sendemailconfirmado import enviar_email_pedido_confirmado
+
 # --- Permisos del proyecto
 from BACKEND.permissions import (
     IsAdminWriteClienteRead,
@@ -220,11 +223,43 @@ class DireccionViewSet(viewsets.ModelViewSet):
 
 # Create your views here.
 
-class Rolview(viewsets.ModelViewSet):
+# views.py
+from django.db import transaction
+from django.core.cache import cache
+from rest_framework import viewsets
 
+
+class Rolview(viewsets.ModelViewSet):
     serializer_class = RolSerializer
     queryset = Rol.objects.all()
     permission_classes = [IsAdminWriteClienteRead]
+
+    REQUIRED_ROLES = ("administrador", "cliente")
+    CACHE_KEY = "roles_seeded_v1"   # cambia el sufijo si agregas/renombras roles
+    CACHE_TTL = 60 * 60 * 6         # 6 horas
+
+    def _ensure_roles(self):
+        """Crea roles requeridos si no existen. Idempotente y seguro."""
+        if cache.get(self.CACHE_KEY):
+            return
+
+        with transaction.atomic():
+            for nombre in self.REQUIRED_ROLES:
+                # Ajusta el campo según tu modelo: nombre / name / codigo / slug
+                Rol.objects.get_or_create(nombre=nombre)
+
+        cache.set(self.CACHE_KEY, True, self.CACHE_TTL)
+
+    # Opción A: asegura roles al inicio de cada request del ViewSet
+    def initial(self, request, *args, **kwargs):
+        self._ensure_roles()
+        return super().initial(request, *args, **kwargs)
+
+    # Opción B (alternativa): asegurar justo antes de usar el queryset
+    # def get_queryset(self):
+    #     self._ensure_roles()
+    #     return super().get_queryset()
+
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='me')
@@ -1894,6 +1929,16 @@ class EstadoCarritoView(viewsets.ModelViewSet):
                     carrito.estado = False
                     carrito.save(update_fields=['estado'])
 
+                    # si status_pago == "approved":
+                    with transaction.atomic():
+                        pedido = cv._ensure_pedido_from_carrito(carrito)
+                        if not cv._pedido_items_qs(pedido).exists():
+                            cv._move_items_carrito_a_pedido(carrito, pedido)
+                        carrito.estado = False
+                        carrito.save(update_fields=['estado'])
+
+                    transaction.on_commit(lambda: enviar_email_pedido_confirmado(pedido))
+
             return Response({"ok": True})
         except Exception as e:
             return Response({"error": str(e)}, status=500)
@@ -2472,15 +2517,14 @@ class FacturaView(viewsets.ModelViewSet):
             except Exception:
                 pass
 
-        # -------------------------
-        # 4) (Opcional) enviar email con comprobante/factura
-        # -------------------------
-        try:
-            _send_factura_email(request, factura)
-        except Exception:
-            pass
+        #Envio del email para Pedido
+
+        if (status_mp or "").lower() == "approved":
+            transaction.on_commit(lambda: enviar_email_pedido_confirmado(factura))
 
         return Response(FacturaSerializer(factura).data, status=status.HTTP_201_CREATED)
+    
+        # ... después de crear 'factura'
     
     #Factura en PDF Camila
 
@@ -2650,7 +2694,7 @@ class FacturaView(viewsets.ModelViewSet):
             [Paragraph("EMISOR", styles["label"]), ""],
             [Paragraph(emisor_nombre, styles["value"]), ""],
             [Paragraph("Dirección:", styles["label"]), ""],
-            [Paragraph(emisor_dir or "zoe@gmail.com", styles["value"]), ""],
+            [Paragraph(emisor_dir or "variedadezyestiloszoe@gmail.com", styles["value"]), ""],
         ]
         meta_mid = [
             [Paragraph("FACTURA", styles["label"]), ""],
@@ -3042,6 +3086,18 @@ class SubcategoriaViewSet(viewsets.ModelViewSet):
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('categoria')
+        # acepta ?categoria= o ?categoria_id= (compat)
+        cat = self.request.query_params.get('categoria') or self.request.query_params.get('categoria_id')
+        if cat:
+            qs = qs.filter(categoria_id=cat)
+
+        #permite ver solo activas :(
+        qs = qs.filter(estado=True)
+
+        return qs    
+    
 
 def _parse_date(s: str):
     try:

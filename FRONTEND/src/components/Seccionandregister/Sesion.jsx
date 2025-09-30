@@ -119,7 +119,7 @@ export function Sesion() {
         setShowVerificationModal(false);
         setPendingLogin(null);
         setAdminPassword('');
-        navigate('/admin/dashboard', { replace: true });
+        navigate('/admin/', { replace: true });
       } catch {
         toast.error('Error al verificar el código.');
       }

@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback, } from "react";
 import {
   getTablaCategorias,
   getTablaSubcategorias,
   getTablaProductos,
 } from "../../api/InventarioApi";
 import "../../assets/css/Notificaciones/AdminStockNotificaciones.css";
+import { useNavigate } from 'react-router-dom';
 
 // --- Util: "hace X"
 function timeAgo(iso) {
@@ -22,13 +23,14 @@ const aKey = (a) => `${a.categoriaId}-${a.subcategoriaId}-${a.productoId}-${a.ta
 export function AdminStockNotifications({
   isAdmin = false,          // pásalo desde auth: user.rol_nombre === 'administrador'
   pollMs = 30000,           // intervalo de refresco
-  umbralGlobal = 5,         // fallback si no viene stock_minimo en la talla
+  // ⚠️ Ignoraremos cualquier stock_minimo del backend y usaremos SIEMPRE este umbral por talla:
+  umbralGlobal = 5,         // <--- umbral fijo por talla
   onGoToInventario = null,  // ({categoriaId, subcategoriaId, productoId, tallaId, ...})
   
-  // NUEVAS PROPS PARA POSICIONAMIENTO FLEXIBLE
+  // Posicionamiento
   position = "top-right",   // "top-right" | "top-left" | "bottom-right" | "bottom-left"
-  offset = 20,              // distancia desde los bordes
-  customPosition = null,    // { top?: number, right?: number, bottom?: number, left?: number }
+  offset = 20,
+  customPosition = null,    // { top?, right?, bottom?, left? }
 }) {
   const [open, setOpen] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
@@ -37,6 +39,7 @@ export function AdminStockNotifications({
   const [errorList, setErrorList] = useState("");
   const [errorBadge, setErrorBadge] = useState("");
   const [readSet, setReadSet] = useState(() => new Set());
+  const Navigate = useNavigate();
 
   const mountedRef = useRef(true);
   const visibleRef = useRef(typeof document !== "undefined" ? document.visibilityState === "visible" : true);
@@ -53,32 +56,15 @@ export function AdminStockNotifications({
 
   // Calcular estilos de posicionamiento
   const buttonStyles = useMemo(() => {
-    if (customPosition) {
-      return customPosition;
-    }
-    
+    if (customPosition) return customPosition;
     const styles = {};
-    
     switch (position) {
-      case "top-left":
-        styles.top = `${offset}px`;
-        styles.left = `${offset}px`;
-        break;
-      case "bottom-left":
-        styles.bottom = `${offset}px`;
-        styles.left = `${offset}px`;
-        break;
-      case "bottom-right":
-        styles.bottom = `${offset}px`;
-        styles.right = `${offset}px`;
-        break;
+      case "top-left": styles.top = `${offset}px`; styles.left = `${offset}px`; break;
+      case "bottom-left": styles.bottom = `${offset}px`; styles.left = `${offset}px`; break;
+      case "bottom-right": styles.bottom = `${offset}px`; styles.right = `${offset}px`; break;
       case "top-right":
-      default:
-        styles.top = `${offset}px`;
-        styles.right = `${offset}px`;
-        break;
+      default: styles.top = `${offset}px`; styles.right = `${offset}px`; break;
     }
-    
     return styles;
   }, [position, offset, customPosition]);
 
@@ -87,14 +73,14 @@ export function AdminStockNotifications({
   }, []);
 
   // --------------------------
-  // Núcleo: leer inventario y derivar alertas desde tus endpoints (resp.datos)
+  // Núcleo: leer inventario y derivar alertas
+  // REGLA: alerta "stock_out" si stock === 0
+  //        alerta "stock_low" si 0 < stock < 5 (ignorando stock_minimo del backend)
   // --------------------------
   const derivarAlertas = useCallback(async () => {
-    // 1) Categorías
-    const catRes = await getTablaCategorias();            // { datos: [...] }
+    const catRes = await getTablaCategorias(); // { datos: [...] }
     const categorias = catRes?.datos ?? [];
 
-    // 2) Subcategorías por categoría (paralelo) -> getTablaSubcategorias(categoriaId)
     const subPromises = categorias.map((c) => getTablaSubcategorias(c.id));
     const subSettled = await Promise.allSettled(subPromises);
 
@@ -107,7 +93,6 @@ export function AdminStockNotifications({
       }
     });
 
-    // 3) Productos por subcategoría (paralelo) -> getTablaProductos(subcategoriaId)
     const prodPromises = [];
     const meta = [];
     for (const { categoria, subcats } of catSubs) {
@@ -118,7 +103,6 @@ export function AdminStockNotifications({
     }
     const prodSettled = await Promise.allSettled(prodPromises);
 
-    // 4) Construir alertas por talla (usa stock_minimo cuando venga; si no, umbralGlobal)
     const nowIso = new Date().toISOString();
     const alerts = [];
 
@@ -128,12 +112,11 @@ export function AdminStockNotifications({
       const { categoria, subcat } = meta[i] || {};
 
       for (const p of productos) {
-        // p.stock_por_talla -> { "S": { talla_id, stock, stock_minimo }, ... }
+        // p.stock_por_talla -> { "S": { talla_id, stock, ... }, ... }
         const spt = p?.stock_por_talla || {};
         for (const [tallaNombre, info] of Object.entries(spt)) {
           const tallaId = info?.talla_id;
           const stock = Number(info?.stock ?? 0);
-          const smin = Number(info?.stock_minimo != null ? info.stock_minimo : umbralGlobal);
 
           if (stock <= 0) {
             alerts.push({
@@ -148,10 +131,11 @@ export function AdminStockNotifications({
               tallaId,
               talla: tallaNombre,
               cantidad: 0,
-              stock_minimo: smin,
+              // mantenemos el campo para UI, pero SIEMPRE 5
+              stock_minimo: umbralGlobal,
               actualizado_en: nowIso,
             });
-          } else if (stock <= smin) {
+          } else if (stock < umbralGlobal) {
             alerts.push({
               id: `low-${categoria?.id}-${subcat?.id}-${p.id}-${tallaId}`,
               tipo: "stock_low",
@@ -164,7 +148,7 @@ export function AdminStockNotifications({
               tallaId,
               talla: tallaNombre,
               cantidad: stock,
-              stock_minimo: smin,
+              stock_minimo: umbralGlobal, // fijo a 5 para consistencia visual
               actualizado_en: nowIso,
             });
           }
@@ -182,7 +166,6 @@ export function AdminStockNotifications({
     safeSet(setErrorBadge, "");
     try {
       const alerts = await derivarAlertas();
-      // Evitar setState si nada cambió (firma por id+cantidad)
       safeSet(setAlertas, (prev) => {
         const sigPrev = JSON.stringify(prev.map((a) => [a.id, a.cantidad]));
         const sigNew  = JSON.stringify(alerts.map((a) => [a.id, a.cantidad]));
@@ -364,7 +347,9 @@ export function AdminStockNotifications({
                             {a.categoria} / {a.subcategoria}
                           </span>
                           <span className="notification-item-stock">
-                            {isOut ? "Sin stock" : `Stock bajo: ${a.cantidad} (mínimo: ${a.stock_minimo})`}
+                            {isOut
+                              ? "Sin stock"
+                              : `Stock bajo: ${a.cantidad}` /* mostramos regla fija */}
                           </span>
                         </div>
                         {a.actualizado_en && (
@@ -381,14 +366,9 @@ export function AdminStockNotifications({
                         <button
                           className="btn btn-sm btn-outline-secondary notification-btn-go"
                           onClick={() =>
-                            onGoToInventario({
-                              categoriaId: a.categoriaId,
-                              subcategoriaId: a.subcategoriaId,
-                              productoId: a.productoId,
-                              tallaId: a.tallaId,
-                              producto: a.producto,
-                              talla: a.talla,
-                            })
+                           Navigate(
+                            `/admin/inventario`
+                          )
                           }
                         >
                           Ir a inventario

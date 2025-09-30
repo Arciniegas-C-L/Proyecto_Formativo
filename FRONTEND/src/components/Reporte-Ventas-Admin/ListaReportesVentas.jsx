@@ -114,26 +114,6 @@ export function ListaReportesVentas({
     })();
   }, [show, previewId, ordering, page, pageSize]);
 
-  const exportCSV = () => {
-    const data = rows.map((p) => ({
-      producto_id: p.producto?.id ?? p.producto_id,
-      producto_nombre: p.producto?.nombre,
-      cantidad: p.cantidad,
-      ingresos: p.ingresos,
-      tickets: p.tickets,
-    }));
-    const blob = new Blob([toCSV(data)], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const label = hdr ? `${hdr.fecha_inicio}_a_${hdr.fecha_fin}` : `reporte_${previewId}`;
-    a.download = `reporte_ventas_${label}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <>
       {/* Tabla principal responsive */}
@@ -250,16 +230,6 @@ export function ListaReportesVentas({
                   </div>
                   <div className="col-lg-4">
                     <div className="btn-group w-100" role="group">
-                      <button 
-                        className="btn lista-btn-export" 
-                        onClick={exportCSV} 
-                        disabled={!rows.length}
-                        title="Exportar datos a CSV"
-                      >
-                        <i className="fas fa-download me-1"></i>
-                        <span className="d-none d-md-inline">Exportar</span>
-                        CSV
-                      </button>
                       <button 
                         className="btn lista-btn-print" 
                         onClick={() => window.print()}

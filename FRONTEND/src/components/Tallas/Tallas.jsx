@@ -25,11 +25,11 @@ export function Tallas() {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingTalla, setEditingTalla] = useState(null);
 
-  //  estados para eliminar (una sola vez) 
+  // eliminar
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [tallaToDelete, setTallaToDelete] = useState(null);
 
-  //  estados para agregar talla a productos existentes 
+  // agregar a productos
   const [openAgregarDialog, setOpenAgregarDialog] = useState(false);
   const [tallaToAdd, setTallaToAdd] = useState(null);
   const [loadingAgregar, setLoadingAgregar] = useState(false);
@@ -40,6 +40,13 @@ export function Tallas() {
     estado: true,
   });
   const [error, setError] = useState("");
+
+  // filtros
+  const [filtroGrupo, setFiltroGrupo] = useState("");
+  const [filtroNombre, setFiltroNombre] = useState("");
+
+  // === NUEVO: recordar el grupo original al abrir modal ===
+  const [originalGrupoId, setOriginalGrupoId] = useState("");
 
   useEffect(() => {
     cargarTallas();
@@ -70,11 +77,13 @@ export function Tallas() {
     setError("");
     if (talla) {
       setEditingTalla(talla);
+      const gid = talla?.grupo?.id ?? talla?.grupo_id ?? "";
       setFormData({
         nombre: talla?.nombre ?? "",
-        grupo_id: talla?.grupo?.id ?? talla?.grupo_id ?? "",
+        grupo_id: gid,
         estado: Boolean(talla?.estado),
       });
+      setOriginalGrupoId(String(gid || ""));
     } else {
       setEditingTalla(null);
       const grupoIdDesdeNavegacion = location.state?.grupoId || "";
@@ -83,6 +92,7 @@ export function Tallas() {
         grupo_id: grupoIdDesdeNavegacion,
         estado: true,
       });
+      setOriginalGrupoId(String(grupoIdDesdeNavegacion || ""));
     }
     setOpenDialog(true);
   };
@@ -91,6 +101,7 @@ export function Tallas() {
     setOpenDialog(false);
     setEditingTalla(null);
     setFormData({ nombre: "", grupo_id: "", estado: true });
+    setOriginalGrupoId("");
     setError("");
   };
 
@@ -105,10 +116,25 @@ export function Tallas() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // === NUEVO: confirmar si cambia grupo al editar ===
+    const grupoCambioPeligroso =
+      !!editingTalla &&
+      String(formData.grupo_id || "") !== String(originalGrupoId || "");
+
     if (!formData.nombre.trim() || !formData.grupo_id) {
       setError("Todos los campos son obligatorios");
       return;
     }
+
+    if (grupoCambioPeligroso) {
+      const ok = window.confirm(
+        "¿Seguro que quieres cambiar el grupo de la talla?\n\n" +
+          "Esto afectará tu stock en inventario y tendrás que volver a asignar el grupo de tallas a tus pedidos."
+      );
+      if (!ok) return; // cancela el guardado
+    }
+
     try {
       if (editingTalla) {
         await updateTalla(editingTalla.id, formData);
@@ -145,7 +171,7 @@ export function Tallas() {
   const handleEstadoChange = async (id, estado) => {
     try {
       await cambiarEstadoTalla(id, !estado);
-      toast.success('Estado de la talla actualizado exitosamente');
+      toast.success("Estado de la talla actualizado exitosamente");
       cargarTallas();
     } catch (err) {
       toast.error("Error al cambiar estado");
@@ -172,15 +198,53 @@ export function Tallas() {
     }
   };
 
+  // derivar lista filtrada
+  const tallasFiltradas = tallas.filter((t) => {
+    const grupoIdTalla = String(
+      t?.grupo?.id ?? t?.grupo_id ?? t?.grupo?.idGrupoTalla ?? ""
+    );
+    const coincideGrupo = !filtroGrupo || grupoIdTalla === String(filtroGrupo);
+    const nombreTalla = (t?.nombre ?? "").toLowerCase();
+    const coincideNombre =
+      !filtroNombre || nombreTalla.includes(filtroNombre.toLowerCase());
+    return coincideGrupo && coincideNombre;
+  });
+
+  // === NUEVO: flag visual para alerta en el modal ===
+  const grupoCambioPeligroso =
+    !!editingTalla &&
+    String(formData.grupo_id || "") !== String(originalGrupoId || "");
+
   return (
     <div className="lista-tallas-container">
       <div className="header-acciones">
         <h2>Gestión de Tallas</h2>
         <div className="header-controls">
-          <button 
-            className="btn-nueva-talla" 
-            onClick={() => handleOpenDialog()}
+          {/* filtros */}
+          <select
+            className="form-select filtro-grupo"
+            value={filtroGrupo}
+            onChange={(e) => setFiltroGrupo(e.target.value)}
+            style={{ maxWidth: 220, marginRight: 8 }}
           >
+            <option value="">Todos los grupos</option>
+            {gruposTalla.map((g, idx) => (
+              <option key={g?.id ?? idx} value={g?.id ?? g?.idGrupoTalla}>
+                {g?.nombre}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="text"
+            className="form-control filtro-nombre"
+            placeholder="Buscar por nombre"
+            value={filtroNombre}
+            onChange={(e) => setFiltroNombre(e.target.value)}
+            style={{ maxWidth: 220, marginRight: 8 }}
+          />
+
+          <button className="btn-nueva-talla" onClick={() => handleOpenDialog()}>
             <FaPlus />
             <span className="btn-text-desktop">Nueva Talla</span>
           </button>
@@ -199,22 +263,22 @@ export function Tallas() {
             </tr>
           </thead>
           <tbody>
-            {tallas.length === 0 ? (
+            {tallasFiltradas.length === 0 ? (
               <tr>
                 <td colSpan="4" className="loading">
                   No hay tallas registradas
                 </td>
               </tr>
             ) : (
-              tallas.map((talla, index) => {
+              tallasFiltradas.map((talla, index) => {
                 const id = talla.id ?? talla.idTalla ?? talla.id_talla ?? index;
                 return (
                   <tr key={id}>
                     <td>{talla.nombre}</td>
-                    <td>{talla.grupo?.nombre ?? '-'}</td>
+                    <td>{talla.grupo?.nombre ?? "-"}</td>
                     <td className="estado-talla">
                       <button
-                        className={`chip-estado ${talla.estado ? 'on' : 'off'}`}
+                        className={`chip-estado ${talla.estado ? "on" : "off"}`}
                         onClick={() => handleEstadoChange(id, talla.estado)}
                         title="Cambiar estado"
                       >
@@ -222,15 +286,21 @@ export function Tallas() {
                       </button>
                     </td>
                     <td className="celda-acciones">
-                      <button className="btn-editar" onClick={() => handleOpenDialog(talla)}>
+                      <button
+                        className="btn-editar"
+                        onClick={() => handleOpenDialog(talla)}
+                      >
                         <FaEdit />
                       </button>
-                      <button className="btn-eliminar" onClick={() => handleDeleteClick(talla)}>
+                      <button
+                        className="btn-eliminar"
+                        onClick={() => handleDeleteClick(talla)}
+                      >
                         <FaTrash />
                       </button>
                       {talla.estado && (
-                        <button 
-                          className="btn-agregar-productos" 
+                        <button
+                          className="btn-agregar-productos"
                           onClick={() => handleAgregarAProductosClick(talla)}
                           title="Agregar a productos existentes"
                         >
@@ -248,40 +318,44 @@ export function Tallas() {
 
       {/* Vista Mobile - Cards */}
       <div className="mobile-view">
-        {tallas.length === 0 ? (
-          <div className="loading-mobile">
-            No hay tallas registradas
-          </div>
+        {tallasFiltradas.length === 0 ? (
+          <div className="loading-mobile">No hay tallas registradas</div>
         ) : (
           <div className="tallas-cards">
-            {tallas.map((talla, index) => {
+            {tallasFiltradas.map((talla, index) => {
               const id = talla.id ?? talla.idTalla ?? talla.id_talla ?? index;
               return (
                 <div key={id} className="talla-card">
                   <div className="card-header">
                     <div className="talla-info">
                       <h3 className="talla-nombre">{talla.nombre}</h3>
-                      <p className="talla-grupo">{talla.grupo?.nombre ?? '-'}</p>
+                      <p className="talla-grupo">{talla.grupo?.nombre ?? "-"}</p>
                     </div>
                     <button
-                      className={`chip-estado-mobile ${talla.estado ? 'on' : 'off'}`}
+                      className={`chip-estado-mobile ${talla.estado ? "on" : "off"}`}
                       onClick={() => handleEstadoChange(id, talla.estado)}
                     >
                       {talla.estado ? "Activo" : "Inactivo"}
                     </button>
                   </div>
                   <div className="card-actions">
-                    <button className="btn-card btn-editar-card" onClick={() => handleOpenDialog(talla)}>
+                    <button
+                      className="btn-card btn-editar-card"
+                      onClick={() => handleOpenDialog(talla)}
+                    >
                       <FaEdit />
                       <span>Editar</span>
                     </button>
-                    <button className="btn-card btn-eliminar-card" onClick={() => handleDeleteClick(talla)}>
+                    <button
+                      className="btn-card btn-eliminar-card"
+                      onClick={() => handleDeleteClick(talla)}
+                    >
                       <FaTrash />
                       <span>Eliminar</span>
                     </button>
                     {talla.estado && (
-                      <button 
-                        className="btn-card btn-agregar-card" 
+                      <button
+                        className="btn-card btn-agregar-card"
                         onClick={() => handleAgregarAProductosClick(talla)}
                       >
                         <FaBoxes />
@@ -330,6 +404,15 @@ export function Tallas() {
               ))}
             </select>
 
+            {/* === NUEVO: alerta visual cuando cambia grupo al editar === */}
+            {grupoCambioPeligroso && (
+              <div className="alert alert-warning py-2 px-3" role="alert">
+                <strong>¿Seguro que quieres cambiar la talla de grupo?</strong><br />
+                Esto afectará tu stock en inventario y tendrás que volver a asignar
+                el grupo de tallas a tu pedido.
+              </div>
+            )}
+
             <div className="form-check form-switch mb-3">
               <input
                 className="form-check-input"
@@ -353,7 +436,7 @@ export function Tallas() {
         </div>
       )}
 
-      {/* Nuevo Modal Eliminar Global */}
+      {/* Modal Eliminar */}
       <EliminarModal
         abierto={openDeleteDialog}
         mensaje={`¿Seguro que quieres eliminar la talla "${tallaToDelete?.nombre}"?`}
