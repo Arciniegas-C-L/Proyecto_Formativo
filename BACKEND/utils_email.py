@@ -1,57 +1,63 @@
 # BACKEND/utils_email.py
-import re
+
+# Enviar correos usando Maileroo API (HTTP)
+import os
+import json
+import requests
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
 
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
-def _clean_emails(to_emails):
-    if isinstance(to_emails, str):
-        emails = [to_emails]
-    else:
-        emails = list(to_emails or [])
-    cleaned = []
-    for e in emails:
-        if not e:
-            continue
-        e = str(e).strip()
-        if not e:
-            continue
-        if _EMAIL_RE.match(e):
-            cleaned.append(e)
-        else:
-            print(f"[WARN] Email inválido descartado: {e!r}")
-    return sorted(set(cleaned))
+MAILEROO_API_KEY = os.getenv("MAILEROO_API_KEY", getattr(settings, "MAILEROO_API_KEY", ""))
+MAILEROO_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", "Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org"))
+MAILEROO_FROM_NAME = os.getenv("DEFAULT_FROM_NAME", getattr(settings, "DEFAULT_FROM_NAME", "Variedades Zoe"))
 
 def send_email_raw(subject, to_emails, html_body, text_body=None, from_email=None):
-    print(f"[DEBUG] send_email_raw() raw to_emails={to_emails!r}")
-    cleaned = _clean_emails(to_emails)
-    print(f"[DEBUG] send_email_raw() cleaned={cleaned!r}")
-
-    # Fallback opcional (settings.ALERT_FALLBACK_EMAIL)
-    fallback = getattr(settings, "ALERT_FALLBACK_EMAIL", "")
-    fb_clean = _clean_emails(fallback) if fallback else []
-
-    if not cleaned and fb_clean:
-        print("[INFO] Usando ALERT_FALLBACK_EMAIL (lista vacía).")
-        cleaned = fb_clean
-
-    if not cleaned:
+    """
+    Envía un correo usando la API HTTP de Maileroo.
+    subject: asunto
+    to_emails: lista o string de destinatarios
+    html_body: cuerpo HTML
+    text_body: cuerpo texto plano (opcional)
+    from_email: remitente (opcional)
+    """
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+    to_list = [
+        {"address": addr} for addr in to_emails if addr and "@" in addr
+    ]
+    if not to_list:
         print(f"[WARN] Email NO enviado: sin destinatarios válidos. subject={subject!r}")
         return 0
 
-    msg = EmailMultiAlternatives(
-        subject=subject,
-        body=text_body or subject,
-        from_email=from_email or getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@example.com"),
-        to=cleaned,
-    )
-    msg.attach_alternative(html_body, "text/html")
+    url = "https://smtp.maileroo.com/api/v2/emails"
+    api_headers = {
+        "X-API-Key": MAILEROO_API_KEY,
+        "Content-Type": "application/json"
+    }
+    data = {
+        "from": {
+            "address": from_email or MAILEROO_FROM_EMAIL,
+            "display_name": MAILEROO_FROM_NAME
+        },
+        "to": to_list,
+        "subject": subject,
+        "html": html_body,
+    }
+    if text_body:
+        data["plain"] = text_body
 
+    print("[Maileroo][REQUEST] URL:", url)
+    print("[Maileroo][REQUEST] Headers:", api_headers)
+    print("[Maileroo][REQUEST] Data:", json.dumps(data, ensure_ascii=False))
     try:
-        msg.send(fail_silently=False)
-        return len(cleaned)
+        response = requests.post(url, headers=api_headers, json=data)
+        print(f"[Maileroo][RESPONSE] Status: {response.status_code}")
+        print(f"[Maileroo][RESPONSE] Body: {response.text}")
+        if response.status_code >= 400:
+            import sys
+            print(f"[Maileroo][ERROR] {response.status_code}: {response.text}", file=sys.stderr)
+            return 0
     except Exception as e:
-        # No romper la API si falla SMTP
-        print(f"[ERROR] Email no enviado: {e}")
+        import sys
+        print(f"[Maileroo][EXCEPTION] {str(e)}", file=sys.stderr)
         return 0
+    return 1
