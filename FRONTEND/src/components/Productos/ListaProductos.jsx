@@ -39,8 +39,9 @@ export function ListaProductos() {
       }
     } catch (error) {
       console.error('Error al cargar productos:', error);
-      setError('No se pudieron cargar los productos. Por favor, intente nuevamente.');
-      toast.error('Error al cargar los productos');
+          const mensaje = error?.response?.data?.error || error?.message || 'No se pudieron cargar los productos. Por favor, intente nuevamente.';
+          setError(mensaje);
+          toast.error(mensaje);
     } finally {
       setLoading(false);
     }
@@ -117,15 +118,16 @@ export function ListaProductos() {
 
   // Filtro robusto (evita .toLowerCase sobre null/undefined)
   const productosFiltrados = productos.filter(producto => {
-    const nombre = (producto?.nombre ?? '').toLowerCase();
-    const descripcion = (producto?.descripcion ?? '').toLowerCase();
-    const categoriaNombre = (producto?.categoria_nombre ?? '').toLowerCase();
+    const nombre = (producto && producto.nombre) ? String(producto.nombre).toLowerCase() : '';
+    const descripcion = (producto && producto.descripcion) ? String(producto.descripcion).toLowerCase() : '';
+    const subcategoria = (producto && producto.subcategoria_nombre) ? String(producto.subcategoria_nombre).toLowerCase() : '';
+    const categoria = (producto && producto.categoria_nombre) ? String(producto.categoria_nombre).toLowerCase() : '';
     const filtro = (filtroBusqueda ?? '').toLowerCase();
-
     return (
       nombre.includes(filtro) ||
       descripcion.includes(filtro) ||
-      categoriaNombre.includes(filtro)
+      subcategoria.includes(filtro) ||
+      categoria.includes(filtro)
     );
   });
 

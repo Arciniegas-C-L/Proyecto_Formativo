@@ -209,15 +209,14 @@ export function ProductosForm() {
     const stockNum = Number(formData.stock);
     const subId = parseInt(formData.subcategoria, 10);
 
-    // Usamos FormData para ser compatibles con tu backend
-    const form = new FormData();
-    form.append("nombre", formData.nombre.trim());
-    form.append("descripcion", formData.descripcion.trim());
-    form.append("precio", precioNum);
-    form.append("stock", stockNum);
-    form.append("categoria", formData.categoria);
-    form.append("subcategoria", subId);
-    form.append("imagen", formData.imagen); // URL de Cloudinary
+  // Usamos FormData para ser compatibles con tu backend
+  const form = new FormData();
+  form.append("nombre", formData.nombre.trim());
+  form.append("descripcion", formData.descripcion.trim());
+  form.append("precio", precioNum);
+  form.append("stock", stockNum);
+  form.append("subcategoria", subId);
+  form.append("imagen", formData.imagen); // URL de Cloudinary
 
     try {
       if (productoEditar) {
