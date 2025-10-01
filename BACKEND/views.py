@@ -636,11 +636,12 @@ class ProductoView(viewsets.ModelViewSet):
         import logging
         logger = logging.getLogger("producto.create")
         try:
-            logger.info(f"[Producto][CREATE] Datos recibidos: {request.data}")
+            logger.info(f"[Producto][CREATE][INICIO] Datos recibidos: {request.data}")
 
             # Validación manual de tipos antes del serializer
             errores_tipo = {}
             data = request.data.copy()
+            logger.info(f"[Producto][CREATE][PASO] Copia de datos realizada: {data}")
             # nombre
             if 'nombre' not in data or not isinstance(data['nombre'], str):
                 errores_tipo['nombre'] = 'Debe ser un string.'
@@ -669,14 +670,18 @@ class ProductoView(viewsets.ModelViewSet):
                 errores_tipo['subcategoria'] = 'Debe ser el ID (entero) de una subcategoría.'
             # imagen: puede ser url, null o archivo, no forzar tipo aquí
 
+            logger.info(f"[Producto][CREATE][PASO] Errores de tipo: {errores_tipo}")
             if errores_tipo:
                 logger.error(f"[Producto][CREATE][TIPO] Errores de tipo: {errores_tipo}")
                 return Response({'errores_tipo': errores_tipo}, status=status.HTTP_400_BAD_REQUEST)
 
+            logger.info(f"[Producto][CREATE][PASO] Datos listos para serializar: {data}")
             serializer = self.get_serializer(data=data)
+            logger.info(f"[Producto][CREATE][PASO] Serializer instanciado")
             if serializer.is_valid():
+                logger.info(f"[Producto][CREATE][PASO] Datos validados por el serializer")
                 self.perform_create(serializer)
-                logger.info(f"[Producto][CREATE] Producto creado: {serializer.data}")
+                logger.info(f"[Producto][CREATE][EXITO] Producto creado: {serializer.data}")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             logger.error(f"[Producto][CREATE][VALIDACION] Errores de validación: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
