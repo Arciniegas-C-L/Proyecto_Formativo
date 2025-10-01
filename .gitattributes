@@ -1,8 +1,12 @@
-* text=auto
+
+# JS, JSX, CSS, HTML siempre LF
 *.js text eol=lf
-*.ts text eol=lf
-*.json text eol=lf
-*.md text eol=lf
-*.css text eol=lf
 *.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# Otros archivos de texto
+*.md text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
 *.py text eol=lf
