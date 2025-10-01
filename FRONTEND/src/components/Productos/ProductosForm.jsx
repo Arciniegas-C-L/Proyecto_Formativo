@@ -119,23 +119,23 @@ export function ProductosForm() {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
-    const subId = parseInt(formData.subcategoria, 10);
 
-    const form = new FormData();
-    form.append("nombre", formData.nombre);
-    form.append("descripcion", formData.descripcion);
-    form.append("precio", Number(String(formData.precio).replace(",", ".")));
-    form.append("stock", Number(formData.stock));
-    form.append("categoria", formData.categoria);
-    form.append("subcategoria", subId);
-    form.append("imagen", formData.imagen);
+    // Construir objeto JSON para enviar
+    const payload = {
+      nombre: formData.nombre,
+      descripcion: formData.descripcion,
+      precio: Number(String(formData.precio).replace(",", ".")),
+      stock: Number(formData.stock),
+      subcategoria: parseInt(formData.subcategoria, 10),
+      imagen: formData.imagen
+    };
 
     try {
       if (productoEditar) {
-        await updateProducto(productoEditar.idProducto, form);
+        await updateProducto(productoEditar.idProducto, payload);
         toast.success("Producto actualizado correctamente");
       } else {
-        await createProducto(form);
+        await createProducto(payload);
         toast.success("Producto creado correctamente");
         setFormData({
           nombre: "",
