@@ -8,27 +8,24 @@ export function VerificationModal({ isOpen, onRequestClose, email, onSuccess }) 
   const [verificationCode, setVerificationCode] = useState('');
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [error, setError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  React.useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const handleVerifyCode = async () => {
+    setIsVerifying(true);
     try {
-      const isValid = await verificarCodigo(email, verificationCode);
-      if (isValid) {
-        toast.success('Código verificado correctamente.');
-        onRequestClose();
-        if (onSuccess) onSuccess(verificationCode);
-      } else {
-        setAttemptsLeft((prev) => prev - 1);
-        if (attemptsLeft <= 1) {
-          setError('Demasiados intentos fallidos. Por favor, vuelve a iniciar sesión.');
-          setTimeout(() => {
-            onRequestClose();
-          }, 1800);
-        } else {
-          setError(`Código incorrecto. Intentos restantes: ${attemptsLeft - 1}`);
-        }
-      }
-    } catch {
-      setError('Error al verificar el código.');
+      if (onSuccess) await onSuccess(verificationCode);
+    } finally {
+      setIsVerifying(false);
+      setCooldown(30); // desactiva el botón por 30 segundos
     }
   };
 
@@ -53,7 +50,9 @@ export function VerificationModal({ isOpen, onRequestClose, email, onSuccess }) 
         className="verification-modal-input"
       />
       {error && <p className="verification-modal-error">{error}</p>}
-      <button className="verification-modal-btn" onClick={handleVerifyCode} disabled={attemptsLeft <= 0}>Verificar</button>
+      <button className="verification-modal-btn" onClick={handleVerifyCode} disabled={attemptsLeft <= 0 || isVerifying || cooldown > 0}>
+        {isVerifying ? "Verificando..." : cooldown > 0 ? `Espera ${cooldown}s` : "Verificar"}
+      </button>
       <button className="verification-modal-btn" onClick={onRequestClose}>Cancelar</button>
     </Modal>
   );

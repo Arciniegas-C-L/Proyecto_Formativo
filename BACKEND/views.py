@@ -446,6 +446,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                     codigo_obj = CodigoRecuperacion.objects.filter(usuario=usuario).latest('creado')
                 except CodigoRecuperacion.DoesNotExist:
                     return Response({"error": "No se encontró código de verificación"}, status=status.HTTP_400_BAD_REQUEST)
+                if codigo_obj.esta_expirado():
+                    return Response({"error": "El código ha expirado. Solicita uno nuevo."}, status=status.HTTP_400_BAD_REQUEST)
                 if codigo_obj.intentos >= 3:
                     return Response({"error": "Código bloqueado por demasiados intentos"}, status=status.HTTP_403_FORBIDDEN)
                 if codigo_obj.codigo != codigo:

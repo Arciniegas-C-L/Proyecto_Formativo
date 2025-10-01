@@ -124,7 +124,7 @@ class CodigoRecuperacion(models.Model):
     intentos = models.PositiveIntegerField(default=0)
 
     def esta_expirado(self):
-        return timezone.now() > self.creado + timedelta(minutes=10)
+        return timezone.now() > self.creado + timedelta(minutes=3)
 
     def __str__(self):
         return f"Código para {self.usuario.correo} - {self.codigo}"
