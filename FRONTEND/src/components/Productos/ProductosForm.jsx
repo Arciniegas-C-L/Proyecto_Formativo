@@ -209,21 +209,22 @@ export function ProductosForm() {
     const stockNum = Number(formData.stock);
     const subId = parseInt(formData.subcategoria, 10);
 
-  // Usamos FormData para ser compatibles con tu backend
-  const form = new FormData();
-  form.append("nombre", formData.nombre.trim());
-  form.append("descripcion", formData.descripcion.trim());
-  form.append("precio", precioNum);
-  form.append("stock", stockNum);
-  form.append("subcategoria", subId);
-  form.append("imagen", formData.imagen); // URL de Cloudinary
+    // Construir objeto JSON plano
+    const data = {
+      nombre: formData.nombre.trim(),
+      descripcion: formData.descripcion.trim(),
+      precio: precioNum,
+      stock: stockNum,
+      subcategoria: subId,
+      imagen: formData.imagen
+    };
 
     try {
       if (productoEditar) {
-        await updateProducto(productoEditar.idProducto, form);
+        await updateProducto(productoEditar.idProducto, data);
         toast.success("Producto actualizado correctamente");
       } else {
-        await createProducto(form);
+        await createProducto(data);
         toast.success("Producto creado correctamente");
         setFormData({
           nombre: "",

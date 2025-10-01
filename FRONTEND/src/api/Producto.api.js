@@ -17,10 +17,12 @@ export const getALLProductos = async () => {
   }
 };
 
-// Crear un nuevo producto
-export const createProducto = async (formData) => {
+// Crear un nuevo producto (JSON)
+export const createProducto = async (data) => {
   try {
-    return await api.post('producto/', formData);
+    return await api.post('producto/', data, {
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.error(' Backend respondió:', error.response?.data); 
     handleProductoError(error);
@@ -39,27 +41,11 @@ export const deleteProducto = async (id) => {
   }
 };
 
-// Actualizar un producto por ID
-export const updateProducto = async (id, producto) => {
+// Actualizar un producto por ID (JSON)
+export const updateProducto = async (id, data) => {
   try {
-    let formData;
-
-    // Si ya viene como FormData
-    if (producto instanceof FormData) {
-      formData = producto;
-    } else {
-      formData = new FormData();
-      for (const key in producto) {
-        if (producto[key] !== undefined && producto[key] !== null) {
-          formData.append(key, producto[key]);
-        }
-      }
-    }
-
-    return await api.put(`producto/${id}/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+    return await api.put(`producto/${id}/`, data, {
+      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error(' Backend al actualizar:', error.response?.data);
