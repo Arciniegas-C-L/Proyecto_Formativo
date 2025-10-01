@@ -298,10 +298,29 @@ def enviar_email_pedido_confirmado(obj) -> bool:
     from_email = (
         getattr(settings, "DEFAULT_FROM_EMAIL", None)
         or getattr(settings, "EMAIL_HOST_USER", None)
-        or "no-reply@tudominio.com"
+        or "Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org"
     )
+    from_name = "Variedades Zoe"
 
-    msg = EmailMultiAlternatives(subject=subject, body=text_body, from_email=from_email, to=[to_email])
-    msg.attach_alternative(html_body, "text/html")
-    sent = msg.send(fail_silently=False)
-    return bool(sent)
+    # Importar aquí para evitar dependencias cruzadas
+    from BACKEND.views import send_email_via_maileroo
+
+    try:
+        resp = send_email_via_maileroo(
+            to=to_email,
+            subject=subject,
+            text=text_body,
+            html=html_body,
+            from_email=from_email,
+            from_name=from_name
+        )
+        # Maileroo responde con status_code 200 y un JSON con 'id' si fue exitoso
+        if hasattr(resp, 'status_code') and resp.status_code == 200:
+            return True
+        # Si es dict (mock o test), buscar 'id'
+        if isinstance(resp, dict) and resp.get('id'):
+            return True
+        return False
+    except Exception as e:
+        print(f"[ERROR] Fallo al enviar email de pedido confirmado por Maileroo: {e}")
+        return False
