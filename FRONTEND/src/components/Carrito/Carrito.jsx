@@ -68,19 +68,56 @@ export function Carrito() {
   const [carrito, setCarrito] = useState(null);
   const [items, setItems] = useState([]);
   const [productosRecomendados, setProductosRecomendados] = useState([]);
-  useEffect(() => {
-    cargarCarrito();
-    if (productosRecomendados.length === 0) {
-      cargarProductosRecomendados();
-    }
-    // Sin listeners ni debounce
-  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [creatingPreference, setCreatingPreference] = useState(false);
 
-  // Cargar carrito
+  // NUEVOS CAMPOS
+  const [ciudad, setCiudad] = useState("");
+  const [barrio, setBarrio] = useState("");
+  const [calle, setCalle] = useState("");
+
+  // Teléfono y dirección (string opcional como complemento)
+  const [telefono, setTelefono] = useState(usuario?.telefono || "");
+  const [direccion, setDireccion] = useState(usuario?.direccion || "");
+  const [formErrors, setFormErrors] = useState({});
+  const didTryAdopt = useRef(false);
+
+  const mpLoaded = useMercadoPagoLoader(MP_PUBLIC_KEY_TEST);
+
+  useEffect(() => {
+    cargarCarrito();
+    cargarProductosRecomendados();
+
+    const onCarritoActualizado = () => cargarCarrito();
+    window.addEventListener("carritoActualizado", onCarritoActualizado);
+    return () =>
+      window.removeEventListener("carritoActualizado", onCarritoActualizado);
+  }, []);
+
+  useEffect(() => {
+    const tryAdopt = async () => {
+      if (!autenticado) return;
+      if (didTryAdopt.current) return;
+      didTryAdopt.current = true;
+
+      const cartId = localStorage.getItem("cartId");
+      if (!cartId) return;
+      try {
+        await adoptarCarritoAnon(cartId);
+        localStorage.removeItem("cartId");
+        window.dispatchEvent(new CustomEvent("carritoActualizado"));
+        toast.success("Se migró tu carrito a tu cuenta");
+      } catch (e) {
+        // Silenciar
+      }
+    };
+
+    tryAdopt();
+  }, [autenticado]);
+
+  // Normaliza response.data (array | {results: []} | objeto)
   const cargarCarrito = async () => {
-    if (loading) return; // Evita recargas simultáneas
     try {
       setLoading(true);
       setError(null);
@@ -151,7 +188,6 @@ export function Carrito() {
     }
   };
 
-  // Cargar productos recomendados
   const cargarProductosRecomendados = async () => {
     try {
       const response = await getALLProductos();
@@ -267,10 +303,6 @@ export function Carrito() {
 
   // Crear preferencia y redirigir
   const handlePagar = async () => {
-    if (pedidoBloqueado) {
-      toast.error("Por favor espera antes de realizar otro pedido.");
-      return;
-    }
     try {
       if (!carrito || items.length === 0) {
         toast.error("Tu carrito está vacío");
@@ -293,9 +325,7 @@ export function Carrito() {
         return;
       }
 
-  setCreatingPreference(true);
-  setPedidoBloqueado(true);
-  setTimeout(() => setPedidoBloqueado(false), 30000); // 30 segundos
+      setCreatingPreference(true);
 
       // Respetar max_length=255
       const direccionTrimmed = (direccion || "").trim().slice(0, 255);
@@ -648,13 +678,11 @@ export function Carrito() {
                   <button
                     className="btn-finalizar"
                     onClick={handleFinalizarCompra}
-                    disabled={creatingPreference || pedidoBloqueado}
+                    disabled={creatingPreference}
                   >
                     {creatingPreference
                       ? "Preparando pago..."
-                      : pedidoBloqueado
-                        ? "Espera 30 segundos..."
-                        : "Finalizar Compra"}
+                      : "Finalizar Compra"}
                   </button>
                 </div>
                 {!mpLoaded && (
@@ -668,7 +696,6 @@ export function Carrito() {
         </div>
       )}
       <div className="productos-recomendados-section">
-        <h2><FaEye /> También te puede interesar</h2>
         <div className="ver-mas-container">
           <button 
             className="btn-ver-mas"
