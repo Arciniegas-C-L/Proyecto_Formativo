@@ -11,29 +11,76 @@ import requests
 # --- Email API Maileroo
 import os
 MAILEROO_API_KEY = os.getenv("MAILEROO_API_KEY", "b52075e7833bbd52abc5d87e90ca3c1ebe740d062cfba0f3e3be941497548909")
-def send_email_via_maileroo(to, subject, text, from_email="Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org"):
+def send_email_via_maileroo(
+    to,
+    subject,
+    text=None,
+    html=None,
+    from_email="Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org",
+    from_name="Variedades Zoe",
+    cc=None,
+    bcc=None,
+    reply_to=None,
+    headers=None,
+    tags=None,
+    attachments=None,
+    tracking=None,
+    scheduled_at=None,
+    reference_id=None
+):
     url = "https://smtp.maileroo.com/api/v2/emails"
-    headers = {
-        "Authorization": f"Bearer {MAILEROO_API_KEY}",
+    api_headers = {
+        "X-API-Key": MAILEROO_API_KEY,
         "Content-Type": "application/json"
     }
     data = {
         "from": {
             "address": from_email,
-            "display_name": "Variedades Zoe"
+            "display_name": from_name
         },
-        "to": [
-            {"address": to}
-        ],
-        "subject": subject,
-        "plain": text
+        "to": [{"address": addr} if isinstance(addr, str) else addr for addr in (to if isinstance(to, list) else [to])],
+        "subject": subject
     }
-    response = requests.post(url, headers=headers, json=data)
-    print(f"[Maileroo] Status: {response.status_code}")
-    print(f"[Maileroo] Response: {response.text}")
-    if response.status_code >= 400:
+    if text:
+        data["plain"] = text
+    if html:
+        data["html"] = html
+    if cc:
+        data["cc"] = [{"address": addr} if isinstance(addr, str) else addr for addr in (cc if isinstance(cc, list) else [cc])]
+    if bcc:
+        data["bcc"] = [{"address": addr} if isinstance(addr, str) else addr for addr in (bcc if isinstance(bcc, list) else [bcc])]
+    if reply_to:
+        if isinstance(reply_to, dict):
+            data["reply_to"] = reply_to
+        else:
+            data["reply_to"] = {"address": reply_to}
+    if headers:
+        data["headers"] = headers
+    if tags:
+        data["tags"] = tags
+    if attachments:
+        data["attachments"] = attachments
+    if tracking is not None:
+        data["tracking"] = tracking
+    if scheduled_at:
+        data["scheduled_at"] = scheduled_at
+    if reference_id:
+        data["reference_id"] = reference_id
+
+    print("[Maileroo][REQUEST] URL:", url)
+    print("[Maileroo][REQUEST] Headers:", api_headers)
+    print("[Maileroo][REQUEST] Data:", json.dumps(data, ensure_ascii=False))
+    try:
+        response = requests.post(url, headers=api_headers, json=data)
+        print(f"[Maileroo][RESPONSE] Status: {response.status_code}")
+        print(f"[Maileroo][RESPONSE] Body: {response.text}")
+        if response.status_code >= 400:
+            import sys
+            print(f"[Maileroo][ERROR] {response.status_code}: {response.text}", file=sys.stderr)
+    except Exception as e:
         import sys
-        print(f"[Maileroo][ERROR] {response.status_code}: {response.text}", file=sys.stderr)
+        print(f"[Maileroo][EXCEPTION] {str(e)}", file=sys.stderr)
+        return 500, str(e)
     return response.status_code, response.text
 from django.db import transaction, IntegrityError
 from BACKEND.services.stock_alerts_core import low_stock_event_check
