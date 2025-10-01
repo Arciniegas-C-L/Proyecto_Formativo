@@ -606,7 +606,8 @@ class ProductoView(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     permission_classes = [CarritoAnonimoMenosPago]
     queryset = Producto.objects.all()
-    parser_classes = (MultiPartParser, FormParser)  # Soportar archivos en request
+    from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+    parser_classes = (MultiPartParser, FormParser, JSONParser)  # Soportar archivos y JSON en request
     def get_permissions(self):
         # Permitir acceso público a métodos de solo lectura (GET, HEAD, OPTIONS)
         if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
