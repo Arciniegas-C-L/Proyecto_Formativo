@@ -314,6 +314,9 @@ class Pedido(models.Model):
     shipping_city = models.CharField(max_length=120, null=True, blank=True)
     shipping_department = models.CharField(max_length=120, null=True, blank=True)
 
+    # Control idempotente para envío de confirmación
+    confirmacion_enviada = models.BooleanField(default=False)
+
     def __str__(self):
         return f"Pedido {self.idPedido}"
 

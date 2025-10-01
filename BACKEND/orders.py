@@ -22,3 +22,16 @@ def confirmar_pedido_y_descontar_stock(pedido_id):
         # upsert_stock_alert_for_inventory(inv)
 
     return pedido
+
+def enviar_confirmacion_pedido_si_aplica(pedido):
+    """
+    Envía el correo de confirmación solo si no se ha enviado antes y el pago está aprobado.
+    """
+    from BACKEND.services.Sendemailconfirmado import enviar_email_pedido_confirmado
+    if not pedido.confirmacion_enviada:
+        exito = enviar_email_pedido_confirmado(pedido)
+        if exito:
+            pedido.confirmacion_enviada = True
+            pedido.save(update_fields=["confirmacion_enviada"])
+        return exito
+    return False

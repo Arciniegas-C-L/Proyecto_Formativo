@@ -2176,6 +2176,13 @@ class PedidoView(viewsets.ModelViewSet):
 
         return qs.order_by("-idPedido")
 
+    # Al crear un pedido, enviar confirmación solo si corresponde
+    def perform_create(self, serializer):
+        pedido = serializer.save()
+        # Aquí podrías validar el pago si es necesario
+        from BACKEND.orders import enviar_confirmacion_pedido_si_aplica
+        enviar_confirmacion_pedido_si_aplica(pedido)
+
 class PedidoProductoView(viewsets.ModelViewSet):
     """
     CRUD de ítems de pedido.
