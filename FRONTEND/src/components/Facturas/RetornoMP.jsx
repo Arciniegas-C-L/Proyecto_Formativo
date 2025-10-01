@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useParams, Link } from "react-router-dom";
 import { crearFacturaDesdePago, getFactura, descargarFacturaPDF } from "../../api/Factura.api.js";
-import "../../assets/css/Facturas/RetornoMp.css";
+import "../../assets/css/Facturas/Retornomp.css";
 
 // Construye el payload y permite pasar una bandera para que el backend no descuente stock.
 function buildBodyFromQuery(q, { skipStock = true } = {}) {
