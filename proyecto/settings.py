@@ -209,8 +209,6 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_HEADERS = list(default_headers) + ["x-rol"]
 # CORS_ALLOW_CREDENTIALS = True  # solo si usas cookies entre dominios
 
-
-
 # ========= Email (Maileroo) =========
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.maileroo.com"
