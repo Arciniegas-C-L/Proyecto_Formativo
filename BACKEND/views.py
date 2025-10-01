@@ -360,7 +360,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                         send_mail(
                             subject="Código de verificación administrador",
                             message=f"Tu código de verificación es: {codigo_gen}",
-                            from_email=settings.EMAIL_HOST_USER,
+                            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER),
                             recipient_list=[correo],
                             fail_silently=False,
                         )
