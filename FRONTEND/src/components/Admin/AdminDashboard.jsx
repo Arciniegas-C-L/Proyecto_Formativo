@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import ZOEAdmin from "../../assets/images/home/ZOEAdmin.gif";
 import {
   FaUsers,
   FaBoxOpen,
@@ -241,7 +242,7 @@ export const AdminDashboard = () => {
         <div className="encabezado-completo-sidebar">
           <div className="contenedor-logo-principal">
             <img
-              src="/src/assets/images/home/ZOE copy.gif"
+              src={ZOEAdmin}
               alt="Logo ZOE"
               className="logo-principal"
             />

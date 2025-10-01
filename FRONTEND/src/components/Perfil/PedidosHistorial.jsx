@@ -140,7 +140,7 @@ export default function PedidosHistorial() {
               <div className="pedido-productos">
                 {productosAMostrar.map((prod, idx) => (
                   <div className="producto-item" key={idx}>
-                    <img src={prod.imagen} alt={prod.nombre} className="producto-img" />
+                    <img src={prod.imagen} alt={prod.nombre} className="producto-img" loading="lazy" />
                     <div className="producto-info">
                       <span className="producto-nombre">{prod.nombre}</span>
                       <span className="producto-cantidad">Cantidad: {prod.cantidad}</span>

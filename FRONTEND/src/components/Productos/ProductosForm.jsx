@@ -274,7 +274,7 @@ export function ProductosForm() {
 
     return (
       <div className="image-preview">
-        <img src={imagenUrl} alt="Previsualización de producto" />
+  <img src={imagenUrl} alt="Previsualización de producto" loading="lazy" />
       </div>
     );
   };

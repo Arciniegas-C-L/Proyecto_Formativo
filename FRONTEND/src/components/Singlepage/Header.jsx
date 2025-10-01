@@ -133,7 +133,7 @@ export function Header() {
         <div className="header-container">
           <div className="header-brand">
             <div className="logo-container">
-              <img src={ZOE} alt="Logo ZOE" className="logo-img" />
+              <img src={ZOE} alt="Logo ZOE" className="logo-img" loading="lazy" />
             </div>
             <h3 className="brand-title">
               <Link to="/" className="brand-link">

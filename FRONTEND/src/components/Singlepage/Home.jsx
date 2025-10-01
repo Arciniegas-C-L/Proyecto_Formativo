@@ -448,7 +448,7 @@ export const Home = () => {
         </div>
         <div className="productos">
           <div className="producto-home">
-            <img src={pareja} alt="Ropa para mujeres, hombres y niños" />
+            <img src={pareja} alt="Ropa para mujeres, hombres y niños" loading="lazy" />
             <h2>Ropa para Mujer, Hombre y Niño.</h2>
             <p>
               Ropa de alta calidad para toda la familia: Hombres, mujeres, niños
@@ -456,7 +456,7 @@ export const Home = () => {
             </p>
           </div>
           <div className="producto-home">
-            <img src={calzado} alt="Calzado familiar cómodo y moderno" />
+            <img src={calzado} alt="Calzado familiar cómodo y moderno" loading="lazy" />
             <h2>Calzado para toda la Familia</h2>
             <p>
               Ofrecemos una amplia gama de calzado para hombres, mujeres y
@@ -464,7 +464,7 @@ export const Home = () => {
             </p>
           </div>
           <div className="producto-home">
-            <img src={gorra} alt="Accesorios de moda para todos" />
+            <img src={gorra} alt="Accesorios de moda para todos" loading="lazy" />
             <h2>Accesorios y Complementos</h2>
             <p>
               Eleva tu estilo con nuestros bolsos, relojes, gafas y gorras.
@@ -472,7 +472,7 @@ export const Home = () => {
             </p>
           </div>
           <div className="producto-home">
-            <img src={colcha} alt="Decoración y productos para el hogar" />
+            <img src={colcha} alt="Decoración y productos para el hogar" loading="lazy" />
             <h2>Productos para el Hogar</h2>
             <p>
               Descubre nuestra selección de productos para el hogar de alta
@@ -481,7 +481,7 @@ export const Home = () => {
             </p>
           </div>
           <div className="producto-home">
-            <img src={gafas} alt="gafas como accesorio" />
+            <img src={gafas} alt="gafas como accesorio" loading="lazy" />
             <h2>Gafas de Moda</h2>
             <p>
               Completa tu look con nuestras gafas modernas y elegantes,
@@ -489,7 +489,7 @@ export const Home = () => {
             </p>
           </div>
           <div className="producto-home">
-            <img src={guayos} alt="zapatosdeportivos" />
+            <img src={guayos} alt="zapatosdeportivos" loading="lazy" />
             <h2>Guayos Deportivos</h2>
             <p>
               Encuentra guayos cómodos y resistentes para todo tipo de deportes,

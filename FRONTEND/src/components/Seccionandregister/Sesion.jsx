@@ -273,7 +273,7 @@ export function Sesion() {
         <div className="container-welcome">
           <div className="welcome-sign-up welcome">
             <h3>¡Bienvenido!</h3>
-            <img className="saludo-welcome" src={bienvenida} alt="Bienvenida" />
+            <img className="saludo-welcome" src={bienvenida} alt="Bienvenida" loading="lazy" />
             <p>
               Es un placer tenerte de regreso. Tu tienda favorita te estaba
               esperando. Ingresa y continúa donde lo dejaste.
@@ -284,7 +284,7 @@ export function Sesion() {
           </div>
           <div className="welcome-sign-in welcome">
             <h3>¡Hola!</h3>
-            <img className="saludo-welcome" src={saludo} alt="Saludo" />
+            <img className="saludo-welcome" src={saludo} alt="Saludo" loading="lazy" />
             <p>
               Nos alegra tenerte aquí. Crea tu cuenta y descubre todo lo que
               hemos preparado para ti

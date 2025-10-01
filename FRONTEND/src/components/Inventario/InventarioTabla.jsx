@@ -26,11 +26,15 @@ const InventarioTabla = () => {
   const [stockForm, setStockForm] = useState({});
   const [stockMinimoForm, setStockMinimoForm] = useState({});
   const [error, setError] = useState("");
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "info",
   });
+
+  // Estado para bloquear recarga de productos si no hay productos
+  const [noProductos, setNoProductos] = useState(false);
 
   const [openNoCategoriasDialog, setOpenNoCategoriasDialog] = useState(false);
   const [contador, setContador] = useState(10);
@@ -163,10 +167,12 @@ const InventarioTabla = () => {
   };
 
   const cargarProductos = async (subcategoriaId, subcategoriaNombre) => {
+    if (noProductos) return; // Bloquea recarga si ya se detectó que no hay productos
     try {
       setLoading(true);
       const data = await getTablaProductos(subcategoriaId);
       if (!data.datos || data.datos.length === 0) {
+        setNoProductos(true);
         showSnackbar(`No hay productos en "${subcategoriaNombre}"`, "info");
         return;
       }
@@ -184,6 +190,7 @@ const InventarioTabla = () => {
         },
         { text: subcategoriaNombre, active: true },
       ]);
+      setNoProductos(false); // Si hay productos, permite recarga
     } catch (e) {
       console.error("Error al cargar productos:", e);
       showSnackbar("Error al cargar productos", "error");
@@ -710,6 +717,17 @@ const renderProductosTable = () => (
       <div className="inventario-tabla-container">
         <div className="loading">
           <div className="spinner"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje fijo si no hay productos en la subcategoría
+  if (noProductos && currentView === "productos") {
+    return (
+      <div className="inventario-tabla-container">
+        <div className="alert-info" style={{marginTop: '2rem', textAlign: 'center'}}>
+          No hay productos en esta subcategoría. Recarga la página o selecciona otra subcategoría para volver a intentar.
         </div>
       </div>
     );

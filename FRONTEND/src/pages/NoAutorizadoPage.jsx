@@ -20,7 +20,7 @@ export function NoAutorizadoPage() {
 
   return (
     <div className="no-autorizado-container">
-      <img src={NoAutorizado} alt="Acceso Denegado" className="acceso-denegado-img"/>
+  <img src={NoAutorizado} alt="Acceso Denegado" className="acceso-denegado-img" loading="lazy"/>
       <h2>Acceso Denegado</h2>
       <p>No tienes los permisos necesarios para acceder a está página</p>
       <p className="no-autorizado-error">Error 403</p>
