@@ -12,21 +12,25 @@ import requests
 import os
 MAILEROO_API_KEY = os.getenv("MAILEROO_API_KEY", "b52075e7833bbd52abc5d87e90ca3c1ebe740d062cfba0f3e3be941497548909")
 def send_email_via_maileroo(to, subject, text, from_email="Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org"):
-    url = "https://api.maileroo.com/send"
+    url = "https://smtp.maileroo.com/api/v2/emails"
     headers = {
         "Authorization": f"Bearer {MAILEROO_API_KEY}",
         "Content-Type": "application/json"
     }
     data = {
-        "from": from_email,
-        "to": [to],
+        "from": {
+            "address": from_email,
+            "display_name": "Variedades Zoe"
+        },
+        "to": [
+            {"address": to}
+        ],
         "subject": subject,
-        "text": text
+        "plain": text
     }
     response = requests.post(url, headers=headers, json=data)
     print(f"[Maileroo] Status: {response.status_code}")
     print(f"[Maileroo] Response: {response.text}")
-    # También loguear en consola de error si falla
     if response.status_code >= 400:
         import sys
         print(f"[Maileroo][ERROR] {response.status_code}: {response.text}", file=sys.stderr)
