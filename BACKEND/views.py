@@ -7,7 +7,24 @@ from datetime import timedelta, datetime
 from decimal import Decimal
 import io
 from django.db.models import Prefetch
-from django.core.mail import EmailMessage
+import requests
+# --- Email API Maileroo
+import os
+MAILEROO_API_KEY = os.getenv("MAILEROO_API_KEY", "b52075e7833bbd52abc5d87e90ca3c1ebe740d062cfba0f3e3be941497548909")
+def send_email_via_maileroo(to, subject, text, from_email="Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org"):
+    url = "https://api.maileroo.com/send"
+    headers = {
+        "Authorization": f"Bearer {MAILEROO_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "from": from_email,
+        "to": [to],
+        "subject": subject,
+        "text": text
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response.status_code, response.text
 from django.db import transaction, IntegrityError
 from BACKEND.services.stock_alerts_core import low_stock_event_check
 
@@ -22,7 +39,6 @@ from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.db import models, transaction
 from django.db.models import Q
 from django.http import HttpResponse
@@ -357,12 +373,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                     if not codigo_activo:
                         codigo_gen = ''.join(random.choices(string.digits, k=6))
                         CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo_gen)
-                        send_mail(
+                        send_email_via_maileroo(
+                            to=correo,
                             subject="Código de verificación administrador",
-                            message=f"Tu código de verificación es: {codigo_gen}",
-                            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER),
-                            recipient_list=[correo],
-                            fail_silently=False,
+                            text=f"Tu código de verificación es: {codigo_gen}",
                         )
                     return Response({
                         "requiere_verificacion": True,
@@ -440,12 +454,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             CodigoRecuperacion.objects.create(usuario=usuario, codigo=codigo)
 
             # Enviar correo real
-            send_mail(
+            send_email_via_maileroo(
+                to=correo,
                 subject="Código de recuperación",
-                message=f"Tu código de recuperación es: {codigo}",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[correo],
-                fail_silently=False,
+                text=f"Tu código de recuperación es: {codigo}",
             )
 
             return Response({"mensaje": "Código enviado al correo."}, status=status.HTTP_200_OK)
@@ -2306,10 +2318,12 @@ def _send_factura_email(request, factura):
     filename, pdf_bytes = _factura_pdf_bytes(factura)
 
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or getattr(settings, "EMAIL_HOST_USER", None)
-    email = EmailMessage(subject=subject, body=body, from_email=from_email, to=[to_email])
-    email.attach(filename, pdf_bytes, "application/pdf")
-    # Si tienes logo u otros adjuntos, puedes añadirlos aquí.
-    email.send(fail_silently=True)
+    # Envío simple sin adjunto (Maileroo API básica, no soporta adjuntos en este ejemplo)
+    send_email_via_maileroo(
+        to=to_email,
+        subject=subject,
+        text=body
+    )
     return True
 
 # =========================
