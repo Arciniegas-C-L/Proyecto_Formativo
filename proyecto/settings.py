@@ -143,14 +143,15 @@ SIMPLE_JWT = {
 # ========= DB (local/railway) =========
 DB_ENV = os.getenv("DB_ENV", "local")  # "local" o "railway"
 if DB_ENV == "railway":
+    # Configuración directa desde la URL proporcionada
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("MYSQL_DATABASE", "railway"),
-            "USER": os.getenv("MYSQL_USER", "root"),
-            "PASSWORD": os.getenv("MYSQL_PASSWORD", ""),
-            "HOST": os.getenv("MYSQL_HOST", "gondola.proxy.rlwy.net"),
-            "PORT": os.getenv("MYSQL_PORT", "42442"),
+            "NAME": "railway",
+            "USER": "root",
+            "PASSWORD": "SWTqcmrueFOJFnqXihulLDTuBjUpMihw",
+            "HOST": "metro.proxy.rlwy.net",
+            "PORT": "12934",
             "OPTIONS": {
                 "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             },
