@@ -15,4 +15,4 @@ ALLOWED_HOSTS = [
     os.getenv("PUBLIC_HOST", "").strip() or "",
 ]
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
