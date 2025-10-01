@@ -632,12 +632,51 @@ class ProductoView(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
-        print("Datos recibidos en create:", request.data)  # Log datos recibidos
-        serializer = self.get_serializer(data=request.data)
+        import logging
+        logger = logging.getLogger("producto.create")
+        logger.info(f"[Producto][CREATE] Datos recibidos: {request.data}")
+
+        # Validación manual de tipos antes del serializer
+        errores_tipo = {}
+        data = request.data.copy()
+        # nombre
+        if 'nombre' not in data or not isinstance(data['nombre'], str):
+            errores_tipo['nombre'] = 'Debe ser un string.'
+        # descripcion
+        if 'descripcion' not in data or not isinstance(data['descripcion'], str):
+            errores_tipo['descripcion'] = 'Debe ser un string.'
+        # precio
+        try:
+            data['precio'] = int(data.get('precio', ''))
+            if data['precio'] < 0:
+                raise ValueError
+        except Exception:
+            errores_tipo['precio'] = 'Debe ser un entero positivo.'
+        # stock
+        if 'stock' in data:
+            try:
+                data['stock'] = int(data['stock'])
+                if data['stock'] < 0:
+                    raise ValueError
+            except Exception:
+                errores_tipo['stock'] = 'Debe ser un entero positivo.'
+        # subcategoria
+        try:
+            data['subcategoria'] = int(data.get('subcategoria', ''))
+        except Exception:
+            errores_tipo['subcategoria'] = 'Debe ser el ID (entero) de una subcategoría.'
+        # imagen: puede ser url, null o archivo, no forzar tipo aquí
+
+        if errores_tipo:
+            logger.error(f"[Producto][CREATE][TIPO] Errores de tipo: {errores_tipo}")
+            return Response({'errores_tipo': errores_tipo}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             self.perform_create(serializer)
+            logger.info(f"[Producto][CREATE] Producto creado: {serializer.data}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print("Errores de validación en create:", serializer.errors)
+        logger.error(f"[Producto][CREATE][VALIDACION] Errores de validación: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
