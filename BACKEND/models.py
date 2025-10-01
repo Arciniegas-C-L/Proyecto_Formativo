@@ -209,7 +209,7 @@ class Producto(models.Model):
     precio = models.PositiveIntegerField()
     stock = models.PositiveIntegerField(default=0)
     subcategoria = models.ForeignKey(Subcategoria, on_delete=models.CASCADE, related_name='productos')
-    imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
+    imagen = models.URLField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return self.nombre
