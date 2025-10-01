@@ -1268,25 +1268,27 @@ class InventarioView(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def tabla_productos(self, request):
+        import logging
+        logger = logging.getLogger("inventario.tabla_productos")
         subcategoria_id = request.query_params.get('subcategoria_id')
         if not subcategoria_id:
-            return Response({"error": "Se requiere el ID de la subcategoría"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            logger.error("[tabla_productos] Falta subcategoria_id en query params")
+            return Response({"error": "Se requiere el ID de la subcategoría"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            subcategoria = Subcategoria.objects.select_related('categoria').get(
-                idSubcategoria=subcategoria_id,
-                estado=True
-            )
-            productos = Producto.objects.filter(
-                subcategoria=subcategoria
-            ).prefetch_related('inventarios__talla')
+            subcategoria = Subcategoria.objects.select_related('categoria').get(idSubcategoria=subcategoria_id, estado=True)
+        except Subcategoria.DoesNotExist:
+            logger.error(f"[tabla_productos] Subcategoría no encontrada o inactiva: {subcategoria_id}")
+            return Response({"error": "Subcategoría no encontrada o inactiva"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"[tabla_productos] Error inesperado buscando subcategoría: {str(e)}")
+            return Response({"error": f"Error inesperado buscando subcategoría: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            productos = Producto.objects.filter(subcategoria=subcategoria).prefetch_related('inventarios__talla')
             productos_data = []
             for producto in productos:
                 try:
-                    # Solo inventarios cuyas tallas pertenezcan al grupo actual
                     inventarios = producto.inventarios.filter(talla__grupo=subcategoria.grupoTalla)
-
                     stock_por_talla = {}
                     for inv in inventarios:
                         try:
@@ -1300,6 +1302,7 @@ class InventarioView(viewsets.ModelViewSet):
                                 'stock_inicial': getattr(inv, 'cantidad', 0)
                             }
                         except Exception as e:
+                            logger.warning(f"[tabla_productos] Error en inventario/talla: {str(e)}")
                             stock_por_talla['error'] = f"Error en talla: {str(e)}"
 
                     stock_total = sum(getattr(inv, 'stock_talla', 0) for inv in inventarios)
@@ -1324,6 +1327,7 @@ class InventarioView(viewsets.ModelViewSet):
                         }
                     })
                 except Exception as e:
+                    logger.error(f"[tabla_productos] Error al procesar producto id={getattr(producto, 'id', None)}: {str(e)}")
                     productos_data.append({
                         'id': getattr(producto, 'id', None),
                         'nombre': getattr(producto, 'nombre', '[Sin nombre]'),
@@ -1349,10 +1353,9 @@ class InventarioView(viewsets.ModelViewSet):
                     {'nombre': subcategoria.nombre, 'url': f'/inventario/tabla_productos/?subcategoria_id={subcategoria.idSubcategoria}'}
                 ]
             })
-        except Subcategoria.DoesNotExist:
-            return Response({"error": "Subcategoría no encontrada o inactiva"},
-                            status=status.HTTP_404_NOT_FOUND)
-
+        except Exception as e:
+            logger.error(f"[tabla_productos] Error inesperado en procesamiento de productos: {str(e)}")
+            return Response({"error": f"Error inesperado en procesamiento de productos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
     # ==============================
     # Actualización de stock por tallas (modal)
     # ==============================
