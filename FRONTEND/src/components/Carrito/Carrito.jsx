@@ -26,7 +26,6 @@ import {
 import { getALLProductos } from "../../api/Producto.api";
 import "../../assets/css/Carrito/Carrito.css";
 
-let debounceTimeout = null;
 
 const API_BASE_URL = "http://127.0.0.1:8000"; // Backend Django
 const MP_PUBLIC_KEY_TEST = import.meta?.env?.VITE_MP_PUBLIC_KEY || "TEST-PUBLIC-KEY-AQUI";
@@ -74,18 +73,7 @@ export function Carrito() {
     if (productosRecomendados.length === 0) {
       cargarProductosRecomendados();
     }
-    const onCarritoActualizado = () => {
-      if (debounceTimeout) return;
-      debounceTimeout = setTimeout(() => {
-        cargarCarrito();
-        debounceTimeout = null;
-      }, 500);
-    };
-    window.addEventListener("carritoActualizado", onCarritoActualizado);
-    return () => {
-      window.removeEventListener("carritoActualizado", onCarritoActualizado);
-      if (debounceTimeout) clearTimeout(debounceTimeout);
-    };
+    // Sin listeners ni debounce
   }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
