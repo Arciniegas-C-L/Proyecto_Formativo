@@ -1244,39 +1244,52 @@ class InventarioView(viewsets.ModelViewSet):
 
             productos_data = []
             for producto in productos:
-                # Solo inventarios cuyas tallas pertenezcan al grupo actual
-                inventarios = producto.inventarios.filter(talla__grupo=subcategoria.grupoTalla)
+                try:
+                    # Solo inventarios cuyas tallas pertenezcan al grupo actual
+                    inventarios = producto.inventarios.filter(talla__grupo=subcategoria.grupoTalla)
 
-                stock_por_talla = {
-                    inv.talla.nombre: {
-                        'talla_id': inv.talla.id,
-                        'stock': inv.stock_talla,
-                        'stock_minimo': inv.stockMinimo,
-                        'stock_inicial': inv.cantidad
-                    } for inv in inventarios
-                }
+                    stock_por_talla = {}
+                    for inv in inventarios:
+                        try:
+                            talla_nombre = getattr(inv.talla, 'nombre', None)
+                            if talla_nombre is None:
+                                talla_nombre = 'Desconocida'
+                            stock_por_talla[talla_nombre] = {
+                                'talla_id': getattr(inv.talla, 'id', None),
+                                'stock': getattr(inv, 'stock_talla', 0),
+                                'stock_minimo': getattr(inv, 'stockMinimo', 0),
+                                'stock_inicial': getattr(inv, 'cantidad', 0)
+                            }
+                        except Exception as e:
+                            stock_por_talla['error'] = f"Error en talla: {str(e)}"
 
-                stock_total = sum(inv.stock_talla for inv in inventarios)
-                stock_minimo_total = sum(inv.stockMinimo for inv in inventarios)
-                stock_inicial_total = sum(inv.cantidad for inv in inventarios)
+                    stock_total = sum(getattr(inv, 'stock_talla', 0) for inv in inventarios)
+                    stock_minimo_total = sum(getattr(inv, 'stockMinimo', 0) for inv in inventarios)
+                    stock_inicial_total = sum(getattr(inv, 'cantidad', 0) for inv in inventarios)
 
-                productos_data.append({
-                    'id': producto.id,
-                    'nombre': producto.nombre,
-                    'descripcion': producto.descripcion,
-                    'precio': producto.precio,
-                    'stock': producto.stock,
-                    'stock_total': stock_total,
-                    'stock_inicial_total': stock_inicial_total,
-                    'stock_minimo_total': stock_minimo_total,
-                    'imagen': producto.imagen if producto.imagen else None,
-                    'stock_por_talla': stock_por_talla,
-                    'estado_stock': 'Bajo' if stock_total <= stock_minimo_total else 'Normal',
-                    'acciones': {
-                        'editar': f'/productos/{producto.id}/',
-                        'ver_detalle': f'/productos/{producto.id}/detalle/'
-                    }
-                })
+                    productos_data.append({
+                        'id': getattr(producto, 'id', None),
+                        'nombre': getattr(producto, 'nombre', '[Sin nombre]'),
+                        'descripcion': getattr(producto, 'descripcion', ''),
+                        'precio': getattr(producto, 'precio', 0),
+                        'stock': getattr(producto, 'stock', 0),
+                        'stock_total': stock_total,
+                        'stock_inicial_total': stock_inicial_total,
+                        'stock_minimo_total': stock_minimo_total,
+                        'imagen': getattr(producto, 'imagen', None),
+                        'stock_por_talla': stock_por_talla,
+                        'estado_stock': 'Bajo' if stock_total <= stock_minimo_total else 'Normal',
+                        'acciones': {
+                            'editar': f"/productos/{getattr(producto, 'id', '0')}/",
+                            'ver_detalle': f"/productos/{getattr(producto, 'id', '0')}/detalle/"
+                        }
+                    })
+                except Exception as e:
+                    productos_data.append({
+                        'id': getattr(producto, 'id', None),
+                        'nombre': getattr(producto, 'nombre', '[Sin nombre]'),
+                        'error': f"Error al procesar producto: {str(e)}"
+                    })
 
             return Response({
                 'titulo': f'Productos de {subcategoria.nombre}',

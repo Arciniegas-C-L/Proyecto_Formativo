@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 LOW_STOCK_UMBRAL = 5
 DIGEST_TOP_N = 10
-LOW_STOCK_CACHE_TTL = 120 * 60  # 2 horas
+LOW_STOCK_CACHE_TTL = 120 * 60  # 2 horas (por defecto)
+NEW_PRODUCT_DISABLE_ALERT_TTL = 30 * 60  # 30 minutos para productos nuevos
 
 def _admin_emails():
     try:

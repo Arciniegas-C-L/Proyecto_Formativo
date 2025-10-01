@@ -469,7 +469,14 @@ class CarritoItem(models.Model):
 @receiver(post_save, sender=Producto)
 def crear_inventario_producto(sender, instance, created, **kwargs):
     if created:
-        Inventario.crear_inventario_para_producto(instance)
+        inventarios = Inventario.crear_inventario_para_producto(instance)
+        # Deshabilitar alerta de bajo stock por 30 minutos para cada inventario creado
+        from django.core.cache import cache
+        from BACKEND.services.stock_alerts_core import LOW_STOCK_UMBRAL
+        for inv in inventarios if isinstance(inventarios, (list, tuple)) else [inventarios]:
+            for umbral in [LOW_STOCK_UMBRAL, 5]:
+                key = f"lowstock:inv:{inv.pk}:u{umbral}"
+                cache.set(key, True, timeout=30*60)  # 30 minutos
 
 
 @receiver(post_save, sender=Subcategoria)
