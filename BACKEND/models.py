@@ -14,20 +14,7 @@ from django.dispatch import receiver
 # ----------------------------
 # Comentarios de usuarios
 # ----------------------------
-class Comentario(models.Model):
 
-    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='comentarios')
-    texto = models.TextField()
-    valoracion = models.PositiveSmallIntegerField(default=5)
-    fecha = models.DateTimeField(auto_now_add=True)
-    # Campos snapshot para mantener datos originales
-    usuario_nombre = models.CharField(max_length=45, blank=True, null=True)
-    usuario_apellido = models.CharField(max_length=45, blank=True, null=True)
-    usuario_avatar_seed = models.CharField(max_length=32, blank=True, null=True)
-    usuario_avatar_options = models.JSONField(blank=True, null=True)
-
-    def __str__(self):
-        return f"Comentario de {self.usuario.nombre} {self.usuario.apellido} - {self.valoracion} estrellas"
 
 # ----------------------------
 # Roles
@@ -638,4 +625,17 @@ class LowStockAlert(models.Model):
         return f"Alert({self.inventario_id}) < {self.umbral}: {self.en_alerta}"
 
 
+class Comentario(models.Model):
 
+    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='comentarios')
+    texto = models.TextField()
+    valoracion = models.PositiveSmallIntegerField(default=5)
+    fecha = models.DateTimeField(auto_now_add=True)
+    # Campos snapshot para mantener datos originales
+    usuario_nombre = models.CharField(max_length=45, blank=True, null=True)
+    usuario_apellido = models.CharField(max_length=45, blank=True, null=True)
+    usuario_avatar_seed = models.CharField(max_length=32, blank=True, null=True)
+    usuario_avatar_options = models.JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Comentario de {self.usuario.nombre} {self.usuario.apellido} - {self.valoracion} estrellas"
