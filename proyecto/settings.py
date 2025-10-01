@@ -210,14 +210,16 @@ CORS_ALLOW_HEADERS = list(default_headers) + ["x-rol"]
 # CORS_ALLOW_CREDENTIALS = True  # solo si usas cookies entre dominios
 
 
-# ========= Email (Brevo/Sendinblue) =========
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp-relay.brevo.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "9848b3001@smtp-brevo.com")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "Ly8Ws7YCVHkgPab3")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+
+# ========= Email (Maileroo) =========
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.maileroo.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = "Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org"
+EMAIL_HOST_PASSWORD = "40fd0da3418fb1a1fd325bcc"
+DEFAULT_FROM_EMAIL = "Variedadesyestiloszoe@bb72b3c7eb447366.maileroo.org"
 
 #Esto permitira enviar la alerta por stock 
 # ======== Cache (para cooldown de alertas) ========
