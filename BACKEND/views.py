@@ -24,6 +24,12 @@ def send_email_via_maileroo(to, subject, text, from_email="Variedadesyestiloszoe
         "text": text
     }
     response = requests.post(url, headers=headers, json=data)
+    print(f"[Maileroo] Status: {response.status_code}")
+    print(f"[Maileroo] Response: {response.text}")
+    # También loguear en consola de error si falla
+    if response.status_code >= 400:
+        import sys
+        print(f"[Maileroo][ERROR] {response.status_code}: {response.text}", file=sys.stderr)
     return response.status_code, response.text
 from django.db import transaction, IntegrityError
 from BACKEND.services.stock_alerts_core import low_stock_event_check
