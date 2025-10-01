@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+// import { Toaster } from "react-hot-toast";
 import AutoAvatarInitializer from './components/Perfil/AutoAvatarInitializer.jsx';
 
 import {AdminStockNotifications} from "./components/Notificaciones/AdminStockNotifications.jsx"
@@ -250,7 +250,7 @@ function AppContent() {
 
       {!location.pathname.startsWith("/admin") && <Footer />}
 
-      <Toaster />
+  {/* <Toaster /> */}
     </>
   );
 }

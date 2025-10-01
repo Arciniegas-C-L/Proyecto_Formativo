@@ -8,7 +8,7 @@ export const solicitarCodigo = async (correo) => {
 };
 
 export const verificarCodigo = async (correo, codigo) => {
-  const res = await axios.post(`${API_URL}verificar_codigo/`, { correo, codigo });
+  const res = await axios.post(`${API_URL}usuario/verificar_codigo/`, { correo, codigo });
   return res.data;
 };
 

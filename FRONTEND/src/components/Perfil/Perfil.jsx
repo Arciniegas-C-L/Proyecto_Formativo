@@ -347,15 +347,6 @@ export function Perfil() {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>Dirección:</label>
-                    <input
-                      type="text"
-                      name="direccion"
-                      value={usuario.direccion || ''}
-                      onChange={handleChange}
-                    />
-                  </div>
 
                   <button type="button" className="btn-guardar" onClick={handleGuardarDatos}>
                     Guardar cambios

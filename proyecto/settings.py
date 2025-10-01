@@ -164,7 +164,7 @@ else:
             "USER": os.getenv("MYSQL_USER", "root"),
             "PASSWORD": os.getenv("MYSQL_PASSWORD", "proyecto"),
             "HOST": os.getenv("MYSQL_HOST", "localhost"),
-            "PORT": os.getenv("MYSQL_PORT", "3307"),
+            "PORT": os.getenv("MYSQL_PORT", "3306"),
             "OPTIONS": {
                 "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             },
