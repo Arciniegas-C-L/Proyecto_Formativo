@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 /* Flex para formulario y promedio lado a lado */
 .formulario-comentarios-flex {
   display: flex;
@@ -238,7 +236,6 @@
 }
 
 
->>>>>>> 97812d6 (Cambio de base de datos a MySQL)
 /* SECCIÓN HERO */
 .hero {
   min-height: 100vh;
